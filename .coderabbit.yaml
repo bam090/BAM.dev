@@ -1,0 +1,13 @@
+language: ko-KR
+
+reviews:
+  high_level_summary: true
+  review_status: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    auto_incremental_review: true
+    base_branches:
+      - dev
+      - main
