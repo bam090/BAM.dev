@@ -425,18 +425,26 @@ test("배송비 공개 채점은 standard 지역의 멤버십 30,000원 경계�
   const quest = collection.quests.find(
     (item) => item.id === "quest-javascript-delivery-fee",
   );
+  assert.ok(quest, "배송비 Quest가 필요합니다.");
   const fixture = codeQuestSolutionFixtures[quest.id];
+  assert.ok(fixture, "배송비 Quest의 풀이 fixture가 필요합니다.");
   const publicBoundary = quest.publicTests.find(
     (publicTest) => publicTest.id === "delivery-member-standard-at-threshold",
   );
+  assert.ok(publicBoundary, "멤버십 무료 기준 공개 테스트가 필요합니다.");
   const maximumVerification = fixture.verificationCases.find(
     (verificationCase) => verificationCase.id === "verify-delivery-maximum-member-island",
   );
+  assert.ok(maximumVerification, "최대 입력 추가 검증 사례가 필요합니다.");
   const wrongSolution = fixture.representativeWrongSolutions.find(
     (solution) => solution.id === "membership-threshold-by-destination",
   );
+  assert.ok(wrongSolution, "배송 지역별 기준 금액 대표 오답이 필요합니다.");
 
-  assert.equal(quest.revision, 2);
+  assert.ok(
+    Number.isSafeInteger(quest.revision) && quest.revision >= 2,
+    "배송비 Quest revision은 P1 수정 버전인 2 이상이어야 합니다.",
+  );
   assert.deepEqual(publicBoundary, {
     id: "delivery-member-standard-at-threshold",
     label: "멤버십 무료 기준과 같은 금액의 일반 지역 배송",

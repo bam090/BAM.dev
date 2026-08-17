@@ -316,7 +316,12 @@ test("새 문항끼리 또는 기존 확인 문제와 문구가 중복되지 않
   const existingQuestions = [];
   for (const lesson of curriculum.lessons.filter((item) => item.languageId === quiz.languageId)) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
-    const confirmationSection = markdown.split(/\n## (?:최종 )?확인 문제\n/).at(-1);
+    const confirmationSections = markdown.split(/\n## (?:최종 )?확인 문제\n/);
+    assert.ok(
+      confirmationSections.length > 1,
+      `${lesson.id}: 확인 문제 섹션을 찾을 수 없습니다.`,
+    );
+    const confirmationSection = confirmationSections.at(-1);
 
     for (const line of confirmationSection.split("\n")) {
       const match = line.match(/^\d+\.\s+(.+)$/);

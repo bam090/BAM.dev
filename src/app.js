@@ -43,9 +43,9 @@ import {
   renderCodeQuestView,
 } from "./ui/code-quest-view.js";
 
-const appRoot = document.querySelector("#app");
+const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
 
-class BamLearningApp {
+export class BamLearningApp {
   constructor(root) {
     this.root = root;
     this.curriculum = null;
@@ -60,6 +60,8 @@ class BamLearningApp {
     this.codeQuestState = null;
     this.codeQuestRunner = new BrowserCodeQuestRunner();
     this.activeQuestExecution = null;
+    this.pendingQuestDraftSave = null;
+    this.questDraftSaveTimer = null;
     this.questRequestSequence = 0;
     this.renderSequence = 0;
     this.hasRenderedView = false;
@@ -91,6 +93,7 @@ class BamLearningApp {
     });
 
     window.addEventListener("hashchange", () => this.openRoute());
+    window.addEventListener("pagehide", () => this.flushPendingQuestDraftSave());
     window.addEventListener("storage", (event) => {
       if (event.key !== PROGRESS_STORAGE_KEY) return;
       if (this.currentLesson) this.renderLesson();
@@ -125,6 +128,7 @@ class BamLearningApp {
   }
 
   async openRoute({ useLastLesson = false } = {}) {
+    this.flushPendingQuestDraftSave();
     if (!this.curriculum) return;
     this.abortQuestExecutionForNavigation();
 
@@ -447,18 +451,7 @@ class BamLearningApp {
 
     state.source = editor.value;
     state.uiError = null;
-    try {
-      this.progressRepository.saveQuestDraft({
-        questId: state.quest.id,
-        languageId: this.codeQuestCollection.languageId,
-        source: state.source,
-      });
-      const persistence = this.progressRepository.getPersistenceStatus();
-      state.draftStatus = persistence.isPersistent ? "saved" : "memory";
-    } catch {
-      state.draftStatus = "failed";
-      state.uiError = "초안을 저장하지 못했습니다. 편집 중인 코드는 화면에 유지됩니다.";
-    }
+    this.scheduleQuestDraftSave(state);
     this.updateCodeQuestDraftFeedback();
   }
 
@@ -667,6 +660,96 @@ class BamLearningApp {
     if (runButton) runButton.disabled = state.source.trim().length === 0;
   }
 
+  setQuestDraftSaveTimer(callback) {
+    return window.setTimeout(callback, QUEST_DRAFT_SAVE_DEBOUNCE_MS);
+  }
+
+  clearQuestDraftSaveTimer(timer) {
+    window.clearTimeout(timer);
+  }
+
+  clearScheduledQuestDraftSave() {
+    if (this.questDraftSaveTimer === null) return;
+    this.clearQuestDraftSaveTimer(this.questDraftSaveTimer);
+    this.questDraftSaveTimer = null;
+  }
+
+  scheduleQuestDraftSave(state) {
+    const languageId = this.codeQuestCollection?.languageId;
+    if (!languageId) {
+      state.draftStatus = "failed";
+      state.uiError = "초안을 저장하지 못했습니다. 편집 중인 코드는 화면에 유지됩니다.";
+      return;
+    }
+
+    const previous = this.pendingQuestDraftSave;
+    if (
+      previous &&
+      (previous.questId !== state.quest.id || previous.languageId !== languageId)
+    ) {
+      this.flushPendingQuestDraftSave();
+    } else {
+      this.clearScheduledQuestDraftSave();
+    }
+
+    const pending = {
+      owner: state,
+      questId: state.quest.id,
+      languageId,
+      source: state.source,
+    };
+    this.pendingQuestDraftSave = pending;
+    this.questDraftSaveTimer = this.setQuestDraftSaveTimer(() => {
+      if (this.pendingQuestDraftSave !== pending) return;
+      this.pendingQuestDraftSave = null;
+      this.questDraftSaveTimer = null;
+      this.persistQuestDraft(pending);
+    });
+  }
+
+  flushPendingQuestDraftSave() {
+    const pending = this.pendingQuestDraftSave;
+    if (!pending) return false;
+
+    this.clearScheduledQuestDraftSave();
+    this.pendingQuestDraftSave = null;
+    this.persistQuestDraft(pending);
+    return true;
+  }
+
+  cancelPendingQuestDraftSave() {
+    this.clearScheduledQuestDraftSave();
+    this.pendingQuestDraftSave = null;
+  }
+
+  persistQuestDraft(pending) {
+    const isCurrentOwner =
+      this.currentView === "quest" &&
+      this.codeQuestState === pending.owner &&
+      pending.owner.quest.id === pending.questId;
+
+    try {
+      this.progressRepository.saveQuestDraft({
+        questId: pending.questId,
+        languageId: pending.languageId,
+        source: pending.source,
+      });
+      const persistence = this.progressRepository.getPersistenceStatus();
+      if (isCurrentOwner) {
+        pending.owner.draftStatus = persistence.isPersistent ? "saved" : "memory";
+        pending.owner.uiError = null;
+      }
+    } catch {
+      if (isCurrentOwner) {
+        pending.owner.draftStatus = "failed";
+        pending.owner.uiError =
+          "초안을 저장하지 못했습니다. 편집 중인 코드는 화면에 유지됩니다.";
+      }
+    }
+
+    if (isCurrentOwner) this.updateCodeQuestDraftFeedback();
+  }
+
   revealNextCodeQuestHint() {
     const state = this.codeQuestState;
     if (!state || state.isRunning) return;
@@ -685,6 +768,7 @@ class BamLearningApp {
     const state = this.codeQuestState;
     if (!state || state.isRunning) return;
 
+    this.cancelPendingQuestDraftSave();
     state.source = state.quest.starterCode;
     state.report = null;
     state.reportPersistenceStatus = null;
@@ -708,6 +792,8 @@ class BamLearningApp {
   async runCurrentCodeQuest() {
     const state = this.codeQuestState;
     if (!state || this.currentView !== "quest" || state.isRunning) return;
+
+    this.flushPendingQuestDraftSave();
 
     if (this.activeQuestExecution) {
       state.uiError = "이전 코드 실행을 정리하고 있습니다. 잠시 후 다시 실행해 주세요.";
@@ -1336,4 +1422,7 @@ class BamLearningApp {
   }
 }
 
-new BamLearningApp(appRoot).start();
+if (typeof document !== "undefined") {
+  const appRoot = document.querySelector("#app");
+  if (appRoot) new BamLearningApp(appRoot).start();
+}

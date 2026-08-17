@@ -37,6 +37,13 @@ function resolveRequestPath(requestUrl) {
   return resolvedPath;
 }
 
+export function pipeReadableResponse(readable, response) {
+  readable.once("error", () => {
+    response.destroy();
+  });
+  readable.pipe(response);
+}
+
 const server = createServer(async (request, response) => {
   if (!request.url || !["GET", "HEAD"].includes(request.method ?? "")) {
     response.writeHead(405, { Allow: "GET, HEAD" });
@@ -61,14 +68,16 @@ const server = createServer(async (request, response) => {
       "X-Content-Type-Options": "nosniff",
     });
     if (request.method === "HEAD") response.end();
-    else createReadStream(filePath).pipe(response);
+    else pipeReadableResponse(createReadStream(filePath), response);
   } catch {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Not Found");
   }
 });
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`BAM.dev 개발 서버: http://localhost:${port}`);
-  console.log("종료하려면 Ctrl+C를 누르세요.");
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`BAM.dev 개발 서버: http://localhost:${port}`);
+    console.log("종료하려면 Ctrl+C를 누르세요.");
+  });
+}

@@ -39,6 +39,33 @@ test("중복 교안 ID와 끊어진 순서를 거부한다", () => {
   assert.ok(errors.some((error) => error.includes("order는 1부터 연속")));
 });
 
+test("빈 언어와 교안 컬렉션을 런타임과 스키마 검증에서 거부한다", async (t) => {
+  const fixtureDirectory = await mkdtemp(path.join(tmpdir(), "bam-empty-curriculum-"));
+  t.after(() => rm(fixtureDirectory, { recursive: true, force: true }));
+  const validatorPath = fileURLToPath(new URL("../scripts/validate-content.mjs", import.meta.url));
+
+  for (const field of ["languages", "lessons"]) {
+    const invalid = structuredClone(curriculum);
+    invalid[field] = [];
+
+    assert.ok(
+      validateCurriculum(invalid).some((error) => error.includes(field)),
+      `${field}: 런타임 검증이 빈 컬렉션을 거부해야 합니다.`,
+    );
+
+    const fixturePath = path.join(fixtureDirectory, `${field}.json`);
+    await writeFile(fixturePath, JSON.stringify(invalid), "utf8");
+    await assert.rejects(
+      execFileAsync(process.execPath, [validatorPath, "--curriculum", fixturePath]),
+      (error) => {
+        assert.match(error.stderr, /커리큘럼 스키마 검증 실패/);
+        assert.match(error.stderr, new RegExp(`\\$\\.${field}`));
+        return true;
+      },
+    );
+  }
+});
+
 test("콘텐츠 검증 명령은 수동 검증에 없는 커리큘럼 스키마 제약도 적용한다", async (t) => {
   const invalid = structuredClone(curriculum);
   invalid.product = "다른 제품";
@@ -74,10 +101,25 @@ test("DOM 본 교안과 종합 실습은 같은 키보드 접근 가능 목록 �
       "utf8",
     ),
   ]);
-  const executionExample = markdown.split("\n## 실행 흐름\n")[1].split("\n## 최소 코드\n")[0];
-  const reviewPractice = reviewMarkdown
-    .split("\n## 실습 3. DOM과 이벤트\n")[1]
-    .split("\n## 실습 4. Promise와 `fetch()`\n")[0];
+  const executionSections = markdown.split("\n## 실행 흐름\n");
+  assert.ok(executionSections.length > 1, "DOM 교안의 실행 흐름 섹션을 찾을 수 없습니다.");
+  const minimumCodeSections = executionSections[1].split("\n## 최소 코드\n");
+  assert.ok(minimumCodeSections.length > 1, "DOM 교안의 최소 코드 섹션을 찾을 수 없습니다.");
+  const executionExample = minimumCodeSections[0];
+
+  const reviewPracticeSections = reviewMarkdown.split("\n## 실습 3. DOM과 이벤트\n");
+  assert.ok(
+    reviewPracticeSections.length > 1,
+    "종합 실습의 DOM과 이벤트 섹션을 찾을 수 없습니다.",
+  );
+  const followingPracticeSections = reviewPracticeSections[1].split(
+    "\n## 실습 4. Promise와 `fetch()`\n",
+  );
+  assert.ok(
+    followingPracticeSections.length > 1,
+    "종합 실습의 Promise와 fetch 섹션을 찾을 수 없습니다.",
+  );
+  const reviewPractice = followingPracticeSections[0];
 
   assert.match(markdown, /<label for="item-input">새 항목<\/label>/);
   assert.match(markdown, /<form id="item-form">/);
@@ -106,9 +148,11 @@ test("종합 실행 예제는 고정된 시각에도 고유 ID를 만들고 선�
     new URL("../content/lessons/javascript/review-and-practice.md", import.meta.url),
     "utf8",
   );
-  const executionSection = markdown
-    .split("\n## 실행 흐름\n")[1]
-    .split("\n## 최소 코드\n")[0];
+  const executionSections = markdown.split("\n## 실행 흐름\n");
+  assert.ok(executionSections.length > 1, "종합 실습의 실행 흐름 섹션을 찾을 수 없습니다.");
+  const minimumCodeSections = executionSections[1].split("\n## 최소 코드\n");
+  assert.ok(minimumCodeSections.length > 1, "종합 실습의 최소 코드 섹션을 찾을 수 없습니다.");
+  const executionSection = minimumCodeSections[0];
   const htmlSource = executionSection.match(/```html\n([\s\S]*?)\n```/)?.[1];
   const source = executionSection.match(/```javascript\n([\s\S]*?)\n```/)?.[1];
 
@@ -282,7 +326,11 @@ test("JSON.stringify 교안은 순환 참조와 BigInt의 TypeError 경계를 �
     new URL("../content/lessons/javascript/arrays-objects-built-ins.md", import.meta.url),
     "utf8",
   );
-  const jsonSection = markdown.split("\n#### JSON\n")[1].split("\n## 실행 흐름\n")[0];
+  const jsonSections = markdown.split("\n#### JSON\n");
+  assert.ok(jsonSections.length > 1, "배열·객체 교안의 JSON 섹션을 찾을 수 없습니다.");
+  const executionSections = jsonSections[1].split("\n## 실행 흐름\n");
+  assert.ok(executionSections.length > 1, "배열·객체 교안의 실행 흐름 섹션을 찾을 수 없습니다.");
+  const jsonSection = executionSections[0];
 
   assert.match(jsonSection, /JSON으로 표현 가능한 JavaScript 값/);
   assert.match(jsonSection, /circularData\.self = circularData/);

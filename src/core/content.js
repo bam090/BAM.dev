@@ -28,8 +28,8 @@ export function validateCurriculum(curriculum) {
     errors.push("languages에는 한 개 이상의 언어가 필요합니다.");
   }
 
-  if (!Array.isArray(curriculum.lessons)) {
-    errors.push("lessons는 배열이어야 합니다.");
+  if (!Array.isArray(curriculum.lessons) || curriculum.lessons.length === 0) {
+    errors.push("lessons에는 한 개 이상의 교안이 필요합니다.");
     return errors;
   }
 
