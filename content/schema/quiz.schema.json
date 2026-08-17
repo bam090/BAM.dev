@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bam.dev/schema/quiz.schema.json",
+  "title": "BAM.dev quiz collection",
+  "type": "object",
+  "required": ["schemaVersion", "languageId", "title", "questions"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "languageId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "questions": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/question" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "question": {
+      "type": "object",
+      "required": ["id", "lessonId", "conceptId", "difficulty", "prompt", "options"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^quiz-[a-z][a-z0-9]*(?:-[a-z0-9]+)+$"
+        },
+        "lessonId": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "conceptId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+        },
+        "difficulty": { "enum": ["basic", "application"] },
+        "prompt": { "type": "string", "minLength": 1 },
+        "code": { "type": "string", "minLength": 1 },
+        "options": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/option" },
+          "contains": {
+            "type": "object",
+            "required": ["isCorrect"],
+            "properties": { "isCorrect": { "const": true } }
+          },
+          "minContains": 1,
+          "maxContains": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "option": {
+      "type": "object",
+      "required": ["id", "text", "isCorrect", "feedback"],
+      "properties": {
+        "id": { "enum": ["a", "b", "c", "d"] },
+        "text": { "type": "string", "minLength": 1 },
+        "isCorrect": { "type": "boolean" },
+        "feedback": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}
