@@ -40,3 +40,20 @@ test("javascript URL은 링크로 허용하지 않는다", () => {
   assert.ok(result.includes('href="#"'));
   assert.ok(!result.includes("href=\"javascript:"));
 });
+
+test("표의 코드 span과 이스케이프된 파이프를 열 구분자로 해석하지 않는다", () => {
+  const markdown = [
+    "| 종류 | 예 | 설명 |",
+    "| --- | --- | --- |",
+    "| 논리 | `&&`, `||`, `!` | 조건 조합 또는 반전 |",
+    String.raw`| 문자 | 왼쪽 \| 오른쪽 | 파이프 문자 |`,
+  ].join("\n");
+
+  const result = renderMarkdown(markdown);
+
+  assert.equal(result.match(/<th scope="col">/g)?.length, 3);
+  assert.equal(result.match(/<td>/g)?.length, 6);
+  assert.ok(result.includes("<code>||</code>"));
+  assert.ok(result.includes("왼쪽 | 오른쪽"));
+  assert.ok(!result.includes(String.raw`왼쪽 \| 오른쪽`));
+});

@@ -15,10 +15,16 @@
   <body>
     <a class="skip-link" href="#lesson-content">본문으로 바로가기</a>
     <div id="app">
-      <div class="initial-loader" role="status">
-        <span class="brand-mark" aria-hidden="true">B</span>
-        <p>학습 공간을 준비하고 있습니다…</p>
-      </div>
+      <main
+        class="initial-loader"
+        id="lesson-content"
+        tabindex="-1"
+      >
+        <div class="state-message" role="status">
+          <span class="brand-mark" aria-hidden="true">B</span>
+          <p>학습 공간을 준비하고 있습니다…</p>
+        </div>
+      </main>
     </div>
     <noscript>
       <p class="noscript-message">BAM.dev를 사용하려면 브라우저에서 JavaScript를 켜 주세요.</p>

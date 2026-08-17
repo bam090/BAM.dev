@@ -2,7 +2,7 @@
 
 ## 검증 기준
 
-- 확인일: 2026-08-15
+- 확인일: 2026-08-17
 - 언어 규칙의 최우선 기준: TC39의 ECMAScript 언어 명세
 - 브라우저 API와 학습 설명의 기준: MDN Web Docs의 직접 관련 가이드와 API 레퍼런스
 - 교안에서는 ECMAScript가 정의하는 언어 기능과 브라우저가 제공하는 Web API를 구분했습니다.
@@ -13,9 +13,11 @@
 | 공식 문서 | 확인한 내용 | 반영 문서 |
 | --- | --- | --- |
 | [ECMAScript Language Specification - ECMAScript Data Types and Values](https://tc39.es/ecma262/multipage/ecmascript-data-types-and-values.html) | TC39의 현재 명세 초안에서 ECMAScript 언어 타입, 원시 타입과 Object, 타입 변환과 비교의 기준 확인 | 01, 02, 04 |
+| [ECMAScript Language Specification - Hosts and Implementations](https://tc39.es/ecma262/multipage/overview.html#sec-hosts-and-implementations) | ECMAScript는 계산 규칙을 정의하고 입력·출력 객체와 함수는 호스트 환경이 제공할 수 있다는 언어와 실행 환경의 경계 | 01 |
 | [MDN - JavaScript Guide](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide) | 문법과 타입, 제어 흐름, 함수, 객체, Promise로 이어지는 공식 학습 범위 | 전체 구성 |
 | [MDN - JavaScript language overview](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Language_overview) | 동적 타입, 함수가 호출 가능한 객체라는 점, 배열이 특별한 객체라는 점, 엄격 동등 비교 | 01, 02, 03, 04 |
 | [MDN - Grammar and types](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Grammar_and_types) | 원시 타입과 객체, 동적 타입, 변수 선언과 배열 리터럴 | 02, 04 |
+| [MDN - Console API](https://developer.mozilla.org/en-US/docs/Web/API/Console_API) | `console.log()`는 변수 값을 기록하는 Console API 기능이며 ECMAScript의 숫자 연산 규칙과 역할이 다름 | 01 |
 | [MDN - `<script>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script) | 클래식 외부 스크립트의 `defer` 실행 시점과 문서 순서 보장, `DOMContentLoaded`와의 관계 | 01 |
 | [MDN - Add JavaScript to your web page](https://developer.mozilla.org/en-US/docs/Web/HTML/How_to/Add_JavaScript_to_your_web_page) | 일반 스크립트의 파싱 시 실행과 이후 요소 접근 문제, 외부 스크립트의 `defer` 사용 | 01 |
 
@@ -64,6 +66,7 @@
 | [MDN - `Document.createElement()`](https://developer.mozilla.org/en-US/docs/Web/API/Document/createElement) | 지정한 태그 이름의 새 `Element`를 생성하지만 문서에 자동 삽입하지 않는다는 점 | 05 |
 | [MDN - `EventTarget.addEventListener()`](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener) | 이벤트 종류와 리스너 함수 등록, 리스너에 Event 객체가 전달되는 동작 | 05 |
 | [MDN - `Event.target`](https://developer.mozilla.org/en-US/docs/Web/API/Event/target) | 이벤트가 처음 전달된 요소이며 이벤트 위임에서 `currentTarget`과 다를 수 있다는 점 | 05 |
+| [MDN - `Event.currentTarget`](https://developer.mozilla.org/en-US/docs/Web/API/Event/currentTarget) | 현재 리스너가 연결된 대상을 가리키며 이벤트가 시작된 `target`과 다를 수 있다는 점 | 05, 07 |
 | [MDN - `Event.preventDefault()`](https://developer.mozilla.org/en-US/docs/Web/API/Event/preventDefault) | 취소 가능한 이벤트의 기본 동작을 막되 이벤트 전파 자체를 막지는 않는다는 점 | 05 |
 | [MDN - `Node.textContent`](https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent) | 노드와 자손의 텍스트 내용을 읽고 바꾸는 프로퍼티의 동작 | 05, 07 |
 | [MDN - `Element.innerHTML`](https://developer.mozilla.org/en-US/docs/Web/API/Element/innerHTML) | 문자열을 HTML로 해석해 자손을 교체하는 동작, 신뢰할 수 없는 입력에서의 XSS 위험, 일반 텍스트에는 `textContent`를 권장한다는 점 | 05 |
@@ -71,6 +74,9 @@
 | [MDN - `Element.classList`](https://developer.mozilla.org/en-US/docs/Web/API/Element/classList) | 클래스 토큰을 다루는 `DOMTokenList`와 `add`, `remove`, `toggle`, `contains` | 05 |
 | [MDN - `HTMLElement.dataset`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset) | `data-*` 속성의 대시 이름이 camelCase 프로퍼티로 대응되고 값은 문자열로 설정된다는 점 | 05, 07 |
 | [MDN - `FormData`](https://developer.mozilla.org/en-US/docs/Web/API/FormData) | 폼 필드와 값을 나타내는 키·값 쌍을 구성하고 `get()` 등으로 읽는 동작 | 05, 07 |
+| [MDN - `<label>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/label) | `for`와 폼 컨트롤의 `id`를 맞춰 보이는 설명을 프로그래밍 방식으로 연결하는 동작 | 05 |
+| [MDN - `<button>` element](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/button) | 네이티브 버튼은 마우스, 키보드와 보조 기술로 활성화할 수 있고 목록 삭제 같은 동작에 사용할 수 있음 | 05 |
+| [MDN - `aria-label`](https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Reference/Attributes/aria-label) | 기본 이름만으로 반복 버튼의 대상을 구분하기 어려울 때 인식 가능한 접근 가능한 이름을 제공하는 방법 | 05 |
 
 ## Promise와 Fetch
 

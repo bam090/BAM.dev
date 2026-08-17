@@ -1,0 +1,17 @@
+[
+  {
+    "id": "todo-01",
+    "title": "Promise의 세 가지 상태를 설명하기",
+    "completed": true
+  },
+  {
+    "id": "todo-02",
+    "title": "HTTP 오류와 네트워크 실패를 구분하기",
+    "completed": false
+  },
+  {
+    "id": "todo-03",
+    "title": "로컬 fixture로 fetch 흐름 확인하기",
+    "completed": true
+  }
+]

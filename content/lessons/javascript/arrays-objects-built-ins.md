@@ -204,14 +204,29 @@ const parsedUser = JSON.parse(jsonText);
 ```
 
 ```text
-JavaScript 값
+JSON으로 표현 가능한 JavaScript 값
 → JSON.stringify()
 → JSON 문자열
 → JSON.parse()
 → JavaScript 값
 ```
 
-`JSON.parse()`에 올바르지 않은 JSON 문자열을 넣으면 `SyntaxError`가 발생할 수 있습니다.
+모든 JavaScript 값이 JSON 문자열로 바뀌는 것은 아닙니다. 순환 참조가 있는 객체를 그대로 전달하거나 `BigInt` 값을 별도 변환 없이 포함하면 `JSON.stringify()`는 `TypeError`를 일으킵니다.
+
+```javascript
+const circularData = {};
+circularData.self = circularData;
+
+JSON.stringify(circularData); // TypeError
+```
+
+위 코드와 별도로 다음 코드도 실행해 확인할 수 있습니다.
+
+```javascript
+JSON.stringify({ count: 1n }); // TypeError
+```
+
+따라서 직렬화할 값이 JSON으로 표현 가능한 구조인지 먼저 확인해야 합니다. 반대 방향에서도 `JSON.parse()`에 올바르지 않은 JSON 문자열을 넣으면 `SyntaxError`가 발생할 수 있습니다.
 
 ## 실행 흐름
 
@@ -293,4 +308,3 @@ const jsonText = '{"name":"bam"}'; // 문자열
 4. 숫자 배열을 오름차순으로 정렬할 때 비교 함수가 필요한 이유는 무엇인가요?
 5. `JSON.stringify()`와 `JSON.parse()`는 각각 어느 방향의 변환인가요?
 6. 스프레드 문법의 복사가 얕은 복사라는 말은 무엇을 뜻하나요?
-

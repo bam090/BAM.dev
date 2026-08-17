@@ -58,12 +58,21 @@ DOM 자동 변경
 
 ```javascript
 const todos = [];
+let nextTodoId = 1;
+
+function createTodo(title) {
+  const todo = { id: nextTodoId, title, completed: false };
+  nextTodoId += 1;
+  return todo;
+}
 
 function addTodo(title) {
-  todos.push({ id: Date.now(), title, completed: false });
+  todos.push(createTodo(title));
   renderTodos();
 }
 ```
+
+`Date.now()`만 ID로 사용하면 같은 밀리초에 추가된 항목의 ID가 겹칠 수 있습니다. 이 로컬 세션 예제는 하나씩 증가하는 카운터로 ID를 만들기 때문에 연속해서 추가해도 항목을 구분할 수 있습니다.
 
 반대로 DOM만 바꾸고 배열을 바꾸지 않으면 다음 렌더링에서 변경 내용이 사라질 수 있습니다. 애플리케이션에서 어떤 데이터를 기준으로 화면을 만드는지 정해야 합니다.
 
@@ -87,25 +96,55 @@ function addTodo(title) {
 
 ```html
 <form id="todo-form">
-  <input name="title" aria-label="할 일" />
-  <button>추가</button>
+  <label for="todo-title">할 일</label>
+  <input id="todo-title" name="title" />
+  <button type="submit">추가</button>
 </form>
 <ul id="todo-list"></ul>
 ```
 
 ```javascript
 const form = document.querySelector("#todo-form");
+const input = document.querySelector("#todo-title");
 const list = document.querySelector("#todo-list");
 const todos = [];
+let nextTodoId = 1;
+
+function createTodo(title) {
+  const todo = { id: nextTodoId, title, completed: false };
+  nextTodoId += 1;
+  return todo;
+}
+
+function toggleTodo(id) {
+  const todo = todos.find((currentTodo) => currentTodo.id === id);
+  if (!todo) return false;
+
+  todo.completed = !todo.completed;
+  return true;
+}
 
 function renderTodos() {
   list.textContent = "";
 
   todos.forEach((todo) => {
     const item = document.createElement("li");
-    item.dataset.id = String(todo.id);
-    item.textContent = todo.completed ? `완료: ${todo.title}` : todo.title;
-    list.appendChild(item);
+    const status = document.createElement("span");
+    const toggleButton = document.createElement("button");
+    const actionLabel = todo.completed ? "미완료로 변경" : "완료로 변경";
+
+    status.textContent = todo.completed ? `완료: ${todo.title}` : todo.title;
+    toggleButton.type = "button";
+    toggleButton.dataset.action = "toggle";
+    toggleButton.dataset.id = String(todo.id);
+    toggleButton.setAttribute(
+      "aria-label",
+      `${todo.title} ${actionLabel}`,
+    );
+    toggleButton.textContent = actionLabel;
+
+    item.append(status, " ", toggleButton);
+    list.append(item);
   });
 }
 
@@ -116,31 +155,29 @@ form.addEventListener("submit", (event) => {
   const title = (formData.get("title") ?? "").trim();
   if (!title) return;
 
-  todos.push({ id: Date.now(), title, completed: false });
+  todos.push(createTodo(title));
   event.currentTarget.reset();
+  input.focus();
   renderTodos();
 });
 
 list.addEventListener("click", (event) => {
-  const item = event.target.closest("li");
-  if (!item) return;
+  const toggleButton = event.target.closest('[data-action="toggle"]');
+  if (!toggleButton || !list.contains(toggleButton)) return;
 
-  const id = Number(item.dataset.id);
-  const todo = todos.find((currentTodo) => currentTodo.id === id);
-  if (!todo) return;
+  const id = Number(toggleButton.dataset.id);
 
-  todo.completed = !todo.completed;
-  renderTodos();
+  if (toggleTodo(id)) renderTodos();
 });
 ```
 
-1. 페이지를 읽을 때 요소와 빈 배열을 준비하고 이벤트를 등록합니다.
+1. 페이지를 읽을 때 요소, 빈 배열과 세션 ID 카운터를 준비하고 이벤트를 등록합니다.
 2. 폼을 제출하면 기본 이동을 막고 제목을 읽습니다.
-3. 빈 값이 아니면 새 할 일 객체를 배열에 추가합니다.
+3. 빈 값이 아니면 `createTodo()`로 고유한 ID를 가진 할 일 객체를 배열에 추가합니다.
 4. 입력창을 초기화하고 `renderTodos()`를 호출합니다.
-5. 렌더 함수는 기존 목록을 비우고 현재 배열을 기준으로 다시 만듭니다.
-6. 목록 항목을 클릭하면 `dataset.id`로 같은 할 일 객체를 찾습니다.
-7. `completed`를 반대로 바꾸고 다시 렌더링합니다.
+5. 렌더 함수는 현재 배열을 기준으로 상태 문구와 항목별 이름을 가진 토글 버튼을 만듭니다.
+6. 목록의 위임 리스너는 실제로 활성화된 토글 버튼의 `dataset.id`를 읽습니다.
+7. `toggleTodo()`가 해당 객체의 `completed`만 바꾸면 다시 렌더링합니다.
 
 ## 최소 코드
 
@@ -223,62 +260,71 @@ console.log(getActiveUserNames(users)); // ["Bam", "Moon"]
 
 ### 요구사항
 
-입력창에 문자열을 입력하고 버튼을 누르면 목록에 항목을 추가하세요.
+보이는 `<label>`이 연결된 입력창에 문자열을 입력하고 폼을 제출하면 목록에 항목을 추가하세요.
 
 - 공백만 입력하면 추가하지 않습니다.
 - 추가 후 입력창을 비웁니다.
-- 목록 항목을 클릭하면 해당 항목만 삭제합니다.
+- Enter 또는 추가 버튼으로 같은 `<form>`의 `submit` 흐름을 실행합니다.
+- 각 항목에 `<button type="button">` 삭제 버튼을 만들고, `aria-label`에는 항목 이름을 포함합니다.
+- 목록의 위임 리스너에서 삭제 버튼을 활성화한 항목만 삭제합니다.
 - 사용자 입력은 `textContent`로 넣습니다.
 
 ### 풀이 방향
 
 ```text
 초기화
-→ input, button, ul을 한 번씩 선택
+→ form, input, ul을 한 번씩 선택
 
-추가 버튼 클릭
+폼 submit
+→ preventDefault()
 → value 읽기
 → trim()
 → 빈 값 검사
-→ li 생성
-→ textContent 설정
+→ li, span, 삭제 button 생성
+→ span.textContent 설정
+→ 삭제 button의 type, data-action, aria-label 설정
 → ul에 추가
-→ 입력창 초기화
+→ form.reset() 후 입력창에 focus()
 
 목록 클릭
-→ event.target 확인
-→ li이면 remove()
+→ event.target.closest()로 삭제 button 확인
+→ button.closest("li")를 remove()
 ```
 
 ### 스스로 확인할 것
 
 - 실제 HTML의 `id`와 선택자가 일치하나요?
+- `<label for>`와 입력의 `id`가 일치하나요?
 - `createElement("#li")`가 아니라 `createElement("li")`인가요?
-- 이벤트 객체를 매개변수로 받았나요?
+- 반복되는 삭제 버튼의 접근 가능한 이름으로 대상을 구분할 수 있나요?
+- `li` 클릭에만 의존하지 않고 네이티브 버튼을 사용했나요?
 
 ## 실습 4. Promise와 `fetch()`
 
 ### 요구사항
 
-JSONPlaceholder에서 사용자 한 명을 가져와 이름을 출력하는 `printUserName(userId)`를 작성하세요.
+저장소의 로컬 fixture에서 할 일 목록을 가져와 완료된 항목의 제목을 출력하는 `printCompletedTodoTitles()`를 작성하세요.
 
 ```text
-GET https://jsonplaceholder.typicode.com/users/{userId}
+GET ./content/fixtures/javascript/todos.json
 ```
 
 - `async/await`와 `try...catch`를 사용합니다.
 - `response.ok`가 거짓이면 상태 코드를 포함한 오류를 발생시킵니다.
-- JSON 변환 결과의 `name`을 출력합니다.
+- JSON 변환 결과에서 `completed`가 `true`인 항목만 골라 `title`을 출력합니다.
+- 외부 API나 인터넷 연결 없이 `npm run dev`의 로컬 주소에서 실행합니다.
 
 ### 뼈대 코드
 
 ```javascript
-async function printUserName(userId) {
+const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
+
+async function printCompletedTodoTitles() {
   try {
-    // 1. fetch() 결과 기다리기
+    // 1. TODO_FIXTURE_URL의 fetch() 결과 기다리기
     // 2. response.ok 검사하기
     // 3. response.json() 결과 기다리기
-    // 4. name 출력하기
+    // 4. 완료된 항목만 골라 title 출력하기
   } catch (error) {
     console.error(error.message);
   }
@@ -287,9 +333,10 @@ async function printUserName(userId) {
 
 ### 스스로 확인할 것
 
-- URL에 `userId`를 올바르게 넣었나요?
+- 외부 주소 대신 `TODO_FIXTURE_URL`을 요청했나요?
 - `response.json()`도 `await`했나요?
 - 오류 검사보다 먼저 본문을 사용하고 있지는 않나요?
+- fixture 경로의 `todos.json`을 존재하지 않는 이름으로 잠시 바꾸면 HTTP 오류 흐름으로 이동하나요?
 
 ## 실습 5. 종합 미니 기능
 

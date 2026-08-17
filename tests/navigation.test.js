@@ -3,8 +3,12 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   buildLessonHash,
+  buildQuestHash,
+  buildReviewHash,
   getAdjacentLessons,
   parseLessonHash,
+  parseQuestHash,
+  parseReviewHash,
   resolveLessonRoute,
 } from "../src/core/navigation.js";
 
@@ -19,6 +23,39 @@ test("교안 해시를 만들고 다시 해석한다", () => {
     languageId: "javascript",
     slug: "functions-scope-closure",
   });
+});
+
+test("객관식 복습 해시를 만들고 다시 해석한다", () => {
+  assert.equal(buildReviewHash("javascript"), "#/review/javascript");
+  assert.deepEqual(parseReviewHash("#/review/javascript"), { languageId: "javascript" });
+  assert.deepEqual(parseReviewHash("#/review/javascript/"), { languageId: "javascript" });
+});
+
+test("잘못된 객관식 복습 해시는 해석하지 않는다", () => {
+  assert.equal(parseReviewHash("#/review"), null);
+  assert.equal(parseReviewHash("#/review/javascript/extra"), null);
+  assert.equal(parseReviewHash("#/review/%E0%A4%A"), null);
+});
+
+test("Code Quest 해시를 만들고 다시 해석한다", () => {
+  assert.equal(
+    buildQuestHash("javascript", "delivery-fee-policy"),
+    "#/quest/javascript/delivery-fee-policy",
+  );
+  assert.deepEqual(parseQuestHash("#/quest/javascript/delivery-fee-policy"), {
+    languageId: "javascript",
+    slug: "delivery-fee-policy",
+  });
+  assert.deepEqual(parseQuestHash("#/quest/javascript/delivery-fee-policy/"), {
+    languageId: "javascript",
+    slug: "delivery-fee-policy",
+  });
+});
+
+test("잘못된 Code Quest 해시는 해석하지 않는다", () => {
+  assert.equal(parseQuestHash("#/quest/javascript"), null);
+  assert.equal(parseQuestHash("#/quest/javascript/delivery-fee-policy/extra"), null);
+  assert.equal(parseQuestHash("#/quest/javascript/%E0%A4%A"), null);
 });
 
 test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한다", () => {

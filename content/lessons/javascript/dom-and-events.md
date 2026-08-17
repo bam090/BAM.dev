@@ -151,8 +151,14 @@ form.addEventListener("submit", (event) => {
 
 ```html
 <ul id="item-list">
-  <li>첫 번째</li>
-  <li>두 번째</li>
+  <li>
+    첫 번째
+    <button type="button" data-action="delete" aria-label="첫 번째 항목 삭제">삭제</button>
+  </li>
+  <li>
+    두 번째
+    <button type="button" data-action="delete" aria-label="두 번째 항목 삭제">삭제</button>
+  </li>
 </ul>
 ```
 
@@ -160,16 +166,17 @@ form.addEventListener("submit", (event) => {
 const list = document.querySelector("#item-list");
 
 list.addEventListener("click", (event) => {
-  if (event.target.matches("li")) {
-    event.target.remove();
-  }
+  const deleteButton = event.target.closest('[data-action="delete"]');
+  if (!deleteButton) return;
+
+  deleteButton.closest("li")?.remove();
 });
 ```
 
 - `event.target`: 이벤트가 처음 발생한 실제 요소
 - `event.currentTarget`: 현재 리스너가 실행되고 있는 요소, 여기서는 `ul`
 
-항목마다 리스너를 붙이지 않고 부모가 자식의 이벤트를 처리하는 방식을 **이벤트 위임**이라고 합니다. 나중에 추가된 `li`도 같은 부모 안에서 클릭되면 처리할 수 있습니다.
+항목마다 리스너를 붙이지 않고 부모가 자식의 이벤트를 처리하는 방식을 **이벤트 위임**이라고 합니다. 나중에 추가된 삭제 버튼도 같은 부모 안에서 활성화되면 처리할 수 있습니다.
 
 삭제 버튼 안의 아이콘처럼 더 안쪽 요소가 클릭될 수 있다면 `closest()`로 가장 가까운 버튼을 찾을 수 있습니다.
 
@@ -178,45 +185,65 @@ const deleteButton = event.target.closest('[data-action="delete"]');
 if (!deleteButton) return;
 ```
 
+### 마우스 클릭만 가정하지 않기
+
+`li`나 `div`처럼 본래 동작을 수행하는 요소가 아닌 곳에 클릭 리스너만 붙이면 키보드 사용자는 같은 기능을 실행하기 어렵습니다. 동작에는 기본 키보드 조작을 제공하는 `<button>`을 사용하고, 입력에는 목적을 알려 주는 보이는 `<label>`을 연결합니다. 네이티브 버튼은 마우스와 키보드 활성화를 모두 `click` 이벤트로 처리할 수 있으므로 같은 동작을 위한 별도 `keydown` 코드를 중복해서 만들 필요가 없습니다. 같은 이름의 삭제 버튼이 반복될 때는 `aria-label`에 항목 이름도 포함해 어떤 항목을 지우는지 구분합니다.
+
 ## 실행 흐름
 
-다음은 입력값을 목록에 추가하고, 항목을 누르면 삭제하는 최소 예제입니다.
+다음은 입력값을 목록에 추가하고 삭제 버튼으로 지우는 예제입니다. 입력창에서 Enter를 누르거나 추가 버튼을 활성화하면 같은 `submit` 흐름이 실행됩니다.
 
 ```html
-<input id="item-input" />
-<button id="add-button" type="button">추가</button>
+<form id="item-form">
+  <label for="item-input">새 항목</label>
+  <input id="item-input" name="item" />
+  <button type="submit">추가</button>
+</form>
 <ul id="item-list"></ul>
 ```
 
 ```javascript
+const form = document.querySelector("#item-form");
 const input = document.querySelector("#item-input");
-const addButton = document.querySelector("#add-button");
 const list = document.querySelector("#item-list");
 
-addButton.addEventListener("click", () => {
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+
   const value = input.value.trim();
   if (!value) return;
 
   const item = document.createElement("li");
-  item.textContent = value;
-  list.appendChild(item);
-  input.value = "";
+  const label = document.createElement("span");
+  const deleteButton = document.createElement("button");
+
+  label.textContent = value;
+  deleteButton.type = "button";
+  deleteButton.dataset.action = "delete";
+  deleteButton.setAttribute("aria-label", `${value} 삭제`);
+  deleteButton.textContent = "삭제";
+
+  item.append(label, " ", deleteButton);
+  list.append(item);
+  form.reset();
+  input.focus();
 });
 
 list.addEventListener("click", (event) => {
-  if (event.target.matches("li")) {
-    event.target.remove();
-  }
+  const deleteButton = event.target.closest('[data-action="delete"]');
+  if (!deleteButton) return;
+
+  deleteButton.closest("li")?.remove();
 });
 ```
 
-1. 페이지가 준비되면 세 요소를 한 번씩 선택합니다.
-2. 추가 버튼에 클릭 리스너를 등록합니다.
-3. 버튼을 클릭하면 그 시점의 입력값을 읽습니다.
-4. 공백을 제거한 값이 비어 있으면 함수를 끝냅니다.
-5. `li`를 만들고 `textContent`로 안전하게 내용을 넣습니다.
-6. `ul`에 `li`를 붙이고 입력창을 비웁니다.
-7. `ul`에서 클릭이 발생하면 실제 클릭 요소가 `li`인지 검사하여 삭제합니다.
+1. 보이는 `label`의 `for`와 입력의 `id`를 맞춰 입력 목적을 연결합니다.
+2. 폼에 `submit` 리스너를 등록해 Enter와 추가 버튼을 같은 흐름으로 처리합니다.
+3. 공백을 제거한 입력값이 비어 있으면 함수를 끝냅니다.
+4. `li` 안에 안전한 텍스트와 네이티브 삭제 버튼을 만들고, 항목 이름을 포함한 접근 가능한 이름을 붙입니다.
+5. 폼을 비우고 입력으로 포커스를 돌려 다음 항목을 바로 입력할 수 있게 합니다.
+6. `ul`의 위임 리스너는 실제 활성화된 삭제 버튼을 찾아 가장 가까운 `li`를 삭제합니다.
+7. 삭제 동작을 버튼으로 제공했기 때문에 포인터와 키보드 사용자가 같은 기능을 이용할 수 있습니다.
 
 ## 최소 코드
 
@@ -301,4 +328,3 @@ if (event.target.tagName === "LI") { /* ... */ }
 3. 사용자 입력을 단순 텍스트로 보여줄 때 `textContent`를 우선하는 이유는 무엇인가요?
 4. `target`과 `currentTarget`을 목록 클릭 예제로 설명해 보세요.
 5. 이벤트 위임은 동적으로 추가되는 요소를 처리할 때 왜 유용한가요?
-

@@ -53,7 +53,7 @@
       "estimatedMinutes": 25,
       "conceptIds": ["js.ecmascript", "js.runtime", "js.script-loading", "js.execution-order"],
       "contentFile": "content/lessons/javascript/javascript-and-runtime.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     },
     {
       "id": "js-02-values-control-flow",
@@ -72,7 +72,7 @@
       "estimatedMinutes": 45,
       "conceptIds": ["js.values-types", "js.variables", "js.operators", "js.control-flow"],
       "contentFile": "content/lessons/javascript/values-variables-control-flow.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     },
     {
       "id": "js-03-functions-scope-closure",
@@ -91,7 +91,7 @@
       "estimatedMinutes": 45,
       "conceptIds": ["js.functions", "js.scope", "js.closure"],
       "contentFile": "content/lessons/javascript/functions-scope-closure.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     },
     {
       "id": "js-04-collections",
@@ -110,7 +110,7 @@
       "estimatedMinutes": 55,
       "conceptIds": ["js.arrays", "js.objects", "js.references", "js.builtins"],
       "contentFile": "content/lessons/javascript/arrays-objects-built-ins.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     },
     {
       "id": "js-05-dom-events",
@@ -129,7 +129,7 @@
       "estimatedMinutes": 55,
       "conceptIds": ["web.dom", "web.events", "web.forms", "web.event-delegation"],
       "contentFile": "content/lessons/javascript/dom-and-events.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     },
     {
       "id": "js-06-async-fetch",
@@ -148,7 +148,7 @@
       "estimatedMinutes": 55,
       "conceptIds": ["js.async", "js.promise", "js.async-await", "web.fetch"],
       "contentFile": "content/lessons/javascript/async-await-fetch.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     },
     {
       "id": "js-07-review-practice",
@@ -167,7 +167,7 @@
       "estimatedMinutes": 70,
       "conceptIds": ["js.data-flow", "js.problem-decomposition", "js.debugging"],
       "contentFile": "content/lessons/javascript/review-and-practice.md",
-      "source": { "kind": "user-authored", "verifiedAt": "2026-08-15" }
+      "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
     }
   ]
 }

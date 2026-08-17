@@ -4,9 +4,44 @@ export function buildLessonHash(languageId, slug) {
   return `#/learn/${encodeURIComponent(languageId)}/${encodeURIComponent(slug)}`;
 }
 
+export function buildReviewHash(languageId) {
+  return `#/review/${encodeURIComponent(languageId)}`;
+}
+
+export function buildQuestHash(languageId, slug) {
+  return `#/quest/${encodeURIComponent(languageId)}/${encodeURIComponent(slug)}`;
+}
+
 export function parseLessonHash(hash) {
   const cleanHash = String(hash ?? "").replace(/^#/, "");
   const match = cleanHash.match(/^\/learn\/([^/]+)\/([^/]+)\/?$/);
+  if (!match) return null;
+
+  try {
+    return {
+      languageId: decodeURIComponent(match[1]),
+      slug: decodeURIComponent(match[2]),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function parseReviewHash(hash) {
+  const cleanHash = String(hash ?? "").replace(/^#/, "");
+  const match = cleanHash.match(/^\/review\/([^/]+)\/?$/);
+  if (!match) return null;
+
+  try {
+    return { languageId: decodeURIComponent(match[1]) };
+  } catch {
+    return null;
+  }
+}
+
+export function parseQuestHash(hash) {
+  const cleanHash = String(hash ?? "").replace(/^#/, "");
+  const match = cleanHash.match(/^\/quest\/([^/]+)\/([^/]+)\/?$/);
   if (!match) return null;
 
   try {

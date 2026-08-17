@@ -63,8 +63,49 @@ function isBlockStart(lines, index) {
 }
 
 function splitTableRow(line) {
-  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
-  return trimmed.split("|").map((cell) => cell.trim());
+  const text = line.trim();
+  const cells = [];
+  let cell = "";
+  let codeDelimiterLength = 0;
+  let endedWithDelimiter = false;
+  let index = text.startsWith("|") ? 1 : 0;
+
+  while (index < text.length) {
+    const character = text[index];
+
+    if (character === "\\" && text[index + 1] === "|" && codeDelimiterLength === 0) {
+      cell += "|";
+      endedWithDelimiter = false;
+      index += 2;
+      continue;
+    }
+
+    if (character === "`") {
+      let runLength = 1;
+      while (text[index + runLength] === "`") runLength += 1;
+      if (codeDelimiterLength === 0) codeDelimiterLength = runLength;
+      else if (codeDelimiterLength === runLength) codeDelimiterLength = 0;
+      cell += "`".repeat(runLength);
+      endedWithDelimiter = false;
+      index += runLength;
+      continue;
+    }
+
+    if (character === "|" && codeDelimiterLength === 0) {
+      cells.push(cell.trim());
+      cell = "";
+      endedWithDelimiter = true;
+      index += 1;
+      continue;
+    }
+
+    cell += character;
+    endedWithDelimiter = false;
+    index += 1;
+  }
+
+  if (!endedWithDelimiter || cell) cells.push(cell.trim());
+  return cells;
 }
 
 export function renderMarkdown(markdown, { skipFirstHeading = false } = {}) {

@@ -141,38 +141,42 @@ async function run() {
 
 ### 독립적인 작업을 함께 시작하기
 
-서로 결과에 의존하지 않는 요청은 먼저 함께 시작하고 `Promise.all()`로 기다릴 수 있습니다.
+서로 결과에 의존하지 않는 작업은 먼저 함께 시작하고 `Promise.all()`로 기다릴 수 있습니다.
 
 ```javascript
 async function loadSummary() {
-  const userRequest = fetch("/api/user/1");
-  const postsRequest = fetch("/api/posts?userId=1");
+  const profileTask = Promise.resolve({ nickname: "bam" });
+  const progressTask = Promise.resolve({ completedLessonCount: 5 });
 
-  const [userResponse, postsResponse] = await Promise.all([
-    userRequest,
-    postsRequest,
+  const [profile, progress] = await Promise.all([
+    profileTask,
+    progressTask,
   ]);
 
-  return { userResponse, postsResponse };
+  return { profile, progress };
 }
 ```
 
-두 번째 요청에 첫 번째 결과가 필요하다면 순차적으로 `await`해야 합니다. 무조건 병렬 처리하는 것이 정답은 아닙니다.
+두 번째 작업에 첫 번째 결과가 필요하다면 순차적으로 `await`해야 합니다. 무조건 병렬 처리하는 것이 정답은 아닙니다.
 
 ### `fetch()`의 흐름
 
 `fetch()`는 HTTP 요청을 시작하고 `Response`로 이행하는 Promise를 반환합니다.
 
+아래 예제는 저장소에 포함된 `content/fixtures/javascript/todos.json`을 요청합니다. `npm run dev`로 BAM.dev를 실행하면 인터넷이나 외부 API 없이 연습할 수 있고, 빌드 결과에도 같은 fixture가 포함됩니다. HTML 파일을 `file://`로 직접 여는 대신 로컬 개발 서버 주소에서 실행합니다.
+
 ```javascript
-async function getPosts() {
-  const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
+
+async function getTodos() {
+  const response = await fetch(TODO_FIXTURE_URL);
 
   if (!response.ok) {
     throw new Error(`HTTP 오류: ${response.status}`);
   }
 
-  const posts = await response.json();
-  return posts;
+  const todos = await response.json();
+  return todos;
 }
 ```
 
@@ -183,8 +187,10 @@ async function getPosts() {
 ### Promise 체이닝으로 같은 요청 작성하기
 
 ```javascript
-function getPosts() {
-  return fetch("https://jsonplaceholder.typicode.com/posts")
+const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
+
+function getTodos() {
+  return fetch(TODO_FIXTURE_URL)
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP 오류: ${response.status}`);
@@ -192,7 +198,7 @@ function getPosts() {
 
       return response.json();
     })
-    .then((posts) => posts)
+    .then((todos) => todos)
     .catch((error) => {
       console.error(error.message);
       throw error;
@@ -205,11 +211,11 @@ function getPosts() {
 ## 실행 흐름
 
 ```javascript
-async function getCompletedTodoTitles(userId) {
+const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
+
+async function getCompletedTodoTitles() {
   try {
-    const response = await fetch(
-      `https://jsonplaceholder.typicode.com/users/${userId}/todos`,
-    );
+    const response = await fetch(TODO_FIXTURE_URL);
 
     if (!response.ok) {
       throw new Error(`HTTP 오류: ${response.status}`);
@@ -240,24 +246,24 @@ async function getCompletedTodoTitles(userId) {
 ## 최소 코드
 
 ```javascript
-async function loadUser() {
+const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
+
+async function loadTodos() {
   try {
-    const response = await fetch(
-      "https://jsonplaceholder.typicode.com/users/1",
-    );
+    const response = await fetch(TODO_FIXTURE_URL);
 
     if (!response.ok) {
       throw new Error(`HTTP 오류: ${response.status}`);
     }
 
-    const user = await response.json();
-    console.log(user.name);
+    const todos = await response.json();
+    console.log(`${todos.length}개 항목을 불러왔습니다.`);
   } catch (error) {
     console.error(error.message);
   }
 }
 
-loadUser();
+loadTodos();
 ```
 
 ## 흔한 실수
