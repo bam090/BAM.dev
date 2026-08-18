@@ -55,10 +55,11 @@
 
 ## Code Quest 컬렉션
 
-`content/quests/<languageId>.json`은 학습한 개념을 함수로 직접 구현하는 문제를 정의합니다. 컬렉션은 `schemaVersion`, 실행 DTO와 맞추는 `contractVersion`, `languageId`, 화면 제목과 `quests` 배열을 가집니다. 전체 필드와 작성 규칙은 [Code Quest 작성 가이드](code-quest-authoring.md)와 `content/schema/code-quest.schema.json`을 함께 따릅니다.
+`content/quests/<languageId>.json`은 학습한 개념을 언어의 실제 작성 단위로 구현하는 문제를 정의합니다. 공통 메타데이터는 `schemaVersion`, 실행 DTO와 맞추는 `contractVersion`, `languageId`, 화면 제목과 `quests` 배열입니다. HTML·CSS 컬렉션은 평가기를 고르는 `evaluationKind`도 가집니다. JavaScript 함수 계약은 `content/schema/code-quest.schema.json`, HTML·CSS 직접 소스 계약은 `content/schema/web-code-quest.schema.json`을 따릅니다.
 
-| 필드 | 의미 |
+| 공통 필드 | 의미 |
 | --- | --- |
+| `evaluationKind` | HTML은 `html-dom-v1`, CSS는 `css-style-v1`. 기존 JavaScript 컬렉션은 생략하고 함수 실행기로 라우팅 |
 | `quest.id` | `quest-<languageId>-...` 형식의 안정적인 전역 ID |
 | `slug` | Quest 해시 URL에 쓰는 언어 내 고유 문자열 |
 | `revision` | 계약·공개 테스트가 바뀔 때 올리는 양의 정수 |
@@ -66,17 +67,29 @@
 | `lessonId` | 근거 교안의 안정 ID |
 | `conceptIds` | 해당 교안에 실제 선언된 개념 ID 배열 |
 | `difficulty` | `beginner`, `intermediate`, `advanced` 중 하나 |
-| `instructions` | 구현 요구사항과 반환 규칙 |
-| `functionContract` | 매개변수·반환값·제약·복잡도 계약 |
-| `entryPoint` | 채점기가 호출할 함수 이름 |
-| `starterCode` | 편집기에 처음 표시할 코드 |
-| `examples` | 인수·기대값·설명이 있는 예시 1~3개 |
-| `publicTests` | 브라우저에 포함되는 공개 테스트 3~6개 |
-| `failureExplanations` | 각 공개 테스트 ID에 대응하는 실패 원인 |
+| `starterCode` | 언어의 실제 편집 단위로 제공하는 시작 소스 |
+| `failureExplanations` | 각 공개 테스트 ID에 정확히 하나 대응하는 실패 관찰 지점 |
 | `hints` | `concept` → `observation` → `implementation` 순서의 단계별 힌트 |
 | `commonMistakes` | 정답을 직접 노출하지 않는 대표 오개념 설명 |
 
-각 예시와 공개 테스트의 `args` 개수는 함수 매개변수 개수와 같아야 합니다. JSON 입출력은 경로당 컨테이너 512단계와 테스트별 16 KiB 제한을 지키며, 상세 산정 방식은 [Code Quest 작성 가이드](code-quest-authoring.md#문제-계약)를 따릅니다. Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 참조, `failureExplanations`의 1:1 대응과 힌트 단계 순서는 `npm run validate:content` 및 전용 콘텐츠 테스트로 검증합니다. 공개 테스트는 사용자가 브라우저 개발자 도구로 확인할 수 있으므로 비밀 테스트라고 표현하지 않습니다.
+### JavaScript 함수 Quest
+
+JavaScript Quest는 `functionContract`, `entryPoint`, 인수·기대값을 가진 `examples`와 `publicTests`를 사용합니다. 각 예시와 공개 테스트의 `args` 개수는 함수 매개변수 개수와 같아야 합니다. JSON 입출력은 경로당 컨테이너 512단계와 테스트별 16 KiB 제한을 지킵니다. 학습자 함수는 테스트마다 새 Worker에서 호출되고 반환값을 기대값과 비교합니다.
+
+### HTML·CSS 직접 소스 Quest
+
+HTML·CSS Quest는 함수를 선언하지 않습니다. `instructions`, 문자열 배열 `requirements`, 실제 HTML 또는 CSS 문자열과 설명으로 구성된 `examples`, assertion 기반 `publicTests`를 사용합니다. 학습자 소스는 UTF-8 20 KiB 이하여야 합니다.
+
+| 구분 | 추가 필드·공개 assertion |
+| --- | --- |
+| HTML `html-dom-v1` | 직접 마크업. `doctype-present`, `selector-exists`, `selector-count`, `attribute-equals`, `text-includes` |
+| CSS `css-style-v1` | 최대 32 KiB의 고정 `fixtureHtml`과 직접 스타일시트. `rule-declaration`, `media-rule-declaration`, `computed-style` |
+
+HTML doctype은 source 첫 선언과 문서 파서 결과를 함께 확인하고, 나머지 구조는 inert template DOM에서 검사합니다. CSS 선언과 최상위 미디어 조건 assertion은 정확한 규칙 안에 요구 선언이 존재하는지를 CSSOM에서 확인하고, 캐스케이드가 적용된 최종 결과는 `computed-style`로 구분합니다. 계산 스타일은 안전 검사를 통과한 고정 fixture를 one-shot sandbox iframe에 넣어 검사합니다. `fixtureHtml`은 콘텐츠 계약의 일부이며 학습자가 수정하거나 실행 요청에서 교체할 수 없습니다.
+
+HTML·CSS의 시작 코드·예시·fixture·학습자 소스는 평가 전에 공통 preflight를 통과해야 합니다. HTML은 실행 요소, 이벤트 속성, 외부 리소스와 탐색을 시작할 수 있는 속성을 거부하고 CSS는 `@import`, `url()`, 외부 URL과 레거시 실행 구문을 거부합니다. 상세 경계와 한계는 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)에 기록합니다.
+
+Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 참조, 평가 종류와 언어의 일치, `failureExplanations`의 1:1 대응, 힌트 단계 순서는 `npm run validate:content`와 전용 콘텐츠 테스트로 검증합니다. 현재 콘텐츠는 JavaScript 5개, HTML 5개, CSS 4개입니다. 브라우저에 포함되는 모든 assertion과 기대값은 공개 테스트이며 비밀 또는 숨김 테스트라고 표현하지 않습니다. 전체 작성 규칙은 [Code Quest 작성 가이드](code-quest-authoring.md)를 따릅니다.
 
 ## 코딩테스트 컬렉션
 
