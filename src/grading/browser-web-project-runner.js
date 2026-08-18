@@ -376,14 +376,6 @@ function isAbortSignal(value) {
   );
 }
 
-function isAbortError(error) {
-  try {
-    return error?.name === "AbortError";
-  } catch {
-    return false;
-  }
-}
-
 function isSyntaxError(error) {
   try {
     return error instanceof SyntaxError || error?.name === "SyntaxError";
@@ -631,7 +623,7 @@ export class BrowserWebProjectRunner {
         } catch (error) {
           let outcome;
           let resultError;
-          if (signal?.aborted || isAbortError(error)) {
+          if (signal?.aborted) {
             outcome = "cancelled";
             resultError = createError(
               "cancelled",

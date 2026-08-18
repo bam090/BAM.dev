@@ -189,6 +189,9 @@ export function validateSchemaValue(value, schema, rootSchema, valuePath, errors
     if (schema.minimum !== undefined && value < schema.minimum) {
       errors.push(`${valuePath}: ${schema.minimum}보다 작습니다.`);
     }
+    if (schema.maximum !== undefined && value > schema.maximum) {
+      errors.push(`${valuePath}: ${schema.maximum}보다 큽니다.`);
+    }
   }
 }
 

@@ -146,6 +146,7 @@ function extractDirectChildHasSelectors(selector) {
 
 function matchesSimpleSelector(element, selector) {
   const { baseSelector, childSelectors } = extractDirectChildHasSelectors(selector);
+  const firstOfType = baseSelector.includes(":first-of-type");
   const tagName = /^[A-Za-z][A-Za-z0-9-]*/u.exec(baseSelector)?.[0]?.toLowerCase() ?? null;
   const classNames = [...baseSelector.matchAll(/\.([A-Za-z_][A-Za-z0-9_-]*)/gu)].map((match) => match[1]);
   const id = /#([A-Za-z_][A-Za-z0-9_-]*)/u.exec(baseSelector)?.[1] ?? null;
@@ -166,9 +167,18 @@ function matchesSimpleSelector(element, selector) {
       /:not\(\[[A-Za-z_:][A-Za-z0-9_.:-]*=(?:""|'')\]\)/gu,
       "",
     )
+    .replaceAll(":first-of-type", "")
     .trim();
   assert.equal(unsupported, "", `테스트 DOM이 지원하지 않는 선택자입니다: ${selector}`);
   if (tagName && element.tagName !== tagName) return false;
+  if (
+    firstOfType &&
+    element.parent?.children.find(
+      (child) => typeof child !== "string" && child.tagName === element.tagName,
+    ) !== element
+  ) {
+    return false;
+  }
   if (id && element.getAttribute("id") !== id) return false;
   const actualClasses = new Set((element.getAttribute("class") ?? "").split(/\s+/u).filter(Boolean));
   return (
@@ -664,6 +674,28 @@ test("공백 진도 이름·가짜 링크·한 카드에 몰아넣거나 숨긴 
   ]) {
     assert.ok(failedIds.includes(criterionId), criterionId);
   }
+});
+
+test("이름 있는 progress 세 개를 한 카드에 몰아넣으면 카드별 진도 기준을 통과하지 않는다", async () => {
+  const project = collection.projects[0];
+  const fixture = webProjectSolutionFixtures[project.id];
+  const referenceHtml = fixture.referenceFiles.find((file) => file.path === "index.html");
+  const referenceCss = fixture.referenceFiles.find((file) => file.path === "styles.css");
+  const progressElements = referenceHtml.source.match(/<progress[\s\S]*?<\/progress>/gu);
+  assert.equal(progressElements.length, 3);
+  const misplacedHtml = {
+    path: "index.html",
+    source: referenceHtml.source
+      .replace(/\n\s*<progress[\s\S]*?<\/progress>/gu, "")
+      .replace("<h2>HTML</h2>", `<h2>HTML</h2>\n      ${progressElements.join("\n      ")}`),
+  };
+
+  const results = await evaluateProjectFiles(project, [misplacedHtml, referenceCss]);
+  const progressResult = results.find(
+    (result) => result.criterionId === "auto-html-progress-label",
+  );
+
+  assert.equal(progressResult.passed, false);
 });
 
 test("동등한 Grid 문법을 허용하고 뒤에서 무효화한 최종 레이아웃은 통과시키지 않는다", async () => {

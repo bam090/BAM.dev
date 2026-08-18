@@ -145,7 +145,7 @@
           "evaluationKind": "html-dom-v1",
           "assertion": {
             "kind": "nonblank-attribute-count",
-            "selector": "main#plan .learning-board > article.learning-card > progress",
+            "selector": "main#plan .learning-board > article.learning-card > progress[aria-label]:first-of-type",
             "attribute": "aria-label",
             "expected": 3
           }
