@@ -678,6 +678,13 @@ a.language-nav-link:hover {
   box-shadow: var(--shadow-soft);
 }
 
+.code-card:focus-within {
+  border-color: rgba(110, 163, 255, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(76, 139, 245, 0.12),
+    0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
 .code-card figcaption {
   display: flex;
   min-height: 42px;
@@ -720,11 +727,89 @@ a.language-nav-link:hover {
   tab-size: 2;
 }
 
+.code-card pre:focus-visible {
+  border-radius: 0;
+  outline-offset: -4px;
+}
+
 .code-card code {
+  display: block;
+  width: max-content;
+  min-width: 100%;
   color: #cbd7ed;
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.72;
+}
+
+.code-line {
+  display: block;
+  min-height: 1.72em;
+  padding: 0 20px;
+  margin: 0 -20px;
+  border-left: 2px solid transparent;
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    opacity 120ms ease;
+}
+
+.code-token--comment {
+  color: #8fa0bb;
+  font-style: italic;
+}
+
+.code-token--keyword {
+  color: #f9a8d4;
+}
+
+.code-token--tag {
+  color: #7dd3fc;
+}
+
+.code-token--property {
+  color: #c4b5fd;
+}
+
+.code-token--string {
+  color: #a7f3d0;
+}
+
+.code-token--number {
+  color: #fcd34d;
+}
+
+.code-token--literal {
+  color: #f0abfc;
+}
+
+.code-token--builtin {
+  color: #93c5fd;
+}
+
+.code-token--function {
+  color: #fde68a;
+}
+
+.code-token--selector {
+  color: #67e8f9;
+}
+
+.code-token--operator {
+  color: #a5b4fc;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .code-card code:hover .code-line:not(:hover) {
+    opacity: 0.75;
+  }
+
+  .code-card .code-line:hover {
+    border-left-color: rgba(110, 163, 255, 0.78);
+    background: linear-gradient(90deg, rgba(76, 139, 245, 0.14), transparent 72%);
+    color: #f5f8ff;
+  }
 }
 
 .table-scroll {
@@ -3330,6 +3415,13 @@ a.language-nav-link:hover {
     font-size: 12px;
   }
 
+  .code-line {
+    padding-right: 16px;
+    padding-left: 16px;
+    margin-right: -16px;
+    margin-left: -16px;
+  }
+
   .completion-card {
     align-items: stretch;
     flex-direction: column;
@@ -3571,6 +3663,10 @@ a.language-nav-link:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .code-line {
+    transition: none;
+  }
+
   *,
   *::before,
   *::after {
