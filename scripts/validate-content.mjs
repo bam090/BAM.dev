@@ -53,7 +53,7 @@ function resolveLocalSchemaReference(rootSchema, reference) {
     .reduce((value, part) => value?.[part], rootSchema);
 }
 
-function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
+export function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
   for (const childSchema of schema.allOf ?? []) {
     validateSchemaValue(value, childSchema, rootSchema, valuePath, errors);
   }
@@ -66,6 +66,14 @@ function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
     });
     if (matches.length !== 1) {
       errors.push(`${valuePath}: oneOf 조건 중 정확히 하나를 만족해야 합니다.`);
+    }
+  }
+
+  if (schema.not) {
+    const forbiddenErrors = [];
+    validateSchemaValue(value, schema.not, rootSchema, valuePath, forbiddenErrors);
+    if (forbiddenErrors.length === 0) {
+      errors.push(`${valuePath}: not 조건을 만족하면 안 됩니다.`);
     }
   }
 
@@ -127,7 +135,7 @@ function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
     return;
   }
 
-  if (schema.type === "array") {
+  if (schema.type === "array" || (schema.items && Array.isArray(value))) {
     if (!Array.isArray(value)) {
       errors.push(`${valuePath}: 배열이어야 합니다.`);
       return;
@@ -317,6 +325,7 @@ function validateCodeQuestCollection(collection, curriculum, schema) {
   return errors;
 }
 
+async function main() {
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const curriculumArguments = process.argv.slice(2);
 if (
@@ -672,3 +681,8 @@ const codingTestProblemCount = [...codingTestCollections.values()].reduce(
 console.log(
   `콘텐츠 검증 완료: 정식 언어 ${availableLanguages.length}개, 샘플 언어 ${sampleLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개, 코딩테스트 ${codingTestProblemCount}개`,
 );
+}
+
+const isDirectRun =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isDirectRun) await main();

@@ -19,23 +19,25 @@ export class CodeQuestRunnerRouter {
     this.webRunner = assertRunner(webRunner, "Web Code Quest runner");
   }
 
-  supports(request) {
-    if (!request || typeof request !== "object") return false;
-    if (WEB_EVALUATION_KINDS.has(request.evaluationKind)) return true;
-    return (
-      request.languageId === "javascript" &&
-      (request.evaluationKind === undefined || request.evaluationKind === "javascript-function-v1")
-    );
-  }
-
-  resolve(request) {
-    if (WEB_EVALUATION_KINDS.has(request?.evaluationKind)) return this.webRunner;
+  #runnerFor(request) {
+    if (!request || typeof request !== "object") return null;
+    if (WEB_EVALUATION_KINDS.has(request.evaluationKind)) return this.webRunner;
     if (
-      request?.languageId === "javascript" &&
+      request.languageId === "javascript" &&
       (request.evaluationKind === undefined || request.evaluationKind === "javascript-function-v1")
     ) {
       return this.javascriptRunner;
     }
+    return null;
+  }
+
+  supports(request) {
+    return this.#runnerFor(request) !== null;
+  }
+
+  resolve(request) {
+    const runner = this.#runnerFor(request);
+    if (runner) return runner;
     throw new Error("이 Code Quest 요청을 처리할 평가기가 없습니다.");
   }
 

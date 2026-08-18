@@ -7,6 +7,7 @@ import {
   findWebCodeQuestSourceIssue,
   getWebCodeQuestsInOrder,
   loadWebCodeQuestCollection,
+  validateWebCodeQuestExecutionRequest,
   validateWebCodeQuestCollection,
   WEB_CODE_QUEST_EVALUATION_KINDS,
 } from "../src/core/web-code-quest.js";
@@ -281,6 +282,7 @@ test("위험 HTML 요소·이벤트·리소스와 CSS URL·@import를 사전 차
     "<object></object>",
     "<embed>",
     "<button onclick=\"bad()\">실행</button>",
+    '<button title=">" onfocus="bad()">실행</button>',
     "<img src=\"/avatar.png\">",
     "<a href=\"https://example.com\">외부</a>",
     "<style>.card { background: url(/x.png); }</style>",
@@ -307,6 +309,39 @@ test("위험 HTML 요소·이벤트·리소스와 CSS URL·@import를 사전 차
       '<a href="#profile">프로필</a>',
     ),
     null,
+  );
+  for (const source of [
+    "<p>one= 은 일반 텍스트입니다.</p>",
+    '<article data-on-state="ready">안전한 데이터 속성</article>',
+  ]) {
+    assert.equal(
+      findWebCodeQuestSourceIssue(WEB_CODE_QUEST_EVALUATION_KINDS.HTML, source),
+      null,
+      source,
+    );
+  }
+});
+
+test("잘못된 languageId와 비문자열 questId를 예외 없이 검증 오류로 반환한다", () => {
+  const invalidCollection = createHtmlCollection();
+  invalidCollection.languageId = "[";
+  const collectionErrors = validateWebCodeQuestCollection(invalidCollection, curriculum);
+  assert.ok(collectionErrors.some((error) => error.includes("languageId 형식")));
+  assert.ok(!collectionErrors.includes("Web Code Quest 콘텐츠를 안전하게 검증할 수 없습니다."));
+
+  const collection = createHtmlCollection();
+  const request = createWebCodeQuestExecutionRequest(
+    collection,
+    collection.quests[0],
+    '<main><h1 data-level="primary">프로필</h1><p>소개</p></main>',
+    "invalid-quest-id-request",
+  );
+  const invalidRequest = { ...request, questId: 7 };
+  assert.doesNotThrow(() => validateWebCodeQuestExecutionRequest(invalidRequest));
+  assert.ok(
+    validateWebCodeQuestExecutionRequest(invalidRequest).some((error) =>
+      error.includes("questId 형식"),
+    ),
   );
 });
 

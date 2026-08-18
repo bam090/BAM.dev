@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { validateSchemaValue } from "../scripts/validate-content.mjs";
 
 const schemaUrl = new URL("../content/schema/web-code-quest.schema.json", import.meta.url);
+const htmlCollectionUrl = new URL("../content/quests/html.json", import.meta.url);
+const cssCollectionUrl = new URL("../content/quests/css.json", import.meta.url);
 
 async function loadSchema() {
   return JSON.parse(await readFile(schemaUrl, "utf8"));
+}
+
+function getSchemaErrors(value, schema) {
+  const errors = [];
+  validateSchemaValue(value, schema, schema, "$", errors);
+  return errors;
 }
 
 test("Web Code Quest 스키마는 HTML·CSS evaluationKind와 언어 쌍을 고정한다", async () => {
@@ -121,4 +130,29 @@ test("문제 수·예시 수·공개 테스트와 실패 설명 상한을 스키
   assert.equal(questProperties.failureExplanations.maxItems, 6);
   assert.equal(questProperties.hints.minItems, 3);
   assert.equal(questProperties.hints.maxItems, 5);
+});
+
+test("조건부 items와 not(required)는 HTML fixture를 거부하고 CSS fixture를 요구한다", async () => {
+  const [schema, htmlCollection, cssCollection] = await Promise.all([
+    loadSchema(),
+    readFile(htmlCollectionUrl, "utf8").then(JSON.parse),
+    readFile(cssCollectionUrl, "utf8").then(JSON.parse),
+  ]);
+
+  assert.deepEqual(getSchemaErrors(htmlCollection, schema), []);
+  assert.deepEqual(getSchemaErrors(cssCollection, schema), []);
+
+  htmlCollection.quests[0].fixtureHtml = "<main>허용되지 않는 fixture</main>";
+  assert.ok(
+    getSchemaErrors(htmlCollection, schema).some(
+      (error) => error.includes("$.quests[0]") && error.includes("not 조건"),
+    ),
+  );
+
+  delete cssCollection.quests[0].fixtureHtml;
+  assert.ok(
+    getSchemaErrors(cssCollection, schema).some((error) =>
+      error.includes("$.quests[0].fixtureHtml: 필수 필드"),
+    ),
+  );
 });

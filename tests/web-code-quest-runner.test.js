@@ -65,6 +65,26 @@ function createCssRequest(overrides = {}) {
   };
 }
 
+function createComputedStyleRequest(overrides = {}) {
+  return createCssRequest({
+    source: ".card { color: #1e293b; }",
+    tests: [
+      {
+        id: "card-color",
+        label: "카드 글자색",
+        assertion: {
+          kind: "computed-style",
+          selector: ".card",
+          property: "color",
+          expected: "#1e293b",
+        },
+        expected: "#1e293b",
+      },
+    ],
+    ...overrides,
+  });
+}
+
 function deferred() {
   let resolve;
   let reject;
@@ -73,6 +93,90 @@ function deferred() {
     reject = rejectPromise;
   });
   return { promise, resolve, reject };
+}
+
+function createFakeTimer() {
+  let pendingCallback = null;
+  let scheduledDelay = null;
+  let clearCalls = 0;
+
+  return {
+    setTimeoutFn: (callback, delay) => {
+      pendingCallback = callback;
+      scheduledDelay = delay;
+      return 1;
+    },
+    clearTimeoutFn: (timeoutId) => {
+      assert.equal(timeoutId, 1);
+      pendingCallback = null;
+      clearCalls += 1;
+    },
+    fire() {
+      assert.ok(pendingCallback, "실행할 iframe 제한 시간 콜백이 필요합니다.");
+      pendingCallback();
+    },
+    get scheduledDelay() {
+      return scheduledDelay;
+    },
+    get clearCalls() {
+      return clearCalls;
+    },
+  };
+}
+
+function createIframeHarness({
+  onAppend = () => {},
+  contentDocument = null,
+  contentWindow = null,
+  contentDocumentError = null,
+} = {}) {
+  const listeners = new Map();
+  let removedCount = 0;
+  const iframe = {
+    style: {},
+    contentWindow,
+    setAttribute() {},
+    addEventListener(name, callback) {
+      listeners.set(name, callback);
+    },
+    removeEventListener(name, callback) {
+      if (listeners.get(name) === callback) listeners.delete(name);
+    },
+    remove() {
+      removedCount += 1;
+    },
+  };
+  if (contentDocumentError) {
+    Object.defineProperty(iframe, "contentDocument", {
+      get() {
+        throw contentDocumentError;
+      },
+    });
+  } else {
+    iframe.contentDocument = contentDocument;
+  }
+
+  const dispatch = (eventName) => listeners.get(eventName)?.();
+  const documentRef = {
+    createElement(name) {
+      assert.equal(name, "iframe");
+      return iframe;
+    },
+  };
+  const iframeHost = {
+    append(value) {
+      assert.equal(value, iframe);
+      onAppend(dispatch);
+    },
+  };
+
+  return {
+    environment: { documentRef, iframeHost },
+    listeners,
+    get removedCount() {
+      return removedCount;
+    },
+  };
 }
 
 test("주입 평가 어댑터의 결과를 JavaScript runner 호환 report shape로 요약한다", async () => {
@@ -367,6 +471,24 @@ test("doctype-present는 공개·시스템 식별자 없는 HTML doctype만 승�
     }),
     true,
   );
+  const leadingNewlineSource =
+    "\n\r\t <!DOCTYPE html>\n<html><body></body></html>";
+  assert.equal(
+    await evaluateHtmlDomAssertion(
+      { ...input, source: leadingNewlineSource },
+      { domParserFactory, documentRef: null },
+    ),
+    true,
+  );
+  const multilineDoctypeSource =
+    "<!DOCTYPE\nhtml\r\n>\n<html><body></body></html>";
+  assert.equal(
+    await evaluateHtmlDomAssertion(
+      { ...input, source: multilineDoctypeSource },
+      { domParserFactory, documentRef: null },
+    ),
+    true,
+  );
   doctype = { name: "svg", publicId: "", systemId: "" };
   assert.equal(
     await evaluateHtmlDomAssertion(
@@ -409,6 +531,8 @@ test("doctype-present는 공개·시스템 식별자 없는 HTML doctype만 승�
   );
   assert.deepEqual(calls, [
     { source: "<!doctype html><html><body></body></html>", mimeType: "text/html" },
+    { source: leadingNewlineSource, mimeType: "text/html" },
+    { source: multilineDoctypeSource, mimeType: "text/html" },
     { source: "<!doctype svg><svg></svg>", mimeType: "text/html" },
     { source: "<!doctype html foo><html></html>", mimeType: "text/html" },
     {
@@ -840,4 +964,105 @@ test("CSS computed-style은 스크립트 없는 일회성 iframe에 fixed fixtur
   );
   assert.equal(inlineValue, "");
   assert.equal(inlinePriority, "");
+});
+
+test("CSS iframe error는 리소스를 정리하고 engine_error로 보고한다", async () => {
+  const timer = createFakeTimer();
+  const harness = createIframeHarness({
+    onAppend: (dispatch) => dispatch("error"),
+  });
+  const runner = new BrowserWebCodeQuestRunner({
+    environment: {
+      ...harness.environment,
+      iframeLoadTimeoutMs: 25,
+      setTimeoutFn: timer.setTimeoutFn,
+      clearTimeoutFn: timer.clearTimeoutFn,
+    },
+  });
+
+  const report = await runner.run(createComputedStyleRequest());
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.equal(report.tests[0].error.type, "evaluation_error");
+  assert.match(report.tests[0].error.message, /불러오지 못했습니다/);
+  assert.equal(harness.removedCount, 1);
+  assert.equal(harness.listeners.size, 0);
+  assert.equal(timer.clearCalls, 1);
+});
+
+test("CSS iframe 대기 중 abort는 리소스를 정리하고 cancelled로 보고한다", async () => {
+  const controller = new AbortController();
+  const timer = createFakeTimer();
+  const harness = createIframeHarness({
+    onAppend: () => controller.abort(),
+  });
+  const runner = new BrowserWebCodeQuestRunner({
+    environment: {
+      ...harness.environment,
+      iframeLoadTimeoutMs: 25,
+      setTimeoutFn: timer.setTimeoutFn,
+      clearTimeoutFn: timer.clearTimeoutFn,
+    },
+  });
+
+  const report = await runner.run(createComputedStyleRequest(), {
+    signal: controller.signal,
+  });
+
+  assert.equal(report.outcome, "cancelled");
+  assert.equal(report.tests[0].outcome, "cancelled");
+  assert.equal(harness.removedCount, 1);
+  assert.equal(harness.listeners.size, 0);
+  assert.equal(timer.clearCalls, 1);
+});
+
+test("CSS iframe contentDocument 접근 실패는 정리 후 engine_error로 보고한다", async () => {
+  const timer = createFakeTimer();
+  const harness = createIframeHarness({
+    onAppend: (dispatch) => dispatch("load"),
+    contentDocumentError: new Error("sandbox 문서 접근 거부"),
+  });
+  const runner = new BrowserWebCodeQuestRunner({
+    environment: {
+      ...harness.environment,
+      iframeLoadTimeoutMs: 25,
+      setTimeoutFn: timer.setTimeoutFn,
+      clearTimeoutFn: timer.clearTimeoutFn,
+    },
+  });
+
+  const report = await runner.run(createComputedStyleRequest());
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.match(report.tests[0].error.message, /문서 접근 거부/);
+  assert.equal(harness.removedCount, 1);
+  assert.equal(harness.listeners.size, 0);
+  assert.equal(timer.clearCalls, 1);
+});
+
+test("CSS iframe load 무응답은 제한 시간 뒤 정리하고 engine_error로 보고한다", async () => {
+  const timer = createFakeTimer();
+  const harness = createIframeHarness();
+  const runner = new BrowserWebCodeQuestRunner({
+    environment: {
+      ...harness.environment,
+      iframeLoadTimeoutMs: 25,
+      setTimeoutFn: timer.setTimeoutFn,
+      clearTimeoutFn: timer.clearTimeoutFn,
+    },
+  });
+
+  const reportPromise = runner.run(createComputedStyleRequest());
+  assert.equal(timer.scheduledDelay, 25);
+  timer.fire();
+  const report = await reportPromise;
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.match(report.tests[0].error.message, /25ms를 초과/);
+  assert.equal(harness.removedCount, 1);
+  assert.equal(harness.listeners.size, 0);
+  assert.equal(timer.clearCalls, 1);
 });

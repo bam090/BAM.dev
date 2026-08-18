@@ -16,11 +16,20 @@ export const DEFAULT_WEB_CODE_QUEST_LIMITS = Object.freeze({
 });
 
 const EVALUATION_KINDS = new Set(Object.values(WEB_CODE_QUEST_EVALUATION_KINDS));
+const DEFAULT_IFRAME_LOAD_TIMEOUT_MS = 3000;
 const FIXED_IFRAME_DOCUMENT =
   '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"></head><body></body></html>';
 
 function defaultNow() {
   return globalThis.performance?.now?.() ?? Date.now();
+}
+
+function defaultSetTimeout(callback, delay) {
+  return globalThis.setTimeout(callback, delay);
+}
+
+function defaultClearTimeout(timeoutId) {
+  globalThis.clearTimeout(timeoutId);
 }
 
 function roundDuration(value) {
@@ -120,7 +129,7 @@ function hasExactHtml5Doctype(source, doctype) {
     doctype?.name?.toLowerCase() === "html" &&
     !doctype.publicId &&
     !doctype.systemId &&
-    /^\uFEFF?[\t\f ]*<!doctype[\t\f ]+html[\t\f ]*>/iu.test(source)
+    /^\uFEFF?[\t\n\f\r ]*<!doctype[\t\n\f\r ]+html[\t\n\f\r ]*>/iu.test(source)
   );
 }
 
@@ -284,12 +293,33 @@ function evaluateMediaRuleDeclaration(source, assertion, styleSheetFactory) {
   return fallback;
 }
 
-function waitForIframeLoad(iframe, host, signal) {
+function waitForIframeLoad(
+  iframe,
+  host,
+  signal,
+  {
+    timeoutMs,
+    setTimeoutFn,
+    clearTimeoutFn,
+  },
+) {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new TypeError("CSS 평가용 sandbox iframe 제한 시간은 양수여야 합니다.");
+  }
+  if (typeof setTimeoutFn !== "function" || typeof clearTimeoutFn !== "function") {
+    throw new TypeError("CSS 평가용 sandbox iframe 타이머를 사용할 수 없습니다.");
+  }
+
   return new Promise((resolve, reject) => {
     let settled = false;
+    let timeoutId = null;
     const finish = (callback, value) => {
       if (settled) return;
       settled = true;
+      if (timeoutId !== null) {
+        clearTimeoutFn(timeoutId);
+        timeoutId = null;
+      }
       iframe.removeEventListener?.("load", handleLoad);
       iframe.removeEventListener?.("error", handleError);
       signal?.removeEventListener("abort", handleAbort);
@@ -299,6 +329,13 @@ function waitForIframeLoad(iframe, host, signal) {
     const handleError = () =>
       finish(reject, new Error("CSS 평가용 sandbox iframe을 불러오지 못했습니다."));
     const handleAbort = () => finish(reject, abortError());
+    const handleTimeout = () =>
+      finish(
+        reject,
+        new Error(
+          `CSS 평가용 sandbox iframe 로드 시간이 ${timeoutMs}ms를 초과했습니다.`,
+        ),
+      );
 
     iframe.addEventListener?.("load", handleLoad, { once: true });
     iframe.addEventListener?.("error", handleError, { once: true });
@@ -307,7 +344,12 @@ function waitForIframeLoad(iframe, host, signal) {
       handleAbort();
       return;
     }
-    host.append(iframe);
+    timeoutId = setTimeoutFn(handleTimeout, timeoutMs);
+    try {
+      host.append(iframe);
+    } catch (error) {
+      finish(reject, error);
+    }
   });
 }
 
@@ -316,7 +358,13 @@ async function evaluateComputedStyle(
   fixtureHtml,
   assertion,
   signal,
-  { documentRef, iframeHost },
+  {
+    documentRef,
+    iframeHost,
+    iframeLoadTimeoutMs,
+    setTimeoutFn,
+    clearTimeoutFn,
+  },
 ) {
   if (!documentRef || typeof documentRef.createElement !== "function") {
     throw new Error("이 브라우저에서는 CSS computed-style 평가를 시작할 수 없습니다.");
@@ -327,16 +375,20 @@ async function evaluateComputedStyle(
   }
 
   const iframe = documentRef.createElement("iframe");
-  iframe.setAttribute("sandbox", "allow-same-origin");
-  iframe.setAttribute("title", "BAM.dev CSS 공개 테스트 평가 영역");
-  iframe.setAttribute("aria-hidden", "true");
-  iframe.tabIndex = -1;
-  iframe.style.cssText =
-    "position:fixed;left:-10000px;top:0;width:1024px;height:768px;pointer-events:none;opacity:0;";
-  iframe.srcdoc = FIXED_IFRAME_DOCUMENT;
-
   try {
-    await waitForIframeLoad(iframe, host, signal);
+    iframe.setAttribute("sandbox", "allow-same-origin");
+    iframe.setAttribute("title", "BAM.dev CSS 공개 테스트 평가 영역");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.tabIndex = -1;
+    iframe.style.cssText =
+      "position:fixed;left:-10000px;top:0;width:1024px;height:768px;pointer-events:none;opacity:0;";
+    iframe.srcdoc = FIXED_IFRAME_DOCUMENT;
+
+    await waitForIframeLoad(iframe, host, signal, {
+      timeoutMs: iframeLoadTimeoutMs,
+      setTimeoutFn,
+      clearTimeoutFn,
+    });
     if (signal?.aborted) throw abortError();
     const frameDocument = iframe.contentDocument;
     const frameWindow = iframe.contentWindow;
@@ -399,6 +451,9 @@ export async function evaluateCssStyleAssertion(
   {
     documentRef = globalThis.document,
     iframeHost,
+    iframeLoadTimeoutMs = DEFAULT_IFRAME_LOAD_TIMEOUT_MS,
+    setTimeoutFn = defaultSetTimeout,
+    clearTimeoutFn = defaultClearTimeout,
     styleSheetFactory = () => {
       if (typeof globalThis.CSSStyleSheet !== "function") {
         throw new Error("이 브라우저에서는 CSSStyleSheet를 사용할 수 없습니다.");
@@ -418,6 +473,9 @@ export async function evaluateCssStyleAssertion(
     return evaluateComputedStyle(source, fixtureHtml, assertion, signal, {
       documentRef,
       iframeHost,
+      iframeLoadTimeoutMs,
+      setTimeoutFn,
+      clearTimeoutFn,
     });
   }
   throw new Error(`지원하지 않는 CSS assertion입니다: ${assertion.kind}`);

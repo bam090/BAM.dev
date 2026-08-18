@@ -153,6 +153,63 @@ function isExternalUrlText(value) {
   return /(?:^|[\s"'=])(https?:|data:|javascript:|blob:|file:|\/\/)/iu.test(value);
 }
 
+function hasInlineEventHandlerAttribute(source) {
+  let index = 0;
+  while (index < source.length) {
+    const tagStart = source.indexOf("<", index);
+    if (tagStart < 0) return false;
+    if (source.startsWith("<!--", tagStart)) {
+      const commentEnd = source.indexOf("-->", tagStart + 4);
+      index = commentEnd < 0 ? source.length : commentEnd + 3;
+      continue;
+    }
+
+    let cursor = tagStart + 1;
+    while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
+    if (!/[a-z]/iu.test(source[cursor] ?? "")) {
+      index = tagStart + 1;
+      continue;
+    }
+    while (/[^\t\n\f\r />]/u.test(source[cursor] ?? "")) cursor += 1;
+
+    while (cursor < source.length) {
+      while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
+      if (source[cursor] === ">") {
+        cursor += 1;
+        break;
+      }
+      if (source[cursor] === "/" && source[cursor + 1] === ">") {
+        cursor += 2;
+        break;
+      }
+
+      const nameStart = cursor;
+      while (/[^\t\n\f\r =/>]/u.test(source[cursor] ?? "")) cursor += 1;
+      if (cursor === nameStart) {
+        cursor += 1;
+        continue;
+      }
+      const attributeName = source.slice(nameStart, cursor);
+      if (/^on[a-z0-9_-]+$/iu.test(attributeName)) return true;
+
+      while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
+      if (source[cursor] !== "=") continue;
+      cursor += 1;
+      while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
+      const quote = source[cursor];
+      if (quote === '"' || quote === "'") {
+        cursor += 1;
+        while (cursor < source.length && source[cursor] !== quote) cursor += 1;
+        if (source[cursor] === quote) cursor += 1;
+      } else {
+        while (/[^\t\n\f\r >]/u.test(source[cursor] ?? "")) cursor += 1;
+      }
+    }
+    index = Math.max(cursor, tagStart + 1);
+  }
+  return false;
+}
+
 /**
  * Performs the same conservative source preflight for authored examples,
  * learner submissions, and CSS fixtures. The evaluators never execute scripts
@@ -189,7 +246,7 @@ export function findWebCodeQuestSourceIssue(evaluationKind, source, { fixture = 
     if (/<\s*meta\b[^>]*http-equiv\s*=\s*["']?refresh\b/iu.test(source)) {
       return { code: "meta_refresh", message: "자동 이동을 만드는 meta refresh는 사용할 수 없습니다." };
     }
-    if (/\bon[a-z0-9_-]+\s*=/iu.test(source)) {
+    if (hasInlineEventHandlerAttribute(source)) {
       return { code: "event_handler", message: "이벤트 핸들러 속성은 사용할 수 없습니다." };
     }
     if (/\b(?:src|srcset|poster|data|action|formaction)\s*=/iu.test(source)) {
@@ -412,6 +469,9 @@ function validateWebCodeQuestCollectionInternal(collection, curriculum) {
   if (collection.contractVersion !== 1) errors.push("지원하는 Web Code Quest contractVersion은 1입니다.");
   const expectedLanguageId = EVALUATION_LANGUAGE.get(collection.evaluationKind);
   if (!expectedLanguageId) errors.push("evaluationKind는 html-dom-v1 또는 css-style-v1이어야 합니다.");
+  const hasValidLanguageId =
+    isNonEmptyString(collection.languageId) && STABLE_ID_PATTERN.test(collection.languageId);
+  if (!hasValidLanguageId) errors.push("컬렉션 languageId 형식이 올바르지 않습니다.");
   if (collection.languageId !== expectedLanguageId) {
     errors.push("evaluationKind와 languageId가 일치하지 않습니다.");
   }
@@ -430,13 +490,15 @@ function validateWebCodeQuestCollectionInternal(collection, curriculum) {
   if (collection.evaluationKind === WEB_CODE_QUEST_EVALUATION_KINDS.CSS) {
     questFields.add("fixtureHtml");
   }
+  const idPattern = hasValidLanguageId
+    ? new RegExp(`^quest-${collection.languageId}-[a-z0-9]+(?:-[a-z0-9]+)*$`)
+    : null;
 
   quests.forEach((value, index) => {
     const label = `quests[${index}]`;
     const quest = inspectExactRecord(value, label, questFields, errors);
     if (!quest) return;
-    const idPattern = new RegExp(`^quest-${collection.languageId}-[a-z0-9]+(?:-[a-z0-9]+)*$`);
-    if (!isNonEmptyString(quest.id) || !idPattern.test(quest.id)) {
+    if (!isNonEmptyString(quest.id) || !idPattern?.test(quest.id)) {
       errors.push(`${label}.id는 컬렉션 언어로 네임스페이스되어야 합니다.`);
     } else if (questIds.has(quest.id)) {
       errors.push(`Quest ID가 중복됩니다: ${quest.id}`);
@@ -590,7 +652,10 @@ export function validateWebCodeQuestExecutionRequest(request) {
   if (!expectedLanguageId || request.languageId !== expectedLanguageId) {
     errors.push("evaluationKind와 languageId가 일치하지 않습니다.");
   }
-  if (!request.questId.startsWith(`quest-${request.languageId}-`)) {
+  if (
+    typeof request.questId === "string" &&
+    !request.questId.startsWith(`quest-${request.languageId}-`)
+  ) {
     errors.push("questId와 languageId가 일치하지 않습니다.");
   }
   if (request.suite !== "public") errors.push('suite는 "public"이어야 합니다.');
