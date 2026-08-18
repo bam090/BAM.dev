@@ -36,6 +36,18 @@ const DRAFT_STATUS_COPY = Object.freeze({
   failed: "초안을 저장하지 못했습니다. 코드는 편집기에 그대로 유지됩니다.",
 });
 
+function normalizeOutcome(outcome) {
+  return typeof outcome === "string" && Object.hasOwn(OUTCOME_COPY, outcome)
+    ? outcome
+    : "engine_error";
+}
+
+function normalizeDraftStatus(status) {
+  return typeof status === "string" && Object.hasOwn(DRAFT_STATUS_COPY, status)
+    ? status
+    : "starter";
+}
+
 function safeInteger(value, fallback = 0) {
   return Number.isSafeInteger(value) ? value : fallback;
 }
@@ -206,9 +218,7 @@ function getOutcomeTitle(outcome, mode) {
 }
 
 function renderTestResult(testResult, index, failureByTestId) {
-  const outcome = Object.hasOwn(OUTCOME_COPY, testResult?.outcome)
-    ? testResult.outcome
-    : "engine_error";
+  const outcome = normalizeOutcome(testResult?.outcome);
   const copy = OUTCOME_COPY[outcome];
   const errorMessage = getErrorMessage(testResult?.error);
   const failureExplanation =
@@ -266,9 +276,7 @@ function renderExecutionReport({ problem, report, mode, persistenceStatus, isRun
     return `<p class="coding-test-results-state">코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 브라우저에 포함된 공개 테스트 ${submitCount}개를 모두 채점합니다.</p>`;
   }
 
-  const outcome = Object.hasOwn(OUTCOME_COPY, report?.outcome)
-    ? report.outcome
-    : "engine_error";
+  const outcome = normalizeOutcome(report?.outcome);
   const copy = OUTCOME_COPY[outcome];
   const passed = Math.max(0, safeInteger(report?.summary?.passed));
   const total = Math.max(0, safeInteger(report?.summary?.total));
@@ -363,7 +371,7 @@ function renderExamples(examples) {
 }
 
 export function getCodingTestDraftStatusMessage(status) {
-  return DRAFT_STATUS_COPY[status] ?? DRAFT_STATUS_COPY.starter;
+  return DRAFT_STATUS_COPY[normalizeDraftStatus(status)];
 }
 
 export function renderCodingTestNavigationLink({
@@ -491,6 +499,7 @@ export function renderCodingTestView({
   isSolved = false,
 } = {}) {
   const mode = executionMode === "submit" ? "submit" : "run";
+  const normalizedDraftStatus = normalizeDraftStatus(draftStatus);
   const sourceIsEmpty = String(source).trim().length === 0;
   const actionsDisabled = isRunning || sourceIsEmpty ? " disabled" : "";
   const editorReadonly = isRunning ? " readonly" : "";
@@ -541,7 +550,7 @@ export function renderCodingTestView({
               <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${escapeHtml(problem?.entryPoint ?? "함수")} 함수 코드</label>
               <textarea id="coding-test-source" data-coding-test-source aria-labelledby="coding-test-source-label" aria-describedby="coding-test-editor-help coding-test-draft-status" rows="18" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorReadonly}>${escapeHtml(source)}</textarea>
               <p class="coding-test-editor-help" id="coding-test-editor-help">실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다.</p>
-              <p class="coding-test-draft-status${draftStatus === "failed" || draftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(draftStatus)}</p>
+              <p class="coding-test-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(normalizedDraftStatus)}</p>
               <div class="coding-test-actions">
                 <button class="button button--secondary" type="button" data-coding-test-run aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : "테스트 실행"}</button>
                 <button class="button button--primary" type="button" data-coding-test-submit aria-busy="${String(isRunning && mode === "submit")}"${actionsDisabled}>${isRunning && mode === "submit" ? "채점 중…" : "제출 및 채점"}</button>

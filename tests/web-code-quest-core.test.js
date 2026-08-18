@@ -236,6 +236,107 @@ test("doctype과 media 조건부 선언 assertion을 계약에 보존하고 expe
   );
 });
 
+test("계산된 Grid 열 개수 assertion은 viewport와 기대 범위를 검증해 실행 요청에 보존한다", () => {
+  const cssCollection = createCssCollection();
+  cssCollection.quests[0].publicTests[0].assertion = {
+    kind: "computed-grid-column-count",
+    selector: ".card",
+    viewportWidth: 768,
+    expected: 3,
+  };
+
+  assert.deepEqual(validateWebCodeQuestCollection(cssCollection, curriculum), []);
+  const request = createWebCodeQuestExecutionRequest(
+    cssCollection,
+    cssCollection.quests[0],
+    ".card { display: grid; grid-template-columns: repeat(3, 1fr); }",
+    "grid-columns-request-one",
+  );
+  assert.deepEqual(request.tests[0].assertion, {
+    kind: "computed-grid-column-count",
+    selector: ".card",
+    viewportWidth: 768,
+    expected: 3,
+  });
+  assert.equal(request.tests[0].expected, 3);
+  assert.ok(Object.isFrozen(request.tests[0].assertion));
+
+  for (const [field, value, expectedMessage] of [
+    ["viewportWidth", 319, "viewportWidth는 320~1920"],
+    ["viewportWidth", 1921, "viewportWidth는 320~1920"],
+    ["viewportWidth", 768.5, "viewportWidth는 320~1920"],
+    ["expected", 0, "expected는 1~12"],
+    ["expected", 13, "expected는 1~12"],
+  ]) {
+    const invalid = structuredClone(cssCollection);
+    invalid.quests[0].publicTests[0].assertion[field] = value;
+    assert.ok(
+      validateWebCodeQuestCollection(invalid, curriculum).some((error) =>
+        error.includes(expectedMessage),
+      ),
+    );
+  }
+});
+
+test("공백 속성·직접 자식 텍스트·focus 계산 스타일 assertion을 계약에 보존한다", () => {
+  const htmlCollection = createHtmlCollection();
+  htmlCollection.quests[0].publicTests[0].assertion = {
+    kind: "nonblank-attribute-count",
+    selector: "progress",
+    attribute: "aria-label",
+    expected: 3,
+  };
+  htmlCollection.quests[0].publicTests[1].assertion = {
+    kind: "direct-child-text-equals",
+    selector: ".learning-board",
+    childSelector: "article.learning-card",
+    childIndex: 1,
+    textSelector: "h2",
+    expected: "CSS",
+  };
+  assert.deepEqual(validateWebCodeQuestCollection(htmlCollection, curriculum), []);
+  const htmlRequest = createWebCodeQuestExecutionRequest(
+    htmlCollection,
+    htmlCollection.quests[0],
+    "<main><progress aria-label=\"HTML 진도\"></progress></main>",
+    "html-declarative-request",
+  );
+  assert.deepEqual(htmlRequest.tests[0].assertion, htmlCollection.quests[0].publicTests[0].assertion);
+  assert.equal(htmlRequest.tests[0].expected, 3);
+  assert.deepEqual(htmlRequest.tests[1].assertion, htmlCollection.quests[0].publicTests[1].assertion);
+  assert.equal(htmlRequest.tests[1].expected, true);
+
+  const cssCollection = createCssCollection();
+  cssCollection.quests[0].publicTests[2].assertion = {
+    kind: "computed-focus-style",
+    selector: ".card-link",
+    property: "outline",
+    expected: "3px solid #2563eb",
+  };
+  assert.deepEqual(validateWebCodeQuestCollection(cssCollection, curriculum), []);
+  const cssRequest = createWebCodeQuestExecutionRequest(
+    cssCollection,
+    cssCollection.quests[0],
+    ".card-link:focus-visible { outline: 3px solid #2563eb; }",
+    "css-focus-request",
+  );
+  assert.deepEqual(cssRequest.tests[2].assertion, cssCollection.quests[0].publicTests[2].assertion);
+  assert.equal(cssRequest.tests[2].expected, "3px solid #2563eb");
+
+  const invalidChildIndex = structuredClone(htmlCollection);
+  invalidChildIndex.quests[0].publicTests[1].assertion.childIndex = -1;
+  assert.match(
+    validateWebCodeQuestCollection(invalidChildIndex, curriculum).join("\n"),
+    /childIndex는 0~99/,
+  );
+  const invalidAttribute = structuredClone(htmlCollection);
+  invalidAttribute.quests[0].publicTests[0].assertion.attribute = "bad attribute";
+  assert.match(
+    validateWebCodeQuestCollection(invalidAttribute, curriculum).join("\n"),
+    /attribute 형식/,
+  );
+});
+
 test("evaluationKind·언어·교안·assertion과 CSS fixture 계약 불일치를 거부한다", () => {
   const mismatchedLanguage = createHtmlCollection();
   mismatchedLanguage.languageId = "css";
@@ -283,12 +384,34 @@ test("위험 HTML 요소·이벤트·리소스와 CSS URL·@import를 사전 차
     "<embed>",
     "<button onclick=\"bad()\">실행</button>",
     '<button title=">" onfocus="bad()">실행</button>',
+    '<meta http-equiv="&#114;efresh" content="0;&#117;rl=&#104;ttps&#58;//example.com">',
+    '<!--><meta http-equiv="&#114;efresh" content="0;url=https://example.com">',
+    '<!-- --!><a href="https://example.com">외부</a>',
     "<img src=\"/avatar.png\">",
     "<a href=\"https://example.com\">외부</a>",
+    "<a href=\"/collect\">상대 경로</a>",
+    "<a href=\"relative\">상대 경로</a>",
+    "<a href=\"&#104;ttps://example.com\">엔티티 우회</a>",
+    "<a ping=\"/collect\" href=\"#profile\">전송 링크</a>",
     "<style>.card { background: url(/x.png); }</style>",
   ]) {
     assert.ok(
       findWebCodeQuestSourceIssue(WEB_CODE_QUEST_EVALUATION_KINDS.HTML, source),
+      source,
+    );
+  }
+
+  for (const source of [
+    '<!--><main style="display: grid"></main>',
+    '<!-- --!><style>main { display: grid; }</style>',
+  ]) {
+    assert.equal(
+      findWebCodeQuestSourceIssue(
+        WEB_CODE_QUEST_EVALUATION_KINDS.HTML,
+        source,
+        { disallowInlineStyles: true },
+      )?.code,
+      "malformed_comment",
       source,
     );
   }
@@ -320,6 +443,37 @@ test("위험 HTML 요소·이벤트·리소스와 CSS URL·@import를 사전 차
       source,
     );
   }
+});
+
+test("인라인 style 제한은 Web Project용 명시 옵션에서만 적용한다", () => {
+  for (const source of [
+    "<style>.card { display: grid; }</style><main class=\"card\"></main>",
+    '<main class="card" style="display: grid"></main>',
+  ]) {
+    assert.equal(
+      findWebCodeQuestSourceIssue(WEB_CODE_QUEST_EVALUATION_KINDS.HTML, source),
+      null,
+      source,
+    );
+    assert.equal(
+      findWebCodeQuestSourceIssue(
+        WEB_CODE_QUEST_EVALUATION_KINDS.HTML,
+        source,
+        { disallowInlineStyles: true },
+      )?.code,
+      "inline_style",
+      source,
+    );
+  }
+
+  assert.equal(
+    findWebCodeQuestSourceIssue(
+      WEB_CODE_QUEST_EVALUATION_KINDS.HTML,
+      '<main data-style="grid">style=은 설명 문구입니다.</main>',
+      { disallowInlineStyles: true },
+    ),
+    null,
+  );
 });
 
 test("잘못된 languageId와 비문자열 questId를 예외 없이 검증 오류로 반환한다", () => {

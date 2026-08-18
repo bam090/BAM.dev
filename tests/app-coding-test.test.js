@@ -5,6 +5,8 @@ import {
   BamLearningApp,
   loadCodingTestCollectionSafely,
 } from "../src/app.js";
+import { DraftSaveCoordinator } from "../src/core/draft-save-coordinator.js";
+import { ExecutionCoordinator } from "../src/core/execution-coordinator.js";
 import {
   LocalStorageProgressRepository,
   MemoryStorage,
@@ -89,10 +91,7 @@ function createExecutionHarness() {
       },
     },
     progressRepository: repository,
-    activeQuestExecution: null,
-    activeCodingTestExecution: null,
-    pendingCodingTestDraftSave: null,
-    codingTestDraftSaveTimer: null,
+    executionCoordinator: new ExecutionCoordinator(),
     codingTestRequestSequence: 0,
     renderCodingTest() {},
     focusCodingTestResults() {},
@@ -140,8 +139,6 @@ test("코딩테스트 초안은 연속 입력을 마지막 값 한 건으로 저
     currentView: "coding-test",
     codingTestCollection: { languageId: "javascript" },
     codingTestState: state,
-    pendingCodingTestDraftSave: null,
-    codingTestDraftSaveTimer: null,
     setCodingTestDraftSaveTimer(callback) {
       const id = nextTimerId++;
       timers.set(id, callback);
@@ -160,6 +157,12 @@ test("코딩테스트 초안은 연속 입력을 마지막 값 한 건으로 저
     },
     updateCodingTestDraftFeedback() {},
   });
+  app.codingTestDraftSaveCoordinator = new DraftSaveCoordinator({
+    delayMs: 250,
+    persist: (pending) => app.persistCodingTestDraft(pending),
+    setTimer: (callback) => app.setCodingTestDraftSaveTimer(callback),
+    clearTimer: (timer) => app.clearCodingTestDraftSaveTimer(timer),
+  });
 
   app.scheduleCodingTestDraftSave(state);
   state.source = "마지막 입력";
@@ -167,7 +170,8 @@ test("코딩테스트 초안은 연속 입력을 마지막 값 한 건으로 저
   assert.equal(timers.size, 1);
   assert.equal(savedDrafts.length, 0);
 
-  const callback = timers.values().next().value;
+  const [timerId, callback] = timers.entries().next().value;
+  timers.delete(timerId);
   callback();
   assert.deepEqual(savedDrafts, [
     {
@@ -178,22 +182,130 @@ test("코딩테스트 초안은 연속 입력을 마지막 값 한 건으로 저
     },
   ]);
   assert.equal(state.draftStatus, "saved");
+
+  state.source = "리비전 2의 후속 입력";
+  app.scheduleCodingTestDraftSave(state);
+  const revisedState = {
+    ...state,
+    problem: { ...problem, revision: 3 },
+    source: "리비전 3 입력",
+  };
+  app.codingTestState = revisedState;
+  app.scheduleCodingTestDraftSave(revisedState);
+
+  assert.equal(savedDrafts[1].problemRevision, 2);
+  assert.equal(savedDrafts[1].source, "리비전 2의 후속 입력");
+  assert.equal(timers.size, 1);
+  timers.values().next().value();
+  assert.equal(savedDrafts[2].problemRevision, 3);
+  assert.equal(savedDrafts[2].source, "리비전 3 입력");
 });
 
 test("코딩테스트 실행 취소는 현재 AbortSignal을 중단한다", (t) => {
   installMinimalWindow(t);
   const { app } = createExecutionHarness();
-  const controller = new AbortController();
   app.codingTestState.isRunning = true;
-  app.activeCodingTestExecution = { controller };
+  const execution = app.executionCoordinator.start({
+    kind: "coding-test",
+    requestId: "coding-test-run-cancel",
+    ownerId: `javascript:${problem.id}:${problem.revision}`,
+    mode: "run",
+  });
   const button = { disabled: false, textContent: "실행 취소" };
 
   app.cancelCodingTestRun(button);
 
-  assert.equal(controller.signal.aborted, true);
+  assert.equal(execution.signal.aborted, true);
   assert.equal(app.codingTestState.cancelRequested, true);
   assert.equal(button.disabled, true);
   assert.equal(button.textContent, "취소하는 중…");
+});
+
+test("코딩테스트 제출 중 화면을 떠나 취소되면 결과를 저장하거나 렌더하지 않는다", async (t) => {
+  installMinimalWindow(t);
+  const { app, repository } = createExecutionHarness();
+  let renderCount = 0;
+  let resolveReport;
+  app.renderCodingTest = () => {
+    renderCount += 1;
+  };
+  app.codingTestRunner = {
+    run(input, { signal }) {
+      return new Promise((resolve) => {
+        resolveReport = () =>
+          resolve({
+            requestId: input.requestId,
+            contractVersion: 1,
+            problemId: problem.id,
+            problemRevision: problem.revision,
+            languageId: "javascript",
+            mode: input.mode,
+            suite: "public",
+            outcome: "cancelled",
+            tests: [],
+            summary: { passed: 0, total: 6 },
+            durationMs: 1,
+            limitsApplied: {},
+            error: null,
+          });
+        signal.addEventListener("abort", resolveReport, { once: true });
+      });
+    },
+  };
+
+  const submission = app.executeCurrentCodingTest("submit");
+  app.cancelCodingTestRun({ disabled: false, textContent: "실행 취소" });
+  assert.equal(app.executionCoordinator.active.cancellationReason, "user");
+  app.leaveCurrentView();
+  assert.equal(app.executionCoordinator.active.cancellationReason, "navigation");
+  app.currentView = "lesson";
+  app.codingTestState = null;
+  resolveReport();
+  await submission;
+
+  assert.equal(repository.getProgress().codingTestSubmissions.length, 0);
+  assert.equal(renderCount, 1);
+  assert.equal(app.executionCoordinator.active, null);
+});
+
+test("현재 코딩테스트 화면에서 직접 취소한 제출 결과는 계속 저장하고 표시한다", async (t) => {
+  installMinimalWindow(t);
+  const { app, repository } = createExecutionHarness();
+  app.codingTestRunner = {
+    run(input, { signal }) {
+      return new Promise((resolve) => {
+        signal.addEventListener(
+          "abort",
+          () =>
+            resolve({
+              requestId: input.requestId,
+              contractVersion: 1,
+              problemId: problem.id,
+              problemRevision: problem.revision,
+              languageId: "javascript",
+              mode: input.mode,
+              suite: "public",
+              outcome: "cancelled",
+              tests: [],
+              summary: { passed: 0, total: 6 },
+              durationMs: 1,
+              limitsApplied: {},
+              error: null,
+            }),
+          { once: true },
+        );
+      });
+    },
+  };
+
+  const submission = app.executeCurrentCodingTest("submit");
+  app.cancelCodingTestRun({ disabled: false, textContent: "실행 취소" });
+  assert.equal(app.executionCoordinator.active.cancellationReason, "user");
+  await submission;
+
+  assert.equal(repository.getProgress().codingTestSubmissions.length, 1);
+  assert.equal(app.codingTestState.report.outcome, "cancelled");
+  assert.equal(app.codingTestState.reportPersistenceStatus, "memory");
 });
 
 test("코딩테스트 목록 진입은 진행 중인 이전 화면 렌더를 무효화한다", (t) => {

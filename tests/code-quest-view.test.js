@@ -56,6 +56,7 @@ const quest = {
 
 function render(overrides = {}) {
   return renderCodeQuestView({
+    languageId: "javascript",
     languageName: "JavaScript",
     collectionTitle: "JavaScript Code Quest",
     quest,
@@ -132,6 +133,9 @@ test("초기 화면은 문제·계약·예제와 명시적 편집기 label만 �
   assert.match(html, /제약 조건/);
   assert.match(html, /예제 1/);
   assert.match(html, /<label[^>]*for="quest-source"/);
+  assert.match(html, /class="quest-editor-shell"[^>]*data-quest-editor-shell/);
+  assert.match(html, /<pre class="quest-source-highlight syntax-code" aria-hidden="true">/);
+  assert.match(html, /data-quest-source-highlight/);
   assert.match(html, /<textarea[^>]*data-quest-source[^>]*>/);
   assert.match(html, /&lt;\/textarea&gt;&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);
@@ -140,6 +144,18 @@ test("초기 화면은 문제·계약·예제와 명시적 편집기 label만 �
   assert.doesNotMatch(html, /data-quest-results/);
   assert.doesNotMatch(html, /무료 기준<\/h4>/);
   assert.equal((html.match(/data-quest-hint/g) ?? []).length, 0);
+});
+
+test("Quest 편집기와 JSON 예제는 원본 입력을 유지하며 안전하게 강조한다", () => {
+  const html = render();
+
+  assert.match(html, /data-quest-source-highlight>[\s\S]*code-token--keyword[^>]*>function</);
+  assert.match(html, /data-quest-source-highlight>[\s\S]*code-token--function[^>]*>calculateDeliveryFee</);
+  assert.match(html, /class="language-json"/);
+  assert.match(html, /code-token--number[^>]*>50000</);
+  assert.equal((html.match(/aria-hidden="true"/g) ?? []).length >= 1, true);
+  assert.doesNotMatch(html, /quest-source-highlight[^>]*tabindex/);
+  assert.match(html, new RegExp(`<textarea[^>]*>${quest.starterCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}<\\/textarea>`));
 });
 
 test("실행 중에는 편집과 중복 실행을 막고 실제 취소 버튼만 제공한다", () => {
@@ -209,6 +225,20 @@ test("실행 outcome을 모두 구분하고 실제값이 없는 결과에는 실
     if (!["passed", "wrong_answer"].includes(outcome)) {
       assert.doesNotMatch(html, /<dt>실제값<\/dt>/);
     }
+  }
+});
+
+test("상속 프로퍼티와 알 수 없는 outcome은 실행기 오류로 안전하게 렌더링한다", () => {
+  const invalidOutcomes = ["constructor", "toString", "__proto__", "unknown_outcome", null];
+
+  for (const outcome of invalidOutcomes) {
+    const html = render({ report: createReport(outcome) });
+
+    assert.match(html, /quest-results is-danger/);
+    assert.match(html, /코드 실행기를 사용할 수 없습니다/);
+    assert.match(html, /quest-test-result is-danger/);
+    assert.match(html, /quest-outcome-badge">실행기 오류/);
+    assert.doesNotMatch(html, /is-undefined|>undefined</);
   }
 });
 
@@ -292,6 +322,19 @@ test("초안 저장 상태 문구와 이전·다음 Quest 링크를 렌더링한
   assert.match(html, /다음 Quest/);
 });
 
+test("상속 프로퍼티와 알 수 없는 초안 상태는 초기 코드 안내로 돌아간다", () => {
+  const invalidStatuses = ["constructor", "toString", "__proto__", "unknown_status", null];
+  const starterMessage = "초기 코드를 불러왔습니다. 편집하면 자동으로 저장됩니다.";
+
+  for (const status of invalidStatuses) {
+    assert.equal(getCodeQuestDraftStatusMessage(status), starterMessage);
+
+    const html = render({ draftStatus: status });
+    assert.match(html, /class="quest-draft-status"[^>]*>초기 코드를 불러왔습니다/);
+    assert.doesNotMatch(html, /quest-draft-status is-warning/);
+  }
+});
+
 test("HTML Quest는 함수 계약 대신 직접 마크업 요구사항과 비실행 구조 검사를 안내한다", () => {
   const htmlQuest = {
     ...quest,
@@ -306,6 +349,7 @@ test("HTML Quest는 함수 계약 대신 직접 마크업 요구사항과 비실
     ],
   };
   const html = render({
+    languageId: "html",
     languageName: "HTML",
     evaluationKind: "html-dom-v1",
     quest: htmlQuest,
@@ -315,7 +359,10 @@ test("HTML Quest는 함수 계약 대신 직접 마크업 요구사항과 비실
   assert.match(html, /공개 검사 요구사항/);
   assert.match(html, /HTML 마크업/);
   assert.match(html, /코드를 동작시키지 않고 공개된 문서 구조 검사만 수행/);
-  assert.match(html, /&lt;main&gt;&lt;h1 class=&quot;title&quot;&gt;안녕/);
+  assert.match(html, /class="language-html"/);
+  assert.match(html, /code-token--tag[^>]*>main</);
+  assert.match(html, /code-token--property[^>]*>class</);
+  assert.match(html, /code-token--string[^>]*>&quot;title&quot;</);
   assert.match(html, /main 요소 안에 &lt;h1&gt;을 작성합니다/);
   assert.doesNotMatch(html, /함수 계약|함수 코드/);
   assert.doesNotMatch(html, /<script>/);
@@ -336,6 +383,7 @@ test("CSS Quest는 제공 HTML을 escape해 보여 주고 직접 스타일시트
     ],
   };
   const html = render({
+    languageId: "css",
     languageName: "CSS",
     evaluationKind: "css-style-v1",
     quest: cssQuest,
@@ -345,7 +393,11 @@ test("CSS Quest는 제공 HTML을 escape해 보여 주고 직접 스타일시트
   assert.match(html, /CSS 스타일시트/);
   assert.match(html, /제공 HTML/);
   assert.match(html, /고정 HTML에 적용해 공개된 규칙·스타일 검사만 수행/);
-  assert.match(html, /&lt;article class=&quot;card&quot;&gt;&lt;img src=x onerror=bad\(\)&gt;/);
-  assert.match(html, /\.card \{ display: grid; \}/);
+  assert.match(html, /class="language-html"/);
+  assert.match(html, /code-token--tag[^>]*>article</);
+  assert.match(html, /code-token--property[^>]*>onerror</);
+  assert.match(html, /class="language-css"/);
+  assert.match(html, /code-token--selector[^>]*>\.card</);
+  assert.match(html, /code-token--property[^>]*>display</);
   assert.doesNotMatch(html, /<article class="card">|<img src=x/);
 });

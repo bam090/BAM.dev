@@ -92,7 +92,7 @@ test("공통 Quest 메타데이터·학습 지원·공개 평가 필드를 모�
   ]);
 });
 
-test("평가는 실행 코드가 아니라 여덟 가지 허용목록 assertion만 표현한다", async () => {
+test("평가는 실행 코드가 아니라 열두 가지 허용목록 assertion만 표현한다", async () => {
   const schema = await loadSchema();
   const assertionRefs = schema.$defs.assertion.oneOf.map((entry) => entry.$ref);
 
@@ -102,9 +102,13 @@ test("평가는 실행 코드가 아니라 여덟 가지 허용목록 assertion�
     "#/$defs/selectorCountAssertion",
     "#/$defs/attributeEqualsAssertion",
     "#/$defs/textIncludesAssertion",
+    "#/$defs/nonblankAttributeCountAssertion",
+    "#/$defs/directChildTextEqualsAssertion",
     "#/$defs/ruleDeclarationAssertion",
     "#/$defs/mediaRuleDeclarationAssertion",
     "#/$defs/computedStyleAssertion",
+    "#/$defs/computedFocusStyleAssertion",
+    "#/$defs/computedGridColumnCountAssertion",
   ]);
   for (const definitionName of assertionRefs.map((ref) => ref.split("/").at(-1))) {
     const definition = schema.$defs[definitionName];
@@ -115,6 +119,37 @@ test("평가는 실행 코드가 아니라 여덟 가지 허용목록 assertion�
     assert.ok(!Object.hasOwn(definition.properties, "script"));
   }
   assert.deepEqual(schema.$defs.publicTest.required, ["id", "label", "assertion"]);
+  assert.deepEqual(schema.$defs.computedGridColumnCountAssertion.required, [
+    "kind",
+    "selector",
+    "viewportWidth",
+    "expected",
+  ]);
+  assert.equal(schema.$defs.computedGridColumnCountAssertion.properties.viewportWidth.minimum, 320);
+  assert.equal(schema.$defs.computedGridColumnCountAssertion.properties.viewportWidth.maximum, 1920);
+  assert.equal(schema.$defs.computedGridColumnCountAssertion.properties.expected.minimum, 1);
+  assert.equal(schema.$defs.computedGridColumnCountAssertion.properties.expected.maximum, 12);
+  assert.deepEqual(schema.$defs.nonblankAttributeCountAssertion.required, [
+    "kind",
+    "selector",
+    "attribute",
+    "expected",
+  ]);
+  assert.deepEqual(schema.$defs.directChildTextEqualsAssertion.required, [
+    "kind",
+    "selector",
+    "childSelector",
+    "childIndex",
+    "textSelector",
+    "expected",
+  ]);
+  assert.equal(schema.$defs.directChildTextEqualsAssertion.properties.childIndex.maximum, 99);
+  assert.deepEqual(schema.$defs.computedFocusStyleAssertion.required, [
+    "kind",
+    "selector",
+    "property",
+    "expected",
+  ]);
 });
 
 test("문제 수·예시 수·공개 테스트와 실패 설명 상한을 스키마에 고정한다", async () => {

@@ -37,6 +37,7 @@ const gradedAnswer = {
 
 function renderQuestion(overrides = {}) {
   return renderQuizQuestionView({
+    languageId: "javascript",
     languageName: "JavaScript",
     title: "JavaScript 객관식 복습",
     question,
@@ -45,6 +46,18 @@ function renderQuestion(overrides = {}) {
     answeredCount: 0,
     ...overrides,
   });
+}
+
+function quizCodeText(html) {
+  const markup = html.match(/<figure class="quiz-code">[\s\S]*?<code[^>]*>([\s\S]*?)<\/code>/)?.[1];
+  assert.notEqual(markup, undefined);
+  return markup
+    .replace(/<\/?span(?:\s[^>]*)?>/g, "")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#039;", "'")
+    .replaceAll("&amp;", "&");
 }
 
 test("교안과 구분된 실제 복습 링크를 렌더링한다", () => {
@@ -76,6 +89,31 @@ test("미선택 문제는 fieldset과 라디오 4개를 제공하고 정답 확�
   assert.match(html, /data-quiz-check disabled/);
   assert.match(html, /data-quiz-next aria-disabled="true"/);
   assert.match(html, /정답을 확인한 뒤 다음 문제로 이동할 수 있습니다/);
+  assert.match(html, /<pre class="syntax-code" tabindex="0" aria-label="JavaScript 문제 코드">/);
+  assert.match(html, /class="language-javascript"/);
+  assert.match(html, /code-token--keyword[^>]*>const</);
+  assert.match(html, /code-token--number[^>]*>1</);
+  assert.match(html, /class="code-line"/);
+});
+
+test("HTML이 섞인 복습 코드는 내부 script까지 자동으로 강조한다", () => {
+  const code = [
+    "<script>",
+    '  const button = document.querySelector("button"); // 아직 button이 없음',
+    "</script>",
+    "<button>확인</button>",
+    'const label = "확인";',
+  ].join("\n");
+  const html = renderQuestion({ question: { ...question, code } });
+
+  assert.match(html, /class="language-html-javascript"/);
+  assert.match(html, /code-token--tag[^>]*>script</);
+  assert.match(html, /code-token--keyword[^>]*>const</);
+  assert.match(html, /code-token--builtin[^>]*>document</);
+  assert.match(html, /code-token--comment[^>]*>\/\/ 아직 button이 없음</);
+  assert.match(html, /code-token--keyword[^>]*>const</);
+  assert.match(html, /code-token--string[^>]*>&quot;확인&quot;</);
+  assert.equal(quizCodeText(html), code);
 });
 
 test("선택한 미채점 문제는 확인 버튼을 활성화하되 정답 정보를 노출하지 않는다", () => {
@@ -105,10 +143,38 @@ test("문제·코드·선택지의 위험 문자열을 실행 가능한 HTML로 
   assert.ok(!html.includes("<script>"));
   assert.ok(!html.includes("<button>위험</button>"));
   assert.ok(!html.includes("<img src=x"));
-  assert.match(html, /&lt;\/code&gt;&lt;script&gt;/);
+  assert.equal(quizCodeText(html), maliciousQuestion.code);
   assert.match(html, /&lt;button&gt;위험&lt;\/button&gt;/);
   assert.match(html, /&quot; autofocus onfocus=&quot;/);
   assert.match(html, /&lt;em&gt;위험 언어&lt;\/em&gt;/);
+});
+
+test("문제·선택지·해설의 백틱 코드는 안전한 인라인 코드로 렌더링한다", () => {
+  const inlineQuestion = {
+    ...question,
+    prompt: "`total`과 <tag>를 확인하세요.",
+    options: question.options.map((option, index) => ({
+      ...option,
+      text: index === 0 ? "`console.log()` 사용" : option.text,
+    })),
+  };
+  const inlineGradedAnswer = {
+    ...gradedAnswer,
+    feedback: gradedAnswer.feedback.map((feedback, index) => ({
+      ...feedback,
+      message: index === 0 ? "`total`은 숫자입니다." : feedback.message,
+    })),
+  };
+  const html = renderQuestion({
+    question: inlineQuestion,
+    selectedOptionId: "a",
+    gradedAnswer: inlineGradedAnswer,
+  });
+
+  assert.match(html, /<code>total<\/code>과 &lt;tag&gt;/);
+  assert.match(html, /<code>console\.log\(\)<\/code> 사용/);
+  assert.match(html, /<code>total<\/code>은 숫자입니다/);
+  assert.doesNotMatch(html, /`(?:total|console\.log)/);
 });
 
 test("채점 후 선택지를 잠그고 정답 설명과 네 선택지 feedback을 모두 표시한다", () => {

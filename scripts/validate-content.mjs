@@ -8,6 +8,7 @@ import {
   assertValidWebCodeQuestCollection,
   createWebCodeQuestExecutionRequest,
 } from "../src/core/web-code-quest.js";
+import { assertValidWebProjectCollection } from "../src/core/web-project.js";
 import {
   areJsonValuesEqual,
   assertValidExecutionRequest,
@@ -187,6 +188,9 @@ export function validateSchemaValue(value, schema, rootSchema, valuePath, errors
     }
     if (schema.minimum !== undefined && value < schema.minimum) {
       errors.push(`${valuePath}: ${schema.minimum}보다 작습니다.`);
+    }
+    if (schema.maximum !== undefined && value > schema.maximum) {
+      errors.push(`${valuePath}: ${schema.maximum}보다 큽니다.`);
     }
   }
 }
@@ -668,6 +672,49 @@ if (!codingTestCollections.has("javascript")) {
   contentErrors.push("javascript: 4차 코딩테스트 콘텐츠가 없습니다.");
 }
 
+const webProjectSchemaPath = path.join(
+  projectRoot,
+  "content",
+  "schema",
+  "web-project.schema.json",
+);
+const webProjectContentPath = path.join(
+  projectRoot,
+  "content",
+  "web-projects",
+  "index.json",
+);
+let webProjectCollection = null;
+try {
+  const [webProjectSchemaText, webProjectContentText] = await Promise.all([
+    readFile(webProjectSchemaPath, "utf8"),
+    readFile(webProjectContentPath, "utf8"),
+  ]);
+  const webProjectSchema = JSON.parse(webProjectSchemaText);
+  const webProjectDocument = JSON.parse(webProjectContentText);
+  const schemaErrors = [];
+  validateSchemaValue(
+    webProjectDocument,
+    webProjectSchema,
+    webProjectSchema,
+    "$",
+    schemaErrors,
+  );
+  if (schemaErrors.length > 0) {
+    throw new Error(`JSON Schema 불일치:\n- ${schemaErrors.join("\n- ")}`);
+  }
+  webProjectCollection = assertValidWebProjectCollection(
+    webProjectDocument,
+    curriculum,
+  );
+  if (NON_PUBLIC_TEST_TERMS.test(JSON.stringify(webProjectCollection))) {
+    throw new Error("자동 검사를 비공개 테스트로 오해하게 하는 문구가 있습니다.");
+  }
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  contentErrors.push(`Web Project 콘텐츠 검증 실패 (${message})`);
+}
+
 if (contentErrors.length > 0) {
   throw new Error(`콘텐츠 파일 검증 실패:\n- ${contentErrors.join("\n- ")}`);
 }
@@ -678,8 +725,9 @@ const codingTestProblemCount = [...codingTestCollections.values()].reduce(
   (total, collection) => total + collection.problems.length,
   0,
 );
+const webProjectCount = webProjectCollection?.projects.length ?? 0;
 console.log(
-  `콘텐츠 검증 완료: 정식 언어 ${availableLanguages.length}개, 샘플 언어 ${sampleLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개, 코딩테스트 ${codingTestProblemCount}개`,
+  `콘텐츠 검증 완료: 정식 언어 ${availableLanguages.length}개, 샘플 언어 ${sampleLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개, 코딩테스트 ${codingTestProblemCount}개, Web Project ${webProjectCount}개`,
 );
 }
 

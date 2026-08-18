@@ -82,12 +82,12 @@ HTML·CSS Quest는 함수를 선언하지 않습니다. `instructions`, 문자�
 
 | 구분 | 추가 필드·공개 assertion |
 | --- | --- |
-| HTML `html-dom-v1` | 직접 마크업. `doctype-present`, `selector-exists`, `selector-count`, `attribute-equals`, `text-includes` |
-| CSS `css-style-v1` | 최대 32 KiB의 고정 `fixtureHtml`과 직접 스타일시트. `rule-declaration`, `media-rule-declaration`, `computed-style` |
+| HTML `html-dom-v1` | 직접 마크업. `doctype-present`, `selector-exists`, `selector-count`, `attribute-equals`, `text-includes`, `nonblank-attribute-count`, `direct-child-text-equals` |
+| CSS `css-style-v1` | 최대 32 KiB의 고정 `fixtureHtml`과 직접 스타일시트. `rule-declaration`, `media-rule-declaration`, `computed-style`, `computed-focus-style`, `computed-grid-column-count` |
 
-HTML doctype은 source 첫 선언과 문서 파서 결과를 함께 확인하고, 나머지 구조는 inert template DOM에서 검사합니다. CSS 선언과 최상위 미디어 조건 assertion은 정확한 규칙 안에 요구 선언이 존재하는지를 CSSOM에서 확인하고, 캐스케이드가 적용된 최종 결과는 `computed-style`로 구분합니다. 계산 스타일은 안전 검사를 통과한 고정 fixture를 one-shot sandbox iframe에 넣어 검사합니다. `fixtureHtml`은 콘텐츠 계약의 일부이며 학습자가 수정하거나 실행 요청에서 교체할 수 없습니다.
+HTML doctype은 source 첫 선언과 문서 파서 결과를 함께 확인하고, 나머지 구조는 inert template DOM에서 검사합니다. CSS 선언과 최상위 미디어 조건 assertion은 정확한 규칙 안의 최종 같은-selector 선언을 CSSOM에서 확인하고, 서로 다른 selector의 우선순위까지 적용된 최종 결과는 `computed-style`로 구분합니다. `computed-focus-style`은 실제 `:focus-visible` 상태를 활성화한 뒤 최종 계산값을 읽습니다. 계산 스타일은 안전 검사를 통과한 고정 fixture를 one-shot sandbox iframe에 넣어 검사합니다. `fixtureHtml`은 콘텐츠 계약의 일부이며 학습자가 수정하거나 실행 요청에서 교체할 수 없습니다.
 
-HTML·CSS의 시작 코드·예시·fixture·학습자 소스는 평가 전에 공통 preflight를 통과해야 합니다. HTML은 실행 요소, 이벤트 속성, 외부 리소스와 탐색을 시작할 수 있는 속성을 거부하고 CSS는 `@import`, `url()`, 외부 URL과 레거시 실행 구문을 거부합니다. 상세 경계와 한계는 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)에 기록합니다.
+HTML·CSS의 시작 코드·예시·fixture·학습자 소스는 평가 전에 공통 preflight를 통과해야 합니다. HTML은 비정상·미종료 주석, 실행 요소, 이벤트 속성, 문자 참조 우회를 포함한 meta refresh, `ping` 등 외부 리소스와 탐색을 시작할 수 있는 속성을 거부하며 `href`는 같은 문서의 `#fragment`만 허용합니다. CSS는 `@import`, `url()`, 외부 URL과 레거시 실행 구문을 거부합니다. 상세 경계와 한계는 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)에 기록합니다.
 
 Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 참조, 평가 종류와 언어의 일치, `failureExplanations`의 1:1 대응, 힌트 단계 순서는 `npm run validate:content`와 전용 콘텐츠 테스트로 검증합니다. 현재 콘텐츠는 JavaScript 5개, HTML 5개, CSS 4개입니다. 브라우저에 포함되는 모든 assertion과 기대값은 공개 테스트이며 비밀 또는 숨김 테스트라고 표현하지 않습니다. 전체 작성 규칙은 [Code Quest 작성 가이드](code-quest-authoring.md)를 따릅니다.
 
@@ -110,3 +110,11 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 | `failureExplanations` | 각 공개 테스트에 정확히 하나씩 대응하는 확인 지점 |
 
 `테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 같은 브라우저 공개 데이터이며 비밀·숨김 테스트가 아닙니다. 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/coding-test-content.test.js`에서 실제 JavaScript 런타임으로 검증합니다.
+
+## Web Project 컬렉션
+
+`content/web-projects/index.json`은 HTML·CSS를 함께 작성하는 작은 프로젝트를 정의합니다. `content/schema/web-project.schema.json`과 런타임 계약을 함께 적용하며, 프로젝트는 `web-project-` 안정 ID, URL용 `slug`, `revision`, 연속된 `order`와 실제 교안·개념을 가리키는 `conceptRefs`를 가집니다.
+
+v1 프로젝트는 `index.html`과 `styles.css` 두 파일만 사용합니다. 공개 자동 기준은 HTML DOM·CSSOM assertion과 실패 설명을 포함하고 합계가 정확히 70점이어야 합니다. 사람이 미리보기를 보고 판단해야 하는 기준은 세 단계 자가평가 scale로 분리하며 합계가 정확히 30점이어야 합니다. 자동 평가기 오류·취소·미실행은 0점으로 확정하지 않고, 자가평가가 끝나기 전에는 전체 임시 점수를 숫자로 표시하지 않습니다.
+
+시작 코드·기준답안·대표오답·학습자 제출은 같은 HTML·CSS source preflight와 파일 크기 제한을 통과해야 합니다. Web Project HTML에는 `style` 요소와 `style` 속성을 허용하지 않아 CSS 계산 기준이 `styles.css` 제출만 평가하게 합니다. 브라우저에 포함되는 assertion은 모두 공개 기준이며, 자세한 파일·제출·점수 계약과 독립 검증 절차는 [Web Project 작성 가이드](web-project-authoring.md)를 따릅니다.

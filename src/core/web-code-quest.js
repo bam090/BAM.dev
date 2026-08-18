@@ -23,11 +23,15 @@ const HTML_ASSERTION_KINDS = new Set([
   "selector-count",
   "attribute-equals",
   "text-includes",
+  "nonblank-attribute-count",
+  "direct-child-text-equals",
 ]);
 const CSS_ASSERTION_KINDS = new Set([
   "rule-declaration",
   "media-rule-declaration",
   "computed-style",
+  "computed-grid-column-count",
+  "computed-focus-style",
 ]);
 const COLLECTION_FIELDS = new Set([
   "schemaVersion",
@@ -153,14 +157,42 @@ function isExternalUrlText(value) {
   return /(?:^|[\s"'=])(https?:|data:|javascript:|blob:|file:|\/\/)/iu.test(value);
 }
 
-function hasInlineEventHandlerAttribute(source) {
+function decodeCssEscapes(source) {
+  return source.replace(
+    /\\(?:([0-9a-f]{1,6})(?:\r\n|[\t\n\f\r ])?|(\r\n|[\n\f\r])|(.))/giu,
+    (_match, hexadecimal, newline, escapedCharacter) => {
+      if (hexadecimal !== undefined) {
+        const codePoint = Number.parseInt(hexadecimal, 16);
+        return codePoint === 0 ||
+          codePoint > 0x10ffff ||
+          (codePoint >= 0xd800 && codePoint <= 0xdfff)
+          ? "\uFFFD"
+          : String.fromCodePoint(codePoint);
+      }
+      return newline === undefined ? escapedCharacter : "";
+    },
+  );
+}
+
+function findUnsafeHtmlAttribute(source, { disallowInlineStyles = false } = {}) {
   let index = 0;
   while (index < source.length) {
     const tagStart = source.indexOf("<", index);
-    if (tagStart < 0) return false;
+    if (tagStart < 0) return null;
     if (source.startsWith("<!--", tagStart)) {
       const commentEnd = source.indexOf("-->", tagStart + 4);
-      index = commentEnd < 0 ? source.length : commentEnd + 3;
+      const browserRecoveredEnd = source.indexOf("--!>", tagStart + 4);
+      const hasAbruptEmptyEnd =
+        source.startsWith("<!-->", tagStart) ||
+        source.startsWith("<!--->", tagStart);
+      if (
+        commentEnd < 0 ||
+        hasAbruptEmptyEnd ||
+        (browserRecoveredEnd >= 0 && browserRecoveredEnd < commentEnd)
+      ) {
+        return "malformed_comment";
+      }
+      index = commentEnd + 3;
       continue;
     }
 
@@ -170,7 +202,10 @@ function hasInlineEventHandlerAttribute(source) {
       index = tagStart + 1;
       continue;
     }
+    const tagNameStart = cursor;
     while (/[^\t\n\f\r />]/u.test(source[cursor] ?? "")) cursor += 1;
+    const tagName = source.slice(tagNameStart, cursor).toLowerCase();
+    if (disallowInlineStyles && tagName === "style") return "inline_style";
 
     while (cursor < source.length) {
       while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
@@ -189,25 +224,43 @@ function hasInlineEventHandlerAttribute(source) {
         cursor += 1;
         continue;
       }
-      const attributeName = source.slice(nameStart, cursor);
-      if (/^on[a-z0-9_-]+$/iu.test(attributeName)) return true;
+      const attributeName = source.slice(nameStart, cursor).toLowerCase();
 
       while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
-      if (source[cursor] !== "=") continue;
-      cursor += 1;
-      while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
-      const quote = source[cursor];
-      if (quote === '"' || quote === "'") {
+      let attributeValue = null;
+      if (source[cursor] === "=") {
         cursor += 1;
-        while (cursor < source.length && source[cursor] !== quote) cursor += 1;
-        if (source[cursor] === quote) cursor += 1;
-      } else {
-        while (/[^\t\n\f\r >]/u.test(source[cursor] ?? "")) cursor += 1;
+        while (/[\t\n\f\r ]/u.test(source[cursor] ?? "")) cursor += 1;
+        const quote = source[cursor];
+        if (quote === '"' || quote === "'") {
+          cursor += 1;
+          const valueStart = cursor;
+          while (cursor < source.length && source[cursor] !== quote) cursor += 1;
+          attributeValue = source.slice(valueStart, cursor);
+          if (source[cursor] === quote) cursor += 1;
+        } else {
+          const valueStart = cursor;
+          while (/[^\t\n\f\r >]/u.test(source[cursor] ?? "")) cursor += 1;
+          attributeValue = source.slice(valueStart, cursor);
+        }
+      }
+
+      if (/^on[a-z0-9_-]+$/u.test(attributeName)) return "event_handler";
+      if (disallowInlineStyles && attributeName === "style") return "inline_style";
+      if (tagName === "meta" && attributeName === "http-equiv") {
+        const httpEquiv = attributeValue?.trim() ?? "";
+        if (/^refresh$/iu.test(httpEquiv) || httpEquiv.includes("&")) {
+          return "meta_refresh";
+        }
+      }
+      if (attributeName === "href" || attributeName.endsWith(":href")) {
+        const href = attributeValue?.trim() ?? "";
+        if (!/^#[^\u0000-\u0020"'<>`]*$/u.test(href)) return "non_fragment_href";
       }
     }
     index = Math.max(cursor, tagStart + 1);
   }
-  return false;
+  return null;
 }
 
 /**
@@ -215,7 +268,11 @@ function hasInlineEventHandlerAttribute(source) {
  * learner submissions, and CSS fixtures. The evaluators never execute scripts
  * and never insert learner HTML into BAM.dev's main document.
  */
-export function findWebCodeQuestSourceIssue(evaluationKind, source, { fixture = false } = {}) {
+export function findWebCodeQuestSourceIssue(
+  evaluationKind,
+  source,
+  { fixture = false, disallowInlineStyles = false } = {},
+) {
   if (typeof source !== "string" || source.trim().length === 0) {
     return { code: "empty_source", message: "source는 비어 있지 않은 문자열이어야 합니다." };
   }
@@ -243,13 +300,34 @@ export function findWebCodeQuestSourceIssue(evaluationKind, source, { fixture = 
         message: "외부 문서나 기준 URL을 불러오는 base, link 요소는 사용할 수 없습니다.",
       };
     }
-    if (/<\s*meta\b[^>]*http-equiv\s*=\s*["']?refresh\b/iu.test(source)) {
+    const unsafeAttribute = findUnsafeHtmlAttribute(source, {
+      disallowInlineStyles,
+    });
+    if (unsafeAttribute === "meta_refresh") {
       return { code: "meta_refresh", message: "자동 이동을 만드는 meta refresh는 사용할 수 없습니다." };
     }
-    if (hasInlineEventHandlerAttribute(source)) {
+    if (unsafeAttribute === "malformed_comment") {
+      return {
+        code: "malformed_comment",
+        message: "HTML 주석은 <!-- 내용 --> 형식으로 완전히 닫아야 합니다.",
+      };
+    }
+    if (unsafeAttribute === "inline_style") {
+      return {
+        code: "inline_style",
+        message: "이 HTML에서는 style 요소와 style 속성을 사용할 수 없습니다.",
+      };
+    }
+    if (unsafeAttribute === "event_handler") {
       return { code: "event_handler", message: "이벤트 핸들러 속성은 사용할 수 없습니다." };
     }
-    if (/\b(?:src|srcset|poster|data|action|formaction)\s*=/iu.test(source)) {
+    if (unsafeAttribute === "non_fragment_href") {
+      return {
+        code: "navigation_attribute",
+        message: "href는 같은 문서 안의 #fragment 링크만 사용할 수 있습니다.",
+      };
+    }
+    if (/\b(?:src|srcset|poster|data|action|formaction|ping)\s*=/iu.test(source)) {
       return {
         code: "resource_attribute",
         message: "네트워크나 탐색을 시작할 수 있는 리소스 속성은 사용할 수 없습니다.",
@@ -262,13 +340,14 @@ export function findWebCodeQuestSourceIssue(evaluationKind, source, { fixture = 
   }
 
   if (evaluationKind === WEB_CODE_QUEST_EVALUATION_KINDS.CSS) {
-    if (/@import\b/iu.test(source)) {
+    const normalizedSource = decodeCssEscapes(source);
+    if (/@import\b/iu.test(normalizedSource)) {
       return { code: "css_import", message: "CSS @import는 사용할 수 없습니다." };
     }
-    if (/url\s*\(/iu.test(source) || isExternalUrlText(source)) {
+    if (/url\s*\(/iu.test(normalizedSource) || isExternalUrlText(normalizedSource)) {
       return { code: "external_url", message: "CSS 외부 URL은 사용할 수 없습니다." };
     }
-    if (/\b(?:expression|behavior)\s*[:(]|-moz-binding\s*:/iu.test(source)) {
+    if (/\b(?:expression|behavior)\s*[:(]|-moz-binding\s*:/iu.test(normalizedSource)) {
       return { code: "legacy_execution", message: "실행 동작을 만들 수 있는 CSS 구문은 사용할 수 없습니다." };
     }
     return null;
@@ -285,8 +364,28 @@ function assertionFields(kind) {
     return new Set(["kind", "selector", "attribute", "expected"]);
   }
   if (kind === "text-includes") return new Set(["kind", "selector", "expected"]);
-  if (kind === "rule-declaration" || kind === "computed-style") {
+  if (kind === "nonblank-attribute-count") {
+    return new Set(["kind", "selector", "attribute", "expected"]);
+  }
+  if (kind === "direct-child-text-equals") {
+    return new Set([
+      "kind",
+      "selector",
+      "childSelector",
+      "childIndex",
+      "textSelector",
+      "expected",
+    ]);
+  }
+  if (
+    kind === "rule-declaration" ||
+    kind === "computed-style" ||
+    kind === "computed-focus-style"
+  ) {
     return new Set(["kind", "selector", "property", "expected"]);
+  }
+  if (kind === "computed-grid-column-count") {
+    return new Set(["kind", "selector", "viewportWidth", "expected"]);
   }
   if (kind === "media-rule-declaration") {
     return new Set(["kind", "condition", "selector", "property", "expected"]);
@@ -314,9 +413,15 @@ function validateAssertion(value, evaluationKind, label, errors) {
       errors.push(`${label}.selector는 1~200자의 문자열이어야 합니다.`);
     }
   }
-  if (value.kind === "selector-count") {
+  if (value.kind === "selector-count" || value.kind === "nonblank-attribute-count") {
     if (!Number.isSafeInteger(value.expected) || value.expected < 0) {
       errors.push(`${label}.expected는 0 이상의 안전한 정수여야 합니다.`);
+    }
+    if (
+      value.kind === "nonblank-attribute-count" &&
+      (!isNonEmptyString(value.attribute) || !ATTRIBUTE_NAME_PATTERN.test(value.attribute))
+    ) {
+      errors.push(`${label}.attribute 형식이 올바르지 않습니다.`);
     }
   } else if (value.kind === "attribute-equals") {
     if (!isNonEmptyString(value.attribute) || !ATTRIBUTE_NAME_PATTERN.test(value.attribute)) {
@@ -325,6 +430,27 @@ function validateAssertion(value, evaluationKind, label, errors) {
     if (typeof value.expected !== "string") errors.push(`${label}.expected는 문자열이어야 합니다.`);
   } else if (value.kind === "text-includes") {
     if (!isNonEmptyString(value.expected)) errors.push(`${label}.expected가 필요합니다.`);
+  } else if (value.kind === "direct-child-text-equals") {
+    for (const field of ["childSelector", "textSelector"]) {
+      if (!isNonEmptyString(value[field]) || value[field].length > 200) {
+        errors.push(`${label}.${field}는 1~200자의 문자열이어야 합니다.`);
+      }
+    }
+    if (!Number.isSafeInteger(value.childIndex) || value.childIndex < 0 || value.childIndex > 99) {
+      errors.push(`${label}.childIndex는 0~99의 안전한 정수여야 합니다.`);
+    }
+    if (!isNonEmptyString(value.expected)) errors.push(`${label}.expected가 필요합니다.`);
+  } else if (value.kind === "computed-grid-column-count") {
+    if (
+      !Number.isSafeInteger(value.viewportWidth) ||
+      value.viewportWidth < 320 ||
+      value.viewportWidth > 1920
+    ) {
+      errors.push(`${label}.viewportWidth는 320~1920의 안전한 정수여야 합니다.`);
+    }
+    if (!Number.isSafeInteger(value.expected) || value.expected < 1 || value.expected > 12) {
+      errors.push(`${label}.expected는 1~12의 안전한 정수여야 합니다.`);
+    }
   } else if (CSS_ASSERTION_KINDS.has(value.kind)) {
     if (
       value.kind === "media-rule-declaration" &&
@@ -345,7 +471,8 @@ export function getWebAssertionExpected(assertion) {
   if (
     assertion.kind === "doctype-present" ||
     assertion.kind === "selector-exists" ||
-    assertion.kind === "text-includes"
+    assertion.kind === "text-includes" ||
+    assertion.kind === "direct-child-text-equals"
   ) {
     return true;
   }

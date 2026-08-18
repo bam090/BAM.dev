@@ -174,6 +174,7 @@ export const cssCodeQuestSolutionFixtures = {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }`,
         expectedFailingPublicTestIds: [
+          "css-course-grid-mobile-columns-rule",
           "css-course-grid-tablet-columns-rule",
           "css-course-grid-wide-columns-rule",
         ],

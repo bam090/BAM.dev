@@ -94,10 +94,36 @@ test("HTML 코드 블록은 태그·속성·문자열을 안전하게 강조한�
   assert.match(result, /code-token--tag[^>]*>html</);
   assert.match(result, /code-token--property[^>]*>lang</);
   assert.match(result, /code-token--string[^>]*>&quot;ko&quot;</);
-  assert.match(result, /<pre tabindex="0" aria-label="html 코드 예제">/);
+  assert.match(result, /<pre class="syntax-code" tabindex="0" aria-label="html 코드 예제">/);
   assert.equal((result.match(/class="code-line"/g) ?? []).length, 6);
   assert.equal(originalCodeFrom(result), source);
   assert.doesNotMatch(result, /<!doctype html>|<html lang=|<script src=/);
+});
+
+test("HTML의 script와 style 본문도 각각 JavaScript와 CSS로 강조한다", () => {
+  const source = [
+    "<script>",
+    '  const button = document.querySelector("button"); // 아직 button이 없음',
+    '  const markup = "<img src=x onerror=alert(1)>";',
+    "</script>",
+    "<style>",
+    "  .notice:hover { color: #a7f3d0; }",
+    "</style>",
+    "<button>확인</button>",
+  ].join("\n");
+  const result = renderMarkdown(["```html", source, "```"].join("\n"));
+
+  assert.match(result, /code-token--keyword[^>]*>const</);
+  assert.match(result, /code-token--builtin[^>]*>document</);
+  assert.match(result, /code-token--function[^>]*>querySelector</);
+  assert.match(result, /code-token--string[^>]*>&quot;button&quot;</);
+  assert.match(result, /code-token--comment[^>]*>\/\/ 아직 button이 없음</);
+  assert.match(result, /code-token--selector[^>]*>\.notice:hover</);
+  assert.match(result, /code-token--property[^>]*>color</);
+  assert.match(result, /code-token--number[^>]*>#a7f3d0</);
+  assert.match(result, /code-token--tag[^>]*>button</);
+  assert.doesNotMatch(result, /<img\b/);
+  assert.equal(originalCodeFrom(result), source);
 });
 
 test("JavaScript와 CSS 코드 블록은 주요 토큰을 구분한다", () => {
@@ -184,14 +210,65 @@ test("복사 버튼은 장식된 코드 DOM이 아니라 별도로 보존한 원
   );
 });
 
+test("Code Quest 강조 레이어는 입력 원문을 이스케이프하고 양축 스크롤을 동기화한다", () => {
+  const viewport = { scrollTop: 0, scrollLeft: 0 };
+  const highlight = {
+    innerHTML: "",
+    closest(selector) {
+      assert.equal(selector, ".quest-source-highlight");
+      return viewport;
+    },
+  };
+  const source = '</code><script>alert("x")</script>\nconst answer = 42;';
+  const editor = { value: source, scrollTop: 88, scrollLeft: 31 };
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    codeQuestCollection: { languageId: "javascript" },
+    root: {
+      querySelector(selector) {
+        if (selector === "[data-quest-source]") return editor;
+        if (selector === "[data-quest-source-highlight]") return highlight;
+        return null;
+      },
+    },
+  });
+
+  app.syncCodeQuestEditorHighlight(editor);
+
+  assert.match(highlight.innerHTML, /&lt;\//);
+  assert.match(highlight.innerHTML, /code/);
+  assert.doesNotMatch(highlight.innerHTML, /<script>/);
+  assert.match(highlight.innerHTML, /code-token--keyword[^>]*>const</);
+  assert.equal(viewport.scrollTop, 88);
+  assert.equal(viewport.scrollLeft, 31);
+});
+
 test("코드 스포트라이트는 키보드 포커스·가로 스크롤·reduced-motion을 보존한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
 
   assert.match(css, /\.code-card pre\s*\{[^}]*overflow:\s*auto/s);
-  assert.match(css, /\.code-card pre:focus-visible\s*\{/);
-  assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)[\s\S]*?\.code-card \.code-line:hover/);
-  assert.match(css, /\.code-card code:hover \.code-line:not\(:hover\)\s*\{[^}]*opacity:\s*0\.75/s);
+  assert.match(css, /\.syntax-code:focus-visible\s*\{/);
+  assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)[\s\S]*?\.syntax-code \.code-line:hover/);
+  assert.match(css, /\.syntax-code code:hover \.code-line:not\(:hover\)\s*\{[^}]*opacity:\s*0\.75/s);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.code-line\s*\{[^}]*transition:\s*none/s);
+});
+
+test("Quest 편집기 강조는 입력을 가리지 않고 모바일·고대비 모드를 보존한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const shellRule = css.match(/\.quest-editor-shell\s*\{([^}]*)\}/)?.[1] ?? "";
+  const highlightRule = css.match(/\.quest-source-highlight\s*\{([^}]*)\}/)?.[1] ?? "";
+  const editorRule = css.match(/#quest-source\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.match(shellRule, /position:\s*relative/);
+  assert.match(shellRule, /min-width:\s*0/);
+  assert.match(highlightRule, /position:\s*absolute/);
+  assert.match(highlightRule, /pointer-events:\s*none/);
+  assert.match(highlightRule, /overflow:\s*hidden/);
+  assert.match(editorRule, /color:\s*transparent/);
+  assert.match(editorRule, /-webkit-text-fill-color:\s*transparent/);
+  assert.match(css, /@media \(max-width: 600px\)[\s\S]*?#quest-source,[\s\S]*?\.quest-source-highlight\s*\{[^}]*padding:\s*13px/s);
+  assert.match(css, /@media \(forced-colors: active\)[\s\S]*?\.quest-source-highlight\s*\{[^}]*display:\s*none/s);
+  assert.match(css, /@media \(forced-colors: active\)[\s\S]*?#quest-source\s*\{[^}]*color:\s*CanvasText/s);
 });
 
 test("javascript URL은 링크로 허용하지 않는다", () => {

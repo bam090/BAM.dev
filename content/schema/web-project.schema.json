@@ -1,82 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://bam.dev/schema/web-code-quest.schema.json",
-  "title": "BAM.dev HTML and CSS Code Quest collection",
+  "$id": "https://bam.dev/schema/web-project.schema.json",
+  "title": "BAM.dev Web Project collection",
   "type": "object",
-  "required": [
-    "schemaVersion",
-    "contractVersion",
-    "evaluationKind",
-    "languageId",
-    "title",
-    "quests"
-  ],
+  "required": ["schemaVersion", "contractVersion", "title", "projects"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "contractVersion": { "const": 1 },
-    "evaluationKind": { "enum": ["html-dom-v1", "css-style-v1"] },
-    "languageId": { "enum": ["html", "css"] },
-    "title": { "type": "string", "minLength": 1 },
-    "quests": {
+    "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+    "projects": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/quest" }
+      "maxItems": 20,
+      "items": { "$ref": "#/$defs/project" }
     }
   },
-  "allOf": [
-    {
-      "if": {
-        "properties": { "evaluationKind": { "const": "html-dom-v1" } },
-        "required": ["evaluationKind"]
-      },
-      "then": {
-        "properties": {
-          "languageId": { "const": "html" },
-          "quests": {
-            "items": {
-              "not": { "required": ["fixtureHtml"] },
-              "properties": {
-                "id": { "pattern": "^quest-html-[a-z0-9]+(?:-[a-z0-9]+)*$" },
-                "publicTests": {
-                  "items": {
-                    "properties": {
-                      "assertion": { "$ref": "#/$defs/htmlAssertion" }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": { "evaluationKind": { "const": "css-style-v1" } },
-        "required": ["evaluationKind"]
-      },
-      "then": {
-        "properties": {
-          "languageId": { "const": "css" },
-          "quests": {
-            "items": {
-              "required": ["fixtureHtml"],
-              "properties": {
-                "id": { "pattern": "^quest-css-[a-z0-9]+(?:-[a-z0-9]+)*$" },
-                "publicTests": {
-                  "items": {
-                    "properties": {
-                      "assertion": { "$ref": "#/$defs/cssAssertion" }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  ],
   "additionalProperties": false,
   "$defs": {
     "stableId": {
@@ -85,106 +23,158 @@
     },
     "conceptId": {
       "type": "string",
-      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
     },
-    "quest": {
+    "safePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[a-z0-9][a-z0-9._-]*(?:/[a-z0-9][a-z0-9._-]*)*$"
+    },
+    "project": {
       "type": "object",
       "required": [
         "id",
         "slug",
         "revision",
         "order",
-        "lessonId",
-        "conceptIds",
-        "difficulty",
-        "estimatedMinutes",
         "title",
         "summary",
+        "difficulty",
+        "estimatedMinutes",
         "instructions",
-        "starterCode",
         "requirements",
-        "examples",
-        "publicTests",
-        "failureExplanations",
-        "hints",
-        "commonMistakes"
+        "conceptRefs",
+        "files",
+        "automaticCriteria",
+        "manualCriteria"
       ],
       "properties": {
         "id": {
           "type": "string",
-          "pattern": "^quest-(?:html|css)-[a-z0-9]+(?:-[a-z0-9]+)*$"
+          "pattern": "^web-project-[a-z0-9]+(?:-[a-z0-9]+)*$"
         },
         "slug": { "$ref": "#/$defs/stableId" },
         "revision": { "type": "integer", "minimum": 1 },
         "order": { "type": "integer", "minimum": 1 },
-        "lessonId": { "$ref": "#/$defs/stableId" },
-        "conceptIds": {
-          "type": "array",
-          "minItems": 1,
-          "uniqueItems": true,
-          "items": { "$ref": "#/$defs/conceptId" }
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "summary": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "difficulty": {
+          "enum": ["beginner", "intermediate", "advanced"]
         },
-        "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
-        "estimatedMinutes": { "type": "integer", "minimum": 1 },
-        "title": { "type": "string", "minLength": 1 },
-        "summary": { "type": "string", "minLength": 1 },
-        "instructions": { "type": "string", "minLength": 1 },
-        "starterCode": { "type": "string", "minLength": 1 },
-        "fixtureHtml": { "type": "string", "minLength": 1 },
+        "estimatedMinutes": { "type": "integer", "minimum": 10, "maximum": 480 },
+        "instructions": { "type": "string", "minLength": 1, "maxLength": 3000 },
         "requirements": {
           "type": "array",
           "minItems": 1,
+          "maxItems": 20,
           "uniqueItems": true,
-          "items": { "type": "string", "minLength": 1 }
+          "items": { "type": "string", "minLength": 1, "maxLength": 300 }
         },
-        "examples": {
+        "conceptRefs": {
           "type": "array",
           "minItems": 1,
-          "maxItems": 3,
-          "items": { "$ref": "#/$defs/example" }
+          "maxItems": 8,
+          "items": { "$ref": "#/$defs/conceptRef" }
         },
-        "publicTests": {
+        "files": {
           "type": "array",
-          "minItems": 3,
-          "maxItems": 6,
-          "items": { "$ref": "#/$defs/publicTest" }
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "$ref": "#/$defs/projectFile" }
         },
-        "failureExplanations": {
-          "type": "array",
-          "minItems": 3,
-          "maxItems": 6,
-          "items": { "$ref": "#/$defs/failureExplanation" }
-        },
-        "hints": {
-          "type": "array",
-          "minItems": 3,
-          "maxItems": 5,
-          "items": { "$ref": "#/$defs/hint" }
-        },
-        "commonMistakes": {
+        "automaticCriteria": {
           "type": "array",
           "minItems": 1,
-          "items": { "$ref": "#/$defs/commonMistake" }
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/automaticCriterion" }
+        },
+        "manualCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": { "$ref": "#/$defs/manualCriterion" }
         }
       },
       "additionalProperties": false
     },
-    "example": {
+    "conceptRef": {
       "type": "object",
-      "required": ["source", "explanation"],
+      "required": ["lessonId", "conceptIds"],
       "properties": {
-        "source": { "type": "string", "minLength": 1 },
-        "explanation": { "type": "string", "minLength": 1 }
+        "lessonId": { "$ref": "#/$defs/stableId" },
+        "conceptIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/conceptId" }
+        }
       },
       "additionalProperties": false
     },
-    "publicTest": {
+    "projectFile": {
       "type": "object",
-      "required": ["id", "label", "assertion"],
+      "required": ["path", "languageId", "starterSource"],
+      "properties": {
+        "path": { "$ref": "#/$defs/safePath" },
+        "languageId": { "enum": ["html", "css"] },
+        "starterSource": { "type": "string", "minLength": 1, "maxLength": 20480 }
+      },
+      "additionalProperties": false
+    },
+    "automaticCriterion": {
+      "type": "object",
+      "required": [
+        "id",
+        "order",
+        "title",
+        "description",
+        "failureMessage",
+        "maxPoints",
+        "filePath",
+        "evaluationKind",
+        "assertion"
+      ],
       "properties": {
         "id": { "$ref": "#/$defs/stableId" },
-        "label": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "failureMessage": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "maxPoints": { "type": "integer", "minimum": 1, "maximum": 70 },
+        "filePath": { "$ref": "#/$defs/safePath" },
+        "evaluationKind": { "enum": ["html-dom-v1", "css-style-v1"] },
         "assertion": { "$ref": "#/$defs/assertion" }
+      },
+      "additionalProperties": false
+    },
+    "manualCriterion": {
+      "type": "object",
+      "required": ["id", "order", "title", "description", "maxPoints", "scale"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "order": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "maxPoints": { "type": "integer", "minimum": 2, "maximum": 30 },
+        "scale": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/scaleLevel" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "scaleLevel": {
+      "type": "object",
+      "required": ["id", "label", "description", "points"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "description": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "points": { "type": "integer", "minimum": 0, "maximum": 30 }
       },
       "additionalProperties": false
     },
@@ -204,32 +194,10 @@
         { "$ref": "#/$defs/computedGridColumnCountAssertion" }
       ]
     },
-    "htmlAssertion": {
-      "oneOf": [
-        { "$ref": "#/$defs/doctypePresentAssertion" },
-        { "$ref": "#/$defs/selectorExistsAssertion" },
-        { "$ref": "#/$defs/selectorCountAssertion" },
-        { "$ref": "#/$defs/attributeEqualsAssertion" },
-        { "$ref": "#/$defs/textIncludesAssertion" },
-        { "$ref": "#/$defs/nonblankAttributeCountAssertion" },
-        { "$ref": "#/$defs/directChildTextEqualsAssertion" }
-      ]
-    },
-    "cssAssertion": {
-      "oneOf": [
-        { "$ref": "#/$defs/ruleDeclarationAssertion" },
-        { "$ref": "#/$defs/mediaRuleDeclarationAssertion" },
-        { "$ref": "#/$defs/computedStyleAssertion" },
-        { "$ref": "#/$defs/computedFocusStyleAssertion" },
-        { "$ref": "#/$defs/computedGridColumnCountAssertion" }
-      ]
-    },
     "doctypePresentAssertion": {
       "type": "object",
       "required": ["kind"],
-      "properties": {
-        "kind": { "const": "doctype-present" }
-      },
+      "properties": { "kind": { "const": "doctype-present" } },
       "additionalProperties": false
     },
     "selectorExistsAssertion": {
@@ -374,36 +342,6 @@
         "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
         "viewportWidth": { "type": "integer", "minimum": 320, "maximum": 1920 },
         "expected": { "type": "integer", "minimum": 1, "maximum": 12 }
-      },
-      "additionalProperties": false
-    },
-    "failureExplanation": {
-      "type": "object",
-      "required": ["testId", "message"],
-      "properties": {
-        "testId": { "$ref": "#/$defs/stableId" },
-        "message": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "hint": {
-      "type": "object",
-      "required": ["level", "stage", "title", "content"],
-      "properties": {
-        "level": { "type": "integer", "minimum": 1 },
-        "stage": { "enum": ["concept", "observation", "implementation"] },
-        "title": { "type": "string", "minLength": 1 },
-        "content": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "commonMistake": {
-      "type": "object",
-      "required": ["id", "title", "explanation"],
-      "properties": {
-        "id": { "$ref": "#/$defs/stableId" },
-        "title": { "type": "string", "minLength": 1 },
-        "explanation": { "type": "string", "minLength": 1 }
       },
       "additionalProperties": false
     }

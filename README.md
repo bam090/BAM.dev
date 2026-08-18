@@ -2,9 +2,9 @@
 
 BAM.dev는 프로그래밍 문법을 읽는 데서 멈추지 않고, 개념을 설명하고 직접 구현하며 한 명의 개발자로 성장하도록 돕는 학습 가이드입니다.
 
-현재 구현 범위는 **0~5차와 확장 검증 게이트**입니다. JavaScript·HTML·CSS 3개 언어를 정식 과정으로, Java를 언어 독립성 검증용 샘플로 제공합니다. 전체 콘텐츠는 교안 19개(JavaScript 7·HTML 5·CSS 6·Java 1), 객관식 39문항(14·12·12·1), Code Quest 14개(JavaScript 5·HTML 5·CSS 4), JavaScript 코딩테스트 6문제입니다.
+현재 구현 범위는 **0~6차와 확장 검증 게이트**입니다. JavaScript·HTML·CSS 3개 언어를 정식 과정으로, Java를 언어 독립성 검증용 샘플로 제공합니다. 전체 콘텐츠는 교안 19개(JavaScript 7·HTML 5·CSS 6·Java 1), 객관식 39문항(14·12·12·1), Code Quest 14개(JavaScript 5·HTML 5·CSS 4), JavaScript 코딩테스트 6문제와 HTML·CSS Web Project 1개입니다.
 
-Code Quest에서는 언어의 실제 작성 단위를 그대로 편집합니다. JavaScript는 함수를, HTML은 JavaScript 래퍼 없는 마크업을, CSS는 JavaScript 래퍼 없는 스타일시트를 작성합니다. HTML은 소스를 실행하지 않고 inert DOM과 doctype을 공개 검사하며, CSS는 안전 검사를 통과한 고정 HTML fixture에 스타일을 적용해 CSSOM 규칙·미디어 조건·계산 스타일을 공개 검사합니다. 코딩테스트의 `테스트 실행`과 `제출 및 채점`을 포함해 브라우저에 전달되는 모든 테스트는 공개 테스트입니다.
+Code Quest에서는 언어의 실제 작성 단위를 그대로 편집합니다. JavaScript는 함수를, HTML은 JavaScript 래퍼 없는 마크업을, CSS는 JavaScript 래퍼 없는 스타일시트를 작성합니다. HTML은 소스를 실행하지 않고 inert DOM과 doctype을 공개 검사하며, CSS는 안전 검사를 통과한 고정 HTML fixture에 스타일을 적용해 CSSOM 규칙·미디어 조건·계산 스타일을 공개 검사합니다. Web Project에서는 HTML과 CSS 두 파일을 함께 편집하고 안전 미리보기, 공개 자동 검사 70점과 자가평가 30점으로 결과를 점검합니다. 코딩테스트의 `테스트 실행`과 `제출 및 채점`을 포함해 브라우저에 전달되는 모든 테스트와 assertion은 공개됩니다.
 
 ## 바로 실행하기
 
@@ -27,7 +27,7 @@ npm run check
 ## 프로젝트 구조
 
 ```text
-content/                 언어 비종속 메타데이터, 교안·fixture, 객관식·Quest·코딩테스트
+content/                 언어 비종속 메타데이터, 교안·fixture, 객관식·Quest·코딩테스트·Web Project
 src/core/                콘텐츠·내비게이션·평가 도메인 로직
 src/grading/             Worker 및 inert DOM·CSSOM 기반 Quest·코딩테스트 채점 어댑터
 src/repositories/        사용자 진도 저장소 추상화와 localStorage 구현
@@ -43,7 +43,7 @@ docs/                    아키텍처·결정·참고자료 기록
 
 ## 저장 정책
 
-학습 완료, 최근 교안, 최근 객관식 시도 20개, 오답 재도전 대상, Quest 초안 20개와 최근 실행 50개·완료 ID, 코딩테스트 초안 20개와 최근 제출 50개·리비전별 완료 상태는 현재 `bam.dev.progress.v1` 키로 `localStorage`에 저장됩니다. 사용자 소스는 실행·제출 기록에 중복 저장하지 않고 초안 저장소에만 보관합니다. HTML·CSS 확장도 기존 안정 ID와 `ProgressRepository` 계약을 그대로 사용하므로 화면 코드는 브라우저 저장소를 직접 다루지 않습니다. 8차에서는 저장소 구현을 Supabase로 교체하거나 로컬 데이터를 마이그레이션할 수 있습니다. 브라우저 저장소가 차단되면 현재 탭의 메모리 저장소로 계속 동작하고 비영속 상태를 화면에 알립니다.
+학습 완료, 최근 교안, 최근 객관식 시도 20개, 오답 재도전 대상, Quest 초안 20개와 최근 실행 50개·완료 ID, 코딩테스트 초안 20개와 최근 제출 50개·리비전별 완료 상태는 현재 `bam.dev.progress.v1` 키로 `localStorage`에 저장됩니다. Web Project는 별도 `bam.dev.web-projects.v1` 키에 최근 초안 10개와 source를 제외한 제출 요약 20개를 저장합니다. 사용자 소스는 실행·제출 기록에 중복 저장하지 않고 초안 저장소에만 보관합니다. 화면 코드는 두 저장소 구현 뒤에서만 브라우저 저장소를 사용합니다. 8차에서는 저장소 구현을 Supabase로 교체하거나 로컬 데이터를 마이그레이션할 수 있습니다. 브라우저 저장소가 차단되면 현재 탭의 메모리 저장소로 계속 동작하고 비영속 상태를 화면에 알립니다.
 
 ## 참고 자료
 

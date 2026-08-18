@@ -7,6 +7,19 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+export function renderInlineCodeText(value) {
+  const text = String(value ?? "");
+  const pattern = /`([^`\n]+)`/gu;
+  let output = "";
+  let cursor = 0;
+  for (const match of text.matchAll(pattern)) {
+    output += escapeHtml(text.slice(cursor, match.index));
+    output += `<code>${escapeHtml(match[1])}</code>`;
+    cursor = match.index + match[0].length;
+  }
+  return output + escapeHtml(text.slice(cursor));
+}
+
 const JAVASCRIPT_TOKEN_PATTERNS = [
   { type: "comment", expression: /\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/y },
   { type: "string", expression: /"(?:\\[\s\S]|[^"\\\n])*"?/y },
@@ -72,6 +85,16 @@ const CSS_TOKEN_PATTERNS = [
   { type: "function", expression: /[-A-Z_a-z][\w-]*(?=\s*\()/y },
 ];
 
+const JSON_TOKEN_PATTERNS = [
+  { type: "property", expression: /"(?:\\[\s\S]|[^"\\\n])*"(?=\s*:)/y },
+  { type: "string", expression: /"(?:\\[\s\S]|[^"\\\n])*"?/y },
+  { type: "literal", expression: /\b(?:false|null|true)\b/y },
+  {
+    type: "number",
+    expression: /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y,
+  },
+];
+
 function appendToken(tokens, type, value) {
   if (!value) return;
   const previous = tokens.at(-1);
@@ -113,7 +136,23 @@ function tokenizeWithPatterns(source, patterns) {
   return tokens;
 }
 
-function tokenizeHtml(source) {
+function findClosingHtmlTag(source, tagName, startIndex) {
+  const normalizedSource = source.toLocaleLowerCase("en");
+  const marker = `</${tagName}`;
+  let index = normalizedSource.indexOf(marker, startIndex);
+
+  while (index !== -1) {
+    const boundary = normalizedSource[index + marker.length];
+    if (boundary === undefined || boundary === ">" || /\s/.test(boundary)) {
+      return index;
+    }
+    index = normalizedSource.indexOf(marker, index + marker.length);
+  }
+
+  return source.length;
+}
+
+function tokenizeHtml(source, plainTextPatterns = null) {
   const tokens = [];
   let cursor = 0;
 
@@ -136,7 +175,14 @@ function tokenizeHtml(source) {
     if (source[cursor] !== "<") {
       const nextTag = source.indexOf("<", cursor + 1);
       const end = nextTag === -1 ? source.length : nextTag;
-      appendToken(tokens, null, source.slice(cursor, end));
+      const plainSource = source.slice(cursor, end);
+      if (plainTextPatterns) {
+        for (const token of tokenizeWithPatterns(plainSource, plainTextPatterns)) {
+          appendToken(tokens, token.type, token.value);
+        }
+      } else {
+        appendToken(tokens, null, plainSource);
+      }
       cursor = end;
       continue;
     }
@@ -153,16 +199,22 @@ function tokenizeHtml(source) {
     appendToken(tokens, "operator", closingTag ? "</" : "<");
     appendToken(tokens, "tag", tagName[0]);
     cursor = nameStart + tagName[0].length;
+    const normalizedTagName = tagName[0].toLocaleLowerCase("en");
+    let tagClosed = false;
+    let selfClosing = false;
 
     while (cursor < source.length) {
       if (source.startsWith("/>", cursor)) {
         appendToken(tokens, "operator", "/>");
         cursor += 2;
+        tagClosed = true;
+        selfClosing = true;
         break;
       }
       if (source[cursor] === ">") {
         appendToken(tokens, "operator", ">");
         cursor += 1;
+        tagClosed = true;
         break;
       }
 
@@ -212,6 +264,23 @@ function tokenizeHtml(source) {
         cursor += unquotedValue[0].length;
       }
     }
+
+    if (!closingTag && tagClosed && !selfClosing) {
+      const embeddedPatterns =
+        normalizedTagName === "script"
+          ? JAVASCRIPT_TOKEN_PATTERNS
+          : normalizedTagName === "style"
+            ? CSS_TOKEN_PATTERNS
+            : null;
+      if (embeddedPatterns) {
+        const contentEnd = findClosingHtmlTag(source, normalizedTagName, cursor);
+        const embeddedSource = source.slice(cursor, contentEnd);
+        for (const token of tokenizeWithPatterns(embeddedSource, embeddedPatterns)) {
+          appendToken(tokens, token.type, token.value);
+        }
+        cursor = contentEnd;
+      }
+    }
   }
 
   return tokens;
@@ -220,6 +289,12 @@ function tokenizeHtml(source) {
 function codeTokens(source, language) {
   const normalizedLanguage = String(language).toLocaleLowerCase("en");
   if (normalizedLanguage === "html") return tokenizeHtml(source);
+  if (normalizedLanguage === "html-javascript") {
+    return tokenizeHtml(source, JAVASCRIPT_TOKEN_PATTERNS);
+  }
+  if (normalizedLanguage === "html-css") {
+    return tokenizeHtml(source, CSS_TOKEN_PATTERNS);
+  }
   if (normalizedLanguage === "javascript" || normalizedLanguage === "js") {
     return tokenizeWithPatterns(source, JAVASCRIPT_TOKEN_PATTERNS);
   }
@@ -229,12 +304,16 @@ function codeTokens(source, language) {
   if (normalizedLanguage === "java") {
     return tokenizeWithPatterns(source, JAVA_TOKEN_PATTERNS);
   }
+  if (normalizedLanguage === "json") {
+    return tokenizeWithPatterns(source, JSON_TOKEN_PATTERNS);
+  }
   return [{ type: null, value: source }];
 }
 
-function renderCode(source, language) {
+export function renderHighlightedCode(source, language) {
+  const normalizedSource = String(source);
   const lines = [[]];
-  for (const token of codeTokens(source, language)) {
+  for (const token of codeTokens(normalizedSource, language)) {
     const parts = token.value.split("\n");
     for (const [index, part] of parts.entries()) {
       if (part) {
@@ -391,10 +470,10 @@ export function renderMarkdown(markdown, { skipFirstHeading = false } = {}) {
       }
       index += index < lines.length ? 1 : 0;
       const rawCode = code.join("\n");
-      const highlightedCode = renderCode(rawCode, language);
+      const highlightedCode = renderHighlightedCode(rawCode, language);
       const sourceAttribute = codeSourceAttribute(rawCode);
       output.push(
-        `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
+        `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
       );
       continue;
     }

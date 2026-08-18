@@ -60,6 +60,44 @@ function normalizeText(value) {
   return String(value ?? "").replaceAll(/\s+/g, " ").trim();
 }
 
+function elementParent(value) {
+  return value?.parentElement ?? (value?.parent?.tagName ? value.parent : null);
+}
+
+function isSemanticallyHidden(element) {
+  if (!element || typeof element.getAttribute !== "function") return false;
+  const hasHidden =
+    typeof element.hasAttribute === "function"
+      ? element.hasAttribute("hidden")
+      : element.getAttribute("hidden") !== null;
+  return (
+    hasHidden ||
+    normalizeText(element.getAttribute("aria-hidden")).toLowerCase() === "true"
+  );
+}
+
+function visibleTextContent(node) {
+  if (typeof node === "string") return node;
+  if (!node) return "";
+  if (node.nodeType === 3) return node.nodeValue ?? "";
+  if (isSemanticallyHidden(node)) return "";
+  const childNodes = node.childNodes ?? node.children;
+  if (childNodes) {
+    return Array.from(childNodes, (child) => visibleTextContent(child)).join("");
+  }
+  return node.textContent ?? "";
+}
+
+function isHiddenThroughBoundary(element, boundary) {
+  let current = element;
+  while (current) {
+    if (isSemanticallyHidden(current)) return true;
+    if (current === boundary) return false;
+    current = elementParent(current);
+  }
+  return true;
+}
+
 function createBaseTestResult(test) {
   return {
     testId: test.id,
@@ -177,6 +215,29 @@ export async function evaluateHtmlDomAssertion(
     } else if (assertion.kind === "text-includes") {
       const element = queryOne(root, assertion.selector);
       actual = normalizeText(element?.textContent).includes(normalizeText(assertion.expected));
+    } else if (assertion.kind === "nonblank-attribute-count") {
+      actual = Array.from(queryAll(root, assertion.selector)).filter((element) => {
+        const value = element?.getAttribute?.(assertion.attribute);
+        return typeof value === "string" && value.trim().length > 0;
+      }).length;
+    } else if (assertion.kind === "direct-child-text-equals") {
+      const container = queryOne(root, assertion.selector);
+      const directChildren = container
+        ? Array.from(queryAll(root, assertion.childSelector)).filter(
+            (element) => elementParent(element) === container,
+          )
+        : [];
+      const child = directChildren[assertion.childIndex] ?? null;
+      const directTextElements = child
+        ? Array.from(queryAll(root, assertion.textSelector)).filter(
+            (element) => elementParent(element) === child,
+          )
+        : [];
+      const textElement = directTextElements.length === 1 ? directTextElements[0] : null;
+      actual =
+        textElement !== null &&
+        !isHiddenThroughBoundary(textElement, container) &&
+        normalizeText(visibleTextContent(textElement)) === normalizeText(assertion.expected);
     } else {
       throw new Error(`지원하지 않는 HTML assertion입니다: ${assertion.kind}`);
     }
@@ -228,11 +289,15 @@ function findRuleDeclarations(ruleList, assertion) {
     .filter((candidate) =>
       selectorListIncludes(candidate.selectorText, assertion.selector),
     )
-    .map(
-      (rule) =>
-        rule?.style?.getPropertyValue?.(assertion.property)?.trim() || null,
-    )
-    .filter((value) => value !== null);
+    .map((rule) => {
+      const value =
+        rule?.style?.getPropertyValue?.(assertion.property)?.trim() || null;
+      if (value === null) return null;
+      const priority =
+        rule?.style?.getPropertyPriority?.(assertion.property)?.trim().toLowerCase() ?? "";
+      return { value, priority };
+    })
+    .filter((declaration) => declaration !== null);
 }
 
 function reconcileDeclarationValue(actual, assertion, styleSheetFactory) {
@@ -253,12 +318,22 @@ function reconcileDeclarationValue(actual, assertion, styleSheetFactory) {
 }
 
 function resolveDeclarationValue(ruleList, assertion, styleSheetFactory) {
-  // This assertion proves that an authored declaration exists. It deliberately
-  // does not approximate the full cascade; use computed-style for the winner.
-  const values = findRuleDeclarations(ruleList, assertion).map((value) =>
-    reconcileDeclarationValue(value, assertion, styleSheetFactory),
-  );
-  return values.find((value) => value === assertion.expected) ?? values.at(-1) ?? null;
+  // Identical selectors have identical specificity. Resolve their authored
+  // declaration by importance and source order so a later override cannot keep
+  // an earlier passing value alive. Use computed-style when selectors differ.
+  let winner = null;
+  for (const declaration of findRuleDeclarations(ruleList, assertion)) {
+    if (
+      winner === null ||
+      declaration.priority === "important" ||
+      winner.priority !== "important"
+    ) {
+      winner = declaration;
+    }
+  }
+  return winner === null
+    ? null
+    : reconcileDeclarationValue(winner.value, assertion, styleSheetFactory);
 }
 
 function evaluateRuleDeclaration(source, assertion, styleSheetFactory) {
@@ -280,17 +355,10 @@ function evaluateMediaRuleDeclaration(source, assertion, styleSheetFactory) {
   const matchingMediaRules = collectMediaRules(sheet.cssRules).filter(
     (rule) => normalizeMediaCondition(rule.conditionText) === expectedCondition,
   );
-  let fallback = null;
-  for (const mediaRule of matchingMediaRules) {
-    const actual = resolveDeclarationValue(
-      mediaRule.cssRules,
-      assertion,
-      styleSheetFactory,
-    );
-    if (actual === assertion.expected) return actual;
-    if (actual !== null) fallback = actual;
-  }
-  return fallback;
+  const matchingRules = matchingMediaRules.flatMap((rule) =>
+    Array.from(rule.cssRules ?? []),
+  );
+  return resolveDeclarationValue(matchingRules, assertion, styleSheetFactory);
 }
 
 function waitForIframeLoad(
@@ -353,17 +421,121 @@ function waitForIframeLoad(
   });
 }
 
-async function evaluateComputedStyle(
+function splitTopLevelCssComponents(value) {
+  const components = [];
+  let current = "";
+  let parenthesisDepth = 0;
+  let bracketDepth = 0;
+  let quote = null;
+  let escaped = false;
+
+  const pushCurrent = () => {
+    const component = current.trim();
+    if (component) components.push(component);
+    current = "";
+  };
+
+  for (const character of String(value ?? "")) {
+    if (quote !== null) {
+      current += character;
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      current += character;
+      continue;
+    }
+    if (character === "(") parenthesisDepth += 1;
+    if (character === ")") parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+    if (character === "[") bracketDepth += 1;
+    if (character === "]") bracketDepth = Math.max(0, bracketDepth - 1);
+    if (/\s/u.test(character) && parenthesisDepth === 0 && bracketDepth === 0) {
+      pushCurrent();
+    } else {
+      current += character;
+    }
+  }
+  pushCurrent();
+  return components;
+}
+
+function splitFirstTopLevelComma(value) {
+  let parenthesisDepth = 0;
+  let bracketDepth = 0;
+  let quote = null;
+  let escaped = false;
+  for (let index = 0; index < value.length; index += 1) {
+    const character = value[index];
+    if (quote !== null) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === "\\") {
+        escaped = true;
+      } else if (character === quote) {
+        quote = null;
+      }
+      continue;
+    }
+    if (character === '"' || character === "'") {
+      quote = character;
+      continue;
+    }
+    if (character === "(") parenthesisDepth += 1;
+    if (character === ")") parenthesisDepth = Math.max(0, parenthesisDepth - 1);
+    if (character === "[") bracketDepth += 1;
+    if (character === "]") bracketDepth = Math.max(0, bracketDepth - 1);
+    if (character === "," && parenthesisDepth === 0 && bracketDepth === 0) {
+      return [value.slice(0, index), value.slice(index + 1)];
+    }
+  }
+  return null;
+}
+
+function countComputedGridTracks(value) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized || /^(?:none|subgrid|masonry)$/iu.test(normalized)) return 0;
+
+  return splitTopLevelCssComponents(normalized).reduce((total, component) => {
+    if (/^\[[\s\S]*\]$/u.test(component)) return total;
+    const repeatMatch = /^repeat\(([\s\S]*)\)$/iu.exec(component);
+    if (!repeatMatch) {
+      if (/^repeat\(/iu.test(component)) {
+        throw new Error("CSS Grid repeat()의 반복 횟수를 확정할 수 없습니다.");
+      }
+      return total + 1;
+    }
+    const parts = splitFirstTopLevelComma(repeatMatch[1]);
+    if (!parts) {
+      throw new Error("CSS Grid repeat()의 반복 횟수를 확정할 수 없습니다.");
+    }
+    const repetitions = Number(parts[0].trim());
+    if (!Number.isSafeInteger(repetitions) || repetitions < 1) {
+      throw new Error("CSS Grid repeat()의 반복 횟수를 확정할 수 없습니다.");
+    }
+    return total + repetitions * countComputedGridTracks(parts[1]);
+  }, 0);
+}
+
+async function evaluateInComputedStyleSandbox(
   source,
   fixtureHtml,
   assertion,
   signal,
+  readTarget,
   {
     documentRef,
     iframeHost,
     iframeLoadTimeoutMs,
     setTimeoutFn,
     clearTimeoutFn,
+    viewportWidth = 1024,
   },
 ) {
   if (!documentRef || typeof documentRef.createElement !== "function") {
@@ -381,7 +553,7 @@ async function evaluateComputedStyle(
     iframe.setAttribute("aria-hidden", "true");
     iframe.tabIndex = -1;
     iframe.style.cssText =
-      "position:fixed;left:-10000px;top:0;width:1024px;height:768px;pointer-events:none;opacity:0;";
+      `position:fixed;left:-10000px;top:0;width:${viewportWidth}px;height:768px;border:0;pointer-events:none;opacity:0;`;
     iframe.srcdoc = FIXED_IFRAME_DOCUMENT;
 
     await waitForIframeLoad(iframe, host, signal, {
@@ -405,45 +577,147 @@ async function evaluateComputedStyle(
     frameDocument.head.append(style);
     const target = frameDocument.querySelector(assertion.selector);
     if (!target) return null;
-    const actual = frameWindow
-      .getComputedStyle(target)
-      .getPropertyValue(assertion.property)
-      .trim();
-    let reconciledActual = actual || null;
-    if (
-      reconciledActual !== null &&
-      reconciledActual !== assertion.expected &&
-      target.style &&
-      typeof target.style.setProperty === "function"
-    ) {
-      const previousValue = target.style.getPropertyValue(assertion.property);
-      const previousPriority = target.style.getPropertyPriority(assertion.property);
-      try {
-        target.style.removeProperty(assertion.property);
-        target.style.setProperty(assertion.property, assertion.expected, "important");
-        const acceptedExpected = target.style
-          .getPropertyValue(assertion.property)
-          .trim();
-        if (acceptedExpected) {
-          const normalizedExpected = frameWindow
-            .getComputedStyle(target)
-            .getPropertyValue(assertion.property)
-            .trim();
-          if (actual === normalizedExpected) reconciledActual = assertion.expected;
-        }
-      } finally {
-        if (previousValue) {
-          target.style.setProperty(assertion.property, previousValue, previousPriority);
-        } else {
-          target.style.removeProperty(assertion.property);
-        }
-      }
-    }
+    const actual = readTarget(target, frameWindow, frameDocument);
     if (signal?.aborted) throw abortError();
-    return reconciledActual;
+    return actual;
   } finally {
     iframe.remove?.();
   }
+}
+
+function readNormalizedComputedProperty(target, frameWindow, assertion) {
+  const actual = frameWindow
+    .getComputedStyle(target)
+    .getPropertyValue(assertion.property)
+    .trim();
+  let reconciledActual = actual || null;
+  if (
+    reconciledActual !== null &&
+    reconciledActual !== assertion.expected &&
+    target.style &&
+    typeof target.style.setProperty === "function"
+  ) {
+    const previousValue = target.style.getPropertyValue(assertion.property);
+    const previousPriority = target.style.getPropertyPriority(assertion.property);
+    try {
+      target.style.removeProperty(assertion.property);
+      target.style.setProperty(assertion.property, assertion.expected, "important");
+      const acceptedExpected = target.style
+        .getPropertyValue(assertion.property)
+        .trim();
+      if (acceptedExpected) {
+        const normalizedExpected = frameWindow
+          .getComputedStyle(target)
+          .getPropertyValue(assertion.property)
+          .trim();
+        if (actual === normalizedExpected) reconciledActual = assertion.expected;
+      }
+    } finally {
+      if (previousValue) {
+        target.style.setProperty(assertion.property, previousValue, previousPriority);
+      } else {
+        target.style.removeProperty(assertion.property);
+      }
+    }
+  }
+  return reconciledActual;
+}
+
+export function activateFocusVisibleState(target, frameDocument) {
+  if (
+    !target ||
+    typeof target.focus !== "function" ||
+    typeof target.matches !== "function" ||
+    !frameDocument?.body ||
+    typeof frameDocument.createElement !== "function"
+  ) {
+    throw new Error("focus-visible 계산 상태를 준비할 수 없습니다.");
+  }
+
+  const probe = frameDocument.createElement("input");
+  probe.type = "text";
+  probe.tabIndex = -1;
+  probe.setAttribute?.("aria-hidden", "true");
+  if (probe.style) {
+    probe.style.cssText = "position:fixed;left:-10000px;width:1px;height:1px;opacity:0;";
+  }
+  frameDocument.body.append(probe);
+  try {
+    probe.focus?.({ preventScroll: true });
+    target.focus({ preventScroll: true });
+    const isFocusVisible =
+      frameDocument.activeElement === target &&
+      target.matches(":focus-visible");
+    if (!isFocusVisible) {
+      throw new Error("focus-visible 계산 상태를 만들 수 없습니다.");
+    }
+    return true;
+  } finally {
+    probe.remove?.();
+  }
+}
+
+async function evaluateComputedStyle(source, fixtureHtml, assertion, signal, environment) {
+  return evaluateInComputedStyleSandbox(
+    source,
+    fixtureHtml,
+    assertion,
+    signal,
+    (target, frameWindow) =>
+      readNormalizedComputedProperty(target, frameWindow, assertion),
+    environment,
+  );
+}
+
+async function evaluateComputedFocusStyle(
+  source,
+  fixtureHtml,
+  assertion,
+  signal,
+  environment,
+) {
+  return evaluateInComputedStyleSandbox(
+    source,
+    fixtureHtml,
+    assertion,
+    signal,
+    (target, frameWindow, frameDocument) => {
+      activateFocusVisibleState(target, frameDocument);
+      return readNormalizedComputedProperty(target, frameWindow, assertion);
+    },
+    environment,
+  );
+}
+
+async function evaluateComputedGridColumnCount(
+  source,
+  fixtureHtml,
+  assertion,
+  signal,
+  environment,
+) {
+  if (
+    !Number.isSafeInteger(assertion.viewportWidth) ||
+    assertion.viewportWidth < 320 ||
+    assertion.viewportWidth > 1920
+  ) {
+    throw new TypeError("CSS Grid 열 개수 검사의 viewportWidth는 320~1920 정수여야 합니다.");
+  }
+  return evaluateInComputedStyleSandbox(
+    source,
+    fixtureHtml,
+    assertion,
+    signal,
+    (target, frameWindow) => {
+      const computedStyle = frameWindow.getComputedStyle(target);
+      const display = computedStyle.getPropertyValue("display").trim();
+      if (display !== "grid" && display !== "inline-grid") return 0;
+      return countComputedGridTracks(
+        computedStyle.getPropertyValue("grid-template-columns"),
+      );
+    },
+    { ...environment, viewportWidth: assertion.viewportWidth },
+  );
 }
 
 export async function evaluateCssStyleAssertion(
@@ -471,6 +745,24 @@ export async function evaluateCssStyleAssertion(
   }
   if (assertion.kind === "computed-style") {
     return evaluateComputedStyle(source, fixtureHtml, assertion, signal, {
+      documentRef,
+      iframeHost,
+      iframeLoadTimeoutMs,
+      setTimeoutFn,
+      clearTimeoutFn,
+    });
+  }
+  if (assertion.kind === "computed-focus-style") {
+    return evaluateComputedFocusStyle(source, fixtureHtml, assertion, signal, {
+      documentRef,
+      iframeHost,
+      iframeLoadTimeoutMs,
+      setTimeoutFn,
+      clearTimeoutFn,
+    });
+  }
+  if (assertion.kind === "computed-grid-column-count") {
+    return evaluateComputedGridColumnCount(source, fixtureHtml, assertion, signal, {
       documentRef,
       iframeHost,
       iframeLoadTimeoutMs,

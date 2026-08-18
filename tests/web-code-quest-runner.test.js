@@ -450,6 +450,98 @@ test("HTML 기본 어댑터는 main DOM이 아닌 inert template content만 조�
   assert.equal(createCalls, 4);
 });
 
+test("HTML 선언형 어댑터는 공백 속성과 카드별 직접 제목·숨김 텍스트를 구분한다", async () => {
+  const attributeNode = (attributes = {}) => ({
+    getAttribute: (name) => attributes[name] ?? null,
+    hasAttribute: (name) => Object.hasOwn(attributes, name),
+  });
+  const container = attributeNode();
+  const cards = Array.from({ length: 3 }, () => ({
+    ...attributeNode(),
+    parentElement: container,
+  }));
+  const hiddenName = {
+    ...attributeNode({ hidden: "" }),
+    nodeType: 1,
+    childNodes: ["HTML"],
+  };
+  const headings = [
+    { ...attributeNode(), parentElement: cards[0], childNodes: ["HTML"] },
+    { ...attributeNode(), parentElement: cards[1], childNodes: ["CSS"] },
+    { ...attributeNode(), parentElement: cards[2], childNodes: ["JavaScript"] },
+  ];
+  const progress = [
+    attributeNode({ "aria-label": "HTML 학습 진도" }),
+    attributeNode({ "aria-label": " \n\t " }),
+    attributeNode({ "aria-label": "JavaScript 학습 진도" }),
+  ];
+  const root = {
+    querySelector: (selector) =>
+      selector === ".learning-board" ? container : null,
+    querySelectorAll: (selector) => {
+      if (selector === "article.learning-card") return cards;
+      if (selector === "h2") return headings;
+      if (selector === "progress") return progress;
+      return [];
+    },
+  };
+  const documentRef = {
+    createElement: () => ({ content: root, innerHTML: "" }),
+  };
+
+  assert.equal(
+    await evaluateHtmlDomAssertion(
+      {
+        source: "<main></main>",
+        assertion: {
+          kind: "nonblank-attribute-count",
+          selector: "progress",
+          attribute: "aria-label",
+          expected: 3,
+        },
+      },
+      { documentRef },
+    ),
+    2,
+  );
+  assert.equal(
+    await evaluateHtmlDomAssertion(
+      {
+        source: "<main></main>",
+        assertion: {
+          kind: "direct-child-text-equals",
+          selector: ".learning-board",
+          childSelector: "article.learning-card",
+          childIndex: 1,
+          textSelector: "h2",
+          expected: "CSS",
+        },
+      },
+      { documentRef },
+    ),
+    true,
+  );
+
+  headings[0].childNodes = [hiddenName, "마크업"];
+  assert.equal(
+    await evaluateHtmlDomAssertion(
+      {
+        source: "<main></main>",
+        assertion: {
+          kind: "direct-child-text-equals",
+          selector: ".learning-board",
+          childSelector: "article.learning-card",
+          childIndex: 0,
+          textSelector: "h2",
+          expected: "HTML",
+        },
+      },
+      { documentRef },
+    ),
+    false,
+  );
+});
+
 test("doctype-present는 공개·시스템 식별자 없는 HTML doctype만 승인한다", async () => {
   const calls = [];
   let doctype = { name: "html", publicId: "", systemId: "" };
@@ -634,7 +726,7 @@ test("CSS 선언 기대값도 같은 CSSOM으로 직렬화해 동등한 색 표�
   ]);
 });
 
-test("rule-declaration은 첫 빈 규칙에 멈추지 않고 같은 선택자의 기대 선언 존재를 찾는다", async () => {
+test("rule-declaration은 같은 선택자의 최종 선언과 important 우선순위를 따른다", async () => {
   const createFactory = (values) => {
     let sourceSheetCreated = false;
     return () => {
@@ -642,11 +734,13 @@ test("rule-declaration은 첫 빈 규칙에 멈추지 않고 같은 선택자의
         sourceSheetCreated = true;
         return {
           replaceSync() {},
-          cssRules: values.map((value) => ({
+          cssRules: values.map(({ value, priority = "" }) => ({
             selectorText: ".card",
             style: {
               getPropertyValue: (property) =>
                 property === "display" ? value : "",
+              getPropertyPriority: (property) =>
+                property === "display" ? priority : "",
             },
           })),
         };
@@ -681,16 +775,25 @@ test("rule-declaration은 첫 빈 규칙에 멈추지 않고 같은 선택자의
 
   assert.equal(
     await evaluateCssStyleAssertion(input, {
-      styleSheetFactory: createFactory(["", "block", "grid", "block"]),
+      styleSheetFactory: createFactory([
+        { value: "" },
+        { value: "block" },
+        { value: "grid" },
+        { value: "block" },
+      ]),
     }),
-    "grid",
+    "block",
+    "같은 선택자의 뒤 선언이 앞의 정답 선언을 무효화합니다.",
   );
   assert.equal(
     await evaluateCssStyleAssertion(input, {
-      styleSheetFactory: createFactory(["", "flex", "block"]),
+      styleSheetFactory: createFactory([
+        { value: "grid", priority: "important" },
+        { value: "block" },
+      ]),
     }),
-    "block",
-    "기대 선언이 없으면 마지막 non-empty 값을 오답 설명용 실제값으로 반환합니다.",
+    "grid",
+    "important 선언은 뒤의 일반 선언보다 우선합니다.",
   );
 });
 
@@ -964,6 +1067,243 @@ test("CSS computed-style은 스크립트 없는 일회성 iframe에 fixed fixtur
   );
   assert.equal(inlineValue, "");
   assert.equal(inlinePriority, "");
+});
+
+test("computed-focus-style은 최종 cascade를 읽고 focus-visible 상태를 만들 수 없으면 engine_error로 보고한다", async () => {
+  const listeners = new Map();
+  let activeElement = null;
+  let computedOutline = "rgb(37, 99, 235) solid 3px";
+  let inlineValue = "";
+  let removedCount = 0;
+  let probeRemovedCount = 0;
+  const target = {
+    style: {
+      getPropertyValue: () => inlineValue,
+      getPropertyPriority: () => (inlineValue ? "important" : ""),
+      removeProperty: () => {
+        inlineValue = "";
+      },
+      setProperty: (_property, value) => {
+        inlineValue = value;
+      },
+    },
+    focus: () => {
+      activeElement = target;
+    },
+    matches: (selector) => selector === ":focus-visible",
+  };
+  const body = {
+    append(value) {
+      if (typeof value?.focus === "function") value.focus();
+    },
+  };
+  const frameDocument = {
+    head: { append() {} },
+    body,
+    get activeElement() {
+      return activeElement;
+    },
+    createElement(name) {
+      if (name === "template") return { innerHTML: "", content: {} };
+      if (name === "style") return { textContent: "" };
+      if (name === "input") {
+        const probe = {
+          style: {},
+          setAttribute() {},
+          focus: () => {
+            activeElement = probe;
+          },
+          remove: () => {
+            probeRemovedCount += 1;
+          },
+        };
+        return probe;
+      }
+      throw new Error(`unexpected frame element: ${name}`);
+    },
+    querySelector: (selector) => (selector === ".learning-card-link" ? target : null),
+  };
+  const iframe = {
+    style: {},
+    contentDocument: frameDocument,
+    contentWindow: {
+      getComputedStyle: () => ({
+        getPropertyValue: () =>
+          inlineValue ? "rgb(37, 99, 235) solid 3px" : computedOutline,
+      }),
+    },
+    setAttribute() {},
+    addEventListener: (name, callback) => listeners.set(name, callback),
+    removeEventListener: (name) => listeners.delete(name),
+    remove: () => {
+      removedCount += 1;
+    },
+  };
+  const environment = {
+    documentRef: { createElement: () => iframe },
+    iframeHost: { append: () => listeners.get("load")?.() },
+  };
+  const input = {
+    source: [
+      ".learning-card-link:focus-visible { outline: 3px solid #2563eb; }",
+      "main .learning-card-link:focus-visible { outline: none !important; }",
+    ].join("\n"),
+    fixtureHtml: '<main><a class="learning-card-link" href="#plan">계획</a></main>',
+    assertion: {
+      kind: "computed-focus-style",
+      selector: ".learning-card-link",
+      property: "outline",
+      expected: "3px solid #2563eb",
+    },
+  };
+
+  computedOutline = "none";
+  assert.equal(await evaluateCssStyleAssertion(input, environment), "none");
+  computedOutline = "rgb(37, 99, 235) solid 3px";
+  assert.equal(await evaluateCssStyleAssertion(input, environment), "3px solid #2563eb");
+  assert.equal(activeElement, target);
+  assert.equal(probeRemovedCount, 2);
+  assert.equal(removedCount, 2);
+  assert.equal(inlineValue, "");
+
+  target.matches = () => false;
+  const runner = new BrowserWebCodeQuestRunner({ environment });
+  const report = await runner.run(
+    createCssRequest({
+      source: input.source,
+      fixtureHtml: input.fixtureHtml,
+      tests: [
+        {
+          id: "card-focus-outline",
+          label: "카드 링크 초점선",
+          assertion: input.assertion,
+          expected: input.assertion.expected,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.equal(report.tests[0].error.type, "evaluation_error");
+  assert.match(report.tests[0].error.message, /focus-visible 계산 상태/);
+  assert.equal(probeRemovedCount, 3);
+  assert.equal(removedCount, 3);
+});
+
+test("CSS Grid 열 개수는 지정 viewport의 최종 computed track list를 행동 기준으로 센다", async () => {
+  const listeners = new Map();
+  let computedColumns = "[start] 240px minmax(0px, 1fr) [end]";
+  let removedCount = 0;
+  let appendedSource = null;
+  const target = {};
+  const frameDocument = {
+    head: {
+      append: (style) => {
+        appendedSource = style.textContent;
+      },
+    },
+    body: { append() {} },
+    createElement: (name) => {
+      if (name === "template") return { innerHTML: "", content: {} };
+      if (name === "style") return { textContent: "" };
+      throw new Error(`unexpected frame element: ${name}`);
+    },
+    querySelector: (selector) => (selector === ".learning-board" ? target : null),
+  };
+  const iframe = {
+    style: {},
+    contentDocument: frameDocument,
+    contentWindow: {
+      getComputedStyle: (element) => {
+        assert.equal(element, target);
+        return {
+          getPropertyValue: (property) => {
+            if (property === "display") return "grid";
+            if (property === "grid-template-columns") return computedColumns;
+            throw new Error(`unexpected computed property: ${property}`);
+          },
+        };
+      },
+    },
+    setAttribute() {},
+    addEventListener: (name, callback) => listeners.set(name, callback),
+    removeEventListener: (name) => listeners.delete(name),
+    remove: () => {
+      removedCount += 1;
+    },
+  };
+  const environment = {
+    documentRef: {
+      createElement: (name) => {
+        assert.equal(name, "iframe");
+        return iframe;
+      },
+    },
+    iframeHost: {
+      append: () => listeners.get("load")?.(),
+    },
+  };
+  const source = [
+    ".learning-board { display: grid; grid-template-columns: repeat(4, 1fr); }",
+    ".learning-board { grid-template-columns: 1fr 1fr; }",
+  ].join("\n");
+  const input = {
+    source,
+    fixtureHtml: '<main class="learning-board"></main>',
+    assertion: {
+      kind: "computed-grid-column-count",
+      selector: ".learning-board",
+      viewportWidth: 640,
+      expected: 2,
+    },
+  };
+
+  assert.equal(await evaluateCssStyleAssertion(input, environment), 2);
+  assert.match(iframe.style.cssText, /width:640px/);
+  assert.equal(appendedSource, source);
+
+  computedColumns = "repeat(3, minmax(0px, 1fr))";
+  input.assertion.viewportWidth = 1024;
+  input.assertion.expected = 3;
+  assert.equal(await evaluateCssStyleAssertion(input, environment), 3);
+  assert.match(iframe.style.cssText, /width:1024px/);
+  assert.equal(removedCount, 2);
+
+  iframe.contentWindow.getComputedStyle = () => ({
+    getPropertyValue: (property) =>
+      property === "display" ? "block" : "240px 240px",
+  });
+  assert.equal(await evaluateCssStyleAssertion(input, environment), 0);
+  assert.equal(removedCount, 3);
+
+  iframe.contentWindow.getComputedStyle = () => ({
+    getPropertyValue: (property) =>
+      property === "display"
+        ? "grid"
+        : "repeat(auto-fit, minmax(240px, 1fr))",
+  });
+  const runner = new BrowserWebCodeQuestRunner({ environment });
+  const report = await runner.run(
+    createCssRequest({
+      source,
+      fixtureHtml: input.fixtureHtml,
+      tests: [
+        {
+          id: "grid-column-count",
+          label: "Grid 열 개수",
+          assertion: input.assertion,
+          expected: input.assertion.expected,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.equal(report.tests[0].error.type, "evaluation_error");
+  assert.match(report.tests[0].error.message, /repeat\(\).*반복 횟수/);
+  assert.equal(removedCount, 4);
 });
 
 test("CSS iframe error는 리소스를 정리하고 engine_error로 보고한다", async () => {
