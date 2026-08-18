@@ -659,7 +659,16 @@ export class BamLearningApp {
 
     const copyButton = event.target.closest("[data-copy-code]");
     if (copyButton) {
-      const code = copyButton.closest(".code-card")?.querySelector("code")?.textContent ?? "";
+      const codeElement = copyButton.closest(".code-card")?.querySelector("code");
+      let code = codeElement?.textContent ?? "";
+      const encodedSource = codeElement?.dataset.codeSource;
+      if (encodedSource !== undefined) {
+        try {
+          code = decodeURIComponent(encodedSource);
+        } catch {
+          // 손상된 속성은 화면에 보이는 코드로 안전하게 대체합니다.
+        }
+      }
       this.copyCode(copyButton, code);
       return;
     }

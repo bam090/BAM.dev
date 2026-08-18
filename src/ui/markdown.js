@@ -7,6 +7,265 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+const JAVASCRIPT_TOKEN_PATTERNS = [
+  { type: "comment", expression: /\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/y },
+  { type: "string", expression: /"(?:\\[\s\S]|[^"\\\n])*"?/y },
+  { type: "string", expression: /'(?:\\[\s\S]|[^'\\\n])*'?/y },
+  { type: "string", expression: /`(?:\\[\s\S]|[^`\\])*`?/y },
+  {
+    type: "keyword",
+    expression:
+      /\b(?:async|await|break|case|catch|class|const|continue|debugger|default|delete|do|else|export|extends|finally|for|from|function|get|if|import|in|instanceof|let|new|of|return|set|static|super|switch|this|throw|try|typeof|var|void|while|with|yield)\b/y,
+  },
+  { type: "literal", expression: /\b(?:false|Infinity|NaN|null|true|undefined)\b/y },
+  {
+    type: "builtin",
+    expression:
+      /\b(?:Array|Boolean|console|Date|document|Error|fetch|JSON|Map|Math|Number|Object|Promise|RegExp|Set|String|Symbol|window)\b/y,
+  },
+  {
+    type: "number",
+    expression:
+      /(?:\b0[xX][\dA-Fa-f]+n?\b|\b0[bB][01]+n?\b|\b0[oO][0-7]+n?\b|\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?n?\b)/y,
+  },
+  { type: "function", expression: /[$A-Z_a-z][$\w]*(?=\s*\()/y },
+  {
+    type: "operator",
+    expression: /(?:=>|===|!==|==|!=|<=|>=|\?\?|\?\.|&&|\|\||\+\+|--|\*\*|\+=|-=|\*=|\/=|%=|[+\-*/%!=<>?:&|~^])/y,
+  },
+];
+
+const JAVA_TOKEN_PATTERNS = [
+  { type: "comment", expression: /\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/y },
+  { type: "string", expression: /"(?:\\[\s\S]|[^"\\\n])*"?/y },
+  { type: "string", expression: /'(?:\\[\s\S]|[^'\\\n])*'?/y },
+  { type: "keyword", expression: /@[A-Z_a-z][$\w]*/y },
+  {
+    type: "keyword",
+    expression:
+      /\b(?:abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|if|implements|import|instanceof|int|interface|long|native|new|package|private|protected|public|record|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while)\b/y,
+  },
+  { type: "literal", expression: /\b(?:false|null|true)\b/y },
+  { type: "builtin", expression: /\b(?:Integer|List|Map|Math|Object|Optional|Set|String|System)\b/y },
+  { type: "number", expression: /\b(?:0[xX][\dA-Fa-f]+|\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)[dDfFlL]?\b/y },
+  { type: "function", expression: /[$A-Z_a-z][$\w]*(?=\s*\()/y },
+  {
+    type: "operator",
+    expression: /(?:==|!=|<=|>=|&&|\|\||\+\+|--|\+=|-=|\*=|\/=|%=|[+\-*/%!=<>?:&|~^])/y,
+  },
+];
+
+const CSS_TOKEN_PATTERNS = [
+  { type: "comment", expression: /\/\*[\s\S]*?(?:\*\/|$)/y },
+  { type: "string", expression: /"(?:\\[\s\S]|[^"\\\n])*"?/y },
+  { type: "string", expression: /'(?:\\[\s\S]|[^'\\\n])*'?/y },
+  { type: "keyword", expression: /@[\w-]+/y },
+  { type: "number", expression: /#[\dA-Fa-f]{3,8}\b/y },
+  { type: "selector", expression: /(?:[#.][-_A-Z_a-z][\w-]*|::?[\w-]+)/y },
+  { type: "property", expression: /(?:--[\w-]+|[-A-Z_a-z][\w-]*)(?=\s*:)/y },
+  {
+    type: "number",
+    expression:
+      /(?:\b\d+(?:\.\d+)?|\.\d+)(?:%|ch|cm|deg|dvh|dvw|em|ex|fr|in|mm|ms|pc|pt|px|rem|s|vh|vmax|vmin|vw)?(?![\w-])/y,
+  },
+  { type: "literal", expression: /!important\b/y },
+  { type: "function", expression: /[-A-Z_a-z][\w-]*(?=\s*\()/y },
+];
+
+function appendToken(tokens, type, value) {
+  if (!value) return;
+  const previous = tokens.at(-1);
+  if (previous?.type === type) {
+    previous.value += value;
+  } else {
+    tokens.push({ type, value });
+  }
+}
+
+function tokenizeWithPatterns(source, patterns) {
+  const tokens = [];
+  let cursor = 0;
+  let plainTextStart = 0;
+
+  while (cursor < source.length) {
+    let matchedToken = null;
+    for (const pattern of patterns) {
+      pattern.expression.lastIndex = cursor;
+      const match = pattern.expression.exec(source);
+      if (match) {
+        matchedToken = { type: pattern.type, value: match[0] };
+        break;
+      }
+    }
+
+    if (!matchedToken) {
+      cursor += 1;
+      continue;
+    }
+
+    appendToken(tokens, null, source.slice(plainTextStart, cursor));
+    appendToken(tokens, matchedToken.type, matchedToken.value);
+    cursor += matchedToken.value.length;
+    plainTextStart = cursor;
+  }
+
+  appendToken(tokens, null, source.slice(plainTextStart));
+  return tokens;
+}
+
+function tokenizeHtml(source) {
+  const tokens = [];
+  let cursor = 0;
+
+  while (cursor < source.length) {
+    if (source.startsWith("<!--", cursor)) {
+      const commentEnd = source.indexOf("-->", cursor + 4);
+      const end = commentEnd === -1 ? source.length : commentEnd + 3;
+      appendToken(tokens, "comment", source.slice(cursor, end));
+      cursor = end;
+      continue;
+    }
+
+    const doctype = /^<!doctype\b[^>]*(?:>|$)/i.exec(source.slice(cursor));
+    if (doctype) {
+      appendToken(tokens, "keyword", doctype[0]);
+      cursor += doctype[0].length;
+      continue;
+    }
+
+    if (source[cursor] !== "<") {
+      const nextTag = source.indexOf("<", cursor + 1);
+      const end = nextTag === -1 ? source.length : nextTag;
+      appendToken(tokens, null, source.slice(cursor, end));
+      cursor = end;
+      continue;
+    }
+
+    const closingTag = source[cursor + 1] === "/";
+    const nameStart = cursor + (closingTag ? 2 : 1);
+    const tagName = /^[A-Z_a-z][\w:-]*/.exec(source.slice(nameStart));
+    if (!tagName) {
+      appendToken(tokens, null, source[cursor]);
+      cursor += 1;
+      continue;
+    }
+
+    appendToken(tokens, "operator", closingTag ? "</" : "<");
+    appendToken(tokens, "tag", tagName[0]);
+    cursor = nameStart + tagName[0].length;
+
+    while (cursor < source.length) {
+      if (source.startsWith("/>", cursor)) {
+        appendToken(tokens, "operator", "/>");
+        cursor += 2;
+        break;
+      }
+      if (source[cursor] === ">") {
+        appendToken(tokens, "operator", ">");
+        cursor += 1;
+        break;
+      }
+
+      const whitespace = /^\s+/.exec(source.slice(cursor));
+      if (whitespace) {
+        appendToken(tokens, null, whitespace[0]);
+        cursor += whitespace[0].length;
+        continue;
+      }
+
+      const attribute = /^[^\s=/>]+/.exec(source.slice(cursor));
+      if (!attribute) {
+        appendToken(tokens, null, source[cursor]);
+        cursor += 1;
+        continue;
+      }
+      appendToken(tokens, "property", attribute[0]);
+      cursor += attribute[0].length;
+
+      const spaceBeforeEquals = /^\s+/.exec(source.slice(cursor));
+      if (spaceBeforeEquals) {
+        appendToken(tokens, null, spaceBeforeEquals[0]);
+        cursor += spaceBeforeEquals[0].length;
+      }
+      if (source[cursor] !== "=") continue;
+
+      appendToken(tokens, "operator", "=");
+      cursor += 1;
+      const spaceAfterEquals = /^\s+/.exec(source.slice(cursor));
+      if (spaceAfterEquals) {
+        appendToken(tokens, null, spaceAfterEquals[0]);
+        cursor += spaceAfterEquals[0].length;
+      }
+
+      const quote = source[cursor];
+      if (quote === '"' || quote === "'") {
+        const valueEnd = source.indexOf(quote, cursor + 1);
+        const end = valueEnd === -1 ? source.length : valueEnd + 1;
+        appendToken(tokens, "string", source.slice(cursor, end));
+        cursor = end;
+        continue;
+      }
+
+      const unquotedValue = /^[^\s>]+/.exec(source.slice(cursor));
+      if (unquotedValue) {
+        appendToken(tokens, "string", unquotedValue[0]);
+        cursor += unquotedValue[0].length;
+      }
+    }
+  }
+
+  return tokens;
+}
+
+function codeTokens(source, language) {
+  const normalizedLanguage = String(language).toLocaleLowerCase("en");
+  if (normalizedLanguage === "html") return tokenizeHtml(source);
+  if (normalizedLanguage === "javascript" || normalizedLanguage === "js") {
+    return tokenizeWithPatterns(source, JAVASCRIPT_TOKEN_PATTERNS);
+  }
+  if (normalizedLanguage === "css") {
+    return tokenizeWithPatterns(source, CSS_TOKEN_PATTERNS);
+  }
+  if (normalizedLanguage === "java") {
+    return tokenizeWithPatterns(source, JAVA_TOKEN_PATTERNS);
+  }
+  return [{ type: null, value: source }];
+}
+
+function renderCode(source, language) {
+  const lines = [[]];
+  for (const token of codeTokens(source, language)) {
+    const parts = token.value.split("\n");
+    for (const [index, part] of parts.entries()) {
+      if (part) {
+        const content = escapeHtml(part);
+        lines.at(-1).push(
+          token.type
+            ? `<span class="code-token code-token--${token.type}">${content}</span>`
+            : content,
+        );
+      }
+      if (index < parts.length - 1) lines.push([]);
+    }
+  }
+
+  return lines
+    .map((line) => `<span class="code-line">${line.join("")}</span>`)
+    .join("\n");
+}
+
+function codeSourceAttribute(source) {
+  try {
+    const encodedSource = encodeURIComponent(source).replace(
+      /[!'()*]/g,
+      (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+    );
+    return ` data-code-source="${escapeHtml(encodedSource)}"`;
+  } catch {
+    return "";
+  }
+}
+
 function safeHref(rawHref) {
   const href = rawHref.trim();
   if (/^https:\/\//i.test(href) || /^(?:\.\.?\/|\/|#)/.test(href)) {
@@ -131,9 +390,11 @@ export function renderMarkdown(markdown, { skipFirstHeading = false } = {}) {
         index += 1;
       }
       index += index < lines.length ? 1 : 0;
-      const escapedCode = escapeHtml(code.join("\n"));
+      const rawCode = code.join("\n");
+      const highlightedCode = renderCode(rawCode, language);
+      const sourceAttribute = codeSourceAttribute(rawCode);
       output.push(
-        `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre><code class="language-${escapeHtml(language)}">${escapedCode}</code></pre></figure>`,
+        `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
       );
       continue;
     }
