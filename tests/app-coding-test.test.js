@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { BamLearningApp } from "../src/app.js";
+import {
+  BamLearningApp,
+  loadCodingTestCollectionSafely,
+} from "../src/app.js";
 import {
   LocalStorageProgressRepository,
   MemoryStorage,
@@ -11,6 +15,16 @@ const problem = {
   revision: 2,
   starterCode: "function solve(value) { return value; }",
 };
+
+const curriculum = JSON.parse(
+  await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
+);
+const codingTestCollection = JSON.parse(
+  await readFile(
+    new URL("../content/coding-tests/javascript.json", import.meta.url),
+    "utf8",
+  ),
+);
 
 function installMinimalWindow(t) {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -222,8 +236,30 @@ test("코딩테스트 목록 진입은 진행 중인 이전 화면 렌더를 무
   assert.equal(app.currentView, "coding-test-list");
 });
 
-test("코딩테스트 검색은 IME 조합 중 목록을 교체하지 않는다", () => {
-  let renderCount = 0;
+test("코딩테스트 콘텐츠 로드 실패는 다른 학습 기능의 시작을 막지 않도록 격리한다", async () => {
+  const loadArguments = [];
+  const loaded = { title: "JavaScript 코딩테스트" };
+  const successful = await loadCodingTestCollectionSafely(
+    curriculum,
+    async (...args) => {
+      loadArguments.push(args);
+      return loaded;
+    },
+  );
+  const failed = await loadCodingTestCollectionSafely(curriculum, async () => {
+    throw new Error("503");
+  });
+
+  assert.equal(successful, loaded);
+  assert.deepEqual(loadArguments, [["javascript", curriculum]]);
+  assert.equal(failed, null);
+});
+
+test("코딩테스트 검색은 빠른 연속 입력을 최신 값 한 번으로 렌더한다", (t) => {
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const callbacks = [];
+  const clearedTimers = [];
+  const renderOptions = [];
   const search = {
     value: "배",
     selectionStart: 1,
@@ -231,6 +267,16 @@ test("코딩테스트 검색은 IME 조합 중 목록을 교체하지 않는다"
       return selector === "[data-coding-test-search]" ? this : null;
     },
   };
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    writable: true,
+    value: { activeElement: search },
+  });
+  t.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else delete globalThis.document;
+  });
+
   const app = Object.create(BamLearningApp.prototype);
   Object.assign(app, {
     currentView: "coding-test-list",
@@ -241,18 +287,158 @@ test("코딩테스트 검색은 IME 조합 중 목록을 교체하지 않는다"
       type: "all",
       status: "all",
     },
-    renderCodingTestList() {
-      renderCount += 1;
+    pendingCodingTestSearchRender: null,
+    codingTestSearchRenderTimer: null,
+    setCodingTestSearchRenderTimer(callback) {
+      callbacks.push(callback);
+      return callbacks.length;
+    },
+    clearCodingTestSearchRenderTimer(timer) {
+      clearedTimers.push(timer);
+    },
+    renderCodingTestList(options) {
+      renderOptions.push(options);
+    },
+  });
+
+  search.value = "배열";
+  search.selectionStart = 2;
+  app.handleInput({ target: search, isComposing: false });
+  search.value = "배열 메서드";
+  search.selectionStart = 6;
+  app.handleInput({ target: search, isComposing: false });
+
+  assert.deepEqual(clearedTimers, [1]);
+  assert.equal(renderOptions.length, 0);
+  assert.equal(app.codingTestFilters.query, "배열 메서드");
+
+  callbacks[0]();
+  assert.equal(renderOptions.length, 0);
+  callbacks[1]();
+  assert.deepEqual(renderOptions, [
+    {
+      focusSelector: "[data-coding-test-search]",
+      cursorPosition: 6,
+    },
+  ]);
+
+  search.value = "배열 메서드 검색";
+  search.selectionStart = 9;
+  app.handleInput({ target: search, isComposing: false });
+  globalThis.document.activeElement = {};
+  callbacks[2]();
+  assert.deepEqual(renderOptions[1], {
+    focusSelector: null,
+    cursorPosition: null,
+  });
+});
+
+test("코딩테스트 검색은 IME 조합 중 예약을 취소하고 종료 입력만 렌더한다", (t) => {
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const callbacks = [];
+  const renderOptions = [];
+  const search = {
+    value: "배",
+    selectionStart: 1,
+    closest(selector) {
+      return selector === "[data-coding-test-search]" ? this : null;
+    },
+  };
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    writable: true,
+    value: { activeElement: search },
+  });
+  t.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else delete globalThis.document;
+  });
+
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    currentView: "coding-test-list",
+    codingTestFilters: {
+      query: "",
+      difficulty: "all",
+      language: "all",
+      type: "all",
+      status: "all",
+    },
+    pendingCodingTestSearchRender: null,
+    codingTestSearchRenderTimer: null,
+    setCodingTestSearchRenderTimer(callback) {
+      callbacks.push(callback);
+      return callbacks.length;
+    },
+    clearCodingTestSearchRenderTimer() {},
+    renderCodingTestList(options) {
+      renderOptions.push(options);
     },
   });
 
   app.handleInput({ target: search, isComposing: true });
-  assert.equal(renderCount, 0);
+  assert.equal(callbacks.length, 0);
   assert.equal(app.codingTestFilters.query, "");
 
   search.value = "배열";
   search.selectionStart = 2;
   app.handleInput({ target: search, isComposing: false });
-  assert.equal(renderCount, 1);
+  assert.equal(renderOptions.length, 0);
   assert.equal(app.codingTestFilters.query, "배열");
+  callbacks[0]();
+  assert.equal(renderOptions.length, 1);
+
+  search.value = "배열과";
+  search.selectionStart = 3;
+  app.handleInput({ target: search, isComposing: false });
+  assert.notEqual(app.pendingCodingTestSearchRender, null);
+  search.value = "배열과 ㅎ";
+  app.handleInput({ target: search, isComposing: true });
+  assert.equal(app.pendingCodingTestSearchRender, null);
+  assert.equal(app.codingTestFilters.query, "배열과");
+  callbacks[1]();
+  assert.equal(renderOptions.length, 1);
+});
+
+test("코딩테스트 목록은 한 번 읽은 진도 스냅샷을 셸과 완료 표시에 재사용한다", () => {
+  const progress = {
+    completedCodingTestProblems: [
+      {
+        problemId: codingTestCollection.problems[0].id,
+        problemRevision: codingTestCollection.problems[0].revision,
+        completedAt: "2026-08-18T00:00:00.000Z",
+      },
+    ],
+  };
+  let progressReadCount = 0;
+  let shellArguments = null;
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    curriculum,
+    codingTestCollection,
+    codingTestFilters: {
+      query: "",
+      difficulty: "all",
+      language: "all",
+      type: "all",
+      status: "all",
+    },
+    pendingCodingTestSearchRender: null,
+    codingTestSearchRenderTimer: null,
+    progressRepository: {
+      getProgress() {
+        progressReadCount += 1;
+        return progress;
+      },
+    },
+    renderCodingTestShell(...args) {
+      shellArguments = args;
+    },
+  });
+
+  app.renderCodingTestList();
+
+  assert.equal(progressReadCount, 1);
+  assert.equal(shellArguments[1], progress);
+  assert.equal(shellArguments[2].has(codingTestCollection.problems[0].id), true);
 });

@@ -459,9 +459,9 @@ function normalizeStoredQuestAttempt(value) {
   };
 }
 
-function getQuestAttemptSuffix(id, completedAt) {
+function getTimestampedRecordSuffix(namespace, id, completedAt) {
   if (!isNonEmptyString(id) || !isValidDateString(completedAt)) return null;
-  const prefix = `quest-${completedAt}-`;
+  const prefix = `${namespace}-${completedAt}-`;
   if (!id.startsWith(prefix)) return null;
   const suffixText = id.slice(prefix.length);
   if (!/^[1-9][0-9]*$/.test(suffixText)) return null;
@@ -469,14 +469,12 @@ function getQuestAttemptSuffix(id, completedAt) {
   return Number.isSafeInteger(suffix) && suffix > 0 ? suffix : null;
 }
 
+function getQuestAttemptSuffix(id, completedAt) {
+  return getTimestampedRecordSuffix("quest", id, completedAt);
+}
+
 function getCodingTestSubmissionSuffix(id, completedAt) {
-  if (!isNonEmptyString(id) || !isValidDateString(completedAt)) return null;
-  const prefix = `coding-test-${completedAt}-`;
-  if (!id.startsWith(prefix)) return null;
-  const suffixText = id.slice(prefix.length);
-  if (!/^[1-9][0-9]*$/.test(suffixText)) return null;
-  const suffix = Number(suffixText);
-  return Number.isSafeInteger(suffix) && suffix > 0 ? suffix : null;
+  return getTimestampedRecordSuffix("coding-test", id, completedAt);
 }
 
 function isQuestOutcomeConsistent(outcome, passed, total) {
@@ -955,13 +953,13 @@ function createQuizAttemptId(completedAt, attempts) {
   return `${prefix}${largestSuffix + 1}`;
 }
 
-function createQuestAttemptId(completedAt, attempts) {
-  const prefix = `quest-${completedAt}-`;
+function createTimestampedRecordId(namespace, completedAt, records) {
+  const prefix = `${namespace}-${completedAt}-`;
   const usedSuffixes = new Set();
   let largestSuffix = 0;
-  for (const attempt of attempts) {
-    const suffix = getQuestAttemptSuffix(attempt.id, attempt.completedAt);
-    if (suffix === null || !attempt.id.startsWith(prefix)) continue;
+  for (const record of records) {
+    const suffix = getTimestampedRecordSuffix(namespace, record.id, record.completedAt);
+    if (suffix === null || !record.id.startsWith(prefix)) continue;
     usedSuffixes.add(suffix);
     largestSuffix = Math.max(largestSuffix, suffix);
   }
@@ -975,22 +973,10 @@ function createQuestAttemptId(completedAt, attempts) {
   return `${prefix}${availableSuffix}`;
 }
 
+function createQuestAttemptId(completedAt, attempts) {
+  return createTimestampedRecordId("quest", completedAt, attempts);
+}
+
 function createCodingTestSubmissionId(completedAt, submissions) {
-  const prefix = `coding-test-${completedAt}-`;
-  const usedSuffixes = new Set();
-  let largestSuffix = 0;
-  for (const submission of submissions) {
-    const suffix = getCodingTestSubmissionSuffix(submission.id, submission.completedAt);
-    if (suffix === null || !submission.id.startsWith(prefix)) continue;
-    usedSuffixes.add(suffix);
-    largestSuffix = Math.max(largestSuffix, suffix);
-  }
-
-  if (largestSuffix < Number.MAX_SAFE_INTEGER) {
-    return `${prefix}${largestSuffix + 1}`;
-  }
-
-  let availableSuffix = 1;
-  while (usedSuffixes.has(availableSuffix)) availableSuffix += 1;
-  return `${prefix}${availableSuffix}`;
+  return createTimestampedRecordId("coding-test", completedAt, submissions);
 }

@@ -277,6 +277,7 @@ function validateProblem(problemValue, index, collection, lessonMap, allTestIds,
   validateText(problem.starterCode, `${label}.starterCode`, errors);
   if (
     isNonEmptyString(problem.entryPoint) &&
+    ENTRY_POINT_PATTERN.test(problem.entryPoint) &&
     isNonEmptyString(problem.starterCode) &&
     !new RegExp(`\\b${problem.entryPoint}\\b`).test(problem.starterCode)
   ) {

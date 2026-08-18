@@ -128,6 +128,19 @@ test("동일 ID·slug·공개 테스트 ID와 누락된 실패 설명을 거부�
   assert.ok(errors.some((error) => error.includes("1:1")));
 });
 
+test("잘못된 entryPoint는 RegExp 생성 전에 구체적인 계약 오류로 보고한다", () => {
+  const invalid = structuredClone(collection);
+  invalid.problems[0].entryPoint = "count(";
+
+  const errors = validateCodingTestCollection(invalid, curriculum);
+
+  assert.ok(errors.some((error) => error.includes("entryPoint 형식이 올바르지 않습니다")));
+  assert.equal(
+    errors.some((error) => error.includes("안전하게 검증할 수 없습니다")),
+    false,
+  );
+});
+
 test("언어별 고정 경로에서 컬렉션을 불러오고 요청 언어 불일치를 거부한다", async () => {
   const requestedPaths = [];
   const loaded = await loadCodingTestCollection("javascript", curriculum, async (path) => {

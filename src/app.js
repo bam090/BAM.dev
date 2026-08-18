@@ -62,6 +62,7 @@ import {
 } from "./ui/coding-test-view.js";
 
 const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
+const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
 
 function createDefaultCodingTestFilters() {
   return {
@@ -71,6 +72,17 @@ function createDefaultCodingTestFilters() {
     type: "all",
     status: "all",
   };
+}
+
+export async function loadCodingTestCollectionSafely(
+  curriculum,
+  loader = loadCodingTestCollection,
+) {
+  try {
+    return await loader(DEFAULT_LANGUAGE_ID, curriculum);
+  } catch {
+    return null;
+  }
 }
 
 export class BamLearningApp {
@@ -92,6 +104,8 @@ export class BamLearningApp {
     this.codingTestState = null;
     this.codingTestRunner = new CodingTestRunnerAdapter(this.codeQuestRunner);
     this.activeCodingTestExecution = null;
+    this.pendingCodingTestSearchRender = null;
+    this.codingTestSearchRenderTimer = null;
     this.pendingCodingTestDraftSave = null;
     this.codingTestDraftSaveTimer = null;
     this.codingTestRequestSequence = 0;
@@ -114,8 +128,7 @@ export class BamLearningApp {
         DEFAULT_LANGUAGE_ID,
         this.curriculum,
       );
-      this.codingTestCollection = await loadCodingTestCollection(
-        DEFAULT_LANGUAGE_ID,
+      this.codingTestCollection = await loadCodingTestCollectionSafely(
         this.curriculum,
       );
       await this.openRoute({ useLastLesson: true });
@@ -134,6 +147,7 @@ export class BamLearningApp {
 
     window.addEventListener("hashchange", () => this.openRoute());
     window.addEventListener("pagehide", () => {
+      this.cancelPendingCodingTestSearchRender();
       this.flushPendingQuestDraftSave();
       this.flushPendingCodingTestDraftSave();
     });
@@ -175,6 +189,7 @@ export class BamLearningApp {
   }
 
   async openRoute({ useLastLesson = false } = {}) {
+    this.cancelPendingCodingTestSearchRender();
     this.flushPendingQuestDraftSave();
     this.flushPendingCodingTestDraftSave();
     if (!this.curriculum) return;
@@ -193,7 +208,7 @@ export class BamLearningApp {
       );
       return;
     }
-    if (String(window.location.hash).startsWith("#/coding-tests")) {
+    if (/^#\/coding-tests(?:\/|$)/u.test(String(window.location.hash))) {
       window.history.replaceState(null, "", buildCodingTestListHash());
       this.openCodingTestListRoute();
       return;
@@ -655,13 +670,13 @@ export class BamLearningApp {
   handleInput(event) {
     const codingTestSearch = event.target.closest("[data-coding-test-search]");
     if (codingTestSearch && this.currentView === "coding-test-list") {
-      if (event.isComposing) return;
+      if (event.isComposing) {
+        this.cancelPendingCodingTestSearchRender();
+        return;
+      }
       const cursorPosition = codingTestSearch.selectionStart;
       this.codingTestFilters.query = codingTestSearch.value;
-      this.renderCodingTestList({
-        focusSelector: "[data-coding-test-search]",
-        cursorPosition,
-      });
+      this.scheduleCodingTestSearchRender(codingTestSearch, cursorPosition);
       return;
     }
 
@@ -1037,6 +1052,46 @@ export class BamLearningApp {
     )) {
       button.disabled = sourceIsEmpty;
     }
+  }
+
+  setCodingTestSearchRenderTimer(callback) {
+    return window.setTimeout(callback, CODING_TEST_SEARCH_DEBOUNCE_MS);
+  }
+
+  clearCodingTestSearchRenderTimer(timer) {
+    window.clearTimeout(timer);
+  }
+
+  clearScheduledCodingTestSearchRender() {
+    if (this.codingTestSearchRenderTimer == null) return;
+    this.clearCodingTestSearchRenderTimer(this.codingTestSearchRenderTimer);
+    this.codingTestSearchRenderTimer = null;
+  }
+
+  scheduleCodingTestSearchRender(owner, cursorPosition) {
+    this.clearScheduledCodingTestSearchRender();
+    const pending = {
+      owner,
+      cursorPosition: Number.isSafeInteger(cursorPosition) ? cursorPosition : null,
+    };
+    this.pendingCodingTestSearchRender = pending;
+    this.codingTestSearchRenderTimer = this.setCodingTestSearchRenderTimer(() => {
+      if (this.pendingCodingTestSearchRender !== pending) return;
+      this.pendingCodingTestSearchRender = null;
+      this.codingTestSearchRenderTimer = null;
+      if (this.currentView !== "coding-test-list") return;
+
+      const shouldRestoreFocus = globalThis.document?.activeElement === pending.owner;
+      this.renderCodingTestList({
+        focusSelector: shouldRestoreFocus ? "[data-coding-test-search]" : null,
+        cursorPosition: shouldRestoreFocus ? pending.cursorPosition : null,
+      });
+    });
+  }
+
+  cancelPendingCodingTestSearchRender() {
+    this.clearScheduledCodingTestSearchRender();
+    this.pendingCodingTestSearchRender = null;
   }
 
   setCodingTestDraftSaveTimer(callback) {
@@ -1915,13 +1970,15 @@ export class BamLearningApp {
   }
 
   renderCodingTestList({ focusSelector = null, cursorPosition = null } = {}) {
+    this.cancelPendingCodingTestSearchRender();
     const collection = this.codingTestCollection;
     if (!this.curriculum || !collection) return;
     const language = getLanguage(this.curriculum, collection.languageId);
     if (!language) return;
 
     const allProblems = getCodingTestProblemsInOrder(collection);
-    const solvedProblemIds = this.getSolvedCodingTestProblemIds();
+    const progress = this.progressRepository.getProgress();
+    const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
     const languageMatches =
       this.codingTestFilters.language === "all" ||
       this.codingTestFilters.language === collection.languageId;
@@ -1951,7 +2008,7 @@ export class BamLearningApp {
       solvedProblemIds,
       hrefByProblemId,
     });
-    this.renderCodingTestShell(mainContent);
+    this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
 
     if (focusSelector) {
       window.requestAnimationFrame(() => {
@@ -1973,7 +2030,8 @@ export class BamLearningApp {
     if (!this.curriculum || !collection || !state) return;
     const language = getLanguage(this.curriculum, collection.languageId);
     if (!language) return;
-    const solvedProblemIds = this.getSolvedCodingTestProblemIds();
+    const progress = this.progressRepository.getProgress();
+    const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
     const mainContent = renderCodingTestView({
       languageName: language.name,
       collectionTitle: collection.title,
@@ -1989,17 +2047,23 @@ export class BamLearningApp {
       reportPersistenceStatus: state.reportPersistenceStatus,
       isSolved: solvedProblemIds.has(state.problem.id),
     });
-    this.renderCodingTestShell(mainContent);
+    this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
   }
 
-  renderCodingTestShell(mainContent) {
+  renderCodingTestShell(
+    mainContent,
+    progressSnapshot = null,
+    solvedProblemIdsSnapshot = null,
+  ) {
     const collection = this.codingTestCollection;
     if (!this.curriculum || !collection) return;
     const language = getLanguage(this.curriculum, collection.languageId);
     const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
     if (!language || lessons.length === 0) return;
 
-    const progress = this.progressRepository.getProgress();
+    const progress = progressSnapshot ?? this.progressRepository.getProgress();
+    const solvedProblemIds =
+      solvedProblemIdsSnapshot ?? this.getSolvedCodingTestProblemIds(progress);
     const completedLessonIds = new Set(progress.completedLessonIds);
     const completedLessonCount = lessons.filter((lesson) =>
       completedLessonIds.has(lesson.id),
@@ -2014,7 +2078,6 @@ export class BamLearningApp {
       progress.completedQuestIds.includes(quest.id),
     ).length;
     const problems = getCodingTestProblemsInOrder(collection);
-    const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
     const firstLessonHref = buildLessonHash(lessons[0].languageId, lessons[0].slug);
 
     this.root.innerHTML = `

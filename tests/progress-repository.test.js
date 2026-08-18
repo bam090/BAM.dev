@@ -695,6 +695,91 @@ test("코딩테스트는 실행 코드 없이 제출 요약만 저장하고 현�
   assert.equal(passed.codingTestSubmissions.length, 2);
 });
 
+test("같은 시각의 코딩테스트 제출을 최대 50개 보관하면서 ID를 고유하게 유지한다", () => {
+  const repository = new LocalStorageProgressRepository(new MemoryStorage(), fixedClock);
+  for (let index = 0; index < 52; index += 1) {
+    repository.recordCodingTestSubmission({
+      problemId: `coding-test-javascript-submission-${index}`,
+      problemRevision: 1,
+      languageId: "javascript",
+      outcome: "cancelled",
+      passed: 0,
+      total: 0,
+    });
+  }
+
+  const submissions = repository.getProgress().codingTestSubmissions;
+  assert.equal(submissions.length, 50);
+  assert.equal(new Set(submissions.map((submission) => submission.id)).size, 50);
+  assert.equal(submissions.at(-1).id.endsWith("-52"), true);
+});
+
+test("코딩테스트 submission ID는 완료 시각과 양의 safe integer suffix 전체가 일치해야 한다", () => {
+  const completedAt = "2026-08-16T12:00:00.000Z";
+  const validSubmission = {
+    id: `coding-test-${completedAt}-1`,
+    problemId: "coding-test-javascript-id-contract",
+    problemRevision: 1,
+    languageId: "javascript",
+    outcome: "cancelled",
+    passed: 0,
+    total: 0,
+    completedAt,
+  };
+  const progress = normalizeProgress({
+    ...createEmptyProgress(),
+    codingTestSubmissions: [
+      validSubmission,
+      { ...validSubmission, id: `coding-test-${completedAt}-1junk` },
+      { ...validSubmission, id: `coding-test-${completedAt}-0` },
+      { ...validSubmission, id: `coding-test-${completedAt}-01` },
+      { ...validSubmission, id: `coding-test-${completedAt}-9007199254740992` },
+      { ...validSubmission, id: "coding-test-2026-08-16T12:00:01.000Z-2" },
+      { ...validSubmission, id: `quest-${completedAt}-2` },
+    ],
+  });
+
+  assert.deepEqual(progress.codingTestSubmissions, [validSubmission]);
+});
+
+test("최대 safe integer suffix가 있어도 새 코딩테스트 submission ID가 충돌하지 않는다", () => {
+  const completedAt = "2026-08-16T12:00:00.000Z";
+  const storage = new MemoryStorage();
+  storage.setItem(
+    PROGRESS_STORAGE_KEY,
+    JSON.stringify({
+      ...createEmptyProgress(),
+      codingTestSubmissions: [
+        {
+          id: `coding-test-${completedAt}-${Number.MAX_SAFE_INTEGER}`,
+          problemId: "coding-test-javascript-existing-submission",
+          problemRevision: 1,
+          languageId: "javascript",
+          outcome: "cancelled",
+          passed: 0,
+          total: 0,
+          completedAt,
+        },
+      ],
+    }),
+  );
+  const repository = new LocalStorageProgressRepository(storage, fixedClock);
+
+  repository.recordCodingTestSubmission({
+    problemId: "coding-test-javascript-new-submission",
+    problemRevision: 1,
+    languageId: "javascript",
+    outcome: "cancelled",
+    passed: 0,
+    total: 0,
+  });
+
+  const submissions = repository.getProgress().codingTestSubmissions;
+  assert.equal(submissions.length, 2);
+  assert.equal(new Set(submissions.map((submission) => submission.id)).size, 2);
+  assert.equal(submissions[1].id, `coding-test-${completedAt}-1`);
+});
+
 test("손상된 코딩테스트 데이터는 버리고 보관 밖 통과 제출에서도 완료 상태를 복구한다", () => {
   const completedAt = "2026-08-16T12:00:00.000Z";
   const oldPassedSubmission = {
