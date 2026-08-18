@@ -87,26 +87,32 @@ class ResilientBrowserStorage {
   }
 
   keys() {
-    const keys = new Set(this.fallbackStorage.keys());
     if (this.primaryStorage && this.primaryReadAvailable) {
       try {
+        const length = this.primaryStorage.length;
         if (
-          !Number.isSafeInteger(this.primaryStorage.length) ||
-          this.primaryStorage.length < 0 ||
+          !Number.isSafeInteger(length) ||
+          length < 0 ||
           typeof this.primaryStorage.key !== "function"
         ) {
-          return [...keys].filter((key) => !this.tombstones.has(key));
+          return this.fallbackStorage
+            .keys()
+            .filter((key) => !this.tombstones.has(key));
         }
-        for (let index = 0; index < this.primaryStorage.length; index += 1) {
+        const keys = new Set(this.memoryOnlyKeys);
+        for (let index = 0; index < length; index += 1) {
           const key = this.primaryStorage.key(index);
           if (typeof key === "string") keys.add(key);
         }
+        return [...keys].filter((key) => !this.tombstones.has(key));
       } catch {
         // 키 열거 실패만으로 읽기·쓰기까지 포기하지 않습니다. manifest를
         // 읽을 수 있는 저장소는 fallback 키와 getItem으로 레코드를 복구합니다.
       }
     }
-    return [...keys].filter((key) => !this.tombstones.has(key));
+    return this.fallbackStorage
+      .keys()
+      .filter((key) => !this.tombstones.has(key));
   }
 
   isPersistent() {

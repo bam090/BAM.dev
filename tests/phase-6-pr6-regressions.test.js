@@ -52,7 +52,10 @@ test("Web Project JSON Schema 검증은 maximum을 초과한 정수를 거부한
 
   validateSchemaValue(invalid, schema, schema, "$", errors);
 
-  assert.ok(errors.length > 0, "estimatedMinutes: 481은 maximum: 480을 위반해야 합니다.");
+  assert.ok(
+    errors.includes("$.projects[0].estimatedMinutes: 480보다 큽니다."),
+    `estimatedMinutes: 481의 maximum 오류가 필요합니다: ${errors.join(" | ")}`,
+  );
 });
 
 test("signal이 중단되지 않은 AbortError는 사용자 취소가 아니라 engine_error다", async () => {

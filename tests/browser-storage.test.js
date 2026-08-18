@@ -57,6 +57,38 @@ test("브라우저 저장소 wrapper는 키 열거와 개별 삭제를 지원한
   assert.equal(storage.isPersistent(), true);
 });
 
+test("다른 탭이 primary 키를 삭제하면 정상 키 열거에서 fallback 캐시를 제외한다", () => {
+  const values = new Map([
+    ["keep", "persisted"],
+    ["removed.by.other.tab", "stale soon"],
+  ]);
+  const primaryStorage = {
+    get length() {
+      return values.size;
+    },
+    key(index) {
+      return [...values.keys()][index] ?? null;
+    },
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+  };
+  const storage = createBrowserStorage({ localStorage: primaryStorage });
+
+  assert.equal(storage.getItem("removed.by.other.tab"), "stale soon");
+  assert.deepEqual(storage.keys().sort(), ["keep", "removed.by.other.tab"]);
+
+  values.delete("removed.by.other.tab");
+
+  assert.deepEqual(storage.keys(), ["keep"]);
+});
+
 test("키 열거 API가 없어도 사용 가능한 primary 읽기·쓰기를 포기하지 않는다", () => {
   const values = new Map([
     ["manifest", "record.one"],
