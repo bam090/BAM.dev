@@ -3,6 +3,9 @@ const MAX_QUIZ_ATTEMPTS = 20;
 const MAX_QUEST_DRAFTS = 20;
 const MAX_QUEST_ATTEMPTS = 50;
 const MAX_QUEST_SOURCE_BYTES = 20 * 1024;
+const MAX_CODING_TEST_DRAFTS = 20;
+const MAX_CODING_TEST_SUBMISSIONS = 50;
+const MAX_CODING_TEST_SOURCE_BYTES = 20 * 1024;
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LANGUAGE_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const OPTION_ID_PATTERN = /^[a-d]$/;
@@ -36,6 +39,34 @@ const STORED_QUEST_ATTEMPT_FIELDS = new Set([
   ...QUEST_ATTEMPT_INPUT_FIELDS,
   "completedAt",
 ]);
+const CODING_TEST_DRAFT_INPUT_FIELDS = new Set([
+  "problemId",
+  "problemRevision",
+  "languageId",
+  "source",
+]);
+const STORED_CODING_TEST_DRAFT_FIELDS = new Set([
+  ...CODING_TEST_DRAFT_INPUT_FIELDS,
+  "updatedAt",
+]);
+const CODING_TEST_SUBMISSION_INPUT_FIELDS = new Set([
+  "problemId",
+  "problemRevision",
+  "languageId",
+  "outcome",
+  "passed",
+  "total",
+]);
+const STORED_CODING_TEST_SUBMISSION_FIELDS = new Set([
+  "id",
+  ...CODING_TEST_SUBMISSION_INPUT_FIELDS,
+  "completedAt",
+]);
+const COMPLETED_CODING_TEST_FIELDS = new Set([
+  "problemId",
+  "problemRevision",
+  "completedAt",
+]);
 const textEncoder = new TextEncoder();
 
 export function createEmptyProgress() {
@@ -48,6 +79,9 @@ export function createEmptyProgress() {
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    codingTestDrafts: [],
+    codingTestSubmissions: [],
+    completedCodingTestProblems: [],
     updatedAt: null,
   };
 }
@@ -86,6 +120,27 @@ export function normalizeProgress(value) {
     if (isCompletedQuestAttempt(attempt)) completedQuestIds.add(attempt.questId);
   }
   const retainedQuestAttempts = questAttempts.slice(-MAX_QUEST_ATTEMPTS);
+  const codingTestDrafts = normalizeCodingTestDrafts(value.codingTestDrafts);
+  const codingTestSubmissions = [];
+  const codingTestSubmissionIds = new Set();
+  const completedCodingTestProblems = normalizeCompletedCodingTestProblems(
+    value.completedCodingTestProblems,
+  );
+  for (const storedValue of Array.isArray(value.codingTestSubmissions)
+    ? value.codingTestSubmissions
+    : []) {
+    const submission = normalizeStoredCodingTestSubmission(storedValue);
+    if (!submission || codingTestSubmissionIds.has(submission.id)) continue;
+    codingTestSubmissionIds.add(submission.id);
+    codingTestSubmissions.push(submission);
+    if (isCompletedCodingTestSubmission(submission)) {
+      retainCompletedCodingTestProblem(completedCodingTestProblems, {
+        problemId: submission.problemId,
+        problemRevision: submission.problemRevision,
+        completedAt: submission.completedAt,
+      });
+    }
+  }
 
   return {
     schemaVersion: 1,
@@ -96,6 +151,9 @@ export function normalizeProgress(value) {
     questDrafts,
     questAttempts: retainedQuestAttempts,
     completedQuestIds: [...completedQuestIds],
+    codingTestDrafts,
+    codingTestSubmissions: codingTestSubmissions.slice(-MAX_CODING_TEST_SUBMISSIONS),
+    completedCodingTestProblems: [...completedCodingTestProblems.values()],
     updatedAt: isValidDateString(value.updatedAt) ? value.updatedAt : null,
   };
 }
@@ -114,6 +172,14 @@ function isQuizQuestionId(value) {
 
 function isQuestId(value) {
   return isStableId(value) && value.startsWith("quest-") && value.split("-").length >= 3;
+}
+
+function isCodingTestProblemId(value) {
+  return (
+    isStableId(value) &&
+    value.startsWith("coding-test-") &&
+    value.split("-").length >= 4
+  );
 }
 
 function isLanguageId(value) {
@@ -135,6 +201,10 @@ function utf8ByteLength(value) {
 
 function questMatchesLanguage(questId, languageId) {
   return questId.startsWith(`quest-${languageId}-`);
+}
+
+function codingTestProblemMatchesLanguage(problemId, languageId) {
+  return problemId.startsWith(`coding-test-${languageId}-`);
 }
 
 function snapshotPlainDataDto(value, allowedFields) {
@@ -197,6 +267,165 @@ function normalizeQuestDrafts(value) {
     .slice(-MAX_QUEST_DRAFTS);
 }
 
+function isValidProblemRevision(value) {
+  return Number.isSafeInteger(value) && value > 0;
+}
+
+function normalizeStoredCodingTestDraft(value) {
+  const draft = snapshotPlainDataDto(value, STORED_CODING_TEST_DRAFT_FIELDS);
+  if (
+    !draft ||
+    !isCodingTestProblemId(draft.problemId) ||
+    !isValidProblemRevision(draft.problemRevision) ||
+    !isLanguageId(draft.languageId) ||
+    !codingTestProblemMatchesLanguage(draft.problemId, draft.languageId) ||
+    typeof draft.source !== "string" ||
+    utf8ByteLength(draft.source) > MAX_CODING_TEST_SOURCE_BYTES ||
+    !isValidDateString(draft.updatedAt)
+  ) {
+    return null;
+  }
+  return {
+    problemId: draft.problemId,
+    problemRevision: draft.problemRevision,
+    languageId: draft.languageId,
+    source: draft.source,
+    updatedAt: draft.updatedAt,
+  };
+}
+
+function normalizeCodingTestDrafts(value) {
+  const latestByProblemId = new Map();
+  for (const storedValue of Array.isArray(value) ? value : []) {
+    const draft = normalizeStoredCodingTestDraft(storedValue);
+    if (!draft) continue;
+    const previous = latestByProblemId.get(draft.problemId);
+    if (!previous || previous.updatedAt <= draft.updatedAt) {
+      latestByProblemId.set(draft.problemId, draft);
+    }
+  }
+
+  return [...latestByProblemId.values()]
+    .sort((left, right) => left.updatedAt.localeCompare(right.updatedAt))
+    .slice(-MAX_CODING_TEST_DRAFTS);
+}
+
+function normalizeCodingTestDraftInput(value) {
+  const draft = snapshotPlainDataDto(value, CODING_TEST_DRAFT_INPUT_FIELDS);
+  if (
+    !draft ||
+    !isCodingTestProblemId(draft.problemId) ||
+    !isValidProblemRevision(draft.problemRevision) ||
+    !isLanguageId(draft.languageId) ||
+    !codingTestProblemMatchesLanguage(draft.problemId, draft.languageId)
+  ) {
+    throw new TypeError("코딩테스트 초안의 문제 ID, 리비전과 언어가 올바르지 않습니다.");
+  }
+  if (typeof draft.source !== "string") {
+    throw new TypeError("코딩테스트 초안 source는 문자열이어야 합니다.");
+  }
+  if (utf8ByteLength(draft.source) > MAX_CODING_TEST_SOURCE_BYTES) {
+    throw new RangeError(
+      `코딩테스트 초안은 UTF-8 ${MAX_CODING_TEST_SOURCE_BYTES}바이트 이하여야 합니다.`,
+    );
+  }
+  return {
+    problemId: draft.problemId,
+    problemRevision: draft.problemRevision,
+    languageId: draft.languageId,
+    source: draft.source,
+  };
+}
+
+function isValidCodingTestSubmissionSnapshot(submission, requireStoredFields) {
+  return (
+    (!requireStoredFields ||
+      getCodingTestSubmissionSuffix(submission.id, submission.completedAt) !== null) &&
+    isCodingTestProblemId(submission.problemId) &&
+    isValidProblemRevision(submission.problemRevision) &&
+    isLanguageId(submission.languageId) &&
+    codingTestProblemMatchesLanguage(submission.problemId, submission.languageId) &&
+    QUEST_OUTCOMES.has(submission.outcome) &&
+    Number.isSafeInteger(submission.passed) &&
+    submission.passed >= 0 &&
+    Number.isSafeInteger(submission.total) &&
+    submission.total >= submission.passed &&
+    isQuestOutcomeConsistent(submission.outcome, submission.passed, submission.total) &&
+    (!requireStoredFields || isValidDateString(submission.completedAt))
+  );
+}
+
+function normalizeStoredCodingTestSubmission(value) {
+  const submission = snapshotPlainDataDto(value, STORED_CODING_TEST_SUBMISSION_FIELDS);
+  if (!submission || !isValidCodingTestSubmissionSnapshot(submission, true)) return null;
+  return {
+    id: submission.id,
+    problemId: submission.problemId,
+    problemRevision: submission.problemRevision,
+    languageId: submission.languageId,
+    outcome: submission.outcome,
+    passed: submission.passed,
+    total: submission.total,
+    completedAt: submission.completedAt,
+  };
+}
+
+function normalizeCodingTestSubmissionInput(value) {
+  const submission = snapshotPlainDataDto(value, CODING_TEST_SUBMISSION_INPUT_FIELDS);
+  if (!submission || !isValidCodingTestSubmissionSnapshot(submission, false)) {
+    throw new TypeError("코딩테스트 제출 결과 형식이 올바르지 않습니다.");
+  }
+  return {
+    problemId: submission.problemId,
+    problemRevision: submission.problemRevision,
+    languageId: submission.languageId,
+    outcome: submission.outcome,
+    passed: submission.passed,
+    total: submission.total,
+  };
+}
+
+function isCompletedCodingTestSubmission(submission) {
+  return (
+    submission.outcome === "passed" &&
+    submission.total > 0 &&
+    submission.passed === submission.total
+  );
+}
+
+function normalizeCompletedCodingTestProblem(value) {
+  const completed = snapshotPlainDataDto(value, COMPLETED_CODING_TEST_FIELDS);
+  if (
+    !completed ||
+    !isCodingTestProblemId(completed.problemId) ||
+    !isValidProblemRevision(completed.problemRevision) ||
+    !isValidDateString(completed.completedAt)
+  ) {
+    return null;
+  }
+  return {
+    problemId: completed.problemId,
+    problemRevision: completed.problemRevision,
+    completedAt: completed.completedAt,
+  };
+}
+
+function retainCompletedCodingTestProblem(completedByProblemId, completed) {
+  const previous = completedByProblemId.get(completed.problemId);
+  if (!previous || previous.completedAt <= completed.completedAt) {
+    completedByProblemId.set(completed.problemId, completed);
+  }
+}
+
+function normalizeCompletedCodingTestProblems(value) {
+  const completedByProblemId = new Map();
+  for (const storedValue of Array.isArray(value) ? value : []) {
+    const completed = normalizeCompletedCodingTestProblem(storedValue);
+    if (completed) retainCompletedCodingTestProblem(completedByProblemId, completed);
+  }
+  return completedByProblemId;
+}
+
 function isValidQuestAttemptSnapshot(attempt, requireStoredFields) {
   return (
     (!requireStoredFields || getQuestAttemptSuffix(attempt.id, attempt.completedAt) !== null) &&
@@ -233,6 +462,16 @@ function normalizeStoredQuestAttempt(value) {
 function getQuestAttemptSuffix(id, completedAt) {
   if (!isNonEmptyString(id) || !isValidDateString(completedAt)) return null;
   const prefix = `quest-${completedAt}-`;
+  if (!id.startsWith(prefix)) return null;
+  const suffixText = id.slice(prefix.length);
+  if (!/^[1-9][0-9]*$/.test(suffixText)) return null;
+  const suffix = Number(suffixText);
+  return Number.isSafeInteger(suffix) && suffix > 0 ? suffix : null;
+}
+
+function getCodingTestSubmissionSuffix(id, completedAt) {
+  if (!isNonEmptyString(id) || !isValidDateString(completedAt)) return null;
+  const prefix = `coding-test-${completedAt}-`;
   if (!id.startsWith(prefix)) return null;
   const suffixText = id.slice(prefix.length);
   if (!/^[1-9][0-9]*$/.test(suffixText)) return null;
@@ -454,6 +693,22 @@ export class ProgressRepository {
     throw new Error("recordQuestAttempt()를 구현해야 합니다.");
   }
 
+  getCodingTestDraft() {
+    throw new Error("getCodingTestDraft()를 구현해야 합니다.");
+  }
+
+  saveCodingTestDraft() {
+    throw new Error("saveCodingTestDraft()를 구현해야 합니다.");
+  }
+
+  clearCodingTestDraft() {
+    throw new Error("clearCodingTestDraft()를 구현해야 합니다.");
+  }
+
+  recordCodingTestSubmission() {
+    throw new Error("recordCodingTestSubmission()을 구현해야 합니다.");
+  }
+
   getPersistenceStatus() {
     throw new Error("getPersistenceStatus()를 구현해야 합니다.");
   }
@@ -602,6 +857,83 @@ export class LocalStorageProgressRepository extends ProgressRepository {
     );
   }
 
+  getCodingTestDraft(problemId, problemRevision) {
+    if (!isCodingTestProblemId(problemId) || !isValidProblemRevision(problemRevision)) {
+      throw new TypeError("유효한 코딩테스트 문제 ID와 리비전이 필요합니다.");
+    }
+    return (
+      this.getProgress().codingTestDrafts.find(
+        (draft) =>
+          draft.problemId === problemId && draft.problemRevision === problemRevision,
+      ) ?? null
+    );
+  }
+
+  saveCodingTestDraft(draftInput) {
+    const draft = normalizeCodingTestDraftInput(draftInput);
+    const progress = this.getProgress();
+    const updatedAt = this.clock().toISOString();
+
+    return this.#save(
+      {
+        ...progress,
+        codingTestDrafts: [
+          ...progress.codingTestDrafts.filter(
+            (stored) => stored.problemId !== draft.problemId,
+          ),
+          { ...draft, updatedAt },
+        ].slice(-MAX_CODING_TEST_DRAFTS),
+      },
+      updatedAt,
+    );
+  }
+
+  clearCodingTestDraft(problemId) {
+    if (!isCodingTestProblemId(problemId)) {
+      throw new TypeError("유효한 코딩테스트 문제 ID가 필요합니다.");
+    }
+    const progress = this.getProgress();
+    return this.#save({
+      ...progress,
+      codingTestDrafts: progress.codingTestDrafts.filter(
+        (draft) => draft.problemId !== problemId,
+      ),
+    });
+  }
+
+  recordCodingTestSubmission(submissionInput) {
+    const submission = normalizeCodingTestSubmissionInput(submissionInput);
+    const progress = this.getProgress();
+    const completedAt = this.clock().toISOString();
+    const storedSubmission = {
+      id: createCodingTestSubmissionId(completedAt, progress.codingTestSubmissions),
+      ...submission,
+      completedAt,
+    };
+    const completedCodingTestProblems = normalizeCompletedCodingTestProblems(
+      progress.completedCodingTestProblems,
+    );
+    if (isCompletedCodingTestSubmission(storedSubmission)) {
+      retainCompletedCodingTestProblem(completedCodingTestProblems, {
+        problemId: storedSubmission.problemId,
+        problemRevision: storedSubmission.problemRevision,
+        completedAt,
+      });
+    }
+
+    return this.#save(
+      {
+        ...progress,
+        codingTestSubmissions: [
+          ...progress.codingTestSubmissions,
+          storedSubmission,
+        ].slice(-MAX_CODING_TEST_SUBMISSIONS),
+        completedCodingTestProblems: [...completedCodingTestProblems.values()],
+      },
+      completedAt,
+    );
+  }
+
   #save(progress, updatedAt = this.clock().toISOString()) {
     const nextProgress = normalizeProgress({
       ...progress,
@@ -630,6 +962,26 @@ function createQuestAttemptId(completedAt, attempts) {
   for (const attempt of attempts) {
     const suffix = getQuestAttemptSuffix(attempt.id, attempt.completedAt);
     if (suffix === null || !attempt.id.startsWith(prefix)) continue;
+    usedSuffixes.add(suffix);
+    largestSuffix = Math.max(largestSuffix, suffix);
+  }
+
+  if (largestSuffix < Number.MAX_SAFE_INTEGER) {
+    return `${prefix}${largestSuffix + 1}`;
+  }
+
+  let availableSuffix = 1;
+  while (usedSuffixes.has(availableSuffix)) availableSuffix += 1;
+  return `${prefix}${availableSuffix}`;
+}
+
+function createCodingTestSubmissionId(completedAt, submissions) {
+  const prefix = `coding-test-${completedAt}-`;
+  const usedSuffixes = new Set();
+  let largestSuffix = 0;
+  for (const submission of submissions) {
+    const suffix = getCodingTestSubmissionSuffix(submission.id, submission.completedAt);
+    if (suffix === null || !submission.id.startsWith(prefix)) continue;
     usedSuffixes.add(suffix);
     largestSuffix = Math.max(largestSuffix, suffix);
   }

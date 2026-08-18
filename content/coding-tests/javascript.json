@@ -1,0 +1,710 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "languageId": "javascript",
+  "title": "JavaScript 코딩테스트",
+  "problems": [
+    {
+      "id": "coding-test-javascript-target-words",
+      "slug": "count-target-words",
+      "revision": 1,
+      "order": 1,
+      "lessonId": "js-04-collections",
+      "conceptIds": ["js.arrays", "js.builtins"],
+      "difficulty": "beginner",
+      "type": "string",
+      "tags": ["문자열", "분리", "카운팅"],
+      "estimatedMinutes": 15,
+      "title": "목표 단어 세기",
+      "summary": "공백으로 구분된 문장에서 대소문자를 무시하고 목표 단어의 등장 횟수를 셉니다.",
+      "description": "`countTargetWords(text, target)` 함수를 작성하세요. `text`를 공백 문자로 나눈 단어 중 `target`과 대소문자를 무시하고 정확히 같은 단어의 개수를 반환합니다. 다른 단어 안에 포함된 부분 문자열은 세지 않습니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "text",
+            "type": "string",
+            "description": "영문자와 공백 문자로 이루어진 길이 0 이상 1,000 이하의 문자열입니다."
+          },
+          {
+            "name": "target",
+            "type": "string",
+            "description": "공백이 없는 영문 단어이며 길이는 1 이상 30 이하입니다."
+          }
+        ],
+        "returns": {
+          "type": "integer",
+          "description": "대소문자를 무시했을 때 target과 정확히 같은 단어의 수입니다."
+        },
+        "constraints": [
+          "단어는 하나 이상의 공백 문자로 구분됩니다.",
+          "대소문자는 구분하지 않습니다.",
+          "부분 문자열 일치는 단어 일치로 세지 않습니다."
+        ],
+        "complexity": {
+          "time": "O(n)",
+          "space": "O(n)"
+        }
+      },
+      "entryPoint": "countTargetWords",
+      "starterCode": "function countTargetWords(text, target) {\n  // 문장을 단어 단위로 나눈 뒤 target과 비교하세요.\n  return 0;\n}\n",
+      "examples": [
+        {
+          "args": ["Code learn code", "code"],
+          "expected": 2,
+          "explanation": "Code와 code는 대소문자를 무시하면 모두 목표 단어와 같습니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "words-empty-text",
+          "label": "빈 문장",
+          "args": ["", "js"],
+          "expected": 0
+        },
+        {
+          "id": "words-basic-repeat",
+          "label": "같은 단어가 두 번 등장",
+          "args": ["Code learn code", "code"],
+          "expected": 2
+        },
+        {
+          "id": "words-ignore-case",
+          "label": "대소문자가 다른 같은 단어",
+          "args": ["JS js Js", "js"],
+          "expected": 3
+        },
+        {
+          "id": "words-repeated-whitespace",
+          "label": "앞뒤와 단어 사이에 여러 공백",
+          "args": ["  build   test build  ", "build"],
+          "expected": 2
+        },
+        {
+          "id": "words-substring-trap",
+          "label": "다른 단어 안의 부분 문자열",
+          "args": ["cat scatter cat", "cat"],
+          "expected": 2
+        },
+        {
+          "id": "words-target-absent",
+          "label": "목표 단어가 없는 문장",
+          "args": ["arrays and objects", "function"],
+          "expected": 0
+        }
+      ],
+      "runTestIds": ["words-basic-repeat", "words-ignore-case", "words-substring-trap"],
+      "failureExplanations": [
+        {
+          "testId": "words-empty-text",
+          "message": "빈 문장은 단어를 하나 가진 배열이 아니라 목표 단어가 0번 등장한 경우입니다."
+        },
+        {
+          "testId": "words-basic-repeat",
+          "message": "문장의 모든 단어를 끝까지 순회하며 같은 단어를 누적했는지 확인하세요."
+        },
+        {
+          "testId": "words-ignore-case",
+          "message": "문장 단어와 목표 단어를 같은 대소문자 형태로 바꾼 뒤 비교하세요."
+        },
+        {
+          "testId": "words-repeated-whitespace",
+          "message": "하나 이상의 연속된 공백을 하나의 단어 구분으로 처리해야 합니다."
+        },
+        {
+          "testId": "words-substring-trap",
+          "message": "문자열 내부 포함 여부가 아니라 분리된 단어 전체가 같은지 비교하세요."
+        },
+        {
+          "testId": "words-target-absent",
+          "message": "일치하는 단어가 없으면 누적값 0을 그대로 반환해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-javascript-inventory-summary",
+      "slug": "summarize-inventory",
+      "revision": 1,
+      "order": 2,
+      "lessonId": "js-04-collections",
+      "conceptIds": ["js.arrays", "js.objects"],
+      "difficulty": "beginner",
+      "type": "object",
+      "tags": ["배열", "객체", "누적"],
+      "estimatedMinutes": 20,
+      "title": "재고 수량 요약하기",
+      "summary": "재고 항목을 순회해 카테고리별 수량을 하나의 객체로 누적합니다.",
+      "description": "`summarizeInventory(items)` 함수를 작성하세요. 각 항목의 `category`와 `quantity`를 읽어 food, book, tool 세 카테고리의 총수량을 반환합니다. 항목이 없거나 특정 카테고리가 없어도 세 키를 모두 포함해야 합니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "items",
+            "type": "{ category: \"food\" | \"book\" | \"tool\", quantity: integer }[]",
+            "description": "길이 0 이상 100 이하인 재고 항목 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "{ food: integer, book: integer, tool: integer }",
+          "description": "세 카테고리의 수량 합계를 담은 객체입니다."
+        },
+        "constraints": [
+          "quantity는 0 이상 100 이하인 정수입니다.",
+          "같은 카테고리가 여러 번 나오면 수량을 모두 더합니다.",
+          "반환 객체는 food, book, tool 키를 항상 포함합니다."
+        ],
+        "complexity": {
+          "time": "O(n)",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "summarizeInventory",
+      "starterCode": "function summarizeInventory(items) {\n  const totals = { food: 0, book: 0, tool: 0 };\n\n  // 각 항목의 카테고리에 수량을 누적하세요.\n\n  return totals;\n}\n",
+      "examples": [
+        {
+          "args": [[{"category": "food", "quantity": 2}, {"category": "tool", "quantity": 4}, {"category": "book", "quantity": 1}, {"category": "tool", "quantity": 3}]],
+          "expected": {"food": 2, "book": 1, "tool": 7},
+          "explanation": "tool 항목 두 개의 수량 4와 3을 더하고 food와 book도 각각 누적합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "inventory-empty",
+          "label": "재고 항목이 없는 경우",
+          "args": [[]],
+          "expected": {"food": 0, "book": 0, "tool": 0}
+        },
+        {
+          "id": "inventory-single-category",
+          "label": "카테고리 하나만 있는 경우",
+          "args": [[{"category": "book", "quantity": 3}]],
+          "expected": {"food": 0, "book": 3, "tool": 0}
+        },
+        {
+          "id": "inventory-duplicate-category",
+          "label": "같은 카테고리가 반복되는 경우",
+          "args": [[{"category": "food", "quantity": 2}, {"category": "food", "quantity": 5}]],
+          "expected": {"food": 7, "book": 0, "tool": 0}
+        },
+        {
+          "id": "inventory-mixed-duplicates",
+          "label": "여러 카테고리와 중복 항목",
+          "args": [[{"category": "food", "quantity": 2}, {"category": "tool", "quantity": 4}, {"category": "book", "quantity": 1}, {"category": "tool", "quantity": 3}]],
+          "expected": {"food": 2, "book": 1, "tool": 7}
+        },
+        {
+          "id": "inventory-zero-quantity",
+          "label": "수량이 0인 항목",
+          "args": [[{"category": "food", "quantity": 0}, {"category": "book", "quantity": 2}]],
+          "expected": {"food": 0, "book": 2, "tool": 0}
+        },
+        {
+          "id": "inventory-maximum-total",
+          "label": "같은 카테고리의 최대 수량 누적",
+          "args": [[{"category": "tool", "quantity": 100}, {"category": "tool", "quantity": 100}, {"category": "tool", "quantity": 100}]],
+          "expected": {"food": 0, "book": 0, "tool": 300}
+        }
+      ],
+      "runTestIds": ["inventory-empty", "inventory-duplicate-category", "inventory-mixed-duplicates"],
+      "failureExplanations": [
+        {
+          "testId": "inventory-empty",
+          "message": "항목이 없어도 세 카테고리 키가 0인 초기 객체를 반환해야 합니다."
+        },
+        {
+          "testId": "inventory-single-category",
+          "message": "현재 항목의 category를 반환 객체의 키로 사용했는지 확인하세요."
+        },
+        {
+          "testId": "inventory-duplicate-category",
+          "message": "이전 합계를 덮어쓰지 말고 현재 quantity를 더해야 합니다."
+        },
+        {
+          "testId": "inventory-mixed-duplicates",
+          "message": "각 카테고리가 서로 독립적인 누적값을 유지하는지 확인하세요."
+        },
+        {
+          "testId": "inventory-zero-quantity",
+          "message": "0도 유효한 수량이며 다른 카테고리의 누적에 영향을 주지 않아야 합니다."
+        },
+        {
+          "testId": "inventory-maximum-total",
+          "message": "같은 카테고리가 여러 번 반복되어도 모든 수량을 빠짐없이 누적해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-javascript-increasing-run",
+      "slug": "longest-increasing-run",
+      "revision": 1,
+      "order": 3,
+      "lessonId": "js-04-collections",
+      "conceptIds": ["js.arrays"],
+      "difficulty": "beginner",
+      "type": "array",
+      "tags": ["배열", "연속 구간", "상태"],
+      "estimatedMinutes": 20,
+      "title": "가장 긴 연속 증가 구간",
+      "summary": "배열에서 바로 이전 값보다 엄격히 커지는 가장 긴 연속 구간의 길이를 찾습니다.",
+      "description": "`longestIncreasingRun(values)` 함수를 작성하세요. 인접한 다음 값이 바로 이전 값보다 클 때만 같은 증가 구간입니다. 같거나 작아지면 새 구간이 시작됩니다. 부분 수열이 아니라 원래 배열에서 서로 붙어 있는 구간을 평가합니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "values",
+            "type": "integer[]",
+            "description": "길이 0 이상 100 이하이며 각 값이 -1,000 이상 1,000 이하인 정수 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "integer",
+          "description": "가장 긴 연속 증가 구간의 길이이며 빈 배열이면 0입니다."
+        },
+        "constraints": [
+          "증가는 다음 값이 이전 값보다 엄격히 큰 경우입니다.",
+          "같은 값이 연속되면 증가 구간이 끊깁니다.",
+          "빈 배열은 0을 반환합니다."
+        ],
+        "complexity": {
+          "time": "O(n)",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "longestIncreasingRun",
+      "starterCode": "function longestIncreasingRun(values) {\n  if (values.length === 0) return 0;\n\n  // 현재 구간 길이와 지금까지의 최댓값을 갱신하세요.\n  return 1;\n}\n",
+      "examples": [
+        {
+          "args": [[1, 4, 2, 3, 5, 0]],
+          "expected": 3,
+          "explanation": "연속 구간 [2, 3, 5]의 길이 3이 가장 깁니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "run-empty-array",
+          "label": "빈 배열",
+          "args": [[]],
+          "expected": 0
+        },
+        {
+          "id": "run-single-value",
+          "label": "값이 하나인 배열",
+          "args": [[7]],
+          "expected": 1
+        },
+        {
+          "id": "run-all-increasing",
+          "label": "전체가 증가하는 배열",
+          "args": [[1, 2, 3, 4, 5]],
+          "expected": 5
+        },
+        {
+          "id": "run-reset-and-grow",
+          "label": "감소 뒤 더 긴 증가 구간",
+          "args": [[1, 4, 2, 3, 5, 0]],
+          "expected": 3
+        },
+        {
+          "id": "run-equal-breaks",
+          "label": "같은 값에서 증가가 끊기는 경우",
+          "args": [[2, 2, 3]],
+          "expected": 2
+        },
+        {
+          "id": "run-all-decreasing",
+          "label": "전체가 감소하는 배열",
+          "args": [[5, 4, 3, 2]],
+          "expected": 1
+        }
+      ],
+      "runTestIds": ["run-empty-array", "run-reset-and-grow", "run-equal-breaks"],
+      "failureExplanations": [
+        {
+          "testId": "run-empty-array",
+          "message": "빈 배열에는 길이 1인 구간도 없으므로 0을 별도로 반환해야 합니다."
+        },
+        {
+          "testId": "run-single-value",
+          "message": "값 하나는 그 자체로 길이 1인 연속 증가 구간입니다."
+        },
+        {
+          "testId": "run-all-increasing",
+          "message": "증가가 이어질 때 현재 구간 길이와 최댓값을 함께 갱신하세요."
+        },
+        {
+          "testId": "run-reset-and-grow",
+          "message": "감소가 나타나면 현재 구간만 1로 초기화하고 이전 최댓값은 유지해야 합니다."
+        },
+        {
+          "testId": "run-equal-breaks",
+          "message": "같은 값은 엄격한 증가가 아니므로 새 구간을 시작해야 합니다."
+        },
+        {
+          "testId": "run-all-decreasing",
+          "message": "감소 배열의 각 값도 길이 1인 구간이며 최종 결과는 1입니다."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-javascript-product-order",
+      "slug": "sort-products-by-price",
+      "revision": 1,
+      "order": 4,
+      "lessonId": "js-04-collections",
+      "conceptIds": ["js.arrays", "js.objects", "js.builtins"],
+      "difficulty": "intermediate",
+      "type": "sorting",
+      "tags": ["정렬", "객체 배열", "다중 기준"],
+      "estimatedMinutes": 25,
+      "title": "상품 가격 순서 정하기",
+      "summary": "상품을 가격 오름차순으로 정렬하고 같은 가격에서는 ID 순서를 적용합니다.",
+      "description": "`sortProductsByPrice(products)` 함수를 작성하세요. 가격이 낮은 상품부터 ID를 반환하고, 가격이 같으면 ASCII 소문자 ID의 사전순으로 정렬합니다. 결과는 상품 객체가 아니라 ID 문자열 배열이어야 합니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "products",
+            "type": "{ id: string, price: integer }[]",
+            "description": "서로 다른 소문자 ID와 0 이상 1,000,000 이하 가격을 가진 상품 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "string[]",
+          "description": "가격과 ID 보조 기준으로 정렬된 상품 ID 배열입니다."
+        },
+        "constraints": [
+          "가격은 오름차순으로 정렬합니다.",
+          "가격이 같으면 ID를 ASCII 사전순으로 정렬합니다.",
+          "반환값에는 ID 문자열만 담습니다."
+        ],
+        "complexity": {
+          "time": "O(n log n)",
+          "space": "O(n)"
+        }
+      },
+      "entryPoint": "sortProductsByPrice",
+      "starterCode": "function sortProductsByPrice(products) {\n  // 가격과 ID를 차례로 비교하는 정렬 기준을 작성하세요.\n  return [];\n}\n",
+      "examples": [
+        {
+          "args": [[{"id": "b", "price": 10}, {"id": "c", "price": 5}, {"id": "a", "price": 10}]],
+          "expected": ["c", "a", "b"],
+          "explanation": "c가 가장 저렴하고, 가격이 같은 a와 b는 ID 순서로 배치됩니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "products-empty",
+          "label": "상품이 없는 경우",
+          "args": [[]],
+          "expected": []
+        },
+        {
+          "id": "products-single",
+          "label": "상품이 하나인 경우",
+          "args": [[{"id": "only", "price": 50}]],
+          "expected": ["only"]
+        },
+        {
+          "id": "products-distinct-prices",
+          "label": "모든 가격이 다른 경우",
+          "args": [[{"id": "high", "price": 90}, {"id": "low", "price": 10}, {"id": "mid", "price": 40}]],
+          "expected": ["low", "mid", "high"]
+        },
+        {
+          "id": "products-tied-price",
+          "label": "두 상품의 가격이 같은 경우",
+          "args": [[{"id": "z", "price": 5}, {"id": "a", "price": 5}]],
+          "expected": ["a", "z"]
+        },
+        {
+          "id": "products-mixed-ties",
+          "label": "가격 차이와 동률이 함께 있는 경우",
+          "args": [[{"id": "b", "price": 10}, {"id": "c", "price": 5}, {"id": "a", "price": 10}]],
+          "expected": ["c", "a", "b"]
+        },
+        {
+          "id": "products-price-boundaries",
+          "label": "최소와 최대 가격",
+          "args": [[{"id": "max", "price": 1000000}, {"id": "free", "price": 0}, {"id": "one", "price": 1}]],
+          "expected": ["free", "one", "max"]
+        }
+      ],
+      "runTestIds": ["products-distinct-prices", "products-tied-price", "products-mixed-ties"],
+      "failureExplanations": [
+        {
+          "testId": "products-empty",
+          "message": "빈 입력에서는 상품 객체가 아닌 빈 ID 배열을 반환해야 합니다."
+        },
+        {
+          "testId": "products-single",
+          "message": "정렬 후 상품 객체에서 id만 추출했는지 확인하세요."
+        },
+        {
+          "testId": "products-distinct-prices",
+          "message": "문자열 ID보다 숫자 price를 첫 번째 정렬 기준으로 사용하세요."
+        },
+        {
+          "testId": "products-tied-price",
+          "message": "가격 차이가 0일 때 ID를 두 번째 기준으로 비교해야 합니다."
+        },
+        {
+          "testId": "products-mixed-ties",
+          "message": "가격 정렬을 유지하면서 같은 가격 묶음 안에서만 ID 순서를 적용하세요."
+        },
+        {
+          "testId": "products-price-boundaries",
+          "message": "0과 1,000,000도 일반 가격과 같은 숫자 오름차순으로 비교해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-javascript-first-position",
+      "slug": "find-first-position",
+      "revision": 1,
+      "order": 5,
+      "lessonId": "js-07-review-practice",
+      "conceptIds": ["js.data-flow", "js.problem-decomposition"],
+      "difficulty": "intermediate",
+      "type": "search",
+      "tags": ["이진 탐색", "경계", "중복"],
+      "estimatedMinutes": 30,
+      "title": "정렬 배열의 첫 위치 찾기",
+      "summary": "오름차순 배열에서 목표값이 처음 나타나는 인덱스를 이진 탐색으로 찾습니다.",
+      "description": "`findFirstPosition(sortedValues, target)` 함수를 작성하세요. target이 여러 번 있으면 가장 작은 인덱스를 반환하고, 없으면 -1을 반환합니다. 배열 전체를 차례로 찾는 대신 탐색 범위를 절반씩 줄이세요.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "sortedValues",
+            "type": "integer[]",
+            "description": "오름차순으로 정렬된 길이 0 이상 1,000 이하 정수 배열입니다."
+          },
+          {
+            "name": "target",
+            "type": "integer",
+            "description": "찾을 정수입니다."
+          }
+        ],
+        "returns": {
+          "type": "integer",
+          "description": "target의 첫 인덱스 또는 target이 없을 때 -1입니다."
+        },
+        "constraints": [
+          "sortedValues는 오름차순으로 정렬되어 있습니다.",
+          "중복된 target 중 첫 번째 인덱스를 반환합니다.",
+          "탐색 범위를 절반씩 줄이는 O(log n) 풀이를 목표로 합니다."
+        ],
+        "complexity": {
+          "time": "O(log n)",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "findFirstPosition",
+      "starterCode": "function findFirstPosition(sortedValues, target) {\n  let left = 0;\n  let right = sortedValues.length - 1;\n\n  // target을 찾아도 더 왼쪽에 같은 값이 있는지 확인하세요.\n  return -1;\n}\n",
+      "examples": [
+        {
+          "args": [[1, 2, 2, 2, 3], 2],
+          "expected": 1,
+          "explanation": "2는 세 번 등장하며 그중 가장 작은 인덱스는 1입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "search-empty",
+          "label": "빈 배열",
+          "args": [[], 3],
+          "expected": -1
+        },
+        {
+          "id": "search-found-middle",
+          "label": "가운데 이후에서 목표값 발견",
+          "args": [[1, 3, 5, 7, 9], 7],
+          "expected": 3
+        },
+        {
+          "id": "search-target-absent",
+          "label": "배열 사이 범위에 목표값이 없음",
+          "args": [[1, 3, 5, 7], 4],
+          "expected": -1
+        },
+        {
+          "id": "search-first-duplicate",
+          "label": "중복 목표값의 첫 인덱스",
+          "args": [[1, 2, 2, 2, 3], 2],
+          "expected": 1
+        },
+        {
+          "id": "search-first-boundary",
+          "label": "첫 원소가 목표값",
+          "args": [[-5, -1, 0, 4], -5],
+          "expected": 0
+        },
+        {
+          "id": "search-last-boundary",
+          "label": "마지막 원소가 목표값",
+          "args": [[-2, 0, 3, 6, 9], 9],
+          "expected": 4
+        }
+      ],
+      "runTestIds": ["search-found-middle", "search-target-absent", "search-first-duplicate"],
+      "failureExplanations": [
+        {
+          "testId": "search-empty",
+          "message": "초기 오른쪽 경계가 -1이면 반복하지 않고 -1을 반환해야 합니다."
+        },
+        {
+          "testId": "search-found-middle",
+          "message": "중간값과 target 비교 결과에 따라 왼쪽 또는 오른쪽 경계를 올바르게 옮기세요."
+        },
+        {
+          "testId": "search-target-absent",
+          "message": "탐색 범위가 비었을 때 저장된 정답이 없다면 -1을 반환해야 합니다."
+        },
+        {
+          "testId": "search-first-duplicate",
+          "message": "target을 찾은 즉시 끝내지 말고 위치를 저장한 뒤 더 왼쪽 범위를 탐색하세요."
+        },
+        {
+          "testId": "search-first-boundary",
+          "message": "왼쪽 경계 0도 탐색 범위에 포함되는지 확인하세요."
+        },
+        {
+          "testId": "search-last-boundary",
+          "message": "오른쪽 경계를 배열 길이 - 1로 시작하고 마지막 인덱스까지 포함하세요."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-javascript-grid-robot",
+      "slug": "simulate-grid-robot",
+      "revision": 2,
+      "order": 6,
+      "lessonId": "js-07-review-practice",
+      "conceptIds": ["js.data-flow", "js.problem-decomposition", "js.debugging"],
+      "difficulty": "advanced",
+      "type": "simulation",
+      "tags": ["시뮬레이션", "좌표", "상태 전이"],
+      "estimatedMinutes": 40,
+      "title": "장애물을 피하는 격자 로봇",
+      "summary": "방향과 좌표 상태를 갱신하며 격자 경계와 장애물을 함께 처리합니다.",
+      "description": "`simulateGridRobot(commands, obstacles)` 함수를 작성하세요. 로봇은 5×5 격자의 (0, 0)에서 북쪽 N을 보고 시작합니다. L과 R은 제자리 회전, F는 현재 방향으로 한 칸 이동입니다. 격자 밖이거나 장애물 좌표인 칸으로는 이동하지 않고 다음 명령을 처리합니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "commands",
+            "type": "(\"L\" | \"R\" | \"F\")[]",
+            "description": "길이 0 이상 100 이하인 명령 배열입니다."
+          },
+          {
+            "name": "obstacles",
+            "type": "[integer, integer][]",
+            "description": "서로 다른 장애물의 [x, y] 좌표 배열이며 시작 좌표는 포함하지 않습니다."
+          }
+        ],
+        "returns": {
+          "type": "{ x: integer, y: integer, direction: \"N\" | \"E\" | \"S\" | \"W\" }",
+          "description": "모든 명령 처리 후 로봇의 좌표와 방향입니다."
+        },
+        "constraints": [
+          "x와 y는 항상 0 이상 4 이하입니다.",
+          "북쪽 이동은 y를 1 늘리고 동쪽 이동은 x를 1 늘립니다.",
+          "남쪽 이동은 y를 1 줄이고 서쪽 이동은 x를 1 줄입니다.",
+          "막힌 F 명령은 위치만 유지하며 방향과 다음 명령 처리에는 영향을 주지 않습니다."
+        ],
+        "complexity": {
+          "time": "O(c + o)",
+          "space": "O(o)"
+        }
+      },
+      "entryPoint": "simulateGridRobot",
+      "starterCode": "function simulateGridRobot(commands, obstacles) {\n  let x = 0;\n  let y = 0;\n  let direction = \"N\";\n\n  // 회전과 이동을 명령 순서대로 처리하세요.\n\n  return { x, y, direction };\n}\n",
+      "examples": [
+        {
+          "args": [["F", "R", "F"], [[0, 1]]],
+          "expected": {"x": 1, "y": 0, "direction": "E"},
+          "explanation": "첫 F는 북쪽 장애물에 막히고, 오른쪽으로 회전한 뒤 동쪽으로 한 칸 이동합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "robot-no-commands",
+          "label": "명령이 없는 경우",
+          "args": [[], []],
+          "expected": {"x": 0, "y": 0, "direction": "N"}
+        },
+        {
+          "id": "robot-north-boundary",
+          "label": "북쪽 경계에서 추가 이동",
+          "args": [["F", "F", "F", "F", "F", "F"], []],
+          "expected": {"x": 0, "y": 4, "direction": "N"}
+        },
+        {
+          "id": "robot-turn-east",
+          "label": "동쪽으로 회전한 뒤 이동",
+          "args": [["R", "F", "F"], []],
+          "expected": {"x": 2, "y": 0, "direction": "E"}
+        },
+        {
+          "id": "robot-blocked-at-start",
+          "label": "시작점 바로 앞의 장애물",
+          "args": [["F", "R", "F"], [[0, 1]]],
+          "expected": {"x": 1, "y": 0, "direction": "E"}
+        },
+        {
+          "id": "robot-full-rotation",
+          "label": "오른쪽으로 한 바퀴 회전",
+          "args": [["R", "R", "R", "R"], []],
+          "expected": {"x": 0, "y": 0, "direction": "N"}
+        },
+        {
+          "id": "robot-obstacle-after-move",
+          "label": "이동 중 만나는 장애물",
+          "args": [["F", "F", "R", "F", "F", "L", "F"], [[1, 2]]],
+          "expected": {"x": 0, "y": 3, "direction": "N"}
+        },
+        {
+          "id": "robot-move-south",
+          "label": "남쪽으로 되돌아 이동",
+          "args": [["F", "F", "R", "R", "F"], []],
+          "expected": {"x": 0, "y": 1, "direction": "S"}
+        },
+        {
+          "id": "robot-move-west",
+          "label": "서쪽으로 되돌아 이동",
+          "args": [["R", "F", "F", "R", "R", "F"], []],
+          "expected": {"x": 1, "y": 0, "direction": "W"}
+        }
+      ],
+      "runTestIds": ["robot-north-boundary", "robot-blocked-at-start", "robot-obstacle-after-move"],
+      "failureExplanations": [
+        {
+          "testId": "robot-no-commands",
+          "message": "명령이 없으면 시작 좌표와 북쪽 방향을 그대로 반환해야 합니다."
+        },
+        {
+          "testId": "robot-north-boundary",
+          "message": "다음 좌표가 0~4 범위 안인지 확인한 뒤에만 위치를 갱신하세요."
+        },
+        {
+          "testId": "robot-turn-east",
+          "message": "R 회전 뒤 동쪽 이동은 x를 늘리고 y는 유지해야 합니다."
+        },
+        {
+          "testId": "robot-blocked-at-start",
+          "message": "장애물에 막힌 이동만 건너뛰고 이어지는 회전과 이동 명령은 계속 처리해야 합니다."
+        },
+        {
+          "testId": "robot-full-rotation",
+          "message": "방향 인덱스가 배열 끝을 넘으면 다시 북쪽으로 순환해야 합니다."
+        },
+        {
+          "testId": "robot-obstacle-after-move",
+          "message": "현재 좌표가 아니라 이동하려는 다음 좌표가 장애물인지 검사하세요."
+        },
+        {
+          "testId": "robot-move-south",
+          "message": "남쪽을 볼 때는 x를 유지하고 y를 1 줄여야 합니다."
+        },
+        {
+          "testId": "robot-move-west",
+          "message": "서쪽을 볼 때는 y를 유지하고 x를 1 줄여야 합니다."
+        }
+      ]
+    }
+  ]
+}

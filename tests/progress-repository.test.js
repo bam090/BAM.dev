@@ -45,6 +45,9 @@ test("최근 교안과 완료 상태를 같은 버전 데이터에 저장한다"
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    codingTestDrafts: [],
+    codingTestSubmissions: [],
+    completedCodingTestProblems: [],
     updatedAt: "2026-08-16T12:00:00.000Z",
   });
   assert.ok(storage.getItem(PROGRESS_STORAGE_KEY));
@@ -142,6 +145,9 @@ test("1차 저장 형식을 읽을 때 객관식 필드를 빈 배열로 보완�
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    codingTestDrafts: [],
+    codingTestSubmissions: [],
+    completedCodingTestProblems: [],
     updatedAt: "2026-08-15T12:00:00.000Z",
   });
 });
@@ -616,6 +622,168 @@ test("최대 safe integer suffix가 있어도 새 Code Quest attempt ID가 충�
   assert.equal(attempts.length, 2);
   assert.equal(new Set(attempts.map((attempt) => attempt.id)).size, 2);
   assert.equal(attempts[1].id, `quest-${completedAt}-1`);
+});
+
+test("코딩테스트 초안은 문제 리비전별로 조회하고 같은 문제의 최신 한 건만 보관한다", () => {
+  let tick = 0;
+  const clock = () => new Date(`2026-08-16T12:00:0${tick++}.000Z`);
+  const repository = new LocalStorageProgressRepository(new MemoryStorage(), clock);
+
+  repository.saveCodingTestDraft({
+    problemId: "coding-test-javascript-pair-sum",
+    problemRevision: 1,
+    languageId: "javascript",
+    source: "function findPair() {}",
+  });
+  repository.saveCodingTestDraft({
+    problemId: "coding-test-javascript-pair-sum",
+    problemRevision: 2,
+    languageId: "javascript",
+    source: "function findPair() { return []; }",
+  });
+
+  assert.equal(
+    repository.getCodingTestDraft("coding-test-javascript-pair-sum", 1),
+    null,
+  );
+  assert.deepEqual(
+    repository.getCodingTestDraft("coding-test-javascript-pair-sum", 2),
+    {
+      problemId: "coding-test-javascript-pair-sum",
+      problemRevision: 2,
+      languageId: "javascript",
+      source: "function findPair() { return []; }",
+      updatedAt: "2026-08-16T12:00:01.000Z",
+    },
+  );
+
+  repository.clearCodingTestDraft("coding-test-javascript-pair-sum");
+  assert.equal(
+    repository.getCodingTestDraft("coding-test-javascript-pair-sum", 2),
+    null,
+  );
+});
+
+test("코딩테스트는 실행 코드 없이 제출 요약만 저장하고 현재 리비전 통과를 완료로 기록한다", () => {
+  const repository = new LocalStorageProgressRepository(new MemoryStorage(), fixedClock);
+  const failed = repository.recordCodingTestSubmission({
+    problemId: "coding-test-javascript-pair-sum",
+    problemRevision: 1,
+    languageId: "javascript",
+    outcome: "wrong_answer",
+    passed: 2,
+    total: 5,
+  });
+  assert.deepEqual(failed.completedCodingTestProblems, []);
+  assert.equal(Object.hasOwn(failed.codingTestSubmissions[0], "source"), false);
+
+  const passed = repository.recordCodingTestSubmission({
+    problemId: "coding-test-javascript-pair-sum",
+    problemRevision: 2,
+    languageId: "javascript",
+    outcome: "passed",
+    passed: 5,
+    total: 5,
+  });
+  assert.deepEqual(passed.completedCodingTestProblems, [
+    {
+      problemId: "coding-test-javascript-pair-sum",
+      problemRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
+  assert.equal(passed.codingTestSubmissions.length, 2);
+});
+
+test("손상된 코딩테스트 데이터는 버리고 보관 밖 통과 제출에서도 완료 상태를 복구한다", () => {
+  const completedAt = "2026-08-16T12:00:00.000Z";
+  const oldPassedSubmission = {
+    id: `coding-test-${completedAt}-1`,
+    problemId: "coding-test-javascript-old-solved",
+    problemRevision: 3,
+    languageId: "javascript",
+    outcome: "passed",
+    passed: 1,
+    total: 1,
+    completedAt,
+  };
+  const recentFailures = Array.from({ length: 50 }, (_, index) => ({
+    id: `coding-test-${completedAt}-${index + 2}`,
+    problemId: `coding-test-javascript-recent-${index}`,
+    problemRevision: 1,
+    languageId: "javascript",
+    outcome: "wrong_answer",
+    passed: 0,
+    total: 1,
+    completedAt,
+  }));
+
+  const progress = normalizeProgress({
+    ...createEmptyProgress(),
+    codingTestDrafts: [
+      {
+        problemId: "coding-test-javascript-invalid-language",
+        problemRevision: 1,
+        languageId: "html",
+        source: "",
+        updatedAt: completedAt,
+      },
+    ],
+    codingTestSubmissions: [
+      oldPassedSubmission,
+      ...recentFailures,
+      { ...oldPassedSubmission, id: "bad-id" },
+    ],
+  });
+
+  assert.deepEqual(progress.codingTestDrafts, []);
+  assert.equal(progress.codingTestSubmissions.length, 50);
+  assert.equal(
+    progress.codingTestSubmissions.some((item) => item.id === oldPassedSubmission.id),
+    false,
+  );
+  assert.deepEqual(progress.completedCodingTestProblems, [
+    {
+      problemId: "coding-test-javascript-old-solved",
+      problemRevision: 3,
+      completedAt,
+    },
+  ]);
+});
+
+test("코딩테스트 초안과 제출 DTO의 크기·네임스페이스·결과 일관성을 검증한다", () => {
+  const repository = new LocalStorageProgressRepository(new MemoryStorage(), fixedClock);
+  const valid = {
+    problemId: "coding-test-javascript-pair-sum",
+    problemRevision: 1,
+    languageId: "javascript",
+    outcome: "wrong_answer",
+    passed: 1,
+    total: 2,
+  };
+
+  assert.throws(
+    () =>
+      repository.saveCodingTestDraft({
+        problemId: "coding-test-javascript-source-limit",
+        problemRevision: 1,
+        languageId: "javascript",
+        source: "a".repeat(20481),
+      }),
+    /20480바이트/,
+  );
+  for (const invalid of [
+    { ...valid, problemId: "coding-test-html-pair-sum" },
+    { ...valid, problemRevision: 0 },
+    { ...valid, outcome: "not_run" },
+    { ...valid, outcome: "passed", passed: 1, total: 2 },
+    { ...valid, outcome: "wrong_answer", passed: 2, total: 2 },
+  ]) {
+    assert.throws(
+      () => repository.recordCodingTestSubmission(invalid),
+      /제출 결과 형식/,
+    );
+  }
 });
 
 test("Code Quest DTO는 상속 필드와 accessor를 거부하며 getter를 실행하지 않는다", () => {

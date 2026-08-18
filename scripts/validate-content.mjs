@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertValidCurriculum } from "../src/core/content.js";
 import { assertValidQuizCollection } from "../src/core/quiz.js";
+import { assertValidCodingTestCollection } from "../src/core/coding-test.js";
 import {
   areJsonValuesEqual,
   assertValidExecutionRequest,
@@ -500,12 +501,103 @@ for (const language of curriculum.languages.filter((item) => item.status === "av
   }
 }
 
+const codingTestSchemaPath = path.join(
+  projectRoot,
+  "content",
+  "schema",
+  "coding-test.schema.json",
+);
+let codingTestSchema;
+try {
+  codingTestSchema = JSON.parse(await readFile(codingTestSchemaPath, "utf8"));
+} catch {
+  contentErrors.push("코딩테스트 스키마 파일을 읽을 수 없습니다.");
+}
+
+const codingTestDirectory = path.join(projectRoot, "content", "coding-tests");
+const codingTestCollections = new Map();
+const codingTestProblemIds = new Set();
+const codingTestSlugs = new Set();
+const codingTestPublicTestIds = new Set();
+let codingTestFileNames = [];
+try {
+  codingTestFileNames = (await readdir(codingTestDirectory))
+    .filter((fileName) => fileName.endsWith(".json"))
+    .sort();
+} catch {
+  contentErrors.push("코딩테스트 콘텐츠 디렉터리를 읽을 수 없습니다.");
+}
+
+for (const fileName of codingTestFileNames) {
+  const languageId = fileName.slice(0, -".json".length);
+  const codingTestPath = path.join(codingTestDirectory, fileName);
+  try {
+    if (!STABLE_ID_PATTERN.test(languageId)) {
+      throw new Error(`파일명 언어 ID 형식이 올바르지 않습니다: ${languageId}`);
+    }
+    const document = JSON.parse(await readFile(codingTestPath, "utf8"));
+    if (codingTestSchema) {
+      const schemaErrors = [];
+      validateSchemaValue(
+        document,
+        codingTestSchema,
+        codingTestSchema,
+        "$",
+        schemaErrors,
+      );
+      if (schemaErrors.length > 0) {
+        throw new Error(`JSON Schema 불일치:\n- ${schemaErrors.join("\n- ")}`);
+      }
+    }
+    const collection = assertValidCodingTestCollection(document, curriculum);
+    if (collection.languageId !== languageId) {
+      throw new Error(
+        `파일명 언어 ${languageId}와 languageId ${collection.languageId}가 다릅니다.`,
+      );
+    }
+    if (!curriculum.languages.some((language) => language.id === languageId)) {
+      throw new Error(`커리큘럼에 없는 언어입니다: ${languageId}`);
+    }
+
+    for (const problem of collection.problems) {
+      if (codingTestProblemIds.has(problem.id)) {
+        throw new Error(`다른 컬렉션과 코딩테스트 문제 ID가 중복됩니다: ${problem.id}`);
+      }
+      if (codingTestSlugs.has(problem.slug)) {
+        throw new Error(`다른 컬렉션과 코딩테스트 slug가 중복됩니다: ${problem.slug}`);
+      }
+      codingTestProblemIds.add(problem.id);
+      codingTestSlugs.add(problem.slug);
+      for (const publicTest of problem.publicTests) {
+        if (codingTestPublicTestIds.has(publicTest.id)) {
+          throw new Error(
+            `다른 코딩테스트 문제와 공개 테스트 ID가 중복됩니다: ${publicTest.id}`,
+          );
+        }
+        codingTestPublicTestIds.add(publicTest.id);
+      }
+    }
+    codingTestCollections.set(languageId, collection);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    contentErrors.push(`${languageId}: 코딩테스트 콘텐츠 검증 실패 (${message})`);
+  }
+}
+
+if (!codingTestCollections.has("javascript")) {
+  contentErrors.push("javascript: 4차 코딩테스트 콘텐츠가 없습니다.");
+}
+
 if (contentErrors.length > 0) {
   throw new Error(`콘텐츠 파일 검증 실패:\n- ${contentErrors.join("\n- ")}`);
 }
 
 const availableLanguages = curriculum.languages.filter((language) => language.status === "available");
 const sampleLanguages = curriculum.languages.filter((language) => language.status === "sample");
+const codingTestProblemCount = [...codingTestCollections.values()].reduce(
+  (total, collection) => total + collection.problems.length,
+  0,
+);
 console.log(
-  `콘텐츠 검증 완료: 정식 언어 ${availableLanguages.length}개, 샘플 언어 ${sampleLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개`,
+  `콘텐츠 검증 완료: 정식 언어 ${availableLanguages.length}개, 샘플 언어 ${sampleLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개, 코딩테스트 ${codingTestProblemCount}개`,
 );

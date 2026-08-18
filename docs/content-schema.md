@@ -77,3 +77,23 @@
 | `commonMistakes` | 정답을 직접 노출하지 않는 대표 오개념 설명 |
 
 각 예시와 공개 테스트의 `args` 개수는 함수 매개변수 개수와 같아야 합니다. JSON 입출력은 경로당 컨테이너 512단계와 테스트별 16 KiB 제한을 지키며, 상세 산정 방식은 [Code Quest 작성 가이드](code-quest-authoring.md#문제-계약)를 따릅니다. Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 참조, `failureExplanations`의 1:1 대응과 힌트 단계 순서는 `npm run validate:content` 및 전용 콘텐츠 테스트로 검증합니다. 공개 테스트는 사용자가 브라우저 개발자 도구로 확인할 수 있으므로 비밀 테스트라고 표현하지 않습니다.
+
+## 코딩테스트 컬렉션
+
+`content/coding-tests/<languageId>.json`은 목록 검색·필터와 제출 채점에 사용하는 문제를 정의합니다. `content/schema/coding-test.schema.json`과 런타임 검증을 함께 적용합니다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `problem.id` | `coding-test-<languageId>-...` 형식의 안정적인 전역 ID |
+| `slug`, `revision`, `order` | URL, 문제 계약 버전, 언어 내 연속 순서 |
+| `lessonId`, `conceptIds` | 같은 언어의 근거 교안과 개념 |
+| `difficulty` | `beginner`, `intermediate`, `advanced` |
+| `type`, `tags` | 유형 필터 값과 검색용 주제 |
+| `description`, `functionContract` | 문제 설명, 매개변수·반환·제한·목표 복잡도 |
+| `entryPoint`, `starterCode` | 호출할 함수 이름과 초기 코드 |
+| `examples` | 공개 테스트와 실제 입출력이 일치하는 예제 |
+| `publicTests` | 제출 시 모두 실행하는 브라우저 포함 공개 테스트 |
+| `runTestIds` | 빠른 실행에 쓰는 `publicTests`의 진부분집합 |
+| `failureExplanations` | 각 공개 테스트에 정확히 하나씩 대응하는 확인 지점 |
+
+`테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 같은 브라우저 공개 데이터이며 비밀·숨김 테스트가 아닙니다. 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/coding-test-content.test.js`에서 실제 JavaScript 런타임으로 검증합니다.

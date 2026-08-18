@@ -1,0 +1,195 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bam.dev/schema/coding-test.schema.json",
+  "title": "BAM.dev coding test collection",
+  "type": "object",
+  "required": ["schemaVersion", "contractVersion", "languageId", "title", "problems"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractVersion": { "const": 1 },
+    "languageId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "problems": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/problem" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "conceptId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "problem": {
+      "type": "object",
+      "required": [
+        "id",
+        "slug",
+        "revision",
+        "order",
+        "lessonId",
+        "conceptIds",
+        "difficulty",
+        "type",
+        "tags",
+        "estimatedMinutes",
+        "title",
+        "summary",
+        "description",
+        "functionContract",
+        "entryPoint",
+        "starterCode",
+        "examples",
+        "publicTests",
+        "runTestIds",
+        "failureExplanations"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^coding-test-[a-z][a-z0-9]*(?:-[a-z0-9]+)+$"
+        },
+        "slug": { "$ref": "#/$defs/stableId" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "order": { "type": "integer", "minimum": 1 },
+        "lessonId": { "$ref": "#/$defs/stableId" },
+        "conceptIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/conceptId" }
+        },
+        "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+        "type": { "enum": ["string", "array", "object", "sorting", "search", "simulation"] },
+        "tags": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "estimatedMinutes": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "functionContract": { "$ref": "#/$defs/functionContract" },
+        "entryPoint": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "starterCode": { "type": "string", "minLength": 1 },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/example" }
+        },
+        "publicTests": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/publicTest" }
+        },
+        "runTestIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/stableId" }
+        },
+        "failureExplanations": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 12,
+          "items": { "$ref": "#/$defs/failureExplanation" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "functionContract": {
+      "type": "object",
+      "required": ["parameters", "returns", "constraints", "complexity"],
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/parameter" }
+        },
+        "returns": { "$ref": "#/$defs/returnValue" },
+        "constraints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "complexity": { "$ref": "#/$defs/complexity" }
+      },
+      "additionalProperties": false
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "returnValue": {
+      "type": "object",
+      "required": ["type", "description"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "complexity": {
+      "type": "object",
+      "required": ["time", "space"],
+      "properties": {
+        "time": { "type": "string", "minLength": 1 },
+        "space": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "example": {
+      "type": "object",
+      "required": ["args", "expected", "explanation"],
+      "properties": {
+        "args": { "type": "array", "items": {} },
+        "expected": {},
+        "explanation": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "publicTest": {
+      "type": "object",
+      "required": ["id", "label", "args", "expected"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "type": "string", "minLength": 1 },
+        "args": { "type": "array", "items": {} },
+        "expected": {}
+      },
+      "additionalProperties": false
+    },
+    "failureExplanation": {
+      "type": "object",
+      "required": ["testId", "message"],
+      "properties": {
+        "testId": { "$ref": "#/$defs/stableId" },
+        "message": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

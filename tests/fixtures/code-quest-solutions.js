@@ -25,8 +25,8 @@ export const codeQuestSolutionFixtures = {
         expected: 3000,
       },
       {
-        id: "verify-delivery-member-standard-threshold",
-        args: [30000, "standard", true],
+        id: "verify-delivery-regular-standard-above-threshold",
+        args: [50001, "standard", false],
         expected: 0,
       },
       {
