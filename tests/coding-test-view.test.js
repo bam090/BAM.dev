@@ -260,6 +260,20 @@ test("모든 실행 outcome을 구분하고 실제값이 없는 결과를 만들
   }
 });
 
+test("상속 프로퍼티와 알 수 없는 outcome은 실행기 오류로 안전하게 렌더링한다", () => {
+  const invalidOutcomes = ["constructor", "toString", "__proto__", "unknown_outcome", null];
+
+  for (const outcome of invalidOutcomes) {
+    const html = renderDetail({ executionMode: "run", report: createReport(outcome) });
+
+    assert.match(html, /coding-test-report is-danger/);
+    assert.match(html, /코드 실행기를 사용할 수 없습니다/);
+    assert.match(html, /coding-test-case is-danger/);
+    assert.match(html, /coding-test-outcome">실행기 오류/);
+    assert.doesNotMatch(html, /is-undefined|>undefined</);
+  }
+});
+
 test("문제·리포트·오류의 동적 문자열을 escape하고 초안 상태를 구분한다", () => {
   const maliciousProblem = structuredClone(problem);
   maliciousProblem.title = "<img src=x onerror=bad()>";
@@ -291,4 +305,17 @@ test("문제·리포트·오류의 동적 문자열을 escape하고 초안 상�
     "초안을 저장하지 못했습니다. 코드는 편집기에 그대로 유지됩니다.",
   );
   assert.match(html, /제출 결과는 화면에 유지되지만 시도 기록을 저장하지 못했습니다/);
+});
+
+test("상속 프로퍼티와 알 수 없는 초안 상태는 초기 코드 안내로 돌아간다", () => {
+  const invalidStatuses = ["constructor", "toString", "__proto__", "unknown_status", null];
+  const starterMessage = "초기 코드를 불러왔습니다. 편집하면 자동으로 저장됩니다.";
+
+  for (const status of invalidStatuses) {
+    assert.equal(getCodingTestDraftStatusMessage(status), starterMessage);
+
+    const html = renderDetail({ draftStatus: status });
+    assert.match(html, /class="coding-test-draft-status"[^>]*>초기 코드를 불러왔습니다/);
+    assert.doesNotMatch(html, /coding-test-draft-status is-warning/);
+  }
 });

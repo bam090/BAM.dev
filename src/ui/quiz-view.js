@@ -1,4 +1,4 @@
-import { escapeHtml } from "./markdown.js";
+import { escapeHtml, renderHighlightedCode } from "./markdown.js";
 
 const OPTION_MARKERS = ["A", "B", "C", "D"];
 const DIFFICULTY_LABELS = {
@@ -99,12 +99,21 @@ function renderQuestionHeader({
   `;
 }
 
-function renderQuestionCode(code) {
+function renderQuestionCode(code, languageId, languageName) {
   if (typeof code !== "string" || code.length === 0) return "";
+  const hasHtmlMarkup =
+    /(?:^|\n)\s*(?:<!doctype\b|<\/?[A-Z_a-z][\w:-]*(?:\s[^<>]*|\s*\/?)>)/i.test(code);
+  const syntaxLanguage = hasHtmlMarkup
+    ? languageId === "javascript"
+      ? "html-javascript"
+      : languageId === "css"
+        ? "html-css"
+        : "html"
+    : languageId;
   return `
     <figure class="quiz-code">
       <figcaption>문제 코드</figcaption>
-      <pre tabindex="0"><code>${escapeHtml(code)}</code></pre>
+      <pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(languageName)} 문제 코드"><code class="language-${escapeHtml(syntaxLanguage)}">${renderHighlightedCode(code, syntaxLanguage)}</code></pre>
     </figure>
   `;
 }
@@ -170,6 +179,7 @@ function renderGradedSummary(question, gradedAnswer) {
 }
 
 export function renderQuizQuestionView({
+  languageId = "javascript",
   languageName = "학습 언어",
   title,
   question,
@@ -206,7 +216,7 @@ export function renderQuizQuestionView({
         <section class="quiz-card" aria-labelledby="quiz-question-title">
           <p class="quiz-question-meta">${difficulty} 문제 · ${safeIndex + 1}/${safeTotal}</p>
           <h2 id="quiz-question-title" tabindex="-1">${escapeHtml(question?.prompt ?? "문제를 불러오지 못했습니다.")}</h2>
-          ${renderQuestionCode(question?.code)}
+          ${renderQuestionCode(question?.code, languageId, languageName)}
 
           <form class="quiz-form" data-quiz-form>
             <fieldset class="quiz-options">

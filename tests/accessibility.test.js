@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { renderAppShell } from "../src/ui/app-shell.js";
 import { renderReviewNavigationLink } from "../src/ui/quiz-view.js";
 import {
   renderCodeQuestNavigationLink,
@@ -65,7 +66,6 @@ test("교안 로딩·빈 결과·오류 상태도 같은 본문 바로가기 대
 });
 
 test("Phase 4 학습·복습·Quest·코딩테스트 내비게이션을 실제 링크로 노출한다", async () => {
-  const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const quizViewSource = await readFile(
     new URL("../src/ui/quiz-view.js", import.meta.url),
     "utf8",
@@ -94,16 +94,42 @@ test("Phase 4 학습·복습·Quest·코딩테스트 내비게이션을 실제 �
     solvedCount: 1,
     totalCount: 6,
   });
+  const shell = renderAppShell({
+    homeHref: "#/learn/javascript/javascript-and-runtime",
+    language: { name: "JavaScript", shortName: "JS", accent: "yellow" },
+    lessonProgress: { completedCount: 1, totalCount: 6, percent: 17 },
+    languageNavigation: '<nav class="language-nav">언어</nav>',
+    lessonNavigationItems: '<li><a class="lesson-link" href="#lesson">교안</a></li>',
+    featureNavigation: [
+      {
+        kind: "review",
+        options: { href: "#/review/javascript", isCurrent: true },
+      },
+      {
+        kind: "code-quest",
+        options: {
+          href: "#/quest/javascript/delivery-fee-policy",
+          isCurrent: true,
+          completedCount: 2,
+          totalCount: 5,
+        },
+      },
+      {
+        kind: "coding-test",
+        options: {
+          href: "#/coding-tests",
+          isCurrent: true,
+          solvedCount: 1,
+          totalCount: 6,
+        },
+      },
+    ],
+    mainContent: '<main id="lesson-content" tabindex="-1">본문</main>',
+  });
 
-  assert.equal((appSource.match(/\$\{renderReviewNavigationLink\(\{/g) ?? []).length, 4);
-  assert.equal(
-    (appSource.match(/renderCodeQuestNavigationLink\(\{/g) ?? []).length,
-    4,
-  );
-  assert.equal(
-    (appSource.match(/renderCodingTestNavigationLink\(\{/g) ?? []).length,
-    4,
-  );
+  assert.equal((shell.match(/<nav class="review-nav"/g) ?? []).length, 1);
+  assert.equal((shell.match(/<nav class="quest-nav"/g) ?? []).length, 1);
+  assert.equal((shell.match(/<nav class="coding-test-nav"/g) ?? []).length, 1);
   assert.match(reviewNavigation, /<nav class="review-nav"/);
   assert.match(reviewNavigation, /href="#\/review\/javascript"/);
   assert.match(reviewNavigation, /객관식 복습/);
@@ -119,9 +145,9 @@ test("Phase 4 학습·복습·Quest·코딩테스트 내비게이션을 실제 �
   assert.match(codingTestNavigation, /href="#\/coding-tests"/);
   assert.match(codingTestNavigation, /1\/6 풀이 완료/);
   assert.match(codingTestNavigation, /aria-current="page"/);
-  assert.match(`${appSource}\n${questViewSource}\n${codingTestViewSource}`, /공개 테스트/);
+  assert.match(`${shell}\n${questViewSource}\n${codingTestViewSource}`, /공개 테스트/);
   assert.doesNotMatch(
-    `${appSource}\n${quizViewSource}\n${questViewSource}\n${codingTestViewSource}`,
+    `${shell}\n${quizViewSource}\n${questViewSource}\n${codingTestViewSource}`,
     /실전 프로젝트|AI 코드 리뷰/,
   );
 });
@@ -169,6 +195,8 @@ test("Code Quest 편집기와 결과는 label 및 단일 포커스 region 전략
 
   assert.match(html, /<label[^>]*for="quest-source"/);
   assert.match(html, /<textarea[^>]*id="quest-source"[^>]*data-quest-source/);
+  assert.equal((html.match(/class="quest-source-highlight syntax-code" aria-hidden="true"/g) ?? []).length, 1);
+  assert.doesNotMatch(html, /quest-source-highlight[^>]*(?:tabindex|role=|aria-live)/);
   assert.equal((html.match(/data-quest-results/g) ?? []).length, 1);
   assert.match(
     html,
@@ -266,7 +294,7 @@ test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 �
   assert.match(questSource, /window\.history\.replaceState\(null, "", canonicalHash\)/);
 });
 
-test("Code Quest 실행은 request→runner 순서를 지키고 report당 한 번만 저장한다", async () => {
+test("Code Quest 실행은 공통 실행 신호를 runner에 전달하고 정답 안내를 중복 방송하지 않는다", async () => {
   const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const start = appSource.indexOf("  async runCurrentCodeQuest() {");
   const end = appSource.indexOf("\n  cancelCodeQuestRun(", start);
@@ -274,16 +302,15 @@ test("Code Quest 실행은 request→runner 순서를 지키고 report당 한 �
 
   const runSource = appSource.slice(start, end);
   const requestIndex = runSource.indexOf("createCodeQuestExecutionRequest(");
+  const startIndex = runSource.indexOf("this.executionCoordinator.start({");
   const runnerIndex = runSource.indexOf("this.codeQuestRunner.run(request");
-  const guardIndex = runSource.indexOf("if (!execution.recordAttempted)");
-  const markIndex = runSource.indexOf("execution.recordAttempted = true");
   const recordIndex = runSource.indexOf("recordQuestAttempt({");
-  assert.ok(requestIndex >= 0 && runnerIndex > requestIndex);
-  assert.ok(guardIndex >= 0 && markIndex > guardIndex && recordIndex > markIndex);
+  assert.ok(requestIndex >= 0 && startIndex > requestIndex && runnerIndex > startIndex);
+  assert.ok(recordIndex > runnerIndex);
   assert.equal((runSource.match(/recordQuestAttempt\(/g) ?? []).length, 1);
   assert.equal((appSource.match(/recordQuestAttempt\(/g) ?? []).length, 1);
-  assert.match(runSource, /new AbortController\(\)/);
-  assert.match(runSource, /signal: execution\.controller\.signal/);
+  assert.match(runSource, /signal: execution\.signal/);
+  assert.doesNotMatch(runSource, /new AbortController\(\)/);
   assert.match(runSource, /getPersistenceStatus\(\)/);
   assert.doesNotMatch(runSource.slice(recordIndex, runSource.indexOf("});", recordIndex)), /source:/);
   assert.doesNotMatch(runSource, /this\.announce\([^)]*(?:통과|결과)/);

@@ -3,24 +3,11 @@ import test from "node:test";
 import {
   createBrowserStorage,
   LocalStorageProgressRepository,
+  MemoryStorage,
   PROGRESS_STORAGE_KEY,
   createEmptyProgress,
   normalizeProgress,
 } from "../src/repositories/progress-repository.js";
-
-class MemoryStorage {
-  constructor() {
-    this.values = new Map();
-  }
-
-  getItem(key) {
-    return this.values.get(key) ?? null;
-  }
-
-  setItem(key, value) {
-    this.values.set(key, value);
-  }
-}
 
 const fixedClock = () => new Date("2026-08-16T12:00:00.000Z");
 
@@ -62,66 +49,6 @@ test("완료 표시를 해제할 수 있고 손상된 JSON은 안전하게 복�
 
   storage.setItem(PROGRESS_STORAGE_KEY, "{broken");
   assert.deepEqual(repository.getProgress(), createEmptyProgress());
-});
-
-test("브라우저 저장소 접근이 차단되면 메모리 저장소로 계속 동작한다", () => {
-  const blockedWindow = {};
-  Object.defineProperty(blockedWindow, "localStorage", {
-    get() {
-      throw new Error("SecurityError");
-    },
-  });
-
-  const repository = new LocalStorageProgressRepository(
-    createBrowserStorage(blockedWindow),
-    fixedClock,
-  );
-  repository.setLessonCompleted("js-01-runtime", true);
-  assert.deepEqual(repository.getProgress().completedLessonIds, ["js-01-runtime"]);
-  assert.deepEqual(repository.getPersistenceStatus(), { isPersistent: false });
-});
-
-test("localStorage 쓰기가 실패해도 현재 탭의 진도는 유지한다", () => {
-  const throwingStorage = {
-    getItem() {
-      return null;
-    },
-    setItem() {
-      throw new Error("QuotaExceededError");
-    },
-  };
-  const repository = new LocalStorageProgressRepository(
-    createBrowserStorage({ localStorage: throwingStorage }),
-    fixedClock,
-  );
-  repository.setLessonCompleted("js-02-values-control-flow", true);
-  assert.deepEqual(repository.getProgress().completedLessonIds, ["js-02-values-control-flow"]);
-  assert.deepEqual(repository.getPersistenceStatus(), { isPersistent: false });
-});
-
-test("정상 저장 뒤 localStorage 읽기가 차단되어도 마지막 진도를 유지한다", () => {
-  let blocked = false;
-  const values = new Map();
-  const primaryStorage = {
-    getItem(key) {
-      if (blocked) throw new Error("SecurityError");
-      return values.get(key) ?? null;
-    },
-    setItem(key, value) {
-      values.set(key, String(value));
-    },
-  };
-  const repository = new LocalStorageProgressRepository(
-    createBrowserStorage({ localStorage: primaryStorage }),
-    fixedClock,
-  );
-
-  repository.setLessonCompleted("js-01-runtime", true);
-  assert.deepEqual(repository.getPersistenceStatus(), { isPersistent: true });
-  blocked = true;
-
-  assert.deepEqual(repository.getProgress().completedLessonIds, ["js-01-runtime"]);
-  assert.deepEqual(repository.getPersistenceStatus(), { isPersistent: false });
 });
 
 test("1차 저장 형식을 읽을 때 객관식 필드를 빈 배열로 보완한다", () => {

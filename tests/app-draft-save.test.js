@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
+import { DraftSaveCoordinator } from "../src/core/draft-save-coordinator.js";
+import { ExecutionCoordinator } from "../src/core/execution-coordinator.js";
 
-function createQuestState(questId, source) {
+function createQuestState(questId, source, revision = 1) {
   return {
-    quest: { id: questId },
+    quest: { id: questId, revision },
     source,
     draftStatus: "starter",
     uiError: null,
@@ -22,8 +24,9 @@ function createDraftHarness() {
   app.currentView = "quest";
   app.codeQuestCollection = { languageId: "javascript" };
   app.codeQuestState = null;
-  app.pendingQuestDraftSave = null;
-  app.questDraftSaveTimer = null;
+  app.renderSequence = 0;
+  app.executionCoordinator = new ExecutionCoordinator();
+  app.syncMenuState = () => {};
   app.setQuestDraftSaveTimer = (callback) => {
     const timerId = nextTimerId;
     nextTimerId += 1;
@@ -44,7 +47,12 @@ function createDraftHarness() {
   app.updateCodeQuestDraftFeedback = () => {
     feedbackUpdates += 1;
   };
-
+  app.questDraftSaveCoordinator = new DraftSaveCoordinator({
+    delayMs: 250,
+    persist: (pending) => app.persistQuestDraft(pending),
+    setTimer: (callback) => app.setQuestDraftSaveTimer(callback),
+    clearTimer: (timerId) => app.clearQuestDraftSaveTimer(timerId),
+  });
   return {
     app,
     savedDrafts,
@@ -120,7 +128,12 @@ test("라우트 이탈과 실행 직전에는 대기 중인 초안을 즉시 저
   const runHarness = createDraftHarness();
   const runState = createQuestState("quest-javascript-run", "실행 직전");
   runHarness.app.codeQuestState = runState;
-  runHarness.app.activeQuestExecution = { requestId: "already-running" };
+  runHarness.app.executionCoordinator.start({
+    kind: "code-quest",
+    requestId: "already-running",
+    ownerId: "javascript:quest-javascript-other:1",
+    mode: "run",
+  });
   runHarness.app.renderCodeQuest = () => {};
   runHarness.app.scheduleQuestDraftSave(runState);
 
@@ -153,4 +166,27 @@ test("Quest가 바뀌면 이전 소유자의 최신 초안을 먼저 저장해 �
     languageId: "javascript",
     source: "둘째 Quest 코드",
   });
+});
+
+test("같은 Quest ID라도 리비전이 바뀌면 별도 초안 소유자로 취급한다", () => {
+  const harness = createDraftHarness();
+  const previousRevision = createQuestState(
+    "quest-javascript-revisioned",
+    "리비전 1 코드",
+    1,
+  );
+  const currentRevision = createQuestState(
+    "quest-javascript-revisioned",
+    "리비전 2 코드",
+    2,
+  );
+
+  harness.app.codeQuestState = previousRevision;
+  harness.app.scheduleQuestDraftSave(previousRevision);
+  harness.app.codeQuestState = currentRevision;
+  harness.app.scheduleQuestDraftSave(currentRevision);
+
+  assert.equal(harness.savedDrafts[0]?.source, "리비전 1 코드");
+  harness.runOnlyTimer();
+  assert.equal(harness.savedDrafts[1]?.source, "리비전 2 코드");
 });

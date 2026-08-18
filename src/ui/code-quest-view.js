@@ -1,4 +1,4 @@
-import { escapeHtml } from "./markdown.js";
+import { escapeHtml, renderHighlightedCode } from "./markdown.js";
 
 const DIFFICULTY_LABELS = Object.freeze({
   beginner: "입문",
@@ -67,6 +67,18 @@ const DRAFT_STATUS_COPY = Object.freeze({
   failed: "초안을 저장하지 못했습니다. 코드는 편집기에 그대로 유지됩니다.",
 });
 
+function normalizeOutcome(outcome) {
+  return typeof outcome === "string" && Object.hasOwn(OUTCOME_COPY, outcome)
+    ? outcome
+    : "engine_error";
+}
+
+function normalizeDraftStatus(status) {
+  return typeof status === "string" && Object.hasOwn(DRAFT_STATUS_COPY, status)
+    ? status
+    : "starter";
+}
+
 function safeInteger(value, fallback = 0) {
   return Number.isSafeInteger(value) ? value : fallback;
 }
@@ -100,7 +112,7 @@ function renderQuestProse(value) {
 }
 
 function getOutcomeCopy(outcome) {
-  return OUTCOME_COPY[outcome] ?? OUTCOME_COPY.engine_error;
+  return OUTCOME_COPY[normalizeOutcome(outcome)];
 }
 
 function getErrorMessage(error) {
@@ -113,7 +125,7 @@ function renderValue(label, display) {
   return `
     <div class="quest-result-value">
       <dt>${label}</dt>
-      <dd><pre tabindex="0"><code>${escapeHtml(display)}</code></pre></dd>
+      <dd><pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(label)}"><code class="language-json">${renderHighlightedCode(display, "json")}</code></pre></dd>
     </div>
   `;
 }
@@ -137,9 +149,7 @@ function renderConsoleEntries(entries) {
 }
 
 function renderTestResult(testResult, index, failureByTestId) {
-  const outcome = OUTCOME_COPY[testResult?.outcome]
-    ? testResult.outcome
-    : "engine_error";
+  const outcome = normalizeOutcome(testResult?.outcome);
   const copy = getOutcomeCopy(outcome);
   const errorMessage = getErrorMessage(testResult?.error);
   const failureExplanation =
@@ -195,7 +205,7 @@ function renderQuestReport(report, quest, persistenceStatus) {
     `;
   }
 
-  const outcome = OUTCOME_COPY[report.outcome] ? report.outcome : "engine_error";
+  const outcome = normalizeOutcome(report.outcome);
   const copy = getOutcomeCopy(outcome);
   const passed = Math.max(0, safeInteger(report.summary?.passed));
   const total = Math.max(0, safeInteger(report.summary?.total));
@@ -302,7 +312,7 @@ function renderWebRequirements(quest, evaluationKind) {
           ? `<div class="quest-fixture">
               <h3>제공 HTML</h3>
               <p>아래 고정 마크업에 작성한 CSS를 적용해 공개 테스트를 실행합니다.</p>
-              <pre tabindex="0"><code>${escapeHtml(quest?.fixtureHtml ?? "")}</code></pre>
+              <pre class="syntax-code" tabindex="0" aria-label="제공 HTML 코드"><code class="language-html">${renderHighlightedCode(quest?.fixtureHtml ?? "", "html")}</code></pre>
             </div>`
           : ""
       }
@@ -310,7 +320,7 @@ function renderWebRequirements(quest, evaluationKind) {
   `;
 }
 
-function renderWebExamples(examples) {
+function renderWebExamples(examples, languageId) {
   return `
     <section class="quest-section" aria-labelledby="quest-examples-title">
       <p class="quest-section-label">구조 확인</p>
@@ -321,7 +331,7 @@ function renderWebExamples(examples) {
             (example, index) => `
               <article>
                 <h3>예시 ${index + 1}</h3>
-                <pre tabindex="0"><code>${escapeHtml(example?.source ?? "")}</code></pre>
+                <pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(languageId)} 작성 예시"><code class="language-${escapeHtml(languageId)}">${renderHighlightedCode(example?.source ?? "", languageId)}</code></pre>
                 <p class="quest-prose">${renderQuestProse(example?.explanation)}</p>
               </article>
             `,
@@ -397,7 +407,7 @@ function renderPaginationItem(item, direction) {
 }
 
 export function getCodeQuestDraftStatusMessage(status) {
-  return DRAFT_STATUS_COPY[status] ?? DRAFT_STATUS_COPY.starter;
+  return DRAFT_STATUS_COPY[normalizeDraftStatus(status)];
 }
 
 export function renderCodeQuestNavigationLink({
@@ -431,6 +441,7 @@ export function renderCodeQuestLoadingView({ languageName = "학습 언어" } = 
 }
 
 export function renderCodeQuestView({
+  languageId = "javascript",
   languageName = "학습 언어",
   collectionTitle = "Code Quest",
   evaluationKind = "javascript-function-v1",
@@ -452,9 +463,16 @@ export function renderCodeQuestView({
   const safeTotal = Math.max(0, safeInteger(total));
   const safeIndex = clamp(currentIndex, 0, Math.max(0, safeTotal - 1));
   const difficulty = DIFFICULTY_LABELS[quest?.difficulty] ?? "연습";
+  const normalizedDraftStatus = normalizeDraftStatus(draftStatus);
   const editorDisabled = isRunning ? " readonly" : "";
   const runDisabled = isRunning || String(source).trim().length === 0 ? " disabled" : "";
   const isWebQuest = evaluationKind === "html-dom-v1" || evaluationKind === "css-style-v1";
+  const sourceLanguage =
+    evaluationKind === "html-dom-v1"
+      ? "html"
+      : evaluationKind === "css-style-v1"
+        ? "css"
+        : languageId;
   const editorCopy = getEditorCopy(evaluationKind, languageName, quest?.entryPoint);
 
   return `
@@ -484,7 +502,7 @@ export function renderCodeQuestView({
               <p class="quest-prose">${renderQuestProse(quest?.instructions)}</p>
             </section>
             ${isWebQuest ? renderWebRequirements(quest, evaluationKind) : renderFunctionContract(quest)}
-            ${isWebQuest ? renderWebExamples(quest?.examples) : renderExamples(quest?.examples)}
+            ${isWebQuest ? renderWebExamples(quest?.examples, sourceLanguage) : renderExamples(quest?.examples)}
             ${renderHints(quest, visibleHintCount)}
           </article>
 
@@ -497,9 +515,12 @@ export function renderCodeQuestView({
               <span>공개 테스트 ${quest?.publicTests?.length ?? 0}개</span>
             </header>
             <label class="quest-editor-label" id="quest-source-label" for="quest-source">${escapeHtml(editorCopy.label)}</label>
-            <textarea id="quest-source" data-quest-source aria-labelledby="quest-source-label" aria-describedby="quest-draft-status quest-editor-help" rows="20" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorDisabled}>${escapeHtml(source)}</textarea>
+            <div class="quest-editor-shell${isRunning ? " is-readonly" : ""}" data-quest-editor-shell>
+              <pre class="quest-source-highlight syntax-code" aria-hidden="true"><code class="language-${escapeHtml(sourceLanguage)}" data-quest-source-highlight>${renderHighlightedCode(source, sourceLanguage)}</code></pre>
+              <textarea id="quest-source" data-quest-source aria-labelledby="quest-source-label" aria-describedby="quest-draft-status quest-editor-help" rows="20" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorDisabled}>${escapeHtml(source)}</textarea>
+            </div>
             <p class="quest-editor-help" id="quest-editor-help">${escapeHtml(editorCopy.help)}</p>
-            <p class="quest-draft-status${draftStatus === "failed" || draftStatus === "memory" ? " is-warning" : ""}" id="quest-draft-status" data-quest-draft-status>${getCodeQuestDraftStatusMessage(draftStatus)}</p>
+            <p class="quest-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="quest-draft-status" data-quest-draft-status>${getCodeQuestDraftStatusMessage(normalizedDraftStatus)}</p>
             <div class="quest-run-actions">
               <button class="button button--primary" type="button" data-quest-run aria-busy="${String(isRunning)}"${runDisabled}>${isRunning ? "실행 중…" : "공개 테스트 실행"}</button>
               ${isRunning ? `<button class="button button--danger" type="button" data-quest-cancel${cancelRequested ? " disabled" : ""}>${cancelRequested ? "취소하는 중…" : "실행 취소"}</button>` : '<button class="button button--secondary" type="button" data-quest-reset>초기 코드로 되돌리기</button>'}
