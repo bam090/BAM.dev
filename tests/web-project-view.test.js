@@ -113,9 +113,10 @@ test("파일 선택과 자가평가 선택을 원본 손실 없이 표시한다"
   assert.match(html, /value="meets"[^>]*checked/);
 });
 
-test("실행 중에는 편집과 중복 실행을 막고 취소 동작만 제공한다", () => {
+test("실행 중에는 편집만 잠그고 코드 선택·복사와 취소 동작은 유지한다", () => {
   const html = render({ isRunning: true, executionMode: "submit" });
-  assert.match(html, /data-web-project-source[^>]*disabled/);
+  assert.match(html, /data-web-project-source[^>]*readonly/);
+  assert.doesNotMatch(html, /data-web-project-source[^>]*disabled/);
   assert.match(html, /data-web-project-cancel/);
   assert.match(html, /제출 평가 중… 취소/);
   assert.doesNotMatch(html, /data-web-project-run/);
@@ -158,7 +159,7 @@ test("알 수 없는 상태는 안전한 안내로 대체한다", () => {
   );
   const html = render({
     report: {
-      criterionResults: [{ criterionId: "auto-main", outcome: "constructor" }],
+      automaticResults: [{ criterionId: "auto-main", outcome: "constructor" }],
       score: { provisionalScore: null, maxPoints: 100 },
     },
   });

@@ -543,16 +543,25 @@ export class BrowserWebProjectRunner {
       const { sourceIssues, htmlPath, htmlIssue } = getSourcePreflight(project, submission);
       const fixtureHtml = htmlPath ? sourceByPath.get(htmlPath) : null;
       const results = [];
-      let shouldStop = false;
+      let stopReason = null;
       let reportError = null;
 
       for (const criterion of project.automaticCriteria) {
-        if (shouldStop) {
+        if (stopReason) {
+          const stoppedAfterCancel = stopReason === "cancelled";
           results.push(
             createStoppedResult(
               criterion,
               "not_run",
-              createError("stopped_after_fatal", "앞선 치명적 오류로 이 기준을 실행하지 않았습니다."),
+              stoppedAfterCancel
+                ? createError(
+                    "stopped_after_cancel",
+                    "사용자가 자동 평가를 취소해 이 기준을 실행하지 않았습니다.",
+                  )
+                : createError(
+                    "stopped_after_fatal",
+                    "앞선 치명적 오류로 이 기준을 실행하지 않았습니다.",
+                  ),
             ),
           );
           continue;
@@ -561,7 +570,7 @@ export class BrowserWebProjectRunner {
           const error = createError("cancelled", "사용자가 Web Project 자동 평가를 취소했습니다.");
           results.push(createStoppedResult(criterion, "cancelled", error));
           reportError = error;
-          shouldStop = true;
+          stopReason = "cancelled";
           continue;
         }
 
@@ -648,7 +657,7 @@ export class BrowserWebProjectRunner {
             durationMs: elapsed(this.now, criterionStartedAt),
           });
           reportError = resultError;
-          shouldStop = true;
+          stopReason = outcome === "cancelled" ? "cancelled" : "fatal";
         }
       }
 

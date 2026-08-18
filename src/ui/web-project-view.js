@@ -275,7 +275,7 @@ export function renderWebProjectView({
             <div class="web-project-file-tabs" role="group" aria-label="편집할 파일 선택">${renderFileTabs(project, activeFile?.path, isRunning)}</div>
           </div>
           <label class="sr-only" for="web-project-source">${escapeHtml(activeFile?.path ?? "프로젝트 파일")} 코드</label>
-          <textarea id="web-project-source" class="web-project-source" data-web-project-source spellcheck="false" aria-describedby="web-project-draft-status"${isRunning ? " disabled" : ""}>${escapeHtml(activeFile?.source ?? "")}</textarea>
+          <textarea id="web-project-source" class="web-project-source" data-web-project-source spellcheck="false" aria-describedby="web-project-draft-status"${isRunning ? " readonly" : ""}>${escapeHtml(activeFile?.source ?? "")}</textarea>
           <div class="web-project-editor-footer">
           <p id="web-project-draft-status" data-web-project-draft-status class="${draftStatus === "failed" || draftStatus === "memory" || draftStatus === "conflict" ? "is-warning" : ""}">${escapeHtml(getWebProjectDraftStatusMessage(draftStatus))}</p>
             <button class="button button--ghost" type="button" data-web-project-reset${isRunning ? " disabled" : ""}>초기 코드로 되돌리기</button>

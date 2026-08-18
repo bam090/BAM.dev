@@ -536,6 +536,16 @@ test("반응형 학습 계획 보드는 실제 교안 개념과 HTML·CSS 두 �
   assert.doesNotMatch(JSON.stringify(project.files), /javascript|<script\b/iu);
 });
 
+test("Web Project 요구사항 문구는 공개 HTML 검사 구조를 정확히 안내한다", () => {
+  const project = collection.projects[0];
+  const requirements = project.requirements.join("\n");
+
+  assert.match(requirements, /직접 자식 progress/);
+  assert.match(requirements, /비어 있지 않은 aria-label/);
+  assert.match(requirements, /href가 있는 \.learning-card-link/);
+  assert.match(requirements, /카드의 후손/);
+});
+
 test("공개 자동 70점과 자가점검 30점은 순서·배점·scale을 명시한다", () => {
   const project = collection.projects[0];
   assert.equal(

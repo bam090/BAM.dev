@@ -1069,7 +1069,7 @@ test("CSS computed-style은 스크립트 없는 일회성 iframe에 fixed fixtur
   assert.equal(inlinePriority, "");
 });
 
-test("computed-focus-style은 focus-visible 상태의 최종 cascade와 important override를 읽는다", async () => {
+test("computed-focus-style은 최종 cascade를 읽고 focus-visible 상태를 만들 수 없으면 engine_error로 보고한다", async () => {
   const listeners = new Map();
   let activeElement = null;
   let computedOutline = "rgb(37, 99, 235) solid 3px";
@@ -1165,6 +1165,30 @@ test("computed-focus-style은 focus-visible 상태의 최종 cascade와 importan
   assert.equal(probeRemovedCount, 2);
   assert.equal(removedCount, 2);
   assert.equal(inlineValue, "");
+
+  target.matches = () => false;
+  const runner = new BrowserWebCodeQuestRunner({ environment });
+  const report = await runner.run(
+    createCssRequest({
+      source: input.source,
+      fixtureHtml: input.fixtureHtml,
+      tests: [
+        {
+          id: "card-focus-outline",
+          label: "카드 링크 초점선",
+          assertion: input.assertion,
+          expected: input.assertion.expected,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.equal(report.tests[0].error.type, "evaluation_error");
+  assert.match(report.tests[0].error.message, /focus-visible 계산 상태/);
+  assert.equal(probeRemovedCount, 3);
+  assert.equal(removedCount, 3);
 });
 
 test("CSS Grid 열 개수는 지정 viewport의 최종 computed track list를 행동 기준으로 센다", async () => {
@@ -1252,6 +1276,34 @@ test("CSS Grid 열 개수는 지정 viewport의 최종 computed track list를 �
   });
   assert.equal(await evaluateCssStyleAssertion(input, environment), 0);
   assert.equal(removedCount, 3);
+
+  iframe.contentWindow.getComputedStyle = () => ({
+    getPropertyValue: (property) =>
+      property === "display"
+        ? "grid"
+        : "repeat(auto-fit, minmax(240px, 1fr))",
+  });
+  const runner = new BrowserWebCodeQuestRunner({ environment });
+  const report = await runner.run(
+    createCssRequest({
+      source,
+      fixtureHtml: input.fixtureHtml,
+      tests: [
+        {
+          id: "grid-column-count",
+          label: "Grid 열 개수",
+          assertion: input.assertion,
+          expected: input.assertion.expected,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.outcome, "engine_error");
+  assert.equal(report.tests[0].outcome, "engine_error");
+  assert.equal(report.tests[0].error.type, "evaluation_error");
+  assert.match(report.tests[0].error.message, /repeat\(\).*반복 횟수/);
+  assert.equal(removedCount, 4);
 });
 
 test("CSS iframe error는 리소스를 정리하고 engine_error로 보고한다", async () => {

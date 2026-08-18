@@ -113,6 +113,83 @@ test("localStorage 쓰기가 실패해도 현재 탭의 값을 유지한다", ()
   assert.equal(storage.isPersistent(), false);
 });
 
+test("QuotaExceeded 뒤에도 기존 primary 값과 키를 읽고 실패한 키만 메모리를 우선한다", () => {
+  const values = new Map([
+    ["persisted.one", "primary one"],
+    ["persisted.two", "primary two"],
+    ["failed.write", "stale primary"],
+  ]);
+  const primaryStorage = {
+    get length() {
+      return values.size;
+    },
+    key(index) {
+      return [...values.keys()][index] ?? null;
+    },
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem() {
+      throw new Error("QuotaExceededError");
+    },
+    removeItem() {
+      throw new Error("QuotaExceededError");
+    },
+  };
+  const storage = createBrowserStorage({ localStorage: primaryStorage });
+
+  storage.setItem("failed.write", "memory replacement");
+  storage.setItem("memory.new", "memory new");
+
+  assert.equal(storage.getItem("failed.write"), "memory replacement");
+  assert.equal(storage.getItem("memory.new"), "memory new");
+  assert.equal(storage.getItem("persisted.one"), "primary one");
+  assert.equal(storage.getItem("persisted.two"), "primary two");
+  assert.deepEqual(storage.keys().sort(), [
+    "failed.write",
+    "memory.new",
+    "persisted.one",
+    "persisted.two",
+  ]);
+  assert.equal(storage.isPersistent(), false);
+});
+
+test("primary 삭제가 실패하면 tombstone이 이전 값을 읽기와 키 열거에서 숨긴다", () => {
+  const values = new Map([
+    ["keep", "persisted"],
+    ["remove.me", "stale primary"],
+  ]);
+  const primaryStorage = {
+    get length() {
+      return values.size;
+    },
+    key(index) {
+      return [...values.keys()][index] ?? null;
+    },
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem() {
+      throw new Error("QuotaExceededError");
+    },
+    removeItem() {
+      throw new Error("QuotaExceededError");
+    },
+  };
+  const storage = createBrowserStorage({ localStorage: primaryStorage });
+
+  storage.removeItem("remove.me");
+
+  assert.equal(storage.getItem("remove.me"), null);
+  assert.equal(storage.getItem("keep"), "persisted");
+  assert.deepEqual(storage.keys(), ["keep"]);
+  assert.equal(storage.isPersistent(), false);
+
+  storage.setItem("remove.me", "memory restored");
+  assert.equal(storage.getItem("remove.me"), "memory restored");
+  assert.deepEqual(storage.keys().sort(), ["keep", "remove.me"]);
+});
+
 test("정상 저장 뒤 localStorage 읽기가 차단되어도 마지막 값을 유지한다", () => {
   let blocked = false;
   const values = new Map();

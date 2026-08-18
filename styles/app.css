@@ -722,6 +722,7 @@ a.language-nav-link:hover {
 
 .code-card pre {
   --syntax-gutter: 20px;
+
   margin: 0;
   overflow: auto;
   padding: 20px;
@@ -1342,6 +1343,7 @@ a.language-nav-link:hover {
 
 .quiz-code pre {
   --syntax-gutter: 20px;
+
   max-width: 100%;
   margin: 0;
   overflow: auto;
@@ -2112,6 +2114,7 @@ a.language-nav-link:hover {
 
 .quest-source-highlight {
   --syntax-gutter: 16px;
+
   position: absolute;
   z-index: 0;
   inset: 0;
@@ -3654,7 +3657,7 @@ a.language-nav-link:hover {
   border-color: var(--color-primary-strong);
 }
 
-.web-project-source:disabled {
+.web-project-source[readonly] {
   cursor: wait;
   opacity: 0.72;
 }

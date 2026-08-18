@@ -28,75 +28,93 @@ class ResilientBrowserStorage {
   constructor(primaryStorage) {
     this.primaryStorage = primaryStorage;
     this.fallbackStorage = new MemoryStorage();
+    this.primaryReadAvailable = primaryStorage !== null;
+    this.primaryWriteAvailable = primaryStorage !== null;
+    this.memoryOnlyKeys = new Set();
+    this.tombstones = new Set();
   }
 
   getItem(key) {
-    if (this.primaryStorage) {
+    if (this.tombstones.has(key)) return null;
+    if (this.memoryOnlyKeys.has(key)) return this.fallbackStorage.getItem(key);
+
+    if (this.primaryStorage && this.primaryReadAvailable) {
       try {
         const value = this.primaryStorage.getItem(key);
         if (value === null) this.fallbackStorage.removeItem(key);
         else this.fallbackStorage.setItem(key, value);
         return value;
       } catch {
-        this.primaryStorage = null;
+        this.primaryReadAvailable = false;
       }
     }
     return this.fallbackStorage.getItem(key);
   }
 
   setItem(key, value) {
-    if (this.primaryStorage) {
+    const stringValue = String(value);
+    if (this.primaryStorage && this.primaryWriteAvailable) {
       try {
-        this.primaryStorage.setItem(key, value);
-        this.fallbackStorage.setItem(key, value);
+        this.primaryStorage.setItem(key, stringValue);
+        this.fallbackStorage.setItem(key, stringValue);
+        this.memoryOnlyKeys.delete(key);
+        this.tombstones.delete(key);
         return;
       } catch {
-        this.primaryStorage = null;
+        this.primaryWriteAvailable = false;
       }
     }
-    this.fallbackStorage.setItem(key, value);
+    this.fallbackStorage.setItem(key, stringValue);
+    this.memoryOnlyKeys.add(key);
+    this.tombstones.delete(key);
   }
 
   removeItem(key) {
-    if (this.primaryStorage) {
+    if (this.primaryStorage && this.primaryWriteAvailable) {
       try {
         this.primaryStorage.removeItem(key);
         this.fallbackStorage.removeItem(key);
+        this.memoryOnlyKeys.delete(key);
+        this.tombstones.delete(key);
         return;
       } catch {
-        this.primaryStorage = null;
+        this.primaryWriteAvailable = false;
       }
     }
     this.fallbackStorage.removeItem(key);
+    this.memoryOnlyKeys.delete(key);
+    if (this.primaryStorage) this.tombstones.add(key);
   }
 
   keys() {
-    if (this.primaryStorage) {
+    const keys = new Set(this.fallbackStorage.keys());
+    if (this.primaryStorage && this.primaryReadAvailable) {
       try {
         if (
           !Number.isSafeInteger(this.primaryStorage.length) ||
           this.primaryStorage.length < 0 ||
           typeof this.primaryStorage.key !== "function"
         ) {
-          return this.fallbackStorage.keys();
+          return [...keys].filter((key) => !this.tombstones.has(key));
         }
-        const keys = [];
         for (let index = 0; index < this.primaryStorage.length; index += 1) {
           const key = this.primaryStorage.key(index);
-          if (typeof key === "string") keys.push(key);
+          if (typeof key === "string") keys.add(key);
         }
-        return keys;
       } catch {
         // 키 열거 실패만으로 읽기·쓰기까지 포기하지 않습니다. manifest를
         // 읽을 수 있는 저장소는 fallback 키와 getItem으로 레코드를 복구합니다.
-        return this.fallbackStorage.keys();
       }
     }
-    return this.fallbackStorage.keys();
+    return [...keys].filter((key) => !this.tombstones.has(key));
   }
 
   isPersistent() {
-    return this.primaryStorage !== null;
+    return Boolean(
+      this.primaryStorage &&
+        this.primaryReadAvailable &&
+        this.primaryWriteAvailable,
+    );
   }
 }
 

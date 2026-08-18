@@ -505,11 +505,20 @@ function countComputedGridTracks(value) {
   return splitTopLevelCssComponents(normalized).reduce((total, component) => {
     if (/^\[[\s\S]*\]$/u.test(component)) return total;
     const repeatMatch = /^repeat\(([\s\S]*)\)$/iu.exec(component);
-    if (!repeatMatch) return total + 1;
+    if (!repeatMatch) {
+      if (/^repeat\(/iu.test(component)) {
+        throw new Error("CSS Grid repeat()의 반복 횟수를 확정할 수 없습니다.");
+      }
+      return total + 1;
+    }
     const parts = splitFirstTopLevelComma(repeatMatch[1]);
-    if (!parts) return total + 1;
+    if (!parts) {
+      throw new Error("CSS Grid repeat()의 반복 횟수를 확정할 수 없습니다.");
+    }
     const repetitions = Number(parts[0].trim());
-    if (!Number.isSafeInteger(repetitions) || repetitions < 1) return total + 1;
+    if (!Number.isSafeInteger(repetitions) || repetitions < 1) {
+      throw new Error("CSS Grid repeat()의 반복 횟수를 확정할 수 없습니다.");
+    }
     return total + repetitions * countComputedGridTracks(parts[1]);
   }, 0);
 }
@@ -636,10 +645,13 @@ export function activateFocusVisibleState(target, frameDocument) {
   try {
     probe.focus?.({ preventScroll: true });
     target.focus({ preventScroll: true });
-    return (
+    const isFocusVisible =
       frameDocument.activeElement === target &&
-      target.matches(":focus-visible")
-    );
+      target.matches(":focus-visible");
+    if (!isFocusVisible) {
+      throw new Error("focus-visible 계산 상태를 만들 수 없습니다.");
+    }
+    return true;
   } finally {
     probe.remove?.();
   }
@@ -670,7 +682,7 @@ async function evaluateComputedFocusStyle(
     assertion,
     signal,
     (target, frameWindow, frameDocument) => {
-      if (!activateFocusVisibleState(target, frameDocument)) return null;
+      activateFocusVisibleState(target, frameDocument);
       return readNormalizedComputedProperty(target, frameWindow, assertion);
     },
     environment,

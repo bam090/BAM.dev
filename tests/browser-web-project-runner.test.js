@@ -437,6 +437,15 @@ test("실행 전 취소는 첫 기준만 cancelled, 나머지는 not_run으로 �
     ["cancelled", ...project.automaticCriteria.slice(1).map(() => "not_run")],
   );
   assert.equal(report.automaticResults[0].error.type, "cancelled");
+  assert.ok(
+    report.automaticResults
+      .slice(1)
+      .every(
+        (result) =>
+          result.error.type === "stopped_after_cancel" &&
+          result.error.message.includes("취소"),
+      ),
+  );
   assert.equal(report.error.type, "cancelled");
   assert.equal(report.score.isComplete, false);
 });
@@ -474,6 +483,15 @@ test("평가 중 취소를 adapter에 전달하고 뒤 기준을 실행하지 �
   assert.equal(report.outcome, "cancelled");
   assert.equal(report.automaticResults[0].outcome, "cancelled");
   assert.ok(report.automaticResults.slice(1).every((result) => result.outcome === "not_run"));
+  assert.ok(
+    report.automaticResults
+      .slice(1)
+      .every(
+        (result) =>
+          result.error.type === "stopped_after_cancel" &&
+          result.error.message.includes("취소"),
+      ),
+  );
 });
 
 test("같은 runner의 동시 실행은 첫 실행을 유지하고 두 번째를 engine_error로 보고한다", async () => {
