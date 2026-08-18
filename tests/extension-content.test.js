@@ -8,65 +8,59 @@ const curriculum = JSON.parse(
   await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
 );
 
-const SAMPLE_CONTRACTS = [
+const AVAILABLE_CONTRACTS = [
   {
     languageId: "html",
-    lessonId: "html-01-document-structure",
-    conceptIds: ["html.document-structure", "html.semantics"],
-    quizId: "quiz-html-semantic-main",
-    sourceHost: "html.spec.whatwg.org",
+    lessonCount: 5,
+    quizCount: 12,
+    sourcePattern: /https:\/\/(?:html\.spec\.whatwg\.org|www\.w3\.org)\//,
   },
   {
     languageId: "css",
-    lessonId: "css-01-cascade-box-model",
-    conceptIds: ["css.cascade", "css.box-model"],
-    quizId: "quiz-css-border-box",
-    sourceHost: "www.w3.org",
-  },
-  {
-    languageId: "java",
-    lessonId: "java-01-types-methods",
-    conceptIds: ["java.types", "java.methods"],
-    quizId: "quiz-java-method-return",
-    sourceHost: "docs.oracle.com",
+    lessonCount: 6,
+    quizCount: 12,
+    sourcePattern: /https:\/\/(?:www\.w3\.org|drafts\.csswg\.org)\//,
   },
 ];
 
-test("HTML·CSS·Java는 각각 한 개의 언어 중립 샘플 교안 계약을 사용한다", async () => {
-  for (const contract of SAMPLE_CONTRACTS) {
+test("HTML·CSS 정식 과정은 연속된 교안과 공식 출처를 가진다", async () => {
+  for (const contract of AVAILABLE_CONTRACTS) {
     const language = curriculum.languages.find(
       (item) => item.id === contract.languageId,
     );
     const lessons = getLessonsForLanguage(curriculum, contract.languageId);
 
     assert.ok(language, `${contract.languageId}: 언어 메타데이터가 필요합니다.`);
-    assert.equal(language.status, "sample");
-    assert.equal(lessons.length, 1);
-    assert.equal(lessons[0].id, contract.lessonId);
-    assert.equal(lessons[0].order, 1);
-    assert.deepEqual(lessons[0].conceptIds, contract.conceptIds);
-    assert.equal(lessons[0].source.kind, "bam-authored");
-    assert.match(
-      lessons[0].contentFile,
-      new RegExp(`^content/lessons/${contract.languageId}/`),
+    assert.equal(language.status, "available");
+    assert.equal(lessons.length, contract.lessonCount);
+    assert.deepEqual(
+      lessons.map((lesson) => lesson.order),
+      Array.from({ length: contract.lessonCount }, (_, index) => index + 1),
     );
 
-    const markdown = await readFile(
-      new URL(`../${lessons[0].contentFile}`, import.meta.url),
-      "utf8",
-    );
-    assert.match(markdown, /^# /);
-    assert.match(markdown, /## 학습 목표/);
-    assert.match(markdown, /## (?:최종 )?확인 문제/);
-    assert.match(markdown, new RegExp(`https://${contract.sourceHost.replaceAll(".", "\\.")}/`));
-    assert.doesNotMatch(markdown, /비밀\s*테스트|숨김\s*테스트/);
+    for (const lesson of lessons) {
+      assert.equal(lesson.source.kind, "bam-authored");
+      assert.match(
+        lesson.contentFile,
+        new RegExp(`^content/lessons/${contract.languageId}/`),
+      );
+      const markdown = await readFile(
+        new URL(`../${lesson.contentFile}`, import.meta.url),
+        "utf8",
+      );
+      assert.match(markdown, /^# /);
+      assert.match(markdown, /## 학습 목표/);
+      assert.match(markdown, /## (?:최종 )?확인 문제/);
+      assert.match(markdown, contract.sourcePattern);
+      assert.doesNotMatch(markdown, /비밀\s*테스트|숨김\s*테스트/);
+    }
   }
 });
 
-test("각 샘플 언어의 객관식 한 문항이 같은 교안·개념과 연결된다", async () => {
+test("HTML·CSS 객관식은 모든 문항을 같은 언어의 교안·개념과 연결한다", async () => {
   const allQuestionIds = new Set();
 
-  for (const contract of SAMPLE_CONTRACTS) {
+  for (const contract of AVAILABLE_CONTRACTS) {
     const quiz = JSON.parse(
       await readFile(
         new URL(`../content/quizzes/${contract.languageId}.json`, import.meta.url),
@@ -75,18 +69,33 @@ test("각 샘플 언어의 객관식 한 문항이 같은 교안·개념과 연�
     );
     assert.deepEqual(validateQuizCollection(quiz, curriculum), []);
     assert.equal(quiz.languageId, contract.languageId);
-    assert.equal(quiz.questions.length, 1);
+    assert.equal(quiz.questions.length, contract.quizCount);
 
-    const [question] = quiz.questions;
-    assert.equal(question.id, contract.quizId);
-    assert.equal(question.lessonId, contract.lessonId);
-    assert.ok(contract.conceptIds.includes(question.conceptId));
-    assert.equal(question.options.length, 4);
-    assert.equal(question.options.filter((option) => option.isCorrect).length, 1);
-    assert.ok(question.options.every((option) => option.feedback.trim().length > 0));
-    assert.equal(allQuestionIds.has(question.id), false);
-    allQuestionIds.add(question.id);
+    for (const question of quiz.questions) {
+      const lesson = curriculum.lessons.find((item) => item.id === question.lessonId);
+      assert.equal(lesson?.languageId, contract.languageId);
+      assert.ok(lesson.conceptIds.includes(question.conceptId));
+      assert.equal(question.options.length, 4);
+      assert.equal(question.options.filter((option) => option.isCorrect).length, 1);
+      assert.ok(question.options.every((option) => option.feedback.trim().length > 0));
+      assert.equal(allQuestionIds.has(question.id), false);
+      allQuestionIds.add(question.id);
+    }
   }
+});
+
+test("Java는 한 개의 읽기·추론 샘플 교안과 객관식을 유지한다", async () => {
+  const language = curriculum.languages.find((item) => item.id === "java");
+  const lessons = getLessonsForLanguage(curriculum, "java");
+  const quiz = JSON.parse(
+    await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"),
+  );
+
+  assert.equal(language?.status, "sample");
+  assert.equal(lessons.length, 1);
+  assert.equal(lessons[0].id, "java-01-types-methods");
+  assert.equal(quiz.questions.length, 1);
+  assert.equal(quiz.questions[0].id, "quiz-java-method-return");
 });
 
 test("모든 정식·샘플 언어가 학습 링크와 짝을 이루는 객관식 컬렉션을 가진다", async () => {
@@ -106,13 +115,13 @@ test("모든 정식·샘플 언어가 학습 링크와 짝을 이루는 객관�
   }
 });
 
-test("sample 언어의 교안 누락과 다른 언어 디렉터리 경로를 거부한다", () => {
-  const missingSampleLesson = structuredClone(curriculum);
-  missingSampleLesson.lessons = missingSampleLesson.lessons.filter(
+test("탐색 가능한 언어의 교안 누락과 다른 언어 디렉터리 경로를 거부한다", () => {
+  const missingAvailableLesson = structuredClone(curriculum);
+  missingAvailableLesson.lessons = missingAvailableLesson.lessons.filter(
     (lesson) => lesson.languageId !== "html",
   );
   assert.ok(
-    validateCurriculum(missingSampleLesson).some(
+    validateCurriculum(missingAvailableLesson).some(
       (error) => error.includes("html") && error.includes("교안이 필요"),
     ),
   );

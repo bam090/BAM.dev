@@ -36,6 +36,374 @@
           "feedback": "틀립니다. `section`은 보통 제목을 가진 하나의 주제 구역에 적합합니다. 학습 본문 안의 개별 주제를 나눌 때 쓸 수 있지만, 질문은 페이지 전체의 고유한 중심 내용을 감싸는 역할을 묻고 있으므로 `main`이 더 정확합니다."
         }
       ]
+    },
+    {
+      "id": "quiz-html-dom-nesting",
+      "lessonId": "html-01-document-structure",
+      "conceptId": "html.dom-tree",
+      "difficulty": "application",
+      "prompt": "다음 문장에서 `em` 안에 `strong`이 들어 있다는 부모·자식 관계를 유지하면서, 시작한 요소의 역순으로 올바르게 닫은 마크업은 무엇인가요?",
+      "code": "나는 <em>HTML을 <strong>정확히</em> 배우고 있습니다.</strong>",
+      "options": [
+        {
+          "id": "a",
+          "text": "`<p>나는 <em>HTML을 </em><strong>정확히</strong> 배우고 있습니다.</p>`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 태그가 겹치지는 않지만 `strong`이 `em`의 자식이어야 한다는 요구와 달리 두 요소가 형제 관계가 됩니다."
+        },
+        {
+          "id": "b",
+          "text": "`<p>나는 <em>HTML을 <strong>정확히</strong></em> 배우고 있습니다.</p>`",
+          "isCorrect": true,
+          "feedback": "맞습니다. `p` 안에서 `em`, 그 안에서 `strong`을 시작했으므로 `strong` → `em` → `p` 순서로 닫아 의도한 DOM 부모·자식 관계를 유지합니다."
+        },
+        {
+          "id": "c",
+          "text": "`<p>나는 <em>HTML을 <strong>정확히</em></strong> 배우고 있습니다.</p>`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 안쪽의 `strong`을 닫기 전에 바깥쪽 `em`을 닫아 태그가 서로 겹칩니다. 브라우저가 복구해 표시하더라도 의도한 소스 구조가 아닙니다."
+        },
+        {
+          "id": "d",
+          "text": "`<p>나는 <strong>HTML을 <em>정확히</strong></em> 배우고 있습니다.</p>`",
+          "isCorrect": false,
+          "feedback": "틀립니다. `strong`과 `em`의 시작 순서도 바뀌었고, `em`을 닫기 전에 `strong`을 닫아 중첩도 겹칩니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-strong-em-meaning",
+      "lessonId": "html-02-text-links",
+      "conceptId": "html.text-semantics",
+      "difficulty": "basic",
+      "prompt": "`strong`과 `em`을 선택하는 기준을 가장 정확하게 설명한 것은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`strong`은 강한 중요성, `em`은 문장의 강세를 표현할 때 사용하고 단순한 모양은 CSS로 다룬다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 두 요소는 기본 모양이 아니라 콘텐츠에 더하는 의미를 기준으로 선택하며, 굵기나 기울임 같은 표현만 필요하면 CSS가 담당합니다."
+        },
+        {
+          "id": "b",
+          "text": "`strong`은 항상 빨간색, `em`은 항상 파란색으로 표시하기 위해 사용한다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 브라우저의 기본 표현이나 프로젝트 CSS는 달라질 수 있습니다. HTML 요소를 특정 색과 연결하면 콘텐츠 의미를 설명하지 못합니다."
+        },
+        {
+          "id": "c",
+          "text": "두 요소는 의미가 없으므로 어느 것을 사용해도 완전히 같다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. `strong`은 중요성, `em`은 강세라는 서로 다른 의미를 나타냅니다. 화면 모양이 비슷해도 의미가 같지는 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "제목을 만들 때는 `h1` 대신 항상 `strong`을 사용한다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 제목은 문서 계층을 나타내는 `h1`~`h6`로 표현합니다. `strong`은 제목 구조를 만들지 않습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-link-destination",
+      "lessonId": "html-02-text-links",
+      "conceptId": "html.urls",
+      "difficulty": "application",
+      "prompt": "현재 문서 URL이 `https://bam.dev/learn/html/index.html`일 때 다음 상대 링크가 가리키는 목적지는 무엇인가요?",
+      "code": "<a href=\"../quiz.html#question-1\">HTML 복습 1번 문제</a>",
+      "options": [
+        {
+          "id": "a",
+          "text": "`https://bam.dev/quiz.html#question-1`",
+          "isCorrect": false,
+          "feedback": "틀립니다. `..`는 현재 `html` 디렉터리에서 한 단계 위인 `/learn/`으로 이동합니다. 사이트 루트 `/`까지 두 단계 올라가지는 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "`https://bam.dev/learn/html/quiz.html#question-1`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 이 결과는 `quiz.html`만 썼을 때에 가깝습니다. 링크의 `..` 때문에 현재 `/learn/html/`에서 한 단계 위로 이동합니다."
+        },
+        {
+          "id": "c",
+          "text": "`https://bam.dev/learn/html/index.html#question-1`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 같은 문서의 fragment만 가리키려면 `href=\"#question-1\"`처럼 작성합니다. 제시된 링크에는 `../quiz.html` 경로가 있습니다."
+        },
+        {
+          "id": "d",
+          "text": "`https://bam.dev/learn/quiz.html#question-1`",
+          "isCorrect": true,
+          "feedback": "맞습니다. 현재 문서가 있는 `/learn/html/`에서 `..`로 `/learn/`에 올라간 뒤 `quiz.html`을 찾고 `question-1` fragment를 가리킵니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-alt-context",
+      "lessonId": "html-03-images-lists-tables",
+      "conceptId": "html.image-alternatives",
+      "difficulty": "basic",
+      "prompt": "다음처럼 이미지만 들어 있는 홈 링크에서 이미지의 기능을 가장 잘 전달하는 `alt`는 무엇인가요?",
+      "code": "<a href=\"/\"><img src=\"bam-logo.svg\" alt=\"TODO\" /></a>",
+      "options": [
+        {
+          "id": "a",
+          "text": "`alt=\"파란색 B 글자가 있는 둥근 사각형 이미지\"`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 시각적 모양은 설명하지만 이 이미지 링크를 활성화했을 때 어디로 이동하는지 알려 주지 못합니다. 기능 이미지에서는 링크 목적이 우선입니다."
+        },
+        {
+          "id": "b",
+          "text": "`alt=\"BAM.dev 홈\"`",
+          "isCorrect": true,
+          "feedback": "맞습니다. 링크 안의 유일한 콘텐츠인 이미지가 `/`로 이동하는 기능을 가지므로 대체 텍스트가 서비스 이름과 홈 목적지를 전달합니다."
+        },
+        {
+          "id": "c",
+          "text": "`alt=\"이미지\"`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 보조 기술은 이미 이미지라는 사실을 알릴 수 있으며, `이미지`라는 말만으로는 링크의 목적을 이해할 수 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "`alt=\"\"`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 빈 대체 텍스트는 장식 이미지에 알맞습니다. 여기서는 이미지가 링크의 유일한 내용이므로 비워 두면 링크 목적을 전달할 텍스트가 사라집니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-list-order",
+      "lessonId": "html-03-images-lists-tables",
+      "conceptId": "html.lists",
+      "difficulty": "basic",
+      "prompt": "파일 생성 → 마크업 작성 → 브라우저 확인처럼 순서가 바뀌면 작업 흐름이 달라지는 세 단계를 나타낼 때 가장 알맞은 마크업은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "세 문장을 각각 `div`에 넣는다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. `div`는 범용 컨테이너이며 세 항목이 정해진 순서의 목록이라는 관계를 표현하지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "`ul` 안에 세 개의 `li`를 순서대로 넣는다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. `ul`은 항목 순서가 의미에 영향을 주지 않는 목록에 알맞습니다. 제시된 작업은 실행 순서가 중요합니다."
+        },
+        {
+          "id": "c",
+          "text": "`ol` 안에 세 개의 `li`를 순서대로 넣는다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 단계의 순서를 바꾸면 과정의 의미가 달라지므로 순서 있는 목록 `ol`과 목록 항목 `li`가 알맞습니다."
+        },
+        {
+          "id": "d",
+          "text": "세 문장을 쉼표로 이어 하나의 `p`에 넣는다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 문단 하나로 표현하면 각 단계가 별도 목록 항목이라는 구조와 순서 관계를 프로그램이 파악하기 어렵습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-table-header-scope",
+      "lessonId": "html-03-images-lists-tables",
+      "conceptId": "html.tabular-data",
+      "difficulty": "application",
+      "prompt": "학습 시간표에서 첫 행의 `요일`, `주제`는 열 머리글이고 첫 열의 `월요일`은 해당 행의 머리글입니다. 이 관계를 가장 정확하게 표현한 마크업은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`<tr><th scope=\"col\">요일</th><th scope=\"col\">주제</th></tr><tr><th scope=\"row\">월요일</th><td>HTML</td></tr>`",
+          "isCorrect": true,
+          "feedback": "맞습니다. 첫 행의 두 `th`는 각각 열을 설명하고, `월요일`의 `th`는 같은 행의 데이터를 설명하므로 `scope` 방향이 실제 관계와 일치합니다."
+        },
+        {
+          "id": "b",
+          "text": "`<tr><td>요일</td><td>주제</td></tr><tr><td>월요일</td><td>HTML</td></tr>`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 모든 셀을 `td`로 작성하면 `요일`, `주제`, `월요일`이 다른 셀을 설명하는 머리글이라는 의미를 잃습니다."
+        },
+        {
+          "id": "c",
+          "text": "`<tr><th scope=\"row\">요일</th><th scope=\"row\">주제</th></tr><tr><th scope=\"col\">월요일</th><td>HTML</td></tr>`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 머리글 요소는 사용했지만 방향이 반대입니다. 첫 행은 열을, 첫 열의 `월요일`은 행을 설명합니다."
+        },
+        {
+          "id": "d",
+          "text": "`<div>요일 | 주제</div><div>월요일 | HTML</div>`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 보이는 구분선은 만들 수 있지만 행·열로 연결된 표 형식 데이터와 머리글 관계를 HTML 구조로 표현하지 못합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-form-name-submission",
+      "lessonId": "html-04-forms-accessibility",
+      "conceptId": "html.form-submission",
+      "difficulty": "basic",
+      "prompt": "다음 입력란에 이메일을 작성해 일반 폼 제출을 해도 이메일 이름·값 항목이 제출 데이터에 포함되지 않는 핵심 이유는 무엇인가요?",
+      "code": "<label for=\"email\">이메일</label>\n<input type=\"email\" id=\"email\" required />",
+      "options": [
+        {
+          "id": "a",
+          "text": "`label` 요소가 있기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. `label`은 입력 목적을 알리고 컨트롤과 연결하는 데 필요하며, 제출 데이터가 빠지는 원인이 아닙니다."
+        },
+        {
+          "id": "b",
+          "text": "`required` 속성이 있기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. `required`는 값이 비었는지를 검사합니다. 값의 제출 이름을 만들지는 않지만, 제출을 막는 원인과 `name` 누락은 서로 다른 문제입니다."
+        },
+        {
+          "id": "c",
+          "text": "`id` 값이 `email`이기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. `id`는 문서 식별과 `label for` 연결에 사용됩니다. `email`이라는 값 자체에는 문제가 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "입력 요소에 제출 데이터의 이름이 될 `name`이 없기 때문이다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. `id`가 레이블 연결을 담당하더라도 일반 폼 제출에서 이름·값 항목을 만들려면 입력 요소에 비어 있지 않은 `name`이 필요합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-label-association",
+      "lessonId": "html-04-forms-accessibility",
+      "conceptId": "html.labels",
+      "difficulty": "application",
+      "prompt": "보이는 레이블 `답변받을 이메일`을 이메일 입력란과 명시적으로 올바르게 연결한 코드는 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "`<label for=\"email\">답변받을 이메일</label><input type=\"email\" id=\"user-email\" name=\"email\" />`",
+          "isCorrect": false,
+          "feedback": "틀립니다. `label`의 `for=\"email\"`과 입력의 `id=\"user-email\"`이 다르므로 명시적 연결이 만들어지지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "`<label for=\"user-email\">답변받을 이메일</label><input type=\"email\" id=\"user-email\" name=\"email\" />`",
+          "isCorrect": true,
+          "feedback": "맞습니다. `label for`와 입력의 `id`가 정확히 같고, 입력 목적에 맞는 유형과 제출용 `name`도 별도로 제공됩니다."
+        },
+        {
+          "id": "c",
+          "text": "`<span>답변받을 이메일</span><input type=\"email\" id=\"user-email\" name=\"email\" />`",
+          "isCorrect": false,
+          "feedback": "틀립니다. 화면에 텍스트는 보이지만 일반 `span`만으로는 그 텍스트와 입력 컨트롤의 레이블 관계가 만들어지지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "`<input type=\"email\" id=\"user-email\" name=\"email\" placeholder=\"답변받을 이메일\" />`",
+          "isCorrect": false,
+          "feedback": "틀립니다. placeholder는 예시나 힌트이며 입력 중 사라질 수 있습니다. 지속적으로 보이는 레이블과 연결 관계를 대신하지 않습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-validation-boundary",
+      "lessonId": "html-04-forms-accessibility",
+      "conceptId": "html.constraint-validation",
+      "difficulty": "application",
+      "prompt": "`required`와 `type=\"email\"`을 사용한 가입 폼이 브라우저 내장 검사를 통과했습니다. 그래도 서버가 입력을 다시 검증해야 하는 이유로 가장 알맞은 것은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "브라우저 내장 검사는 어떤 사용자에게도 오류 안내를 보여 주지 않기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 브라우저는 내장 조건을 만족하지 않는 일반 제출을 막고 사용자에게 안내할 수 있습니다. 문제는 이 검사가 신뢰할 수 있는 서버 경계가 아니라는 점입니다."
+        },
+        {
+          "id": "b",
+          "text": "서버는 HTML의 `label` 문구를 데이터베이스 열 이름으로 바꿔야 하기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 폼 제출 데이터의 이름은 보이는 레이블 문구가 아니라 컨트롤의 `name`에서 만들어집니다. 서버 재검증의 핵심 이유와도 다릅니다."
+        },
+        {
+          "id": "c",
+          "text": "클라이언트 검증은 개발자 도구나 직접 만든 요청으로 우회할 수 있어 서버가 신뢰할 수 없기 때문이다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 내장 검증은 빠른 사용자 피드백에는 유용하지만 우회할 수 있으므로, 서버는 자신이 신뢰하는 규칙으로 모든 입력을 다시 검증해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "POST 요청은 입력값을 전혀 전달할 수 없기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. POST 폼도 제출 가능한 컨트롤의 이름·값을 요청 본문으로 전달할 수 있습니다. POST 자체가 검증을 대신하지 않는다는 것이 핵심입니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-checker-purpose",
+      "lessonId": "html-05-review-practice",
+      "conceptId": "html.validation",
+      "difficulty": "basic",
+      "prompt": "Nu HTML Checker 같은 HTML 검사기의 역할과 한계를 가장 정확하게 설명한 것은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "의도하지 않은 문법·콘텐츠 모델 문제를 찾는 데 도움을 주지만, 접근성과 사용자 경험 전체를 통과 인증하지는 않는다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 검사기는 소스의 잠재적 실수를 찾는 한 관점이며, 링크 문구·대체 텍스트의 문맥과 실제 키보드 흐름은 별도로 확인해야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "검사 결과에 오류가 없으면 모든 화면 낭독기와 키보드 사용성이 자동으로 보장된다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 문법 검사가 실제 보조 기술 사용성과 모든 접근성 요구를 대신하지 않습니다. 자동 검사와 직접 사용 흐름을 함께 확인해야 합니다."
+        },
+        {
+          "id": "c",
+          "text": "브라우저에서 페이지가 보이면 검사기는 어떤 문제도 추가로 찾을 수 없다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 브라우저는 잘못된 HTML을 복구해 표시할 수 있으므로, 화면만 보고 놓친 중첩이나 콘텐츠 모델 문제를 검사기가 찾을 수 있습니다."
+        },
+        {
+          "id": "d",
+          "text": "검사기의 모든 경고는 문맥을 확인하지 않고 반드시 오류처럼 고쳐야 한다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 오류는 우선 수정하되 경고는 코드의 목적과 문맥을 함께 판단해야 합니다. 검사기는 판단을 보조하며 작성자의 의도를 알지 못합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-html-profile-structure-audit",
+      "lessonId": "html-05-review-practice",
+      "conceptId": "html.accessibility-audit",
+      "difficulty": "application",
+      "prompt": "다음 학습 프로필 조각을 의미와 기본 접근성 관점에서 한 번에 가장 잘 개선한 설명은 무엇인가요?",
+      "code": "<div class=\"menu\"><span onclick=\"location.href='/'\">홈</span></div>\n<img src=\"profile.jpg\">\n<input id=\"email\" placeholder=\"이메일\">",
+      "options": [
+        {
+          "id": "a",
+          "text": "세 요소에 모두 굵은 글자 CSS만 적용하면 구조와 접근성 문제도 해결된다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 시각적 굵기는 이동 링크의 의미, 이미지 대체 텍스트, 폼 레이블과 제출 이름을 만들지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "`span`에 `tabindex=\"0\"`만 추가하고 나머지는 그대로 둔다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 포커스만 가능하게 해도 링크의 기본 활성화와 목적지 의미를 모두 복구하지 못하며, 이미지와 입력의 문제도 남습니다."
+        },
+        {
+          "id": "c",
+          "text": "이미지를 삭제하면 메뉴와 입력 요소도 자동으로 접근 가능해진다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 이미지 문제 하나를 없애도 클릭용 `span`, 보이는 레이블이 없는 입력, 제출용 `name` 누락은 그대로 남습니다."
+        },
+        {
+          "id": "d",
+          "text": "주요 이동은 `nav` 안의 `a href=\"/\"`로, 이미지는 문맥에 맞는 `alt`로, 입력은 연결된 `label`과 목적에 맞는 `type`·`name`으로 고친다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 이동·이미지·입력의 목적을 각각 네이티브 HTML 구조로 표현하여 키보드 동작, 대체 정보, 레이블 관계와 제출 데이터 문제를 함께 해결합니다."
+        }
+      ]
     }
   ]
 }

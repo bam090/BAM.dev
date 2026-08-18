@@ -1,8 +1,110 @@
 {
   "schemaVersion": 1,
   "languageId": "css",
-  "title": "CSS 샘플 객관식 복습",
+  "title": "CSS 객관식 복습",
   "questions": [
+    {
+      "id": "quiz-css-selector-compound-descendant",
+      "lessonId": "css-foundations-selectors",
+      "conceptId": "css.selectors",
+      "difficulty": "basic",
+      "prompt": "다음 HTML에서 바깥쪽 `article` 요소 자체와 일치하는 선택자는 무엇인가요? 공백이 같은 요소의 조건인지 후손 관계인지 구분해 보세요.",
+      "code": "<article class=\"card featured\">\n  <h2 class=\"featured\">추천 과정</h2>\n</article>",
+      "options": [
+        {
+          "id": "a",
+          "text": ".card.featured",
+          "isCorrect": true,
+          "feedback": "맞습니다. 공백 없이 이어진 두 클래스 선택자는 `card`와 `featured` 클래스를 동시에 가진 같은 요소를 선택하므로 바깥쪽 article과 일치합니다."
+        },
+        {
+          "id": "b",
+          "text": ".card .featured",
+          "isCorrect": false,
+          "feedback": "틀립니다. 공백은 후손 결합자입니다. 이 선택자는 `.card` 안쪽의 별도 `.featured` 요소인 h2와 일치하며 바깥쪽 article 자체를 선택하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "article .card",
+          "isCorrect": false,
+          "feedback": "틀립니다. 이 선택자는 article 안쪽에 있는 `.card` 후손을 찾습니다. 예제에서는 article 자신이 card 클래스를 가지며 그 안에 별도 `.card` 후손은 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "#card.featured",
+          "isCorrect": false,
+          "feedback": "틀립니다. `#card`는 `id=\"card\"`인 요소를 요구합니다. 예제에는 card라는 class만 있고 같은 이름의 id는 없습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-unit-inheritance-context",
+      "lessonId": "css-foundations-selectors",
+      "conceptId": "css.values-units",
+      "difficulty": "application",
+      "prompt": "다음 코드에서 `.card`의 padding과 margin-block 계산값 조합으로 알맞은 것은 무엇인가요? `em`과 `rem`의 기준을 각각 찾으세요.",
+      "code": "html { font-size: 16px; }\n.card {\n  font-size: 20px;\n  padding: 1em;\n  margin-block: 1.5rem;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "padding 16px, margin-block 20px",
+          "isCorrect": false,
+          "feedback": "틀립니다. 두 단위의 기준을 서로 바꿨습니다. padding의 `1em`은 card 자신의 20px 글자 크기를, margin의 `1.5rem`은 루트의 16px 글자 크기를 기준으로 합니다."
+        },
+        {
+          "id": "b",
+          "text": "padding 20px, margin-block 20px",
+          "isCorrect": false,
+          "feedback": "틀립니다. padding 1em은 20px이 맞지만 1.5rem은 card의 20px을 기준으로 하지 않습니다. 루트 16px의 1.5배인 24px입니다."
+        },
+        {
+          "id": "c",
+          "text": "padding 20px, margin-block 24px",
+          "isCorrect": true,
+          "feedback": "맞습니다. `1em`은 이 요소의 20px 글자 크기이므로 padding은 20px이고, `1.5rem`은 루트 16px의 1.5배이므로 margin-block은 24px입니다."
+        },
+        {
+          "id": "d",
+          "text": "padding 16px, margin-block 24px",
+          "isCorrect": false,
+          "feedback": "틀립니다. margin-block의 24px은 맞지만 `padding: 1em`은 루트가 아니라 `.card` 자신의 20px 글자 크기를 기준으로 계산됩니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-cascade-winner",
+      "lessonId": "css-01-cascade-box-model",
+      "conceptId": "css.cascade",
+      "difficulty": "basic",
+      "prompt": "다음 일반 작성자 스타일에서 다른 출처·`!important`·layer가 없을 때 문단의 최종 글자색은 무엇인가요? specificity를 작성 순서보다 먼저 비교하세요.",
+      "code": "<p id=\"notice\" class=\"message\">저장되었습니다.</p>\n\n#notice { color: royalblue; }\n.message { color: tomato; }",
+      "options": [
+        {
+          "id": "a",
+          "text": "tomato — 더 나중에 작성됐기 때문",
+          "isCorrect": false,
+          "feedback": "틀립니다. 작성 순서는 앞선 캐스케이드 기준과 specificity까지 같을 때 비교합니다. 이 예에서는 ID와 클래스 선택자의 specificity가 다릅니다."
+        },
+        {
+          "id": "b",
+          "text": "royalblue — ID 선택자의 specificity가 더 높기 때문",
+          "isCorrect": true,
+          "feedback": "맞습니다. 같은 일반 작성자 규칙이라는 조건에서 ID 선택자의 specificity가 클래스 선택자보다 높으므로 앞에 있어도 royalblue 선언이 선택됩니다."
+        },
+        {
+          "id": "c",
+          "text": "tomato — 클래스 선택자가 ID 선택자보다 재사용 가능하기 때문",
+          "isCorrect": false,
+          "feedback": "틀립니다. 클래스의 재사용성은 설계상 장점이지만 캐스케이드 승패 기준은 아닙니다. 여기서는 specificity 때문에 ID 규칙이 이깁니다."
+        },
+        {
+          "id": "d",
+          "text": "브라우저 기본색 — 두 선언이 충돌하면 모두 무효이기 때문",
+          "isCorrect": false,
+          "feedback": "틀립니다. 같은 속성에 여러 유효한 선언이 적용되는 것은 정상입니다. 브라우저는 캐스케이드 순서로 한 값을 고르며 두 선언을 모두 무효로 만들지 않습니다."
+        }
+      ]
+    },
     {
       "id": "quiz-css-border-box",
       "lessonId": "css-01-cascade-box-model",
@@ -34,6 +136,272 @@
           "text": "288px",
           "isCorrect": false,
           "feedback": "틀립니다. 240px에 좌우 padding 40px과 좌우 border 8px을 더한 값은 `content-box`에서 240px을 content 너비로 지정했을 때의 border box 계산입니다. 이 코드는 `border-box`이므로 padding과 border가 이미 240px 안에 포함됩니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-display-formatting",
+      "lessonId": "css-flow-display-overflow",
+      "conceptId": "css.display",
+      "difficulty": "basic",
+      "prompt": "문장 안의 `<span class=\"badge\">NEW</span>`을 같은 줄에 유지하면서 width, height와 네 방향 padding을 하나의 박스처럼 적용하려면 어떤 선언이 가장 알맞나요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "display: inline",
+          "isCorrect": false,
+          "feedback": "틀립니다. inline은 문장 안에 흐르지만 일반적인 비대체 인라인 박스에서는 width와 height가 원하는 박스 크기로 적용되지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "display: block",
+          "isCorrect": false,
+          "feedback": "틀립니다. block은 너비와 높이를 다룰 수 있지만 보통 새 줄에 놓입니다. 문제는 문장 안의 같은 줄을 유지하라고 요구합니다."
+        },
+        {
+          "id": "c",
+          "text": "display: none",
+          "isCorrect": false,
+          "feedback": "틀립니다. none은 요소가 박스를 만들지 않게 하므로 배지가 레이아웃과 일반적인 접근성 트리에서 사라집니다."
+        },
+        {
+          "id": "d",
+          "text": "display: inline-block",
+          "isCorrect": true,
+          "feedback": "맞습니다. inline-block은 같은 줄에 놓이는 바깥 동작과 너비·높이·네 방향 간격을 다루는 박스 동작을 함께 제공합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-overflow-spacing-choice",
+      "lessonId": "css-flow-display-overflow",
+      "conceptId": "css.overflow",
+      "difficulty": "application",
+      "prompt": "길이를 알 수 없는 로그를 최대 12rem 높이까지만 보여 주되, 내용이 더 많으면 사용자가 모두 확인할 수 있게 하려면 어떤 선언 조합이 가장 알맞나요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "height: 12rem; overflow: hidden",
+          "isCorrect": false,
+          "feedback": "틀립니다. 고정 높이를 넘는 내용을 hidden으로 자르면 사용자가 남은 로그를 확인할 방법이 사라집니다."
+        },
+        {
+          "id": "b",
+          "text": "max-height: 12rem; overflow: auto",
+          "isCorrect": true,
+          "feedback": "맞습니다. 내용이 짧을 때는 필요한 높이만 사용하고 12rem을 넘을 때만 스크롤 방법을 제공해 전체 내용을 확인할 수 있습니다."
+        },
+        {
+          "id": "c",
+          "text": "height: 12rem; overflow: visible",
+          "isCorrect": false,
+          "feedback": "틀립니다. 내용은 보일 수 있지만 박스 바깥으로 넘쳐 뒤의 콘텐츠와 겹칠 수 있어 최대 높이 안에서 확인한다는 요구를 충족하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "max-height: 12rem; display: none",
+          "isCorrect": false,
+          "feedback": "틀립니다. display none은 로그 전체를 레이아웃과 일반적인 접근성 트리에서 제거하므로 내용을 확인할 수 없습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-flex-axis",
+      "lessonId": "css-position-flex-grid",
+      "conceptId": "css.flexbox",
+      "difficulty": "basic",
+      "prompt": "다음 flex 컨테이너에서 `justify-content: center`는 item을 어느 방향으로 가운데 정렬하나요? 속성 이름보다 먼저 주축을 찾으세요.",
+      "code": ".menu {\n  display: flex;\n  flex-direction: column;\n  justify-content: center;\n  align-items: flex-start;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "항상 가로 방향",
+          "isCorrect": false,
+          "feedback": "틀립니다. justify-content는 가로 전용 속성이 아니라 주축 정렬 속성입니다. 주축 방향은 flex-direction에 따라 달라집니다."
+        },
+        {
+          "id": "b",
+          "text": "교차축인 가로 방향",
+          "isCorrect": false,
+          "feedback": "틀립니다. column에서 가로는 교차축이며 이 축은 align-items가 담당합니다. justify-content는 주축을 정렬합니다."
+        },
+        {
+          "id": "c",
+          "text": "주축인 세로 방향",
+          "isCorrect": true,
+          "feedback": "맞습니다. flex-direction이 column이면 주축은 세로이므로 justify-content는 세로 방향의 남는 공간에서 item을 가운데 정렬합니다."
+        },
+        {
+          "id": "d",
+          "text": "z축의 앞뒤 방향",
+          "isCorrect": false,
+          "feedback": "틀립니다. Flexbox의 주축과 교차축은 컨테이너 안의 배치 축입니다. 겹침의 앞뒤 순서는 stacking context와 z-index 영역입니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-grid-position-choice",
+      "lessonId": "css-position-flex-grid",
+      "conceptId": "css.grid",
+      "difficulty": "application",
+      "prompt": "여러 강의 카드를 행과 열로 배치하고, 각 카드의 `NEW` 배지는 해당 카드 오른쪽 위에 겹치려 합니다. 가장 알맞은 도구 조합은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "카드 목록은 Grid, 각 카드는 relative, 배지는 absolute",
+          "isCorrect": true,
+          "feedback": "맞습니다. Grid가 목록의 두 축을 설계하고, relative 카드가 자신의 absolute 배지에 분명한 위치 기준을 제공합니다."
+        },
+        {
+          "id": "b",
+          "text": "모든 카드를 absolute로 배치하고 배지는 fixed로 배치",
+          "isCorrect": false,
+          "feedback": "틀립니다. 모든 카드를 정상 흐름에서 빼면 콘텐츠 수와 화면 너비 변화에 대응하기 어렵고, fixed 배지는 카드가 아니라 보통 뷰포트를 기준으로 합니다."
+        },
+        {
+          "id": "c",
+          "text": "목록과 배지 모두 display: inline만 사용",
+          "isCorrect": false,
+          "feedback": "틀립니다. inline은 행·열 track을 설계하지 않으며 배지를 카드 모서리에 겹치는 위치 기준도 제공하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "카드 목록은 z-index, 배지는 margin만 사용",
+          "isCorrect": false,
+          "feedback": "틀립니다. z-index는 목록의 행과 열을 만들지 않고 margin은 배지를 다른 콘텐츠 위 특정 모서리에 겹치는 위치 도구가 아닙니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-media-query-condition",
+      "lessonId": "css-responsive-states-motion",
+      "conceptId": "css.media-queries",
+      "difficulty": "basic",
+      "prompt": "다음 모바일 우선 CSS에서 `.layout`이 두 열이 되는 때는 언제인가요? 미디어 쿼리 안의 선언이 후보가 되는 조건을 확인하세요.",
+      "code": ".layout { display: grid; }\n@media (min-width: 48rem) {\n  .layout { grid-template-columns: 2fr 1fr; }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "화면이 48rem보다 좁을 때만",
+          "isCorrect": false,
+          "feedback": "틀립니다. min-width는 최소 너비 이상이라는 조건입니다. 좁은 화면에서는 바깥의 한 열 기본 규칙만 적용됩니다."
+        },
+        {
+          "id": "b",
+          "text": "`.layout` 안에 자식이 정확히 두 개일 때만",
+          "isCorrect": false,
+          "feedback": "틀립니다. 자식 수는 이 미디어 조건에 포함되지 않습니다. 현재 환경의 너비 조건이 참인지가 규칙을 후보로 만듭니다."
+        },
+        {
+          "id": "c",
+          "text": "마우스를 `.layout` 위에 올렸을 때",
+          "isCorrect": false,
+          "feedback": "틀립니다. hover 상태를 검사하는 가상 클래스가 없습니다. 이 코드는 viewport 너비를 검사하는 미디어 쿼리입니다."
+        },
+        {
+          "id": "d",
+          "text": "현재 환경의 너비가 48rem 이상일 때",
+          "isCorrect": true,
+          "feedback": "맞습니다. min-width 조건이 참일 때 안쪽의 두 열 선언이 캐스케이드 후보가 되어 기본 한 열 레이아웃을 확장합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-focus-motion-accessibility",
+      "lessonId": "css-responsive-states-motion",
+      "conceptId": "css.motion-accessibility",
+      "difficulty": "application",
+      "prompt": "버튼에 hover 이동과 transition을 적용했습니다. 키보드 사용자와 동작 줄이기를 요청한 사용자까지 고려하는 보완으로 가장 알맞은 것은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "기본 outline을 제거하고 hover 이동 거리를 더 크게 만든다",
+          "isCorrect": false,
+          "feedback": "틀립니다. 대체 표시 없이 outline을 제거하면 키보드 사용자가 현재 focus 위치를 놓칠 수 있고 더 큰 이동은 동작 민감 사용자의 불편을 키울 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": ":focus-visible 표시를 추가하고 prefers-reduced-motion에서 장식 이동과 transition을 제거한다",
+          "isCorrect": true,
+          "feedback": "맞습니다. 키보드 focus 위치를 시각적으로 제공하고 사용자의 동작 줄이기 설정에서는 불필요한 이동과 중간 동작을 없앱니다."
+        },
+        {
+          "id": "c",
+          "text": "hover 상태에만 안내 문구를 추가하고 focus 스타일은 만들지 않는다",
+          "isCorrect": false,
+          "feedback": "틀립니다. 터치 환경과 키보드 사용자는 지속적인 hover를 사용할 수 없으므로 중요한 안내와 상태를 hover에만 두면 접근할 수 없습니다."
+        },
+        {
+          "id": "d",
+          "text": "transition: all을 사용하면 접근성 설정도 자동 반영된다고 본다",
+          "isCorrect": false,
+          "feedback": "틀립니다. transition all은 바뀌는 모든 속성을 대상으로 할 뿐 사용자 선호를 감지하지 않습니다. reduced-motion 미디어 조건을 별도로 작성해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-debugging-cascade-step",
+      "lessonId": "css-review-practice",
+      "conceptId": "css.debugging",
+      "difficulty": "basic",
+      "prompt": "개발자 도구 Styles 패널에 원하는 `color` 선언이 보이지만 취소선으로 표시됩니다. 다음으로 가장 먼저 할 일은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "CSS 파일이 연결되지 않았다고 판단해 link를 삭제한다",
+          "isCorrect": false,
+          "feedback": "틀립니다. 규칙이 Styles 패널에 나타났다는 것은 파일이 읽히고 선택자도 요소와 일치했을 가능성이 큽니다. 이제 같은 속성에서 이긴 선언을 찾아야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "원인을 확인하지 않고 !important를 추가한다",
+          "isCorrect": false,
+          "feedback": "틀립니다. important는 충돌을 더 강하게 만들 수 있습니다. 먼저 출처·중요도·layer·specificity·순서 중 어느 기준에서 다른 선언이 이겼는지 확인해야 합니다."
+        },
+        {
+          "id": "c",
+          "text": "같은 속성에서 이긴 선언과 자신의 선언의 우선순위·specificity·순서를 비교한다",
+          "isCorrect": true,
+          "feedback": "맞습니다. 취소선은 규칙이 일치했지만 캐스케이드에서 다른 선언이 선택되었음을 나타낼 수 있으므로 이긴 선언의 출처와 비교 기준을 추적합니다."
+        },
+        {
+          "id": "d",
+          "text": "HTML 요소를 모두 div로 바꾼다",
+          "isCorrect": false,
+          "feedback": "틀립니다. 요소 의미를 없애도 캐스케이드 원인을 설명하지 못하고 문서 구조와 접근성만 나빠질 수 있습니다. 현재 선언의 승패부터 확인해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-css-layout-tool-choice",
+      "lessonId": "css-review-practice",
+      "conceptId": "css.layout-choice",
+      "difficulty": "application",
+      "prompt": "강의 카드 목록은 화면 공간에 따라 행과 열이 바뀌고, 각 카드 안의 두 버튼은 한 줄에서 간격을 두어 정렬해야 합니다. 가장 알맞은 설계는 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "바깥 목록은 Grid, 카드 안 버튼 묶음은 Flexbox를 사용한다",
+          "isCorrect": true,
+          "feedback": "맞습니다. 바깥 목록은 행과 열 두 축을 Grid로 설계하고, 내부 버튼 묶음은 한 축 정렬과 gap을 Flexbox로 관리할 수 있습니다."
+        },
+        {
+          "id": "b",
+          "text": "모든 카드와 버튼을 absolute 좌표로 배치한다",
+          "isCorrect": false,
+          "feedback": "틀립니다. 모든 요소를 정상 흐름에서 빼면 카드 수, 글자 길이와 화면 너비가 달라질 때 좌표를 계속 다시 계산해야 하고 겹침이 생기기 쉽습니다."
+        },
+        {
+          "id": "c",
+          "text": "바깥 목록과 버튼 모두 큰 margin 값만 사용해 맞춘다",
+          "isCorrect": false,
+          "feedback": "틀립니다. margin은 행·열 track이나 한 축의 남는 공간 분배를 정의하지 않습니다. 콘텐츠 변화에 취약한 우연한 위치만 만들게 됩니다."
+        },
+        {
+          "id": "d",
+          "text": "카드 목록은 inline, 버튼은 fixed로 배치한다",
+          "isCorrect": false,
+          "feedback": "틀립니다. inline은 반응형 카드의 행과 열을 설계하지 않고 fixed 버튼은 카드가 아니라 보통 viewport에 고정되어 각 카드의 조작 영역을 벗어납니다."
         }
       ]
     }
