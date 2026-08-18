@@ -421,6 +421,27 @@ test("fixture는 모든 Quest와 정확히 대응하고 복잡도·경계값 구
   }
 });
 
+test("추가 검증 사례는 공개 테스트와 ID·입출력 계약이 겹치지 않는다", () => {
+  for (const quest of collection.quests) {
+    const fixture = codeQuestSolutionFixtures[quest.id];
+    const publicTestIds = new Set(quest.publicTests.map((publicTest) => publicTest.id));
+    for (const verificationCase of fixture.verificationCases) {
+      assert.ok(
+        !publicTestIds.has(verificationCase.id),
+        `${quest.id}/${verificationCase.id}: 추가 검증 ID가 공개 테스트와 중복됩니다.`,
+      );
+      assert.ok(
+        !quest.publicTests.some(
+          (publicTest) =>
+            areJsonValuesEqual(publicTest.args, verificationCase.args) &&
+            areJsonValuesEqual(publicTest.expected, verificationCase.expected),
+        ),
+        `${quest.id}/${verificationCase.id}: 추가 검증의 args+expected가 공개 테스트와 중복됩니다.`,
+      );
+    }
+  }
+});
+
 test("배송비 공개 채점은 standard 지역의 멤버십 30,000원 경계를 직접 검증한다", async () => {
   const quest = collection.quests.find(
     (item) => item.id === "quest-javascript-delivery-fee",

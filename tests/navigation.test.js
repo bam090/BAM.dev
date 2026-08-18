@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  buildCodingTestHash,
+  buildCodingTestListHash,
   buildLessonHash,
   buildQuestHash,
   buildReviewHash,
   getAdjacentLessons,
+  parseCodingTestHash,
   parseLessonHash,
   parseQuestHash,
   parseReviewHash,
@@ -56,6 +59,27 @@ test("잘못된 Code Quest 해시는 해석하지 않는다", () => {
   assert.equal(parseQuestHash("#/quest/javascript"), null);
   assert.equal(parseQuestHash("#/quest/javascript/delivery-fee-policy/extra"), null);
   assert.equal(parseQuestHash("#/quest/javascript/%E0%A4%A"), null);
+});
+
+test("코딩테스트 목록과 문제 해시를 만들고 다시 해석한다", () => {
+  assert.equal(buildCodingTestListHash(), "#/coding-tests");
+  assert.equal(
+    buildCodingTestHash("java script", "pair/search"),
+    "#/coding-tests/java%20script/pair%2Fsearch",
+  );
+  assert.deepEqual(parseCodingTestHash("#/coding-tests"), { kind: "list" });
+  assert.deepEqual(parseCodingTestHash("#/coding-tests/"), { kind: "list" });
+  assert.deepEqual(parseCodingTestHash("#/coding-tests/javascript/pair-sum"), {
+    kind: "problem",
+    languageId: "javascript",
+    slug: "pair-sum",
+  });
+});
+
+test("잘못된 코딩테스트 해시는 해석하지 않는다", () => {
+  assert.equal(parseCodingTestHash("#/coding-tests/javascript"), null);
+  assert.equal(parseCodingTestHash("#/coding-tests/javascript/pair-sum/extra"), null);
+  assert.equal(parseCodingTestHash("#/coding-tests/%E0%A4%A/pair-sum"), null);
 });
 
 test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한다", () => {

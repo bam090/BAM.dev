@@ -6,6 +6,7 @@ import {
   renderCodeQuestNavigationLink,
   renderCodeQuestView,
 } from "../src/ui/code-quest-view.js";
+import { renderCodingTestNavigationLink } from "../src/ui/coding-test-view.js";
 
 function relativeLuminance(hex) {
   const channels = hex
@@ -63,7 +64,7 @@ test("교안 로딩·빈 결과·오류 상태도 같은 본문 바로가기 대
   assert.doesNotMatch(appSource, /aria-busy=/);
 });
 
-test("Phase 3 학습·객관식·Code Quest 내비게이션을 실제 링크로 노출한다", async () => {
+test("Phase 4 학습·복습·Quest·코딩테스트 내비게이션을 실제 링크로 노출한다", async () => {
   const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const quizViewSource = await readFile(
     new URL("../src/ui/quiz-view.js", import.meta.url),
@@ -71,6 +72,10 @@ test("Phase 3 학습·객관식·Code Quest 내비게이션을 실제 링크로 
   );
   const questViewSource = await readFile(
     new URL("../src/ui/code-quest-view.js", import.meta.url),
+    "utf8",
+  );
+  const codingTestViewSource = await readFile(
+    new URL("../src/ui/coding-test-view.js", import.meta.url),
     "utf8",
   );
   const reviewNavigation = renderReviewNavigationLink({
@@ -83,11 +88,21 @@ test("Phase 3 학습·객관식·Code Quest 내비게이션을 실제 링크로 
     completedCount: 2,
     totalCount: 5,
   });
+  const codingTestNavigation = renderCodingTestNavigationLink({
+    href: "#/coding-tests",
+    isCurrent: true,
+    solvedCount: 1,
+    totalCount: 6,
+  });
 
-  assert.equal((appSource.match(/\$\{renderReviewNavigationLink\(\{/g) ?? []).length, 3);
+  assert.equal((appSource.match(/\$\{renderReviewNavigationLink\(\{/g) ?? []).length, 4);
   assert.equal(
     (appSource.match(/renderCodeQuestNavigationLink\(\{/g) ?? []).length,
-    3,
+    4,
+  );
+  assert.equal(
+    (appSource.match(/renderCodingTestNavigationLink\(\{/g) ?? []).length,
+    4,
   );
   assert.match(reviewNavigation, /<nav class="review-nav"/);
   assert.match(reviewNavigation, /href="#\/review\/javascript"/);
@@ -100,9 +115,13 @@ test("Phase 3 학습·객관식·Code Quest 내비게이션을 실제 링크로 
   assert.match(questNavigation, /2\/5 완료 · 공개 테스트/);
   assert.match(questNavigation, /aria-current="page"/);
   assert.doesNotMatch(questNavigation, /\s(?:aria-disabled|disabled)(?:=|\s|>)/);
-  assert.match(`${appSource}\n${questViewSource}`, /공개 테스트/);
+  assert.match(codingTestNavigation, /<nav class="coding-test-nav"/);
+  assert.match(codingTestNavigation, /href="#\/coding-tests"/);
+  assert.match(codingTestNavigation, /1\/6 풀이 완료/);
+  assert.match(codingTestNavigation, /aria-current="page"/);
+  assert.match(`${appSource}\n${questViewSource}\n${codingTestViewSource}`, /공개 테스트/);
   assert.doesNotMatch(
-    `${appSource}\n${quizViewSource}\n${questViewSource}`,
+    `${appSource}\n${quizViewSource}\n${questViewSource}\n${codingTestViewSource}`,
     /실전 프로젝트|AI 코드 리뷰/,
   );
 });

@@ -38,6 +38,14 @@ function createRouteHarness(curriculumOverride = curriculum) {
     pendingQuestDraftSave: null,
     questDraftSaveTimer: null,
     activeQuestExecution: null,
+    activeCodingTestExecution: null,
+    pendingCodingTestSearchRender: null,
+    codingTestSearchRenderTimer: null,
+    pendingCodingTestDraftSave: null,
+    codingTestDraftSaveTimer: null,
+    openCodingTestListRoute() {
+      opened.push({ view: "coding-test-list" });
+    },
     async openReviewRoute(languageId) {
       opened.push({ view: "review", languageId });
     },
@@ -82,4 +90,24 @@ test("planned 언어의 객관식 해시는 기본 JavaScript 교안으로 안�
 
   assert.deepEqual(opened, [{ view: "lesson" }]);
   assert.deepEqual(replacements, ["#/learn/javascript/javascript-and-runtime"]);
+});
+
+test("코딩테스트와 이름만 비슷한 해시는 일반 교안 라우팅으로 넘긴다", async (t) => {
+  const replacements = installWindow(t, "#/coding-tests-archive");
+  const { app, opened } = createRouteHarness();
+
+  await app.openRoute();
+
+  assert.deepEqual(opened, [{ view: "lesson" }]);
+  assert.deepEqual(replacements, []);
+});
+
+test("코딩테스트 네임스페이스 안의 잘못된 해시는 목록으로 안전하게 복귀한다", async (t) => {
+  const replacements = installWindow(t, "#/coding-tests/javascript");
+  const { app, opened } = createRouteHarness();
+
+  await app.openRoute();
+
+  assert.deepEqual(opened, [{ view: "coding-test-list" }]);
+  assert.deepEqual(replacements, ["#/coding-tests"]);
 });
