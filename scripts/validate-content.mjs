@@ -342,12 +342,22 @@ if (contentErrors.length > 0) {
   throw new Error(`콘텐츠 파일 검증 실패:\n- ${contentErrors.join("\n- ")}`);
 }
 
+const quizSchemaPath = path.join(projectRoot, "content", "schema", "quiz.schema.json");
+let quizSchema;
+try {
+  quizSchema = JSON.parse(await readFile(quizSchemaPath, "utf8"));
+} catch {
+  contentErrors.push("객관식 스키마 파일을 읽을 수 없습니다.");
+}
+
 const quizDirectory = path.join(projectRoot, "content", "quizzes");
 const quizCollections = new Map();
 const questionIds = new Set();
 let quizFileNames = [];
 try {
-  quizFileNames = (await readdir(quizDirectory)).filter((fileName) => fileName.endsWith(".json"));
+  quizFileNames = (await readdir(quizDirectory))
+    .filter((fileName) => fileName.endsWith(".json"))
+    .sort();
 } catch {
   contentErrors.push("객관식 콘텐츠 디렉터리를 읽을 수 없습니다.");
 }
@@ -357,6 +367,13 @@ for (const fileName of quizFileNames) {
   const quizPath = path.join(quizDirectory, fileName);
   try {
     const quiz = JSON.parse(await readFile(quizPath, "utf8"));
+    if (quizSchema) {
+      const quizSchemaErrors = [];
+      validateSchemaValue(quiz, quizSchema, quizSchema, "$", quizSchemaErrors);
+      if (quizSchemaErrors.length > 0) {
+        throw new Error(`JSON Schema 불일치:\n- ${quizSchemaErrors.join("\n- ")}`);
+      }
+    }
     const collection = assertValidQuizCollection(quiz, curriculum);
     if (collection.languageId !== languageId) {
       throw new Error(`파일명 언어 ${languageId}와 languageId ${collection.languageId}가 다릅니다.`);
@@ -377,9 +394,11 @@ for (const fileName of quizFileNames) {
   }
 }
 
-for (const language of curriculum.languages.filter((item) => item.status === "available")) {
+for (const language of curriculum.languages.filter((item) =>
+  ["available", "sample"].includes(item.status),
+)) {
   if (!quizCollections.has(language.id)) {
-    contentErrors.push(`${language.id}: 사용 가능한 언어의 객관식 콘텐츠가 없습니다.`);
+    contentErrors.push(`${language.id}: 탐색 가능한 언어의 객관식 콘텐츠가 없습니다.`);
   }
 }
 
@@ -486,6 +505,7 @@ if (contentErrors.length > 0) {
 }
 
 const availableLanguages = curriculum.languages.filter((language) => language.status === "available");
+const sampleLanguages = curriculum.languages.filter((language) => language.status === "sample");
 console.log(
-  `콘텐츠 검증 완료: 언어 ${availableLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개`,
+  `콘텐츠 검증 완료: 정식 언어 ${availableLanguages.length}개, 샘플 언어 ${sampleLanguages.length}개, 교안 ${curriculum.lessons.length}개, 객관식 ${[...quizCollections.values()].reduce((total, collection) => total + collection.questions.length, 0)}문항, Code Quest ${[...questCollections.values()].reduce((total, collection) => total + collection.quests.length, 0)}개`,
 );

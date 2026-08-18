@@ -12,6 +12,8 @@
 | `status` | `available`, `sample`, `planned` 중 하나 |
 | `accent` | CSS에서 허용한 테마 키 |
 
+`available`은 현재 단계에서 정식으로 제공하는 언어, `sample`은 계약의 언어 독립성을 확인하는 최소 콘텐츠, `planned`는 아직 탐색할 수 없는 예정 언어를 뜻합니다. `available`과 `sample` 언어에는 적어도 교안 하나와 객관식 컬렉션 하나가 있어야 합니다. 두 상태의 콘텐츠는 학습·복습 링크를 제공하며, `planned` 언어는 교안 파일이 미리 있어도 직접 탐색하거나 최근 학습 위치로 복원하지 않습니다.
+
 ## 교안
 
 | 필드 | 의미 |
@@ -29,7 +31,7 @@
 | `contentFile` | 저장소 루트 기준 Markdown 경로 |
 | `source` | 원본 성격과 검증일을 기록하는 메타데이터 |
 
-새 교안을 추가하면 `npm run validate:content`로 필수 필드, ID·slug 중복, 순서 연속성, 콘텐츠 파일 존재 여부를 확인합니다. 외부 응답이 없어도 실행되어야 하는 교안 예제 데이터는 `content/fixtures/<languageId>/`에 프로젝트가 관리하는 정적 JSON으로 두고 same-origin 경로로 요청합니다. `content/` 전체가 빌드 결과에 포함되므로 별도 원격 API에 의존하지 않습니다.
+새 교안을 추가하면 `npm run validate:content`로 필수 필드, ID·slug 중복, 순서 연속성, 콘텐츠 파일 존재 여부를 확인합니다. `contentFile`은 반드시 해당 언어의 `content/lessons/<languageId>/` 아래를 가리켜야 합니다. 외부 응답이 없어도 실행되어야 하는 교안 예제 데이터는 `content/fixtures/<languageId>/`에 프로젝트가 관리하는 정적 JSON으로 두고 same-origin 경로로 요청합니다. `content/` 전체가 빌드 결과에 포함되므로 별도 원격 API에 의존하지 않습니다.
 
 ## 객관식 컬렉션
 
@@ -49,7 +51,7 @@
 | `code` | 선택적 코드·마크업 예시 문자열 |
 | `options` | 정확히 4개의 선택지 |
 
-각 선택지는 `a`~`d` ID, 문구, `isCorrect` boolean, 개별 `feedback`을 가집니다. 문항마다 정답은 정확히 하나여야 하며 오답을 포함한 네 선택지 모두에 이유가 있어야 합니다. `npm run validate:content`는 저장소의 모든 객관식 JSON을 검사하고 파일명·언어·교안·개념 참조와 전역 문항 ID 중복을 확인합니다. JavaScript 컬렉션의 14문항 분포와 기존 확인 문제 중복은 별도 콘텐츠 테스트로 한 번 더 검증합니다.
+각 선택지는 `a`~`d` ID, 문구, `isCorrect` boolean, 개별 `feedback`을 가집니다. 문항마다 정답은 정확히 하나여야 하며 오답을 포함한 네 선택지 모두에 이유가 있어야 합니다. `npm run validate:content`는 저장소의 모든 객관식 JSON을 JSON Schema와 런타임 계약으로 검사하고 파일명·언어·교안·개념 참조와 전역 문항 ID 중복을 확인합니다. JavaScript 컬렉션의 14문항 분포와 기존 확인 문제 중복은 별도 콘텐츠 테스트로 한 번 더 검증합니다.
 
 ## Code Quest 컬렉션
 

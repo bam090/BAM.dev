@@ -63,6 +63,20 @@ test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한�
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "not-found").order, 1);
 });
 
+test("planned 언어의 직접 경로와 최근 교안은 탐색 가능한 기본 교안으로 복귀한다", () => {
+  const planned = structuredClone(curriculum);
+  planned.languages.find((language) => language.id === "html").status = "planned";
+
+  const direct = resolveLessonRoute(
+    planned,
+    "#/learn/html/document-structure-and-semantics",
+  );
+  const restored = resolveLessonRoute(planned, "#/missing", "html-01-document-structure");
+
+  assert.equal(direct.id, "js-01-runtime");
+  assert.equal(restored.id, "js-01-runtime");
+});
+
 test("현재 교안의 이전과 다음을 계산한다", () => {
   const lessons = curriculum.lessons.filter((lesson) => lesson.languageId === "javascript");
   assert.equal(getAdjacentLessons(lessons, "js-01-runtime").previous, null);

@@ -242,6 +242,24 @@ button {
   color: #f7df5a;
 }
 
+.language-badge--html {
+  border: 1px solid rgba(240, 101, 41, 0.32);
+  background: rgba(240, 101, 41, 0.12);
+  color: #ffb185;
+}
+
+.language-badge--css {
+  border: 1px solid rgba(38, 119, 203, 0.34);
+  background: rgba(38, 119, 203, 0.14);
+  color: #75b9ff;
+}
+
+.language-badge--java {
+  border: 1px solid rgba(232, 87, 64, 0.32);
+  background: rgba(232, 87, 64, 0.12);
+  color: #ff9c88;
+}
+
 .sidebar-progress-label {
   display: flex;
   justify-content: space-between;
@@ -270,6 +288,105 @@ button {
 
 .lesson-nav {
   padding: 18px 10px 24px;
+}
+
+.language-nav {
+  padding: 14px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.language-nav ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.language-nav-link {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(30px, auto) minmax(0, 1fr);
+  gap: 6px;
+  align-items: center;
+  padding: 7px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-soft);
+  text-decoration: none;
+}
+
+a.language-nav-link:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #fff;
+}
+
+.language-nav-link.is-current {
+  border-color: rgba(76, 139, 245, 0.24);
+  background: rgba(76, 139, 245, 0.1);
+  color: #fff;
+}
+
+.language-nav-link.is-disabled {
+  opacity: 0.52;
+}
+
+.language-nav-badge {
+  display: inline-grid;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 4px;
+  place-items: center;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.language-nav-badge--javascript {
+  border-color: rgba(247, 223, 30, 0.24);
+  color: #f7df5a;
+}
+
+.language-nav-badge--html {
+  border-color: rgba(240, 101, 41, 0.32);
+  color: #ffb185;
+}
+
+.language-nav-badge--css {
+  border-color: rgba(38, 119, 203, 0.34);
+  color: #75b9ff;
+}
+
+.language-nav-badge--java {
+  border-color: rgba(232, 87, 64, 0.32);
+  color: #ff9c88;
+}
+
+.language-nav-copy {
+  min-width: 0;
+}
+
+.language-nav-copy strong,
+.language-nav-copy small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.language-nav-copy strong {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.language-nav-copy small {
+  margin-top: 1px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  line-height: 1.25;
 }
 
 .nav-label {

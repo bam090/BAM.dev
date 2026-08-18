@@ -90,6 +90,11 @@ export function validateCurriculum(curriculum) {
     }
     if (!/^content\/lessons\/.+\.md$/.test(lesson?.contentFile ?? "")) {
       errors.push(`${label}.contentFile 경로가 올바르지 않습니다.`);
+    } else if (
+      languageIds.has(lesson?.languageId) &&
+      !lesson.contentFile.startsWith(`content/lessons/${lesson.languageId}/`)
+    ) {
+      errors.push(`${label}.contentFile은 해당 언어 디렉터리 안에 있어야 합니다.`);
     }
 
     if (!lessonsByLanguage.has(lesson?.languageId)) {
@@ -103,6 +108,15 @@ export function validateCurriculum(curriculum) {
     const expected = Array.from({ length: orders.length }, (_, index) => index + 1);
     if (orders.some((order, index) => order !== expected[index])) {
       errors.push(`${languageId} 교안의 order는 1부터 연속되어야 합니다.`);
+    }
+  }
+
+  for (const language of curriculum.languages ?? []) {
+    if (
+      ["available", "sample"].includes(language?.status) &&
+      (lessonsByLanguage.get(language.id)?.length ?? 0) === 0
+    ) {
+      errors.push(`${language.id}: available 또는 sample 언어에는 교안이 필요합니다.`);
     }
   }
 
