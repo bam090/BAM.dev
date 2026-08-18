@@ -1,0 +1,545 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "evaluationKind": "css-style-v1",
+  "languageId": "css",
+  "title": "CSS Code Quest",
+  "quests": [
+    {
+      "id": "quest-css-learning-notice",
+      "slug": "learning-notice",
+      "revision": 1,
+      "order": 1,
+      "lessonId": "css-foundations-selectors",
+      "conceptIds": [
+        "css.selectors",
+        "css.inheritance"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 15,
+      "title": "학습 알림 스타일",
+      "summary": "클래스 선택자로 알림을 꾸미고 자식 제목이 부모의 글자색을 이어받게 만듭니다.",
+      "instructions": "주어진 알림 구조는 바꾸지 않습니다. `.learning-notice`에 글자색, 배경색과 안쪽 여백을 선언하고 `.learning-notice__title`에는 부모의 글자색을 명시적으로 상속하도록 CSS를 작성하세요.",
+      "starterCode": ".learning-notice {\n  /* 알림 전체의 색과 간격을 작성하세요. */\n}\n\n.learning-notice__title {\n  /* 부모의 글자색을 이어받게 하세요. */\n}",
+      "fixtureHtml": "<section class=\"learning-notice\" aria-labelledby=\"learning-notice-title\"><h2 class=\"learning-notice__title\" id=\"learning-notice-title\">오늘의 학습</h2><p class=\"learning-notice__message\">선택자와 상속을 확인하세요.</p><a class=\"learning-notice__link\" href=\"#lesson\">교안 열기</a></section>",
+      "requirements": [
+        "`.learning-notice`의 `color`를 `#1e293b`로 설정합니다.",
+        "`.learning-notice`의 `background-color`를 `#e0f2fe`로 설정합니다.",
+        "`.learning-notice`의 `padding`을 `16px`로 설정합니다.",
+        "`.learning-notice__title`의 `color`를 `inherit`로 설정합니다."
+      ],
+      "examples": [
+        {
+          "source": ".status { color: #075985; }\n.status__text { color: inherit; }",
+          "explanation": "부모의 color를 정한 뒤 자식에 inherit를 선언하면 자식은 부모가 계산한 글자색을 이어받습니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "css-notice-color-rule",
+          "label": "알림 글자색 선언",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".learning-notice",
+            "property": "color",
+            "expected": "rgb(30, 41, 59)"
+          }
+        },
+        {
+          "id": "css-notice-background-rule",
+          "label": "알림 배경색 선언",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".learning-notice",
+            "property": "background-color",
+            "expected": "rgb(224, 242, 254)"
+          }
+        },
+        {
+          "id": "css-notice-padding-rule",
+          "label": "알림 안쪽 여백 선언",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".learning-notice",
+            "property": "padding",
+            "expected": "16px"
+          }
+        },
+        {
+          "id": "css-notice-title-inherit-rule",
+          "label": "제목 글자색 상속",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".learning-notice__title",
+            "property": "color",
+            "expected": "inherit"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "css-notice-color-rule",
+          "message": "`.learning-notice` 규칙에서 `color: #1e293b`를 선언했는지 확인하세요. 제목 규칙에만 색을 쓰면 알림 전체의 기본 글자색이 정해지지 않습니다."
+        },
+        {
+          "testId": "css-notice-background-rule",
+          "message": "`.learning-notice`의 배경에는 글자색 속성인 color가 아니라 `background-color: #e0f2fe`가 필요합니다."
+        },
+        {
+          "testId": "css-notice-padding-rule",
+          "message": "콘텐츠와 알림 테두리 사이의 간격은 바깥 여백인 margin이 아니라 `padding: 16px`로 만드세요."
+        },
+        {
+          "testId": "css-notice-title-inherit-rule",
+          "message": "제목에 별도 색을 고정하지 말고 `.learning-notice__title { color: inherit; }`로 부모의 계산된 글자색을 이어받게 하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "부모에서 자식으로 흐르는 color",
+          "content": "color는 기본적으로 상속되는 속성입니다. 이번 과제에서는 자식 제목에 `inherit` 값을 직접 써서 그 관계를 눈으로 확인합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "선택자와 속성의 역할 나누기",
+          "content": "알림 전체의 세 선언은 `.learning-notice`에, 제목의 상속 선언은 `.learning-notice__title`에 있어야 합니다. 현재 각 선언이 어느 규칙 안에 있는지 살펴보세요."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "두 규칙 완성하기",
+          "content": "첫 규칙에 `color`, `background-color`, `padding`을 차례로 작성하고 두 번째 규칙에 `color: inherit`를 작성하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "notice-descendant-selector-instead",
+          "title": "요구된 클래스 대신 넓은 선택자 사용",
+          "explanation": "`.learning-notice h2`도 현재 구조에는 맞을 수 있지만 다른 h2까지 영향을 줄 수 있습니다. 과제에서 지정한 요소 클래스에 책임을 둡니다."
+        },
+        {
+          "id": "notice-fixed-child-color",
+          "title": "자식 색을 다시 고정",
+          "explanation": "제목에 고정 색을 다시 쓰면 부모 색을 바꿔도 함께 바뀌지 않아 상속을 활용한 설계가 끊깁니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-css-profile-card-box",
+      "slug": "profile-card-box",
+      "revision": 1,
+      "order": 2,
+      "lessonId": "css-01-cascade-box-model",
+      "conceptIds": [
+        "css.box-model"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 15,
+      "title": "프로필 카드 크기",
+      "summary": "border-box와 padding을 함께 사용해 카드의 최종 너비를 예측할 수 있게 만듭니다.",
+      "instructions": "프로필 카드의 선언 너비가 padding과 border를 포함하도록 설정하세요. `.profile-card`의 너비는 320px, 안쪽 여백은 24px, 테두리는 2px 실선으로 완성합니다.",
+      "starterCode": ".profile-card {\n  /* 최종 너비의 기준과 박스 크기를 작성하세요. */\n}",
+      "fixtureHtml": "<article class=\"profile-card\" aria-labelledby=\"profile-name\"><div class=\"profile-card__avatar\" aria-hidden=\"true\">GB</div><h2 id=\"profile-name\">군밤</h2><p>매일 한 가지를 직접 구현하는 학습자</p></article>",
+      "requirements": [
+        "`.profile-card`의 `box-sizing`을 `border-box`로 설정합니다.",
+        "`.profile-card`의 `width`를 `320px`로 설정합니다.",
+        "`.profile-card`의 `padding`을 `24px`로 설정합니다.",
+        "`.profile-card`의 `border`를 `2px solid #cbd5e1`로 설정합니다."
+      ],
+      "examples": [
+        {
+          "source": ".preview {\n  box-sizing: border-box;\n  width: 240px;\n  padding: 12px;\n  border: 1px solid #94a3b8;\n}",
+          "explanation": "border-box에서는 선언한 width 안에 좌우 padding과 border가 포함되어 전체 너비를 계산하기 쉽습니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "css-profile-box-sizing-rule",
+          "label": "border-box 크기 기준",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".profile-card",
+            "property": "box-sizing",
+            "expected": "border-box"
+          }
+        },
+        {
+          "id": "css-profile-width-rule",
+          "label": "카드 너비 선언",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".profile-card",
+            "property": "width",
+            "expected": "320px"
+          }
+        },
+        {
+          "id": "css-profile-padding-rule",
+          "label": "카드 안쪽 여백 선언",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".profile-card",
+            "property": "padding",
+            "expected": "24px"
+          }
+        },
+        {
+          "id": "css-profile-border-rule",
+          "label": "카드 테두리 선언",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".profile-card",
+            "property": "border",
+            "expected": "2px solid rgb(203, 213, 225)"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "css-profile-box-sizing-rule",
+          "message": "`.profile-card`에 `box-sizing: border-box`를 선언해야 width 320px 안에 padding과 border가 포함됩니다."
+        },
+        {
+          "testId": "css-profile-width-rule",
+          "message": "카드 내용 영역이 아니라 `.profile-card` 규칙의 `width`를 정확히 `320px`로 설정했는지 확인하세요."
+        },
+        {
+          "testId": "css-profile-padding-rule",
+          "message": "카드 안쪽 콘텐츠와 테두리 사이에는 `padding: 24px`가 필요합니다. margin은 카드 바깥 간격을 만듭니다."
+        },
+        {
+          "testId": "css-profile-border-rule",
+          "message": "테두리의 두께·선 종류·색을 한꺼번에 `border: 2px solid #cbd5e1`로 선언했는지 확인하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "width가 포함하는 범위",
+          "content": "기본 content-box에서는 width 밖에 padding과 border가 더해집니다. border-box는 이 영역들을 선언 너비 안에 포함합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "박스의 네 층 확인하기",
+          "content": "개발자 도구의 박스 모델에서 content, padding, border, margin을 구분해 보세요. 이번 과제는 margin을 요구하지 않습니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "크기 기준부터 선언하기",
+          "content": "`.profile-card` 규칙 안에 `box-sizing`, `width`, `padding`, `border`를 요구사항의 값으로 하나씩 작성하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "profile-content-box-overflow",
+          "title": "content-box인 채로 너비 계산",
+          "explanation": "width 320px에 좌우 padding 48px와 테두리 4px가 추가되어 실제 바깥 너비가 372px가 됩니다."
+        },
+        {
+          "id": "profile-margin-for-inner-space",
+          "title": "안쪽 여백에 margin 사용",
+          "explanation": "margin은 카드와 주변 요소 사이를 벌립니다. 카드 테두리와 콘텐츠 사이는 padding으로 만듭니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-css-product-card-layout",
+      "slug": "product-card-layout",
+      "revision": 1,
+      "order": 3,
+      "lessonId": "css-position-flex-grid",
+      "conceptIds": [
+        "css.positioning",
+        "css.flexbox"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 20,
+      "title": "상품 카드 레이아웃",
+      "summary": "카드의 기본 흐름은 Flexbox로 정리하고 배지는 카드를 기준으로 겹쳐 배치합니다.",
+      "instructions": "상품 카드의 본문과 동작 영역은 세로 흐름을 유지하고, 신규 배지는 카드 오른쪽 위에 겹쳐 놓으세요. `.product-card`를 배치 기준이 되는 세로 Flex 컨테이너로 만들고 `.product-card__badge`와 `.product-card__actions`를 요구사항에 맞게 완성합니다.",
+      "starterCode": ".product-card {\n  /* 배지의 기준과 세로 Flex 흐름을 작성하세요. */\n}\n\n.product-card__badge {\n  /* 카드를 기준으로 배지를 배치하세요. */\n}\n\n.product-card__actions {\n  /* 가격과 버튼을 양끝에 놓으세요. */\n}",
+      "fixtureHtml": "<article class=\"product-card\" aria-labelledby=\"product-title\"><span class=\"product-card__badge\">신규</span><div class=\"product-card__body\"><h2 id=\"product-title\">CSS 패턴 카드</h2><p>레이아웃 도구를 비교하며 익히는 실습입니다.</p></div><div class=\"product-card__actions\"><strong>무료</strong><button type=\"button\">학습하기</button></div></article>",
+      "requirements": [
+        "`.product-card`의 `position`을 `relative`로 설정해 배지의 기준을 만듭니다.",
+        "`.product-card`를 `display: flex`와 `flex-direction: column`인 세로 Flex 컨테이너로 만듭니다.",
+        "`.product-card__badge`의 `position`을 `absolute`로 설정합니다.",
+        "`.product-card__actions`를 Flex 컨테이너로 만들고 `justify-content: space-between`으로 두 항목을 양끝에 배치합니다."
+      ],
+      "examples": [
+        {
+          "source": ".panel { position: relative; display: flex; flex-direction: column; }\n.panel__tag { position: absolute; }",
+          "explanation": "부모에 relative를 선언하면 absolute인 자식이 그 부모의 padding box를 기준으로 위치를 계산할 수 있습니다."
+        },
+        {
+          "source": ".toolbar { display: flex; justify-content: space-between; }",
+          "explanation": "한 줄의 두 항목 사이에 남는 공간을 두려면 Flexbox의 주축 정렬을 사용할 수 있습니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "css-product-relative-rule",
+          "label": "카드 위치 기준",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".product-card",
+            "property": "position",
+            "expected": "relative"
+          }
+        },
+        {
+          "id": "css-product-flex-rule",
+          "label": "카드 Flex 컨테이너",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".product-card",
+            "property": "display",
+            "expected": "flex"
+          }
+        },
+        {
+          "id": "css-product-direction-rule",
+          "label": "카드 세로 주축",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".product-card",
+            "property": "flex-direction",
+            "expected": "column"
+          }
+        },
+        {
+          "id": "css-product-badge-absolute-rule",
+          "label": "배지 겹침 배치",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".product-card__badge",
+            "property": "position",
+            "expected": "absolute"
+          }
+        },
+        {
+          "id": "css-product-actions-flex-rule",
+          "label": "동작 영역 Flex 컨테이너",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".product-card__actions",
+            "property": "display",
+            "expected": "flex"
+          }
+        },
+        {
+          "id": "css-product-actions-space-rule",
+          "label": "동작 영역 양끝 정렬",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".product-card__actions",
+            "property": "justify-content",
+            "expected": "space-between"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "css-product-relative-rule",
+          "message": "absolute 배지가 상품 카드를 기준으로 삼으려면 `.product-card`에 `position: relative`가 필요합니다."
+        },
+        {
+          "testId": "css-product-flex-rule",
+          "message": "`.product-card`에 `display: flex`를 선언해야 자식의 주축 방향을 Flexbox로 제어할 수 있습니다."
+        },
+        {
+          "testId": "css-product-direction-rule",
+          "message": "본문과 동작 영역이 위아래로 이어지도록 `.product-card`의 `flex-direction`을 `column`으로 설정하세요."
+        },
+        {
+          "testId": "css-product-badge-absolute-rule",
+          "message": "배지가 일반 흐름의 자리를 차지하지 않고 카드 위에 겹치려면 `.product-card__badge`에 `position: absolute`가 필요합니다."
+        },
+        {
+          "testId": "css-product-actions-flex-rule",
+          "message": "가격과 버튼을 한 축에서 정렬하려면 `.product-card__actions`도 `display: flex`인 컨테이너여야 합니다."
+        },
+        {
+          "testId": "css-product-actions-space-rule",
+          "message": "가격과 버튼 사이에 남는 공간을 배치하려면 `.product-card__actions`에 `justify-content: space-between`을 선언하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "흐름과 겹침을 분리하기",
+          "content": "본문과 동작 영역처럼 순서대로 놓이는 콘텐츠는 Flexbox로 정리하고, 배지처럼 일부러 겹치는 장식만 absolute로 꺼냅니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "각 선언의 기준 요소 찾기",
+          "content": "absolute인 배지는 가장 가까운 위치 지정 조상을 찾습니다. 가격과 버튼은 별도의 `.product-card__actions` 컨테이너 안에 있습니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "세 규칙을 차례로 완성하기",
+          "content": "카드에 relative·flex·column, 배지에 absolute, 동작 영역에 flex·space-between을 선언하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "product-missing-containing-block",
+          "title": "배치 기준이 없는 absolute",
+          "explanation": "카드에 position: relative가 없으면 배지가 의도한 카드가 아닌 더 바깥의 기준 영역을 따라갈 수 있습니다."
+        },
+        {
+          "id": "product-absolute-everything",
+          "title": "모든 자식을 absolute로 배치",
+          "explanation": "본문까지 일반 흐름에서 빼면 내용 길이가 변할 때 카드 높이와 요소 관계가 쉽게 무너집니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-css-responsive-course-grid",
+      "slug": "responsive-course-grid",
+      "revision": 1,
+      "order": 4,
+      "lessonId": "css-responsive-states-motion",
+      "conceptIds": [
+        "css.responsive-design",
+        "css.media-queries"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 20,
+      "title": "반응형 코스 Grid",
+      "summary": "모바일 우선 한 열 Grid를 만들고 콘텐츠가 넓어질 때 media query로 열 수를 늘립니다.",
+      "instructions": "코스 목록을 작은 화면에서는 한 열로 표시하고 48rem부터 두 열, 72rem부터 세 열로 확장하세요. 기본 `.course-grid` 규칙과 두 media query의 조건 및 선언을 정확히 작성합니다.",
+      "starterCode": ".course-grid {\n  /* 작은 화면의 기본 Grid를 작성하세요. */\n}\n\n@media (min-width: 48rem) {\n  .course-grid {\n    /* 두 열로 확장하세요. */\n  }\n}\n\n@media (min-width: 72rem) {\n  .course-grid {\n    /* 세 열로 확장하세요. */\n  }\n}",
+      "fixtureHtml": "<section class=\"course-grid\" aria-label=\"추천 코스\"><article class=\"course-card\"><h2>CSS 기초</h2><p>선택자와 값을 연습합니다.</p></article><article class=\"course-card\"><h2>레이아웃</h2><p>Flexbox와 Grid를 비교합니다.</p></article><article class=\"course-card\"><h2>반응형</h2><p>콘텐츠에 맞는 중단점을 찾습니다.</p></article></section>",
+      "requirements": [
+        "기본 `.course-grid`를 `display: grid`로 설정합니다.",
+        "기본 `.course-grid`의 `grid-template-columns`를 `1fr`로 설정합니다.",
+        "기본 `.course-grid`의 `gap`을 `16px`로 설정합니다.",
+        "`@media (min-width: 48rem)` 안에서 `.course-grid`를 `repeat(2, minmax(0, 1fr))` 두 열로 만듭니다.",
+        "`@media (min-width: 72rem)` 안에서 `.course-grid`를 `repeat(3, minmax(0, 1fr))` 세 열로 만듭니다."
+      ],
+      "examples": [
+        {
+          "source": ".gallery { display: grid; grid-template-columns: 1fr; }\n@media (min-width: 40rem) {\n  .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }\n}",
+          "explanation": "모바일 우선 방식은 제약이 가장 적은 한 열을 기본값으로 두고, 공간이 충분한 조건 안에서만 열 수를 늘립니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "css-course-grid-display-rule",
+          "label": "기본 Grid 컨테이너",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".course-grid",
+            "property": "display",
+            "expected": "grid"
+          }
+        },
+        {
+          "id": "css-course-grid-mobile-columns-rule",
+          "label": "작은 화면 한 열",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".course-grid",
+            "property": "grid-template-columns",
+            "expected": "1fr"
+          }
+        },
+        {
+          "id": "css-course-grid-gap-rule",
+          "label": "카드 사이 간격",
+          "assertion": {
+            "kind": "rule-declaration",
+            "selector": ".course-grid",
+            "property": "gap",
+            "expected": "16px"
+          }
+        },
+        {
+          "id": "css-course-grid-tablet-columns-rule",
+          "label": "48rem부터 두 열",
+          "assertion": {
+            "kind": "media-rule-declaration",
+            "condition": "(min-width: 48rem)",
+            "selector": ".course-grid",
+            "property": "grid-template-columns",
+            "expected": "repeat(2, minmax(0, 1fr))"
+          }
+        },
+        {
+          "id": "css-course-grid-wide-columns-rule",
+          "label": "72rem부터 세 열",
+          "assertion": {
+            "kind": "media-rule-declaration",
+            "condition": "(min-width: 72rem)",
+            "selector": ".course-grid",
+            "property": "grid-template-columns",
+            "expected": "repeat(3, minmax(0, 1fr))"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "css-course-grid-display-rule",
+          "message": "기본 `.course-grid` 규칙에 `display: grid`를 선언해야 열 트랙을 사용할 수 있습니다."
+        },
+        {
+          "testId": "css-course-grid-mobile-columns-rule",
+          "message": "media query 밖의 기본 규칙에서 `grid-template-columns: 1fr`를 선언해 작은 화면을 한 열로 시작하세요."
+        },
+        {
+          "testId": "css-course-grid-gap-rule",
+          "message": "카드 자체의 margin이 아니라 Grid 컨테이너의 `gap: 16px`로 항목 사이 간격을 만드세요."
+        },
+        {
+          "testId": "css-course-grid-tablet-columns-rule",
+          "message": "`@media (min-width: 48rem)` 조건 안의 `.course-grid`에 `grid-template-columns: repeat(2, minmax(0, 1fr))`를 선언했는지 확인하세요."
+        },
+        {
+          "testId": "css-course-grid-wide-columns-rule",
+          "message": "`@media (min-width: 72rem)` 조건 안의 `.course-grid`에 `grid-template-columns: repeat(3, minmax(0, 1fr))`를 선언했는지 확인하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "작은 화면을 기본값으로",
+          "content": "media query 밖에는 한 열 규칙을 둡니다. min-width 조건은 화면이 그 너비 이상일 때 기본 규칙을 덮어씁니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "조건과 선언을 함께 확인하기",
+          "content": "열 선언의 값만 맞아도 올바른 중단점 안에 없으면 반응형 요구사항을 충족하지 못합니다. 48rem과 72rem 조건을 각각 살펴보세요."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "한 열에서 세 열까지 확장하기",
+          "content": "기본 규칙에 grid·1fr·gap을 쓰고, 48rem 조건에는 repeat(2, ...), 72rem 조건에는 repeat(3, ...)를 작성하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "course-grid-breakpoint-declaration-outside",
+          "title": "중단점 선언을 media query 밖에 작성",
+          "explanation": "열 수 선언이 최상위에 있으면 화면 너비와 관계없이 적용되어 작은 화면의 한 열 기본값을 덮어씁니다."
+        },
+        {
+          "id": "course-grid-pixel-rem-confusion",
+          "title": "rem 중단점을 px로 잘못 작성",
+          "explanation": "48px와 48rem은 전혀 다른 조건입니다. 요구사항의 단위까지 포함해 media 조건을 확인합니다."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,344 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bam.dev/schema/web-code-quest.schema.json",
+  "title": "BAM.dev HTML and CSS Code Quest collection",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "contractVersion",
+    "evaluationKind",
+    "languageId",
+    "title",
+    "quests"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractVersion": { "const": 1 },
+    "evaluationKind": { "enum": ["html-dom-v1", "css-style-v1"] },
+    "languageId": { "enum": ["html", "css"] },
+    "title": { "type": "string", "minLength": 1 },
+    "quests": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/quest" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "evaluationKind": { "const": "html-dom-v1" } },
+        "required": ["evaluationKind"]
+      },
+      "then": {
+        "properties": {
+          "languageId": { "const": "html" },
+          "quests": {
+            "items": {
+              "not": { "required": ["fixtureHtml"] },
+              "properties": {
+                "id": { "pattern": "^quest-html-[a-z0-9]+(?:-[a-z0-9]+)*$" },
+                "publicTests": {
+                  "items": {
+                    "properties": {
+                      "assertion": { "$ref": "#/$defs/htmlAssertion" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "evaluationKind": { "const": "css-style-v1" } },
+        "required": ["evaluationKind"]
+      },
+      "then": {
+        "properties": {
+          "languageId": { "const": "css" },
+          "quests": {
+            "items": {
+              "required": ["fixtureHtml"],
+              "properties": {
+                "id": { "pattern": "^quest-css-[a-z0-9]+(?:-[a-z0-9]+)*$" },
+                "publicTests": {
+                  "items": {
+                    "properties": {
+                      "assertion": { "$ref": "#/$defs/cssAssertion" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "conceptId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "quest": {
+      "type": "object",
+      "required": [
+        "id",
+        "slug",
+        "revision",
+        "order",
+        "lessonId",
+        "conceptIds",
+        "difficulty",
+        "estimatedMinutes",
+        "title",
+        "summary",
+        "instructions",
+        "starterCode",
+        "requirements",
+        "examples",
+        "publicTests",
+        "failureExplanations",
+        "hints",
+        "commonMistakes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^quest-(?:html|css)-[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "slug": { "$ref": "#/$defs/stableId" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "order": { "type": "integer", "minimum": 1 },
+        "lessonId": { "$ref": "#/$defs/stableId" },
+        "conceptIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/conceptId" }
+        },
+        "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+        "estimatedMinutes": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "instructions": { "type": "string", "minLength": 1 },
+        "starterCode": { "type": "string", "minLength": 1 },
+        "fixtureHtml": { "type": "string", "minLength": 1 },
+        "requirements": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/example" }
+        },
+        "publicTests": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 6,
+          "items": { "$ref": "#/$defs/publicTest" }
+        },
+        "failureExplanations": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 6,
+          "items": { "$ref": "#/$defs/failureExplanation" }
+        },
+        "hints": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/hint" }
+        },
+        "commonMistakes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/commonMistake" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "example": {
+      "type": "object",
+      "required": ["source", "explanation"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "explanation": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "publicTest": {
+      "type": "object",
+      "required": ["id", "label", "assertion"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "type": "string", "minLength": 1 },
+        "assertion": { "$ref": "#/$defs/assertion" }
+      },
+      "additionalProperties": false
+    },
+    "assertion": {
+      "oneOf": [
+        { "$ref": "#/$defs/doctypePresentAssertion" },
+        { "$ref": "#/$defs/selectorExistsAssertion" },
+        { "$ref": "#/$defs/selectorCountAssertion" },
+        { "$ref": "#/$defs/attributeEqualsAssertion" },
+        { "$ref": "#/$defs/textIncludesAssertion" },
+        { "$ref": "#/$defs/ruleDeclarationAssertion" },
+        { "$ref": "#/$defs/mediaRuleDeclarationAssertion" },
+        { "$ref": "#/$defs/computedStyleAssertion" }
+      ]
+    },
+    "htmlAssertion": {
+      "oneOf": [
+        { "$ref": "#/$defs/doctypePresentAssertion" },
+        { "$ref": "#/$defs/selectorExistsAssertion" },
+        { "$ref": "#/$defs/selectorCountAssertion" },
+        { "$ref": "#/$defs/attributeEqualsAssertion" },
+        { "$ref": "#/$defs/textIncludesAssertion" }
+      ]
+    },
+    "cssAssertion": {
+      "oneOf": [
+        { "$ref": "#/$defs/ruleDeclarationAssertion" },
+        { "$ref": "#/$defs/mediaRuleDeclarationAssertion" },
+        { "$ref": "#/$defs/computedStyleAssertion" }
+      ]
+    },
+    "doctypePresentAssertion": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "doctype-present" }
+      },
+      "additionalProperties": false
+    },
+    "selectorExistsAssertion": {
+      "type": "object",
+      "required": ["kind", "selector"],
+      "properties": {
+        "kind": { "const": "selector-exists" },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 }
+      },
+      "additionalProperties": false
+    },
+    "selectorCountAssertion": {
+      "type": "object",
+      "required": ["kind", "selector", "expected"],
+      "properties": {
+        "kind": { "const": "selector-count" },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "expected": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "attributeEqualsAssertion": {
+      "type": "object",
+      "required": ["kind", "selector", "attribute", "expected"],
+      "properties": {
+        "kind": { "const": "attribute-equals" },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "attribute": {
+          "type": "string",
+          "pattern": "^[A-Za-z_:][A-Za-z0-9_.:-]*$"
+        },
+        "expected": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "textIncludesAssertion": {
+      "type": "object",
+      "required": ["kind", "selector", "expected"],
+      "properties": {
+        "kind": { "const": "text-includes" },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "expected": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "ruleDeclarationAssertion": {
+      "type": "object",
+      "required": ["kind", "selector", "property", "expected"],
+      "properties": {
+        "kind": { "const": "rule-declaration" },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "property": {
+          "type": "string",
+          "pattern": "^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$"
+        },
+        "expected": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "mediaRuleDeclarationAssertion": {
+      "type": "object",
+      "required": ["kind", "condition", "selector", "property", "expected"],
+      "properties": {
+        "kind": { "const": "media-rule-declaration" },
+        "condition": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "property": {
+          "type": "string",
+          "pattern": "^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$"
+        },
+        "expected": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "computedStyleAssertion": {
+      "type": "object",
+      "required": ["kind", "selector", "property", "expected"],
+      "properties": {
+        "kind": { "const": "computed-style" },
+        "selector": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "property": {
+          "type": "string",
+          "pattern": "^(?:--[A-Za-z0-9_-]+|-?[A-Za-z][A-Za-z0-9-]*)$"
+        },
+        "expected": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "failureExplanation": {
+      "type": "object",
+      "required": ["testId", "message"],
+      "properties": {
+        "testId": { "$ref": "#/$defs/stableId" },
+        "message": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "hint": {
+      "type": "object",
+      "required": ["level", "stage", "title", "content"],
+      "properties": {
+        "level": { "type": "integer", "minimum": 1 },
+        "stage": { "enum": ["concept", "observation", "implementation"] },
+        "title": { "type": "string", "minLength": 1 },
+        "content": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "commonMistake": {
+      "type": "object",
+      "required": ["id", "title", "explanation"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "title": { "type": "string", "minLength": 1 },
+        "explanation": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -2,6 +2,10 @@ import {
   createExecutionRequestSnapshot,
   validateExecutionRequest,
 } from "../grading/code-grading.js";
+import {
+  assertValidWebCodeQuestCollection,
+  createWebCodeQuestExecutionRequest,
+} from "./web-code-quest.js";
 
 const COLLECTION_FIELDS = new Set([
   "schemaVersion",
@@ -650,7 +654,10 @@ export async function loadCodeQuestCollection(
   if (!response?.ok) {
     throw new Error(`Code Quest 콘텐츠를 불러오지 못했습니다. (${response?.status ?? "unknown"})`);
   }
-  const collection = assertValidCodeQuestCollection(await response.json(), curriculum);
+  const document = await response.json();
+  const collection = Object.hasOwn(document ?? {}, "evaluationKind")
+    ? assertValidWebCodeQuestCollection(document, curriculum)
+    : assertValidCodeQuestCollection(document, curriculum);
   if (collection.languageId !== languageId) {
     throw new Error("요청한 언어와 Code Quest 컬렉션 언어가 다릅니다.");
   }
@@ -694,6 +701,15 @@ export function createCodeQuestExecutionRequest(collection, quest, source, reque
 
   const canonicalQuest = collection.quests.find((candidate) => candidate?.id === quest.id);
   if (!canonicalQuest) throw new Error("Code Quest가 컬렉션에 속하지 않습니다.");
+
+  if (Object.hasOwn(collection, "evaluationKind")) {
+    return createWebCodeQuestExecutionRequest(
+      collection,
+      canonicalQuest,
+      source,
+      requestId,
+    );
+  }
 
   return createExecutionRequestSnapshot({
     requestId,

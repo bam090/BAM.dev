@@ -5,6 +5,10 @@ import { assertValidCurriculum } from "../src/core/content.js";
 import { assertValidQuizCollection } from "../src/core/quiz.js";
 import { assertValidCodingTestCollection } from "../src/core/coding-test.js";
 import {
+  assertValidWebCodeQuestCollection,
+  createWebCodeQuestExecutionRequest,
+} from "../src/core/web-code-quest.js";
+import {
   areJsonValuesEqual,
   assertValidExecutionRequest,
 } from "../src/grading/code-grading.js";
@@ -50,6 +54,31 @@ function resolveLocalSchemaReference(rootSchema, reference) {
 }
 
 function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
+  for (const childSchema of schema.allOf ?? []) {
+    validateSchemaValue(value, childSchema, rootSchema, valuePath, errors);
+  }
+
+  if (Array.isArray(schema.oneOf)) {
+    const matches = schema.oneOf.filter((childSchema) => {
+      const branchErrors = [];
+      validateSchemaValue(value, childSchema, rootSchema, valuePath, branchErrors);
+      return branchErrors.length === 0;
+    });
+    if (matches.length !== 1) {
+      errors.push(`${valuePath}: oneOf 조건 중 정확히 하나를 만족해야 합니다.`);
+    }
+  }
+
+  if (schema.if) {
+    const conditionErrors = [];
+    validateSchemaValue(value, schema.if, rootSchema, valuePath, conditionErrors);
+    if (conditionErrors.length === 0 && schema.then) {
+      validateSchemaValue(value, schema.then, rootSchema, valuePath, errors);
+    } else if (conditionErrors.length > 0 && schema.else) {
+      validateSchemaValue(value, schema.else, rootSchema, valuePath, errors);
+    }
+  }
+
   if (schema.$ref) {
     const referencedSchema = resolveLocalSchemaReference(rootSchema, schema.$ref);
     if (!referencedSchema) {
@@ -67,7 +96,12 @@ function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
     errors.push(`${valuePath}: 허용된 enum 값이 아닙니다.`);
   }
 
-  if (schema.type === "object") {
+  if (
+    schema.type === "object" ||
+    schema.required ||
+    schema.properties ||
+    Object.hasOwn(schema, "additionalProperties")
+  ) {
     if (!isPlainRecord(value)) {
       errors.push(`${valuePath}: 객체여야 합니다.`);
       return;
@@ -125,6 +159,9 @@ function validateSchemaValue(value, schema, rootSchema, valuePath, errors) {
     }
     if (schema.minLength !== undefined && value.length < schema.minLength) {
       errors.push(`${valuePath}: 문자열이 너무 짧습니다.`);
+    }
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) {
+      errors.push(`${valuePath}: 문자열이 너무 깁니다.`);
     }
     if (schema.pattern && !new RegExp(schema.pattern).test(value)) {
       errors.push(`${valuePath}: 문자열 형식이 올바르지 않습니다.`);
@@ -411,6 +448,19 @@ try {
   contentErrors.push("Code Quest 스키마 파일을 읽을 수 없습니다.");
 }
 
+const webCodeQuestSchemaPath = path.join(
+  projectRoot,
+  "content",
+  "schema",
+  "web-code-quest.schema.json",
+);
+let webCodeQuestSchema;
+try {
+  webCodeQuestSchema = JSON.parse(await readFile(webCodeQuestSchemaPath, "utf8"));
+} catch {
+  contentErrors.push("HTML·CSS Code Quest 스키마 파일을 읽을 수 없습니다.");
+}
+
 const questDirectory = path.join(projectRoot, "content", "quests");
 const questCollections = new Map();
 const questIds = new Set();
@@ -434,7 +484,21 @@ for (const fileName of questFileNames) {
     }
 
     const collection = JSON.parse(await readFile(questPath, "utf8"));
-    if (codeQuestSchema) {
+    const isWebCollection = Object.hasOwn(collection, "evaluationKind");
+    if (isWebCollection && webCodeQuestSchema) {
+      const schemaErrors = [];
+      validateSchemaValue(
+        collection,
+        webCodeQuestSchema,
+        webCodeQuestSchema,
+        "$",
+        schemaErrors,
+      );
+      if (schemaErrors.length > 0) {
+        throw new Error(`JSON Schema 불일치:\n- ${schemaErrors.join("\n- ")}`);
+      }
+      assertValidWebCodeQuestCollection(collection, curriculum);
+    } else if (!isWebCollection && codeQuestSchema) {
       const validationErrors = validateCodeQuestCollection(
         collection,
         curriculum,
@@ -468,7 +532,14 @@ for (const fileName of questFileNames) {
         publicTestIds.add(publicTest.id);
       }
 
-      if (languageId === "javascript") {
+      if (isWebCollection) {
+        createWebCodeQuestExecutionRequest(
+          collection,
+          quest,
+          quest.starterCode,
+          `validate-${quest.id}`,
+        );
+      } else if (languageId === "javascript") {
         assertValidExecutionRequest({
           requestId: `validate-${quest.id}`,
           contractVersion: collection.contractVersion,

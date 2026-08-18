@@ -257,9 +257,11 @@ test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 �
   const routeSource = appSource.slice(routeStart, routeEnd);
   const questSource = appSource.slice(questStart, questEnd);
   assert.match(routeSource, /parseQuestHash\(window\.location\.hash\)/);
-  assert.match(routeSource, /questRoute\.languageId === DEFAULT_LANGUAGE_ID/);
+  assert.match(routeSource, /questLanguage\?\.status === "available"/);
+  assert.match(routeSource, /questLessons\.length > 0/);
+  assert.match(routeSource, /openCodeQuestRoute\(questRoute\.languageId, questRoute\.slug\)/);
   assert.match(routeSource, /buildLessonHash\(fallbackLesson\.languageId, fallbackLesson\.slug\)/);
-  assert.match(questSource, /findCodeQuestBySlug\(this\.codeQuestCollection, slug\) \?\? quests\[0\]/);
+  assert.match(questSource, /findCodeQuestBySlug\(collection, slug\) \?\? quests\[0\]/);
   assert.match(questSource, /buildQuestHash\(languageId, quest\.slug\)/);
   assert.match(questSource, /window\.history\.replaceState\(null, "", canonicalHash\)/);
 });

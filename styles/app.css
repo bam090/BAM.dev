@@ -1784,6 +1784,20 @@ a.language-nav-link:hover {
   font-size: 0.9em;
 }
 
+.quest-prose code {
+  padding: 0.08em 0.32em;
+  border: 1px solid rgba(110, 163, 255, 0.15);
+  border-radius: 5px;
+  background: rgba(76, 139, 245, 0.09);
+  color: #d8e5ff;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
 .quest-section > p:not(.quest-section-label),
 .quest-contract-list dd,
 .quest-constraints,
@@ -1899,6 +1913,39 @@ a.language-nav-link:hover {
 
 .quest-examples p {
   margin: 11px 0 0;
+}
+
+.quest-source-examples pre,
+.quest-fixture pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 12px;
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-code);
+  color: #d6e1f4;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre;
+}
+
+.quest-fixture {
+  margin-top: 20px;
+}
+
+.quest-fixture h3 {
+  margin: 0 0 6px;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.quest-fixture p {
+  margin: 0 0 10px;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .quest-hints > .button {

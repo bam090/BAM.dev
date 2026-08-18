@@ -84,6 +84,21 @@ function formatJsonValue(value) {
   }
 }
 
+function renderQuestProse(value) {
+  const text = String(value ?? "");
+  const inlineCodePattern = /`([^`\n]+)`/g;
+  let rendered = "";
+  let lastIndex = 0;
+
+  for (const match of text.matchAll(inlineCodePattern)) {
+    rendered += escapeHtml(text.slice(lastIndex, match.index));
+    rendered += `<code>${escapeHtml(match[1])}</code>`;
+    lastIndex = match.index + match[0].length;
+  }
+
+  return rendered + escapeHtml(text.slice(lastIndex));
+}
+
 function getOutcomeCopy(outcome) {
   return OUTCOME_COPY[outcome] ?? OUTCOME_COPY.engine_error;
 }
@@ -152,7 +167,7 @@ function renderTestResult(testResult, index, failureByTestId) {
         ${testResult?.hasActual === true ? renderValue("실제값", actualDisplay) : ""}
       </dl>
       ${errorMessage ? `<p class="quest-test-error"><strong>실행 안내</strong>${escapeHtml(errorMessage)}</p>` : ""}
-      ${failureExplanation ? `<p class="quest-failure-explanation"><strong>학습자 원인</strong>${escapeHtml(failureExplanation)}</p>` : ""}
+      ${failureExplanation ? `<p class="quest-failure-explanation quest-prose"><strong>학습자 원인</strong>${renderQuestProse(failureExplanation)}</p>` : ""}
       ${renderConsoleEntries(testResult?.console)}
     </article>
   `;
@@ -224,19 +239,19 @@ function renderFunctionContract(quest) {
             (parameter) => `
               <div>
                 <dt><code>${escapeHtml(parameter.name)}</code> <span>${escapeHtml(parameter.type)}</span></dt>
-                <dd>${escapeHtml(parameter.description)}</dd>
+                <dd class="quest-prose">${renderQuestProse(parameter.description)}</dd>
               </div>
             `,
           )
           .join("")}
         <div>
           <dt>반환 <span>${escapeHtml(contract.returns?.type ?? "")}</span></dt>
-          <dd>${escapeHtml(contract.returns?.description ?? "")}</dd>
+          <dd class="quest-prose">${renderQuestProse(contract.returns?.description)}</dd>
         </div>
       </dl>
       <h3>제약 조건</h3>
       <ul class="quest-constraints">
-        ${constraints.map((constraint) => `<li>${escapeHtml(constraint)}</li>`).join("")}
+        ${constraints.map((constraint) => `<li class="quest-prose">${renderQuestProse(constraint)}</li>`).join("")}
       </ul>
       <dl class="quest-complexity" aria-label="목표 복잡도">
         <div><dt>시간</dt><dd><code>${escapeHtml(contract.complexity?.time ?? "-")}</code></dd></div>
@@ -261,7 +276,7 @@ function renderExamples(examples) {
                   ${renderValue("인수", formatJsonValue(example.args))}
                   ${renderValue("기대값", formatJsonValue(example.expected))}
                 </dl>
-                <p>${escapeHtml(example.explanation)}</p>
+                <p class="quest-prose">${renderQuestProse(example.explanation)}</p>
               </article>
             `,
           )
@@ -269,6 +284,71 @@ function renderExamples(examples) {
       </div>
     </section>
   `;
+}
+
+function renderWebRequirements(quest, evaluationKind) {
+  const requirements = Array.isArray(quest?.requirements) ? quest.requirements : [];
+  const isCss = evaluationKind === "css-style-v1";
+
+  return `
+    <section class="quest-section" aria-labelledby="quest-requirements-title">
+      <p class="quest-section-label">작성 조건</p>
+      <h2 id="quest-requirements-title">공개 검사 요구사항</h2>
+      <ul class="quest-constraints">
+        ${requirements.map((requirement) => `<li class="quest-prose">${renderQuestProse(requirement)}</li>`).join("")}
+      </ul>
+      ${
+        isCss
+          ? `<div class="quest-fixture">
+              <h3>제공 HTML</h3>
+              <p>아래 고정 마크업에 작성한 CSS를 적용해 공개 테스트를 실행합니다.</p>
+              <pre tabindex="0"><code>${escapeHtml(quest?.fixtureHtml ?? "")}</code></pre>
+            </div>`
+          : ""
+      }
+    </section>
+  `;
+}
+
+function renderWebExamples(examples) {
+  return `
+    <section class="quest-section" aria-labelledby="quest-examples-title">
+      <p class="quest-section-label">구조 확인</p>
+      <h2 id="quest-examples-title">작성 예시</h2>
+      <div class="quest-examples quest-source-examples">
+        ${(examples ?? [])
+          .map(
+            (example, index) => `
+              <article>
+                <h3>예시 ${index + 1}</h3>
+                <pre tabindex="0"><code>${escapeHtml(example?.source ?? "")}</code></pre>
+                <p class="quest-prose">${renderQuestProse(example?.explanation)}</p>
+              </article>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function getEditorCopy(evaluationKind, languageName, entryPoint) {
+  if (evaluationKind === "html-dom-v1") {
+    return {
+      label: "HTML 마크업",
+      help: "HTML을 직접 작성하세요. 실행하면 코드를 동작시키지 않고 공개된 문서 구조 검사만 수행합니다.",
+    };
+  }
+  if (evaluationKind === "css-style-v1") {
+    return {
+      label: "CSS 스타일시트",
+      help: "CSS를 직접 작성하세요. 실행하면 제공된 고정 HTML에 적용해 공개된 규칙·스타일 검사만 수행합니다.",
+    };
+  }
+  return {
+    label: `${entryPoint || "함수"} 함수 코드`,
+    help: `함수 선언을 포함한 ${languageName} 코드를 작성하세요. 실행하면 이 브라우저에서 공개 테스트만 평가합니다.`,
+  };
 }
 
 function renderHints(quest, visibleHintCount) {
@@ -290,8 +370,8 @@ function renderHints(quest, visibleHintCount) {
                 (hint, index) => `
                   <article class="quest-hint" data-quest-hint tabindex="-1" role="region" aria-labelledby="quest-hint-title-${index}">
                     <p>${index + 1}단계 · ${HINT_STAGE_LABELS[hint.stage] ?? "힌트"}</p>
-                    <h3 id="quest-hint-title-${index}">${escapeHtml(hint.title)}</h3>
-                    <p>${escapeHtml(hint.content)}</p>
+                    <h3 class="quest-prose" id="quest-hint-title-${index}">${renderQuestProse(hint.title)}</h3>
+                    <p class="quest-prose">${renderQuestProse(hint.content)}</p>
                   </article>
                 `,
               )
@@ -353,6 +433,7 @@ export function renderCodeQuestLoadingView({ languageName = "학습 언어" } = 
 export function renderCodeQuestView({
   languageName = "학습 언어",
   collectionTitle = "Code Quest",
+  evaluationKind = "javascript-function-v1",
   quest,
   currentIndex = 0,
   total = 0,
@@ -373,6 +454,8 @@ export function renderCodeQuestView({
   const difficulty = DIFFICULTY_LABELS[quest?.difficulty] ?? "연습";
   const editorDisabled = isRunning ? " readonly" : "";
   const runDisabled = isRunning || String(source).trim().length === 0 ? " disabled" : "";
+  const isWebQuest = evaluationKind === "html-dom-v1" || evaluationKind === "css-style-v1";
+  const editorCopy = getEditorCopy(evaluationKind, languageName, quest?.entryPoint);
 
   return `
     <main class="main-area quest-main" id="lesson-content" tabindex="-1">
@@ -390,7 +473,7 @@ export function renderCodeQuestView({
             </div>
             <span class="quest-completion-badge${isCompleted ? " is-complete" : ""}">${isCompleted ? "완료" : "도전 중"}</span>
           </div>
-          <p class="quest-summary">${escapeHtml(quest?.summary ?? "")}</p>
+          <p class="quest-summary quest-prose">${renderQuestProse(quest?.summary)}</p>
         </header>
 
         <div class="quest-workspace">
@@ -398,10 +481,10 @@ export function renderCodeQuestView({
             <section class="quest-section" aria-labelledby="quest-instructions-title">
               <p class="quest-section-label">문제</p>
               <h2 id="quest-instructions-title">구현 목표</h2>
-              <p>${escapeHtml(quest?.instructions ?? "")}</p>
+              <p class="quest-prose">${renderQuestProse(quest?.instructions)}</p>
             </section>
-            ${renderFunctionContract(quest)}
-            ${renderExamples(quest?.examples)}
+            ${isWebQuest ? renderWebRequirements(quest, evaluationKind) : renderFunctionContract(quest)}
+            ${isWebQuest ? renderWebExamples(quest?.examples) : renderExamples(quest?.examples)}
             ${renderHints(quest, visibleHintCount)}
           </article>
 
@@ -413,9 +496,9 @@ export function renderCodeQuestView({
               </div>
               <span>공개 테스트 ${quest?.publicTests?.length ?? 0}개</span>
             </header>
-            <label class="quest-editor-label" id="quest-source-label" for="quest-source">${escapeHtml(quest?.entryPoint ?? "함수")} 함수 코드</label>
+            <label class="quest-editor-label" id="quest-source-label" for="quest-source">${escapeHtml(editorCopy.label)}</label>
             <textarea id="quest-source" data-quest-source aria-labelledby="quest-source-label" aria-describedby="quest-draft-status quest-editor-help" rows="20" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorDisabled}>${escapeHtml(source)}</textarea>
-            <p class="quest-editor-help" id="quest-editor-help">함수 선언을 포함한 코드를 작성하세요. 실행하면 이 브라우저에서 공개 테스트만 평가합니다.</p>
+            <p class="quest-editor-help" id="quest-editor-help">${escapeHtml(editorCopy.help)}</p>
             <p class="quest-draft-status${draftStatus === "failed" || draftStatus === "memory" ? " is-warning" : ""}" id="quest-draft-status" data-quest-draft-status>${getCodeQuestDraftStatusMessage(draftStatus)}</p>
             <div class="quest-run-actions">
               <button class="button button--primary" type="button" data-quest-run aria-busy="${String(isRunning)}"${runDisabled}>${isRunning ? "실행 중…" : "공개 테스트 실행"}</button>
