@@ -28,10 +28,19 @@ test("leaveCurrentView는 예약 작업을 정리하고 사용자 취소를 탐�
       calls.push("flush-coding-test");
       return true;
     },
+    flushPendingWebProjectDraftSave() {
+      calls.push("flush-web-project");
+      return true;
+    },
   });
 
   assert.equal(app.leaveCurrentView(), true);
-  assert.deepEqual(calls, ["cancel-search", "flush-quest", "flush-coding-test"]);
+  assert.deepEqual(calls, [
+    "cancel-search",
+    "flush-quest",
+    "flush-coding-test",
+    "flush-web-project",
+  ]);
   assert.equal(execution.signal.aborted, true);
   assert.equal(execution.cancellationReason, "navigation");
   assert.equal(executionCoordinator.active, execution);
@@ -44,12 +53,16 @@ test("enterView는 화면 전용 상태만 초기화하고 장기 객체와 콘�
     codeQuestCollections: new Map([["javascript", { quests: [] }]]),
     codeQuestCollection: { languageId: "javascript" },
     codingTestCollection: { languageId: "javascript" },
+    webProjectCollection: { projects: [] },
     codeQuestRunner: { run() {} },
     codingTestRunner: { run() {} },
+    webProjectRunner: { run() {} },
     progressRepository: { getProgress() {} },
     executionCoordinator: new ExecutionCoordinator(),
     questDraftSaveCoordinator: { flush() {} },
     codingTestDraftSaveCoordinator: { flush() {} },
+    webProjectDraftSaveCoordinator: { flush() {} },
+    webProjectRepository: { getState() {} },
     codingTestFilters: { query: "배열" },
   };
   let menuSyncCount = 0;
@@ -64,6 +77,7 @@ test("enterView는 화면 전용 상태만 초기화하고 장기 객체와 콘�
     quizIncorrectQuestionCount: 3,
     codeQuestState: { quest: { id: "quest-one" } },
     codingTestState: { problem: { id: "problem-one" } },
+    webProjectState: { project: { id: "web-project-one" } },
     menuOpen: true,
     syncMenuState() {
       menuSyncCount += 1;
@@ -83,6 +97,7 @@ test("enterView는 화면 전용 상태만 초기화하고 장기 객체와 콘�
   assert.equal(app.quizIncorrectQuestionCount, 0);
   assert.equal(app.codeQuestState, null);
   assert.equal(app.codingTestState, null);
+  assert.equal(app.webProjectState, null);
   assert.equal(app.menuOpen, false);
   assert.equal(menuSyncCount, 1);
 
@@ -112,12 +127,21 @@ test("curriculum 로드 전 openRoute도 초안을 flush하고 이전 비동기 
       calls.push("flush-coding-test");
       return true;
     },
+    flushPendingWebProjectDraftSave() {
+      calls.push("flush-web-project");
+      return true;
+    },
     syncMenuState() {},
   });
 
   await app.openRoute();
 
-  assert.deepEqual(calls, ["cancel-search", "flush-quest", "flush-coding-test"]);
+  assert.deepEqual(calls, [
+    "cancel-search",
+    "flush-quest",
+    "flush-coding-test",
+    "flush-web-project",
+  ]);
   assert.equal(app.renderSequence, 12);
   assert.equal(app.currentView, "quest");
 });

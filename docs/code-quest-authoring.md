@@ -64,8 +64,10 @@ HTML 컬렉션은 `evaluationKind: "html-dom-v1"`을 사용합니다. Quest는 `
 | `selector-count` | 일치하는 요소의 개수 확인 |
 | `attribute-equals` | 첫 일치 요소의 속성 문자열 확인 |
 | `text-includes` | 첫 일치 요소의 정규화한 텍스트에 문구가 포함되는지 확인 |
+| `nonblank-attribute-count` | 선택자와 일치하는 요소 중 지정 속성을 trim했을 때 비어 있지 않은 요소 수 확인 |
+| `direct-child-text-equals` | 컨테이너의 지정 순번 직접 자식 안에 있는 단 하나의 직접 텍스트 요소가 기대 문구와 정확히 같은지 확인 |
 
-doctype 이외의 검사는 학습자 HTML을 BAM.dev 주 문서에 넣지 않고 `<template>`의 inert `DocumentFragment`에서 수행합니다. HTML 파서는 오류 복구를 하므로 “문법적으로 완벽하다”를 포괄적으로 판정한다고 표현하지 않고, 문제에 선언한 관찰 가능한 구조만 평가합니다. `<script>`를 비롯한 위험 source는 파싱 전에 거부하며 학습자 스크립트를 실행하지 않습니다.
+doctype 이외의 검사는 학습자 HTML을 BAM.dev 주 문서에 넣지 않고 `<template>`의 inert `DocumentFragment`에서 수행합니다. `direct-child-text-equals`는 `selector`, `childSelector`, 0부터 시작하는 `childIndex`, `textSelector`, `expected`를 사용하며 `hidden` 또는 `aria-hidden="true"` 경로와 그 숨김 자손의 텍스트를 제외합니다. HTML 파서는 오류 복구를 하므로 “문법적으로 완벽하다”를 포괄적으로 판정한다고 표현하지 않고, 문제에 선언한 관찰 가능한 구조만 평가합니다. `<script>`를 비롯한 위험 source는 파싱 전에 거부하며 학습자 스크립트를 실행하지 않습니다.
 
 ## CSS 직접 스타일시트 계약
 
@@ -80,14 +82,18 @@ CSS 컬렉션은 `evaluationKind: "css-style-v1"`을 사용합니다. Quest는 `
 | `rule-declaration` | CSSOM에서 정확한 선택자의 선언 속성·값 확인 |
 | `media-rule-declaration` | 정규화한 `@media` 조건 안의 선택자 선언 확인 |
 | `computed-style` | 고정 fixture에 스타일을 적용한 뒤 최종 계산 스타일 확인 |
+| `computed-focus-style` | 대상의 실제 `:focus-visible` 상태에서 최종 계산 스타일 확인 |
+| `computed-grid-column-count` | 지정한 viewport 너비에서 선택자의 최종 Grid 열 개수 확인 |
 
-선언·미디어 조건 검사는 constructed `CSSStyleSheet`에서 수행합니다. `rule-declaration`은 최상위의 정확한 선택자 규칙들 가운데 요구한 속성·값 선언이 하나라도 존재하는지를 확인하며 전체 캐스케이드 승자를 추론하지 않습니다. `media-rule-declaration`은 최상위의 정확히 같은 미디어 조건과 그 직접 자식 규칙에서 같은 방식으로 확인합니다. 따라서 `@supports` 같은 다른 조건부 그룹 안에 중첩된 `@media`는 승인하지 않습니다. 우선순위·상속까지 적용된 최종 결과가 목표라면 `computed-style`을 사용합니다. 계산 스타일 검사는 매번 새 sandbox iframe을 만들고 고정 fixture와 학습자 `<style>`만 넣은 뒤 결과를 읽고 iframe을 제거합니다. iframe에는 스크립트 권한이 없고 `default-src 'none'; style-src 'unsafe-inline'` CSP가 적용됩니다. 브라우저가 CSS 값을 정규화할 수 있으므로 평가기는 같은 브라우저의 CSSOM·계산 스타일 정규화를 거친 값과 비교합니다.
+선언·미디어 조건 검사는 constructed `CSSStyleSheet`에서 수행합니다. `rule-declaration`은 최상위의 정확히 같은 선택자 규칙들 사이에서 `!important`와 source order를 적용한 최종 선언을 확인하지만, 서로 다른 specificity·상속을 포함한 전체 캐스케이드 승자는 추론하지 않습니다. `media-rule-declaration`은 최상위의 정확히 같은 미디어 조건과 그 직접 자식 규칙에서 같은 방식으로 확인합니다. 따라서 `@supports` 같은 다른 조건부 그룹 안에 중첩된 `@media`는 승인하지 않습니다. 우선순위·상속까지 적용된 최종 결과가 목표라면 `computed-style`을 사용합니다. 계산 스타일 검사는 매번 새 sandbox iframe을 만들고 고정 fixture와 학습자 `<style>`만 넣은 뒤 결과를 읽고 iframe을 제거합니다. `computed-focus-style`은 먼저 키보드 입력 요소의 초점을 이용해 대상의 실제 `:focus-visible` 상태를 활성화하고 같은 계산 스타일 경계를 사용합니다. iframe에는 스크립트 권한이 없고 `default-src 'none'; style-src 'unsafe-inline'` CSP가 적용됩니다. 브라우저가 CSS 값을 정규화할 수 있으므로 평가기는 같은 브라우저의 CSSOM·계산 스타일 정규화를 거친 값과 비교합니다.
+
+`computed-grid-column-count`는 `kind`, `selector`, `viewportWidth`, `expected`만 사용합니다. `viewportWidth`는 320~1920 정수, `expected`는 1~12 정수입니다. 평가기는 해당 너비의 sandbox iframe에서 `display`가 `grid` 또는 `inline-grid`인지 확인하고 최종 `grid-template-columns`의 실제 트랙 수를 반환합니다. 따라서 `repeat(2, 1fr)`와 `1fr 1fr`처럼 같은 열 수를 만드는 문법을 동등하게 보고, 앞 선언을 뒤 선언이 덮어쓴 경우에도 최종 화면 동작을 기준으로 판정합니다. 선택자가 없으면 `null`, Grid 컨테이너가 아니거나 계산된 트랙이 없으면 `0`이 실제값이 됩니다.
 
 ## Web source preflight
 
 HTML·CSS 시작 코드, 작성 예시, 기준 답안, 대표 오답, CSS fixture와 학습자 제출은 평가 전에 같은 보수적 preflight를 통과해야 합니다. 학습자 source 최대 크기는 UTF-8 20 KiB이고 한 요청의 공개 테스트는 최대 20개입니다.
 
-- HTML: null 문자, `script`·`iframe`·`object`·`embed`, 기준 URL이나 외부 문서를 가져오는 `base`·`link`, meta refresh, `on*` 이벤트 속성, `src`·`srcset`·`poster`·`data`·`action`·`formaction`, 외부 URL·`@import`·`url()`을 거부합니다.
+- HTML: null 문자, 브라우저가 다르게 복구할 수 있는 비정상·미종료 주석, `script`·`iframe`·`object`·`embed`, 기준 URL이나 외부 문서를 가져오는 `base`·`link`, 문자 참조 우회를 포함한 meta refresh, `on*` 이벤트 속성, `src`·`srcset`·`poster`·`data`·`action`·`formaction`·`ping`, 외부 URL·`@import`·`url()`을 거부합니다. `href`와 `xlink:href`는 같은 문서의 `#fragment`만 허용합니다.
 - CSS: null 문자, `@import`, `url()`, 외부 URL, `expression`, `behavior`, `-moz-binding`을 거부합니다.
 
 preflight와 iframe CSP는 위험한 입력과 외부 요청을 줄이는 로컬 학습용 경계이며 완전한 sanitizer나 권한 판단용 보안 샌드박스가 아닙니다. 복잡한 CSS의 자원 사용과 브라우저별 CSS 구현 차이는 남습니다. 자세한 결정과 한계는 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)을 따릅니다.

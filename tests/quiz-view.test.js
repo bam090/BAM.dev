@@ -149,6 +149,34 @@ test("문제·코드·선택지의 위험 문자열을 실행 가능한 HTML로 
   assert.match(html, /&lt;em&gt;위험 언어&lt;\/em&gt;/);
 });
 
+test("문제·선택지·해설의 백틱 코드는 안전한 인라인 코드로 렌더링한다", () => {
+  const inlineQuestion = {
+    ...question,
+    prompt: "`total`과 <tag>를 확인하세요.",
+    options: question.options.map((option, index) => ({
+      ...option,
+      text: index === 0 ? "`console.log()` 사용" : option.text,
+    })),
+  };
+  const inlineGradedAnswer = {
+    ...gradedAnswer,
+    feedback: gradedAnswer.feedback.map((feedback, index) => ({
+      ...feedback,
+      message: index === 0 ? "`total`은 숫자입니다." : feedback.message,
+    })),
+  };
+  const html = renderQuestion({
+    question: inlineQuestion,
+    selectedOptionId: "a",
+    gradedAnswer: inlineGradedAnswer,
+  });
+
+  assert.match(html, /<code>total<\/code>과 &lt;tag&gt;/);
+  assert.match(html, /<code>console\.log\(\)<\/code> 사용/);
+  assert.match(html, /<code>total<\/code>은 숫자입니다/);
+  assert.doesNotMatch(html, /`(?:total|console\.log)/);
+});
+
 test("채점 후 선택지를 잠그고 정답 설명과 네 선택지 feedback을 모두 표시한다", () => {
   const html = renderQuestion({
     selectedOptionId: "b",

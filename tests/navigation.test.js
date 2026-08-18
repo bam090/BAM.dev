@@ -7,11 +7,14 @@ import {
   buildLessonHash,
   buildQuestHash,
   buildReviewHash,
+  buildWebProjectHash,
+  buildWebProjectListHash,
   getAdjacentLessons,
   parseCodingTestHash,
   parseLessonHash,
   parseQuestHash,
   parseReviewHash,
+  parseWebProjectHash,
   resolveLessonRoute,
 } from "../src/core/navigation.js";
 
@@ -80,6 +83,26 @@ test("잘못된 코딩테스트 해시는 해석하지 않는다", () => {
   assert.equal(parseCodingTestHash("#/coding-tests/javascript"), null);
   assert.equal(parseCodingTestHash("#/coding-tests/javascript/pair-sum/extra"), null);
   assert.equal(parseCodingTestHash("#/coding-tests/%E0%A4%A/pair-sum"), null);
+});
+
+test("Web Project 목록과 상세 해시를 만들고 다시 해석한다", () => {
+  assert.equal(buildWebProjectListHash(), "#/web-projects");
+  assert.equal(
+    buildWebProjectHash("learning board/시안"),
+    "#/web-projects/learning%20board%2F%EC%8B%9C%EC%95%88",
+  );
+  assert.deepEqual(parseWebProjectHash("#/web-projects"), { kind: "list" });
+  assert.deepEqual(parseWebProjectHash("#/web-projects/"), { kind: "list" });
+  assert.deepEqual(
+    parseWebProjectHash("#/web-projects/responsive-learning-plan"),
+    { kind: "project", slug: "responsive-learning-plan" },
+  );
+});
+
+test("잘못된 Web Project 해시는 해석하지 않는다", () => {
+  assert.equal(parseWebProjectHash("#/web-projects/one/two"), null);
+  assert.equal(parseWebProjectHash("#/web-projects/%E0%A4%A"), null);
+  assert.equal(parseWebProjectHash("#/web-project"), null);
 });
 
 test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한다", () => {

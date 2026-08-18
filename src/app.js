@@ -11,10 +11,13 @@ import {
   buildLessonHash,
   buildQuestHash,
   buildReviewHash,
+  buildWebProjectHash,
+  buildWebProjectListHash,
   getAdjacentLessons,
   parseCodingTestHash,
   parseQuestHash,
   parseReviewHash,
+  parseWebProjectHash,
   resolveLessonRoute,
 } from "./core/navigation.js";
 import {
@@ -30,6 +33,12 @@ import {
   getCodeQuestsInOrder,
   loadCodeQuestCollection,
 } from "./core/code-quest.js";
+import {
+  createWebProjectSubmission,
+  findWebProjectBySlug,
+  getWebProjectsInOrder,
+  loadWebProjectCollection,
+} from "./core/web-project.js";
 import { gradeQuestion, loadQuizCollection, summarizeQuiz } from "./core/quiz.js";
 import { DraftSaveCoordinator } from "./core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "./core/execution-coordinator.js";
@@ -37,11 +46,19 @@ import { BrowserCodeQuestRunner } from "./grading/browser-code-quest-runner.js";
 import { BrowserWebCodeQuestRunner } from "./grading/browser-web-code-quest-runner.js";
 import { CodeQuestRunnerRouter } from "./grading/code-quest-runner-router.js";
 import { CodingTestRunnerAdapter } from "./grading/coding-test-runner-adapter.js";
+import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js";
+import { scoreWebProject } from "./grading/web-project-scoring.js";
 import {
   createBrowserStorage,
   LocalStorageProgressRepository,
   PROGRESS_STORAGE_KEY,
 } from "./repositories/progress-repository.js";
+import {
+  getWebProjectDraftToken,
+  LocalStorageWebProjectRepository,
+  WEB_PROJECT_STORAGE_KEY,
+  WebProjectDraftConflictError,
+} from "./repositories/web-project-repository.js";
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
 import { renderAppShell } from "./ui/app-shell.js";
 import { renderLanguageNavigation } from "./ui/language-navigation.js";
@@ -62,9 +79,17 @@ import {
   renderCodingTestLoadingView,
   renderCodingTestView,
 } from "./ui/coding-test-view.js";
+import {
+  getWebProjectDraftStatusMessage,
+  renderWebProjectListView,
+  renderWebProjectLoadingView,
+  renderWebProjectView,
+} from "./ui/web-project-view.js";
+import { createWebProjectPreviewDocument } from "./ui/web-project-preview.js";
 
 const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
 const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
+const WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS = 250;
 
 function createDefaultCodingTestFilters() {
   return {
@@ -109,6 +134,57 @@ export async function loadAvailableCodeQuestCollectionsSafely(
   return collections;
 }
 
+export async function loadWebProjectCollectionSafely(
+  curriculum,
+  loader = loadWebProjectCollection,
+) {
+  try {
+    return await loader(curriculum);
+  } catch {
+    return null;
+  }
+}
+
+function createClientEntropy() {
+  try {
+    if (typeof globalThis.crypto?.randomUUID === "function") {
+      return globalThis.crypto.randomUUID();
+    }
+    if (typeof globalThis.crypto?.getRandomValues === "function") {
+      const values = new Uint32Array(2);
+      globalThis.crypto.getRandomValues(values);
+      return `${values[0].toString(36)}-${values[1].toString(36)}`;
+    }
+  } catch {
+    // 사용할 수 있는 브라우저 난수원이 없으면 아래 로컬 충돌 완화값을 사용합니다.
+  }
+  const fallback = `${Math.random().toString(36).slice(2)}-${Math.random()
+    .toString(36)
+    .slice(2)}`;
+  return fallback.replace(/^-|-$/g, "") || "local";
+}
+
+export function createWebProjectRequestId(
+  mode,
+  timestamp,
+  sequence,
+  entropy = createClientEntropy(),
+) {
+  if (!new Set(["run", "submit"]).has(mode)) {
+    throw new TypeError("Web Project 실행 모드가 올바르지 않습니다.");
+  }
+  if (!Number.isSafeInteger(timestamp) || timestamp < 0) {
+    throw new TypeError("Web Project 실행 시각이 올바르지 않습니다.");
+  }
+  if (!Number.isSafeInteger(sequence) || sequence < 1) {
+    throw new TypeError("Web Project 실행 순서가 올바르지 않습니다.");
+  }
+  if (typeof entropy !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/u.test(entropy)) {
+    throw new TypeError("Web Project 실행 ID 난수값이 올바르지 않습니다.");
+  }
+  return `web-project-${mode}-${timestamp.toString(36)}-${sequence.toString(36)}-${entropy}`;
+}
+
 export class BamLearningApp {
   constructor(root) {
     this.root = root;
@@ -135,6 +211,12 @@ export class BamLearningApp {
     this.codingTestRunner = new CodingTestRunnerAdapter(
       this.javascriptCodeQuestRunner,
     );
+    this.webProjectCollection = null;
+    this.webProjectState = null;
+    this.webProjectRunner = new BrowserWebProjectRunner();
+    this.webProjectRepository = new LocalStorageWebProjectRepository(
+      createBrowserStorage(window),
+    );
     this.executionCoordinator = new ExecutionCoordinator();
     this.pendingCodingTestSearchRender = null;
     this.codingTestSearchRenderTimer = null;
@@ -142,6 +224,10 @@ export class BamLearningApp {
     this.codingTestRequestSequence = 0;
     this.questDraftSaveCoordinator = this.createQuestDraftSaveCoordinator();
     this.questRequestSequence = 0;
+    this.webProjectDraftSaveCoordinator =
+      this.createWebProjectDraftSaveCoordinator();
+    this.webProjectRequestSequence = 0;
+    this.webProjectPreviewFrameRequest = null;
     this.renderSequence = 0;
     this.hasRenderedView = false;
     this.menuOpen = false;
@@ -159,6 +245,9 @@ export class BamLearningApp {
       this.codeQuestCollection =
         this.codeQuestCollections.get(DEFAULT_LANGUAGE_ID) ?? null;
       this.codingTestCollection = await loadCodingTestCollectionSafely(
+        this.curriculum,
+      );
+      this.webProjectCollection = await loadWebProjectCollectionSafely(
         this.curriculum,
       );
       await this.openRoute({ useLastLesson: true });
@@ -180,8 +269,16 @@ export class BamLearningApp {
       this.cancelPendingCodingTestSearchRender();
       this.flushPendingQuestDraftSave();
       this.flushPendingCodingTestDraftSave();
+      this.flushPendingWebProjectDraftSave();
     });
     window.addEventListener("storage", (event) => {
+      if (event.key === WEB_PROJECT_STORAGE_KEY) {
+        if (this.currentView === "web-project-list") this.renderWebProjectList();
+        else if (this.currentView === "web-project" && this.webProjectState) {
+          this.handleExternalWebProjectStorageChange();
+        }
+        return;
+      }
       if (event.key !== PROGRESS_STORAGE_KEY) return;
       if (this.currentLesson) this.renderLesson();
       else if (this.currentView === "review" && this.quizCollection) {
@@ -223,6 +320,21 @@ export class BamLearningApp {
     this.leaveCurrentView();
     if (!this.curriculum) {
       this.enterView(this.currentView ?? "lesson");
+      return;
+    }
+
+    const webProjectRoute = parseWebProjectHash(window.location.hash);
+    if (webProjectRoute?.kind === "list") {
+      this.openWebProjectListRoute();
+      return;
+    }
+    if (webProjectRoute?.kind === "project") {
+      this.openWebProjectRoute(webProjectRoute.slug);
+      return;
+    }
+    if (/^#\/web-projects(?:\/|$)/u.test(String(window.location.hash))) {
+      window.history.replaceState(null, "", buildWebProjectListHash());
+      this.openWebProjectListRoute();
       return;
     }
 
@@ -321,8 +433,10 @@ export class BamLearningApp {
 
   leaveCurrentView(reason = "navigation") {
     this.cancelPendingCodingTestSearchRender();
+    this.cancelPendingWebProjectPreviewSync();
     this.flushPendingQuestDraftSave();
     this.flushPendingCodingTestDraftSave();
+    this.flushPendingWebProjectDraftSave();
     return this.executionCoordinator?.cancelActive(reason) ?? false;
   }
 
@@ -340,6 +454,7 @@ export class BamLearningApp {
     this.quizIncorrectQuestionCount = 0;
     this.codeQuestState = null;
     this.codingTestState = null;
+    this.webProjectState = null;
     this.menuOpen = false;
     this.syncMenuState?.();
     return this.renderSequence;
@@ -590,7 +705,95 @@ export class BamLearningApp {
     }
   }
 
+  openWebProjectListRoute() {
+    this.enterView("web-project-list");
+    if (!this.webProjectCollection) {
+      this.renderFatalError(new Error("등록된 Web Project 과제가 없습니다."));
+      return;
+    }
+
+    const canonicalHash = buildWebProjectListHash();
+    if (window.location.hash !== canonicalHash) {
+      window.history.replaceState(null, "", canonicalHash);
+    }
+
+    this.renderWebProjectList();
+    document.title = `${this.webProjectCollection.title} · BAM.dev`;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (this.hasRenderedView) {
+      window.requestAnimationFrame(() => {
+        focusMainContent(document.querySelector("#web-project-list-title"));
+      });
+    }
+    this.hasRenderedView = true;
+  }
+
+  openWebProjectRoute(slug) {
+    this.enterView("web-project");
+    this.root.innerHTML = renderWebProjectLoadingView();
+    const collection = this.webProjectCollection;
+    const project = findWebProjectBySlug(collection, slug);
+    if (!collection || !project) {
+      window.history.replaceState(null, "", buildWebProjectListHash());
+      this.openWebProjectListRoute();
+      return;
+    }
+
+    const canonicalHash = buildWebProjectHash(project.slug);
+    if (window.location.hash !== canonicalHash) {
+      window.history.replaceState(null, "", canonicalHash);
+    }
+
+    let draft = null;
+    let draftStatus = "starter";
+    let uiError = null;
+    try {
+      draft = this.webProjectRepository.getDraft(project.id, project.revision);
+      if (draft) {
+        const persistence = this.webProjectRepository.getPersistenceStatus();
+        draftStatus = persistence.isPersistent ? "saved" : "memory";
+      }
+    } catch {
+      draftStatus = "failed";
+      uiError = "저장된 초안을 읽지 못해 초기 코드를 불러왔습니다.";
+    }
+
+    const draftByPath = new Map(
+      (draft?.files ?? []).map((file) => [file.path, file.source]),
+    );
+    const files = project.files.map((file) => ({
+      path: file.path,
+      languageId: file.languageId,
+      source: draftByPath.get(file.path) ?? file.starterSource,
+    }));
+    this.webProjectState = {
+      project,
+      files,
+      activeFilePath: files[0]?.path ?? "index.html",
+      manualAssessments: project.manualCriteria.map((criterion) => ({
+        criterionId: criterion.id,
+        status: "pending",
+        levelId: null,
+      })),
+      isRunning: false,
+      cancelRequested: false,
+      executionMode: null,
+      draftStatus,
+      draftToken: getWebProjectDraftToken(draft),
+      uiError,
+      report: null,
+      reportPersistenceStatus: null,
+      previewSize: "wide",
+    };
+    this.renderWebProject();
+    document.title = `${project.title} · BAM.dev`;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (this.hasRenderedView) this.focusWebProjectTitle();
+    this.hasRenderedView = true;
+  }
+
   handleClick(event) {
+    if (this.handleWebProjectClick(event)) return;
     if (this.handleCodingTestClick(event)) return;
     if (this.handleCodeQuestClick(event)) return;
     if (this.handleQuizClick(event)) return;
@@ -663,6 +866,60 @@ export class BamLearningApp {
   }
 
   handleChange(event) {
+    const webProjectManual = event.target.closest("[data-web-project-manual]");
+    if (
+      webProjectManual &&
+      this.currentView === "web-project" &&
+      this.webProjectState &&
+      !this.webProjectState.isRunning
+    ) {
+      const criterionId = webProjectManual.dataset.webProjectManual;
+      const criterion = this.webProjectState.project.manualCriteria.find(
+        (item) => item.id === criterionId,
+      );
+      const level = criterion?.scale.find(
+        (item) => item.id === webProjectManual.value,
+      );
+      if (!criterion || !level) return;
+
+      this.webProjectState.manualAssessments =
+        this.webProjectState.manualAssessments.map((assessment) =>
+          assessment.criterionId === criterionId
+            ? {
+                criterionId,
+                status: "self_assessed",
+                levelId: level.id,
+              }
+            : assessment,
+        );
+      if (this.webProjectState.report) {
+        const score = scoreWebProject(this.webProjectState.project, {
+          automaticResults: this.webProjectState.report.automaticResults.map(
+            ({ criterionId: resultCriterionId, outcome }) => ({
+              criterionId: resultCriterionId,
+              outcome,
+            }),
+          ),
+          manualAssessments: this.webProjectState.manualAssessments,
+        });
+        this.webProjectState.report = Object.freeze({
+          ...this.webProjectState.report,
+          score,
+        });
+        this.webProjectState.reportPersistenceStatus = null;
+      }
+      this.renderWebProject();
+      window.requestAnimationFrame(() => {
+        const selected = [...document.querySelectorAll("[data-web-project-manual]")].find(
+          (input) =>
+            input.dataset.webProjectManual === criterionId &&
+            input.value === level.id,
+        );
+        selected?.focus({ preventScroll: true });
+      });
+      return;
+    }
+
     const codingTestFilter = event.target.closest("[data-coding-test-filter]");
     if (codingTestFilter && this.currentView === "coding-test-list") {
       const filterName = codingTestFilter.dataset.codingTestFilter;
@@ -699,6 +956,28 @@ export class BamLearningApp {
   }
 
   handleInput(event) {
+    const webProjectEditor = event.target.closest("[data-web-project-source]");
+    const webProjectState = this.webProjectState;
+    if (
+      webProjectEditor &&
+      this.currentView === "web-project" &&
+      webProjectState &&
+      !webProjectState.isRunning
+    ) {
+      const activeFile = webProjectState.files.find(
+        (file) => file.path === webProjectState.activeFilePath,
+      );
+      if (!activeFile) return;
+      activeFile.source = webProjectEditor.value;
+      webProjectState.uiError = null;
+      webProjectState.report = null;
+      webProjectState.reportPersistenceStatus = null;
+      this.scheduleWebProjectDraftSave(webProjectState);
+      this.updateWebProjectDraftFeedback();
+      this.scheduleWebProjectPreviewSync();
+      return;
+    }
+
     const codingTestSearch = event.target.closest("[data-coding-test-search]");
     if (codingTestSearch && this.currentView === "coding-test-list") {
       if (event.isComposing) {
@@ -753,6 +1032,62 @@ export class BamLearningApp {
       highlightViewport.scrollTop = editor.scrollTop;
       highlightViewport.scrollLeft = editor.scrollLeft;
     }
+  }
+
+  handleWebProjectClick(event) {
+    if (this.currentView !== "web-project" || !this.webProjectState) return false;
+
+    const fileTab = event.target.closest("[data-web-project-file-tab]");
+    if (fileTab && !this.webProjectState.isRunning) {
+      const filePath = fileTab.dataset.webProjectFileTab;
+      if (!this.webProjectState.files.some((file) => file.path === filePath)) {
+        return true;
+      }
+      this.webProjectState.activeFilePath = filePath;
+      this.renderWebProject();
+      window.requestAnimationFrame(() => {
+        document.querySelector("[data-web-project-source]")?.focus({
+          preventScroll: true,
+        });
+      });
+      return true;
+    }
+
+    const previewSizeButton = event.target.closest(
+      "[data-web-project-preview-size]",
+    );
+    if (previewSizeButton) {
+      const size = previewSizeButton.dataset.webProjectPreviewSize;
+      if (["narrow", "wide"].includes(size)) {
+        this.webProjectState.previewSize = size;
+        this.renderWebProject();
+        window.requestAnimationFrame(() => {
+          document
+            .querySelector(`[data-web-project-preview-size="${size}"]`)
+            ?.focus({ preventScroll: true });
+        });
+      }
+      return true;
+    }
+
+    if (event.target.closest("[data-web-project-run]")) {
+      void this.executeCurrentWebProject("run");
+      return true;
+    }
+    if (event.target.closest("[data-web-project-submit]")) {
+      void this.executeCurrentWebProject("submit");
+      return true;
+    }
+    const cancelButton = event.target.closest("[data-web-project-cancel]");
+    if (cancelButton) {
+      this.cancelWebProjectRun(cancelButton);
+      return true;
+    }
+    if (event.target.closest("[data-web-project-reset]")) {
+      this.resetWebProjectFiles();
+      return true;
+    }
+    return false;
   }
 
   handleCodingTestClick(event) {
@@ -983,7 +1318,9 @@ export class BamLearningApp {
       status.textContent = getCodeQuestDraftStatusMessage(state.draftStatus);
       status.classList.toggle(
         "is-warning",
-        state.draftStatus === "failed" || state.draftStatus === "memory",
+        state.draftStatus === "failed" ||
+          state.draftStatus === "memory" ||
+          state.draftStatus === "conflict",
       );
     }
     const error = document.querySelector("[data-quest-error]");
@@ -1074,7 +1411,9 @@ export class BamLearningApp {
       status.textContent = getCodingTestDraftStatusMessage(state.draftStatus);
       status.classList.toggle(
         "is-warning",
-        state.draftStatus === "failed" || state.draftStatus === "memory",
+        state.draftStatus === "failed" ||
+          state.draftStatus === "memory" ||
+          state.draftStatus === "conflict",
       );
     }
     const error = document.querySelector("[data-coding-test-error]");
@@ -1201,6 +1540,149 @@ export class BamLearningApp {
     if (isCurrentOwner) this.updateCodingTestDraftFeedback();
   }
 
+  updateWebProjectDraftFeedback() {
+    const state = this.webProjectState;
+    if (!state) return;
+    const status = document.querySelector("[data-web-project-draft-status]");
+    if (status) {
+      status.textContent = getWebProjectDraftStatusMessage(state.draftStatus);
+      status.classList.toggle(
+        "is-warning",
+        state.draftStatus === "failed" ||
+          state.draftStatus === "memory" ||
+          state.draftStatus === "conflict",
+      );
+    }
+    const error = document.querySelector("[data-web-project-error]");
+    if (error) error.textContent = state.uiError ?? "";
+  }
+
+  setWebProjectDraftSaveTimer(callback) {
+    return window.setTimeout(callback, WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS);
+  }
+
+  clearWebProjectDraftSaveTimer(timer) {
+    window.clearTimeout(timer);
+  }
+
+  createWebProjectDraftSaveCoordinator() {
+    return new DraftSaveCoordinator({
+      delayMs: WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS,
+      persist: (pending) => this.persistWebProjectDraft(pending),
+      setTimer: (callback) => this.setWebProjectDraftSaveTimer(callback),
+      clearTimer: (timer) => this.clearWebProjectDraftSaveTimer(timer),
+    });
+  }
+
+  scheduleWebProjectDraftSave(state) {
+    const pending = {
+      owner: state,
+      projectId: state.project.id,
+      projectRevision: state.project.revision,
+      expectedDraftToken: state.draftToken ?? null,
+      files: state.files.map(({ path, source }) => ({ path, source })),
+    };
+    const ownerKey = `web-project:${state.project.id}:${String(state.project.revision)}`;
+    this.webProjectDraftSaveCoordinator.schedule(ownerKey, pending);
+  }
+
+  flushPendingWebProjectDraftSave() {
+    return this.webProjectDraftSaveCoordinator?.flush() ?? false;
+  }
+
+  cancelPendingWebProjectDraftSave() {
+    return this.webProjectDraftSaveCoordinator?.cancel() ?? false;
+  }
+
+  persistWebProjectDraft(pending) {
+    const state = this.webProjectState;
+    const isCurrentOwner =
+      this.currentView === "web-project" &&
+      state === pending.owner &&
+      state?.project.id === pending.projectId &&
+      state?.project.revision === pending.projectRevision;
+    try {
+      const savedDraft = this.webProjectRepository.saveDraft(
+        {
+          projectId: pending.projectId,
+          projectRevision: pending.projectRevision,
+          files: pending.files,
+        },
+        { expectedDraftToken: pending.expectedDraftToken },
+      );
+      const persistence = this.webProjectRepository.getPersistenceStatus();
+      if (isCurrentOwner) {
+        state.draftToken = getWebProjectDraftToken(savedDraft);
+        state.draftStatus = persistence.isPersistent ? "saved" : "memory";
+        state.uiError = null;
+      }
+    } catch (error) {
+      if (isCurrentOwner) {
+        const isConflict = error instanceof WebProjectDraftConflictError;
+        state.draftStatus = isConflict ? "conflict" : "failed";
+        state.uiError = isConflict
+          ? "다른 탭에서 이 과제의 초안이 바뀌었습니다. 현재 편집 내용은 저장하지 않았습니다. 필요한 코드를 복사한 뒤 새로고침해 외부 변경을 불러오세요."
+          : "초안을 저장하지 못했습니다. 편집 중인 코드는 화면에 유지됩니다.";
+      }
+    }
+    if (isCurrentOwner) this.updateWebProjectDraftFeedback();
+  }
+
+  cancelPendingWebProjectPreviewSync() {
+    if (this.webProjectPreviewFrameRequest == null) return false;
+    window.cancelAnimationFrame(this.webProjectPreviewFrameRequest);
+    this.webProjectPreviewFrameRequest = null;
+    return true;
+  }
+
+  scheduleWebProjectPreviewSync() {
+    this.cancelPendingWebProjectPreviewSync();
+    this.webProjectPreviewFrameRequest = window.requestAnimationFrame(() => {
+      this.webProjectPreviewFrameRequest = null;
+      this.syncWebProjectPreview();
+    });
+  }
+
+  syncWebProjectPreview() {
+    const state = this.webProjectState;
+    if (!state || this.currentView !== "web-project") return;
+    const htmlSource =
+      state.files.find((file) => file.languageId === "html")?.source ?? "";
+    const cssSource =
+      state.files.find((file) => file.languageId === "css")?.source ?? "";
+    const preview = createWebProjectPreviewDocument(htmlSource, cssSource);
+    const frame = this.root?.querySelector?.("[data-web-project-preview]");
+    const status = this.root?.querySelector?.("[data-web-project-preview-status]");
+    if (frame) frame.srcdoc = preview.document;
+    if (status) {
+      status.textContent = preview.issue
+        ? `${preview.issue.filePath}: ${preview.issue.message}`
+        : "스크립트와 외부 요청 없이 HTML과 CSS를 결합해 보여 줍니다.";
+      status.classList.toggle("is-warning", preview.issue !== null);
+    }
+  }
+
+  handleExternalWebProjectStorageChange() {
+    const state = this.webProjectState;
+    if (!state || this.currentView !== "web-project") return false;
+    let externalDraft;
+    try {
+      externalDraft = this.webProjectRepository.getDraft(
+        state.project.id,
+        state.project.revision,
+      );
+    } catch {
+      return false;
+    }
+    if (getWebProjectDraftToken(externalDraft) === state.draftToken) return false;
+    this.cancelPendingWebProjectDraftSave();
+    state.draftStatus = "conflict";
+    state.uiError =
+      "다른 탭에서 이 과제의 초안이 바뀌었습니다. 현재 편집 내용은 저장하지 않았습니다. 필요한 코드를 복사한 뒤 새로고침해 외부 변경을 불러오세요.";
+    this.updateWebProjectDraftFeedback();
+    return true;
+  }
+
   revealNextCodeQuestHint() {
     const state = this.codeQuestState;
     if (!state || state.isRunning) return;
@@ -1264,6 +1746,215 @@ export class BamLearningApp {
     window.requestAnimationFrame(() => {
       document.querySelector("[data-coding-test-source]")?.focus({ preventScroll: true });
     });
+  }
+
+  resetWebProjectFiles() {
+    const state = this.webProjectState;
+    if (!state || state.isRunning) return;
+    if (!this.confirmWebProjectReset()) return false;
+    this.cancelPendingWebProjectDraftSave();
+    try {
+      this.webProjectRepository.clearDraft(
+        state.project.id,
+        state.project.revision,
+        { expectedDraftToken: state.draftToken ?? null },
+      );
+      const persistence = this.webProjectRepository.getPersistenceStatus();
+      state.files = state.project.files.map((file) => ({
+        path: file.path,
+        languageId: file.languageId,
+        source: file.starterSource,
+      }));
+      state.activeFilePath = state.files[0]?.path ?? "index.html";
+      state.draftToken = null;
+      state.report = null;
+      state.reportPersistenceStatus = null;
+      state.uiError = null;
+      state.draftStatus = persistence.isPersistent ? "starter" : "memory";
+    } catch (error) {
+      const isConflict = error instanceof WebProjectDraftConflictError;
+      state.draftStatus = isConflict ? "conflict" : "failed";
+      state.uiError = isConflict
+        ? "다른 탭에서 초안이 바뀌어 초기화하지 않았습니다. 새로고침한 뒤 다시 시도해 주세요."
+        : "저장된 초안을 지우지 못해 편집 내용도 초기화하지 않았습니다.";
+      this.updateWebProjectDraftFeedback();
+      return false;
+    }
+    this.renderWebProject();
+    window.requestAnimationFrame(() => {
+      document.querySelector("[data-web-project-source]")?.focus({
+        preventScroll: true,
+      });
+    });
+    return true;
+  }
+
+  confirmWebProjectReset() {
+    if (typeof window.confirm !== "function") return true;
+    return window.confirm(
+      "편집 중인 HTML과 CSS 및 저장된 초안을 모두 초기 코드로 되돌릴까요? 이 작업은 되돌릴 수 없습니다.",
+    );
+  }
+
+  async executeCurrentWebProject(mode) {
+    const state = this.webProjectState;
+    const collection = this.webProjectCollection;
+    if (
+      !state ||
+      !collection ||
+      this.currentView !== "web-project" ||
+      state.isRunning ||
+      !["run", "submit"].includes(mode)
+    ) {
+      return;
+    }
+
+    this.flushPendingWebProjectDraftSave();
+    if (this.executionCoordinator.active) {
+      state.uiError = "이전 평가를 정리하고 있습니다. 잠시 후 다시 시도해 주세요.";
+      this.renderWebProject();
+      return;
+    }
+
+    this.webProjectRequestSequence += 1;
+    const requestId = createWebProjectRequestId(
+      mode,
+      Date.now(),
+      this.webProjectRequestSequence,
+    );
+    const submission = {
+      submissionId: requestId,
+      contractVersion: collection.contractVersion,
+      projectId: state.project.id,
+      projectRevision: state.project.revision,
+      submittedAt: new Date().toISOString(),
+      files: state.files.map(({ path, source }) => ({ path, source })),
+      manualAssessments: state.manualAssessments.map((assessment) => ({
+        ...assessment,
+      })),
+    };
+    const execution = this.executionCoordinator.start({
+      kind: "web-project",
+      requestId,
+      ownerId: `${state.project.id}:${String(state.project.revision)}`,
+      mode,
+    });
+    if (!execution) return;
+
+    state.isRunning = true;
+    state.cancelRequested = false;
+    state.executionMode = mode;
+    state.uiError = null;
+    state.report = null;
+    state.reportPersistenceStatus = null;
+    this.renderWebProject();
+    window.requestAnimationFrame(() => {
+      document.querySelector("[data-web-project-cancel]")?.focus({
+        preventScroll: true,
+      });
+    });
+
+    let report;
+    try {
+      report = await this.webProjectRunner.run(
+        { collection, project: state.project, submission },
+        { signal: execution.signal },
+      );
+    } catch (error) {
+      this.executionCoordinator.finish(execution);
+      if (execution.cancellationReason === "navigation") return;
+      if (this.webProjectState !== state || this.currentView !== "web-project") {
+        return;
+      }
+      state.isRunning = false;
+      state.cancelRequested = false;
+      state.executionMode = null;
+      state.uiError =
+        error instanceof Error ? error.message : "Web Project 평가 결과를 받지 못했습니다.";
+      this.renderWebProject();
+      return;
+    }
+
+    const ownerId = `${state.project.id}:${String(state.project.revision)}`;
+    const ownsExecution =
+      this.executionCoordinator.isActive(execution) &&
+      execution.cancellationReason !== "navigation" &&
+      this.webProjectState === state &&
+      this.currentView === "web-project" &&
+      execution.ownerId === ownerId;
+    if (!ownsExecution) {
+      this.executionCoordinator.finish(execution);
+      return;
+    }
+
+    let reportPersistenceStatus = null;
+    const canRecordSubmission =
+      mode === "submit" &&
+      report.automaticResults.every(({ outcome }) =>
+        ["passed", "failed"].includes(outcome),
+      );
+    if (canRecordSubmission) {
+      reportPersistenceStatus = "saved";
+      try {
+        const canonicalSubmission = createWebProjectSubmission(
+          collection,
+          state.project,
+          {
+            submissionId: submission.submissionId,
+            submittedAt: submission.submittedAt,
+            files: submission.files,
+            manualAssessments: submission.manualAssessments,
+          },
+        );
+        this.webProjectRepository.recordSubmission(
+          canonicalSubmission,
+          report.score,
+        );
+        const persistence = this.webProjectRepository.getPersistenceStatus();
+        reportPersistenceStatus = persistence.isPersistent ? "saved" : "memory";
+      } catch {
+        reportPersistenceStatus = "failed";
+      }
+    } else if (mode === "submit") {
+      const hasInvalidSource = report.automaticResults.some(
+        ({ outcome }) => outcome === "invalid_source",
+      );
+      state.uiError = hasInvalidSource
+        ? "소스 안전 검사를 통과하지 못해 이번 제출은 기록하지 않았습니다."
+        : "평가가 완료되지 않아 이번 제출은 기록하지 않았습니다.";
+    }
+
+    this.executionCoordinator.finish(execution);
+    if (
+      this.webProjectState !== state ||
+      this.currentView !== "web-project" ||
+      execution.ownerId !== ownerId
+    ) {
+      return;
+    }
+    state.isRunning = false;
+    state.cancelRequested = false;
+    state.executionMode = null;
+    state.report = report;
+    state.reportPersistenceStatus = reportPersistenceStatus;
+    this.renderWebProject();
+    this.focusWebProjectResults();
+  }
+
+  cancelWebProjectRun(button) {
+    const state = this.webProjectState;
+    const execution = this.executionCoordinator?.active;
+    if (
+      !state?.isRunning ||
+      execution?.kind !== "web-project" ||
+      execution.signal.aborted
+    ) {
+      return;
+    }
+    state.cancelRequested = true;
+    button.disabled = true;
+    button.textContent = "취소하는 중…";
+    this.executionCoordinator.cancel(execution, "user");
   }
 
   async executeCurrentCodingTest(mode) {
@@ -1572,6 +2263,23 @@ export class BamLearningApp {
     });
   }
 
+  focusWebProjectTitle() {
+    window.requestAnimationFrame(() => {
+      focusMainContent(
+        document.querySelector("#web-project-title") ??
+          document.querySelector("#lesson-content"),
+      );
+    });
+  }
+
+  focusWebProjectResults() {
+    window.requestAnimationFrame(() => {
+      const results = document.querySelector("[data-web-project-results]");
+      results?.scrollIntoView({ behavior: "instant", block: "start" });
+      focusMainContent(results ?? document.querySelector("#lesson-content"));
+    });
+  }
+
   async copyCode(button, code) {
     try {
       await navigator.clipboard.writeText(code);
@@ -1717,6 +2425,10 @@ export class BamLearningApp {
                 }
               : null,
         },
+        {
+          kind: "web-project",
+          options: this.getWebProjectNavigationOptions(false),
+        },
       ],
       mainContent,
     });
@@ -1819,6 +2531,10 @@ export class BamLearningApp {
                   totalCount: codingTestProblems.length,
                 }
               : null,
+        },
+        {
+          kind: "web-project",
+          options: this.getWebProjectNavigationOptions(false),
         },
       ],
       mainContent,
@@ -1935,6 +2651,201 @@ export class BamLearningApp {
                   totalCount: codingTestProblems.length,
                 }
               : null,
+        },
+        {
+          kind: "web-project",
+          options: this.getWebProjectNavigationOptions(false),
+        },
+      ],
+      mainContent,
+    });
+    this.syncMenuState();
+  }
+
+  getWebProjectNavigationOptions(isCurrent = false) {
+    const projects = getWebProjectsInOrder(this.webProjectCollection);
+    if (projects.length === 0) return null;
+    let submissions = [];
+    try {
+      submissions = this.webProjectRepository.listSubmissions();
+    } catch {
+      submissions = [];
+    }
+    const revisionByProjectId = new Map(
+      projects.map((project) => [project.id, project.revision]),
+    );
+    const submittedProjectIds = new Set(
+      submissions
+        .filter(
+          (submission) =>
+            revisionByProjectId.get(submission.projectId) ===
+            submission.projectRevision,
+        )
+        .map((submission) => submission.projectId),
+    );
+    return {
+      href: buildWebProjectListHash(),
+      isCurrent,
+      submittedCount: submittedProjectIds.size,
+      totalCount: projects.length,
+    };
+  }
+
+  getWebProjectShellContext(project = null) {
+    const currentProject =
+      project ?? getWebProjectsInOrder(this.webProjectCollection)[0] ?? null;
+    const referencedLessonIds = new Set(
+      (currentProject?.conceptRefs ?? []).map((reference) => reference.lessonId),
+    );
+    const referencedLesson = this.curriculum?.lessons.find((lesson) =>
+      referencedLessonIds.has(lesson.id),
+    );
+    const language =
+      getLanguage(this.curriculum, referencedLesson?.languageId) ??
+      getLanguage(this.curriculum, DEFAULT_LANGUAGE_ID);
+    const lessons = language
+      ? getLessonsForLanguage(this.curriculum, language.id)
+      : [];
+    return { language, lessons };
+  }
+
+  renderWebProjectList() {
+    const collection = this.webProjectCollection;
+    if (!this.curriculum || !collection) return;
+    const projects = getWebProjectsInOrder(collection);
+    let state;
+    try {
+      state = this.webProjectRepository.getState();
+    } catch {
+      state = { drafts: [], submissions: [] };
+    }
+    const items = projects.map((project) => ({
+      project,
+      href: buildWebProjectHash(project.slug),
+      status: {
+        hasDraft: state.drafts.some(
+          (draft) =>
+            draft.projectId === project.id &&
+            draft.projectRevision === project.revision,
+        ),
+        submissionCount: state.submissions.filter(
+          (submission) =>
+            submission.projectId === project.id &&
+            submission.projectRevision === project.revision,
+        ).length,
+      },
+    }));
+    const mainContent = renderWebProjectListView({
+      title: collection.title,
+      items,
+    });
+    this.renderWebProjectShell(mainContent, projects[0] ?? null);
+  }
+
+  renderWebProject() {
+    const state = this.webProjectState;
+    if (!state || !this.webProjectCollection || !this.curriculum) return;
+    const mainContent = renderWebProjectView({
+      project: state.project,
+      files: state.files,
+      activeFilePath: state.activeFilePath,
+      manualAssessments: state.manualAssessments,
+      isRunning: state.isRunning,
+      cancelRequested: state.cancelRequested,
+      executionMode: state.executionMode,
+      draftStatus: state.draftStatus,
+      report: state.report,
+      reportPersistenceStatus: state.reportPersistenceStatus,
+      uiError: state.uiError,
+      previewSize: state.previewSize,
+    });
+    this.renderWebProjectShell(mainContent, state.project);
+    this.scheduleWebProjectPreviewSync();
+  }
+
+  renderWebProjectShell(mainContent, project) {
+    const { language, lessons } = this.getWebProjectShellContext(project);
+    if (!language || lessons.length === 0) {
+      this.root.innerHTML = mainContent;
+      return;
+    }
+    const progress = this.progressRepository.getProgress();
+    const completedLessonIds = new Set(progress.completedLessonIds);
+    const completedLessonCount = lessons.filter((lesson) =>
+      completedLessonIds.has(lesson.id),
+    ).length;
+    const lessonProgressPercent = Math.round(
+      (completedLessonCount / lessons.length) * 100,
+    );
+    const questCollection = this.codeQuestCollections.get(language.id) ?? null;
+    const quests = getCodeQuestsInOrder(questCollection);
+    const completedQuestCount = quests.filter((quest) =>
+      progress.completedQuestIds.includes(quest.id),
+    ).length;
+    const codingTestProblems =
+      language.id === this.codingTestCollection?.languageId
+        ? getCodingTestProblemsInOrder(this.codingTestCollection)
+        : [];
+    const solvedCodingTestProblemIds =
+      codingTestProblems.length > 0
+        ? this.getSolvedCodingTestProblemIds(progress)
+        : new Set();
+    const firstLessonHref = buildLessonHash(
+      lessons[0].languageId,
+      lessons[0].slug,
+    );
+    this.root.innerHTML = renderAppShell({
+      homeHref: firstLessonHref,
+      menuOpen: this.menuOpen,
+      language,
+      lessonProgress: {
+        completedCount: completedLessonCount,
+        totalCount: lessons.length,
+        percent: lessonProgressPercent,
+      },
+      languageNavigation: renderLanguageNavigation({
+        curriculum: this.curriculum,
+        currentLanguageId: language.id,
+      }),
+      lessonNavigationItems: lessons
+        .map((lesson) =>
+          this.renderLessonLink(lesson, null, completedLessonIds),
+        )
+        .join(""),
+      featureNavigation: [
+        {
+          kind: "review",
+          options: {
+            href: buildReviewHash(language.id),
+            isCurrent: false,
+          },
+        },
+        {
+          kind: "code-quest",
+          options: quests[0]
+            ? {
+                href: buildQuestHash(language.id, quests[0].slug),
+                isCurrent: false,
+                completedCount: completedQuestCount,
+                totalCount: quests.length,
+              }
+            : null,
+        },
+        {
+          kind: "coding-test",
+          options:
+            codingTestProblems.length > 0
+              ? {
+                  href: buildCodingTestListHash(),
+                  isCurrent: false,
+                  solvedCount: solvedCodingTestProblemIds.size,
+                  totalCount: codingTestProblems.length,
+                }
+              : null,
+        },
+        {
+          kind: "web-project",
+          options: this.getWebProjectNavigationOptions(true),
         },
       ],
       mainContent,
@@ -2117,6 +3028,10 @@ export class BamLearningApp {
             solvedCount: solvedProblemIds.size,
             totalCount: problems.length,
           },
+        },
+        {
+          kind: "web-project",
+          options: this.getWebProjectNavigationOptions(false),
         },
       ],
       mainContent,

@@ -40,6 +40,29 @@ test("긴 교안 제목과 인라인 코드가 320px 문서 폭을 늘리지 않
   assert.ok(inlineCodeRule);
   assert.match(lessonTitleRule[1], /overflow-wrap:\s*anywhere/);
   assert.match(inlineCodeRule[1], /overflow-wrap:\s*anywhere/);
+  assert.match(inlineCodeRule[1], /border:\s*1px solid rgba\(239, 98, 98, 0\.22\)/);
+  assert.match(inlineCodeRule[1], /background:\s*rgba\(239, 98, 98, 0\.1\)/);
+  assert.match(inlineCodeRule[1], /color:\s*#ff9fa8/);
+});
+
+test("인라인 코드는 참고 UI의 분홍빛 적색을 쓰고 오류 제목은 물결 밑줄로 구분한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const sharedInlineRule = css.match(/#lesson-content :not\(pre\) > code\s*\{([^}]*)\}/)?.[1] ?? "";
+  const quizInlineRule = css.match(/\.quiz-card :not\(pre\) > code\s*\{([^}]*)\}/)?.[1] ?? "";
+  const questInlineRule = css.match(/\.quest-prose code\s*\{([^}]*)\}/)?.[1] ?? "";
+  const diagnosticRule = css.match(
+    /\.quiz-answer-summary\.is-incorrect h3,[\s\S]*?\.web-project-result-item\.is-engine_error strong\s*\{([^}]*)\}/,
+  )?.[1] ?? "";
+
+  for (const rule of [quizInlineRule, questInlineRule]) {
+    assert.match(rule, /background:\s*rgba\(239, 98, 98, 0\.1\)/);
+    assert.match(rule, /color:\s*#ff9fa8/);
+  }
+  assert.match(sharedInlineRule, /color:\s*#ff9fa8/);
+  assert.match(diagnosticRule, /text-decoration-color:\s*var\(--color-danger\)/);
+  assert.match(diagnosticRule, /text-decoration-line:\s*underline/);
+  assert.match(diagnosticRule, /text-decoration-style:\s*wavy/);
+  assert.match(diagnosticRule, /text-underline-offset:\s*0\.22em/);
 });
 
 test("초기 로딩 상태에서도 본문 바로가기 링크의 대상이 존재한다", async () => {
@@ -324,4 +347,77 @@ test("Code Quest 초안은 get/save/clear API와 비영속 상태를 연결한�
   assert.match(appSource, /draft \? draft\.source : quest\.starterCode/);
   assert.match(appSource, /persistence\.isPersistent \? "saved" : "memory"/);
   assert.match(appSource, /state\.source = editor\.value/);
+});
+
+test("Web Project 작업 공간은 키보드·고대비·320px 반응형 스타일 계약을 유지한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const baseStart = css.indexOf(".web-project-nav {");
+  const desktopMediaStart = css.indexOf("@media (min-width: 1120px)", baseStart);
+  const tabletStart = css.indexOf("@media (max-width: 820px)", desktopMediaStart);
+  const mobileStart = css.indexOf("@media (max-width: 600px)", tabletStart);
+  const narrowStart = css.indexOf("@media (max-width: 360px)", mobileStart);
+  const reducedMotionStart = css.indexOf(
+    "@media (prefers-reduced-motion: reduce)",
+    narrowStart,
+  );
+  const forcedColorsStart = css.indexOf(
+    "@media (forced-colors: active)",
+    reducedMotionStart,
+  );
+
+  assert.ok(baseStart >= 0);
+  assert.ok(desktopMediaStart > baseStart);
+  assert.ok(tabletStart > desktopMediaStart);
+  assert.ok(mobileStart > tabletStart);
+  assert.ok(narrowStart > mobileStart);
+  assert.ok(reducedMotionStart > narrowStart);
+  assert.ok(forcedColorsStart > reducedMotionStart);
+
+  const base = css.slice(baseStart, desktopMediaStart);
+  const tablet = css.slice(tabletStart, mobileStart);
+  const mobile = css.slice(mobileStart, narrowStart);
+  const narrow = css.slice(narrowStart, reducedMotionStart);
+  const reducedMotion = css.slice(reducedMotionStart, forcedColorsStart);
+  const forcedColors = css.slice(forcedColorsStart);
+
+  const workspaceRules = [
+    ...base.matchAll(/\.web-project-workspace\s*\{([^}]*)\}/g),
+  ];
+  const workspaceRule = workspaceRules.find((match) =>
+    match[1].includes("grid-template-columns"),
+  );
+  const sourceRule = base.match(/\.web-project-source\s*\{([^}]*)\}/);
+  const previewRule = base.match(/\.web-project-preview-frame\s*\{([^}]*)\}/);
+  const fileButtonRule = base.match(
+    /\.web-project-file-tab,\s*\.web-project-preview-heading button\s*\{([^}]*)\}/,
+  );
+  assert.ok(workspaceRule);
+  assert.ok(sourceRule);
+  assert.ok(previewRule);
+  assert.ok(fileButtonRule);
+  assert.match(workspaceRule[1], /grid-template-columns:\s*minmax\(210px,[^)]+\)\s+minmax\(0,[^)]+\)/);
+  assert.match(sourceRule[1], /min-width:\s*0/);
+  assert.match(sourceRule[1], /min-height:\s*420px/);
+  assert.match(sourceRule[1], /overflow:\s*auto/);
+  assert.match(sourceRule[1], /white-space:\s*pre/);
+  assert.match(previewRule[1], /max-width:\s*100%/);
+  assert.match(previewRule[1], /overflow:\s*auto/);
+  assert.match(fileButtonRule[1], /min-height:\s*44px/);
+  assert.match(base, /\.web-project-preview-frame\.is-narrow iframe\s*\{[^}]*width:\s*22\.5rem/s);
+  assert.match(base, /\.web-project-preview-frame\.is-wide iframe\s*\{[^}]*width:\s*max\(100%,\s*48rem\)/s);
+  assert.match(base, /\.web-project-file-tab:focus-visible,[\s\S]*\.web-project-results:focus-visible\s*\{/);
+
+  const webProjectPixelFontSizes = [...base.matchAll(/font-size:\s*(\d+)px/g)].map(
+    (match) => Number(match[1]),
+  );
+  assert.ok(webProjectPixelFontSizes.length > 0);
+  assert.ok(webProjectPixelFontSizes.every((size) => size >= 12));
+
+  assert.match(tablet, /\.web-project-workspace\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  assert.match(mobile, /\.web-project-source\s*\{[^}]*min-height:\s*340px/s);
+  assert.match(narrow, /\.web-project-list\s*\{[^}]*grid-template-columns:\s*minmax\(0,\s*1fr\)/s);
+  assert.match(narrow, /\.web-project-list-page,[\s\S]*padding-left:\s*8px/);
+  assert.match(reducedMotion, /\.web-project-link,[\s\S]*transition:\s*none/);
+  assert.match(forcedColors, /\.web-project-source\s*\{[^}]*background:\s*Canvas[^}]*color:\s*CanvasText/s);
+  assert.match(forcedColors, /\.web-project-result-item\s*\{[^}]*border-left-width:\s*4px/s);
 });

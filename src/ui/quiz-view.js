@@ -1,4 +1,8 @@
-import { escapeHtml, renderHighlightedCode } from "./markdown.js";
+import {
+  escapeHtml,
+  renderHighlightedCode,
+  renderInlineCodeText,
+} from "./markdown.js";
 
 const OPTION_MARKERS = ["A", "B", "C", "D"];
 const DIFFICULTY_LABELS = {
@@ -148,10 +152,10 @@ function renderOption(option, index, selectedOptionId, gradedAnswer) {
       <label for="${inputId}">
         <span class="quiz-option-marker" aria-hidden="true">${OPTION_MARKERS[index] ?? index + 1}</span>
         <span class="quiz-option-content">
-          <span class="quiz-option-text">${escapeHtml(option.text)}</span>
+          <span class="quiz-option-text">${renderInlineCodeText(option.text)}</span>
           ${
             feedback
-              ? `<span class="quiz-option-feedback" id="${feedbackId}"><strong>${resultLabel}</strong>${escapeHtml(feedback.message)}</span>`
+              ? `<span class="quiz-option-feedback" id="${feedbackId}"><strong>${resultLabel}</strong>${renderInlineCodeText(feedback.message)}</span>`
               : ""
           }
         </span>
@@ -172,8 +176,8 @@ function renderGradedSummary(question, gradedAnswer) {
   return `
     <section class="quiz-answer-summary ${gradedAnswer.isCorrect ? "is-correct" : "is-incorrect"}" data-quiz-grade-summary tabindex="-1" role="region" aria-labelledby="quiz-answer-summary-title">
       <h3 id="quiz-answer-summary-title">${gradedAnswer.isCorrect ? "정답입니다." : "오답입니다."}</h3>
-      <p><strong>정답</strong> ${escapeHtml(correctOption?.text ?? "정답 정보를 확인할 수 없습니다.")}</p>
-      <p><strong>정답 설명</strong> ${escapeHtml(explanation?.message ?? "정답 해설을 확인할 수 없습니다.")}</p>
+      <p><strong>정답</strong> ${renderInlineCodeText(correctOption?.text ?? "정답 정보를 확인할 수 없습니다.")}</p>
+      <p><strong>정답 설명</strong> ${renderInlineCodeText(explanation?.message ?? "정답 해설을 확인할 수 없습니다.")}</p>
     </section>
   `;
 }
@@ -215,7 +219,7 @@ export function renderQuizQuestionView({
 
         <section class="quiz-card" aria-labelledby="quiz-question-title">
           <p class="quiz-question-meta">${difficulty} 문제 · ${safeIndex + 1}/${safeTotal}</p>
-          <h2 id="quiz-question-title" tabindex="-1">${escapeHtml(question?.prompt ?? "문제를 불러오지 못했습니다.")}</h2>
+          <h2 id="quiz-question-title" tabindex="-1">${renderInlineCodeText(question?.prompt ?? "문제를 불러오지 못했습니다.")}</h2>
           ${renderQuestionCode(question?.code, languageId, languageName)}
 
           <form class="quiz-form" data-quiz-form>

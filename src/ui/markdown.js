@@ -7,6 +7,19 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+export function renderInlineCodeText(value) {
+  const text = String(value ?? "");
+  const pattern = /`([^`\n]+)`/gu;
+  let output = "";
+  let cursor = 0;
+  for (const match of text.matchAll(pattern)) {
+    output += escapeHtml(text.slice(cursor, match.index));
+    output += `<code>${escapeHtml(match[1])}</code>`;
+    cursor = match.index + match[0].length;
+  }
+  return output + escapeHtml(text.slice(cursor));
+}
+
 const JAVASCRIPT_TOKEN_PATTERNS = [
   { type: "comment", expression: /\/\/[^\n]*|\/\*[\s\S]*?(?:\*\/|$)/y },
   { type: "string", expression: /"(?:\\[\s\S]|[^"\\\n])*"?/y },

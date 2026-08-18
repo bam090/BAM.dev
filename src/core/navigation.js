@@ -20,6 +20,14 @@ export function buildCodingTestHash(languageId, slug) {
   return `#/coding-tests/${encodeURIComponent(languageId)}/${encodeURIComponent(slug)}`;
 }
 
+export function buildWebProjectListHash() {
+  return "#/web-projects";
+}
+
+export function buildWebProjectHash(slug) {
+  return `#/web-projects/${encodeURIComponent(slug)}`;
+}
+
 export function parseLessonHash(hash) {
   const cleanHash = String(hash ?? "").replace(/^#/, "");
   const match = cleanHash.match(/^\/learn\/([^/]+)\/([^/]+)\/?$/);
@@ -74,6 +82,23 @@ export function parseCodingTestHash(hash) {
       kind: "problem",
       languageId: decodeURIComponent(match[1]),
       slug: decodeURIComponent(match[2]),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function parseWebProjectHash(hash) {
+  const cleanHash = String(hash ?? "").replace(/^#/, "");
+  if (/^\/web-projects\/?$/.test(cleanHash)) return { kind: "list" };
+
+  const match = cleanHash.match(/^\/web-projects\/([^/]+)\/?$/);
+  if (!match) return null;
+
+  try {
+    return {
+      kind: "project",
+      slug: decodeURIComponent(match[1]),
     };
   } catch {
     return null;

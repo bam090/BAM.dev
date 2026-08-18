@@ -2,11 +2,13 @@ import { escapeHtml } from "./markdown.js";
 import { renderReviewNavigationLink } from "./quiz-view.js";
 import { renderCodeQuestNavigationLink } from "./code-quest-view.js";
 import { renderCodingTestNavigationLink } from "./coding-test-view.js";
+import { renderWebProjectNavigationLink } from "./web-project-view.js";
 
 const FEATURE_NAVIGATION_RENDERERS = Object.freeze({
   review: renderReviewNavigationLink,
   "code-quest": renderCodeQuestNavigationLink,
   "coding-test": renderCodingTestNavigationLink,
+  "web-project": renderWebProjectNavigationLink,
 });
 
 function normalizeCount(value) {
@@ -26,7 +28,7 @@ function renderFeatureNavigation(features) {
         if (feature.options === null) return "";
         return FEATURE_NAVIGATION_RENDERERS[kind](feature.options);
       }
-      return typeof feature?.content === "string" ? feature.content : "";
+      return "";
     })
     .filter(Boolean)
     .join("");

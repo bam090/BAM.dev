@@ -23,6 +23,62 @@ test("MemoryStorage는 Web Storage처럼 문자열을 저장하고 영구 저장
 
   storage.removeItem("count");
   assert.equal(storage.getItem("count"), null);
+  assert.deepEqual(storage.keys(), []);
+});
+
+test("브라우저 저장소 wrapper는 키 열거와 개별 삭제를 지원한다", () => {
+  const values = new Map();
+  const primaryStorage = {
+    get length() {
+      return values.size;
+    },
+    key(index) {
+      return [...values.keys()][index] ?? null;
+    },
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+  };
+  const storage = createBrowserStorage({ localStorage: primaryStorage });
+
+  storage.setItem("draft.one", "1");
+  storage.setItem("submission.one", "2");
+  assert.deepEqual(storage.keys().sort(), ["draft.one", "submission.one"]);
+
+  storage.removeItem("draft.one");
+  assert.deepEqual(storage.keys(), ["submission.one"]);
+  assert.equal(storage.getItem("draft.one"), null);
+  assert.equal(storage.isPersistent(), true);
+});
+
+test("키 열거 API가 없어도 사용 가능한 primary 읽기·쓰기를 포기하지 않는다", () => {
+  const values = new Map([
+    ["manifest", "record.one"],
+    ["record.one", "persisted"],
+  ]);
+  const primaryStorage = {
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    setItem(key, value) {
+      values.set(key, String(value));
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+  };
+  const storage = createBrowserStorage({ localStorage: primaryStorage });
+
+  assert.equal(storage.getItem("manifest"), "record.one");
+  assert.deepEqual(storage.keys(), ["manifest"]);
+  assert.equal(storage.getItem("record.one"), "persisted");
+  assert.equal(storage.isPersistent(), true);
 });
 
 test("브라우저 저장소 접근이 차단되면 메모리 저장소로 계속 동작한다", () => {
@@ -76,5 +132,8 @@ test("정상 저장 뒤 localStorage 읽기가 차단되어도 마지막 값을 
   blocked = true;
 
   assert.equal(storage.getItem("progress"), "persisted");
+  assert.deepEqual(storage.keys(), ["progress"]);
+  storage.removeItem("progress");
+  assert.deepEqual(storage.keys(), []);
   assert.equal(storage.isPersistent(), false);
 });

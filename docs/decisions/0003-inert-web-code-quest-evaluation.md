@@ -28,12 +28,14 @@ doctype은 source 첫 선언의 모양과 `DOMParser.parseFromString(source, "te
 - `selector-count`
 - `attribute-equals`
 - `text-includes`
+- `nonblank-attribute-count`
+- `direct-child-text-equals`
 
-`template.content`는 BAM.dev 주 문서에 연결하지 않습니다. 학습자 HTML의 스크립트는 실행하지 않고 선택자·개수·속성·정규화한 텍스트처럼 선언된 구조만 관찰합니다. HTML 파서의 오류 복구 때문에 이 평가를 포괄적인 HTML 유효성 검사로 표현하지 않습니다.
+`template.content`는 BAM.dev 주 문서에 연결하지 않습니다. 학습자 HTML의 스크립트는 실행하지 않고 선택자·개수·속성·정규화한 텍스트처럼 선언된 구조만 관찰합니다. 공백 속성은 trim한 뒤 세고, 직접 자식 텍스트 검사는 지정한 서로 다른 자식과 단 하나의 직접 텍스트 요소를 연결하며 `hidden`·`aria-hidden` 텍스트를 제외합니다. HTML 파서의 오류 복구 때문에 이 평가를 포괄적인 HTML 유효성 검사로 표현하지 않습니다.
 
 ## CSS 평가
 
-CSS 선언 검사는 constructed `CSSStyleSheet.replaceSync()`로 만든 CSSOM을 사용합니다. `rule-declaration`은 최상위의 정확한 선택자 규칙들에서 요구한 선언의 존재를, `media-rule-declaration`은 최상위의 정규화한 미디어 조건과 그 직접 자식 규칙들에서 요구한 선언의 존재를 확인합니다. 따라서 같은 선언을 미디어 조건 밖에 두거나 다른 조건부 그룹의 비활성 분기 안에 중첩한 반응형 오답은 통과하지 않습니다. 이 두 검사는 전체 캐스케이드 승자를 흉내 내지 않으며 우선순위·상속까지 적용된 결과가 필요하면 `computed-style`을 사용합니다.
+CSS 선언 검사는 constructed `CSSStyleSheet.replaceSync()`로 만든 CSSOM을 사용합니다. `rule-declaration`은 최상위의 정확한 선택자 규칙들에서 `!important`와 source order를 반영한 최종 같은-selector 선언을, `media-rule-declaration`은 최상위의 정규화한 미디어 조건과 그 직접 자식 규칙들에서 같은 값을 확인합니다. 따라서 같은 선언을 미디어 조건 밖에 두거나 다른 조건부 그룹의 비활성 분기 안에 중첩한 반응형 오답은 통과하지 않습니다. 이 두 검사는 서로 다른 selector의 전체 캐스케이드 승자를 흉내 내지 않으며 우선순위·상속까지 적용된 결과가 필요하면 `computed-style`을 사용합니다.
 
 `computed-style`은 다음 one-shot iframe에서 확인합니다.
 
@@ -42,13 +44,13 @@ CSS 선언 검사는 constructed `CSSStyleSheet.replaceSync()`로 만든 CSSOM�
 3. 위험 source 검사를 통과한 콘텐츠의 고정 HTML fixture와 학습자 `<style>`만 삽입합니다.
 4. 대상 요소의 `getComputedStyle()` 값을 읽고 iframe을 제거합니다.
 
-fixture는 최대 UTF-8 32 KiB이고 문제 콘텐츠·실행 요청 양쪽에서 다시 검사합니다. CSSOM과 계산 스타일이 색상·공백 같은 값을 정규화할 수 있으므로 같은 브라우저가 정규화한 기대값과 비교합니다.
+`computed-focus-style`은 같은 iframe에서 키보드 입력 요소로 `:focus-visible` 상태를 먼저 만들고 대상에 초점을 옮긴 뒤 `getComputedStyle()` 값을 읽습니다. 따라서 더 구체적인 selector나 `!important`가 요구 초점선을 지우면 실패합니다. fixture는 최대 UTF-8 32 KiB이고 문제 콘텐츠·실행 요청 양쪽에서 다시 검사합니다. CSSOM과 계산 스타일이 색상·공백 같은 값을 정규화할 수 있으므로 같은 브라우저가 정규화한 기대값과 비교합니다.
 
 ## source preflight
 
 HTML·CSS starter code, 작성 예시, 기준 답안·대표 오답, CSS fixture와 학습자 source에는 같은 보수적 preflight를 적용합니다. 학습자 source는 UTF-8 20 KiB, 한 요청의 공개 테스트는 최대 20개입니다.
 
-- HTML은 null 문자, `script`·`iframe`·`object`·`embed`, `base`·`link`, meta refresh, `on*` 이벤트 속성, `src`·`srcset`·`poster`·`data`·`action`·`formaction`, 외부 URL·`@import`·`url()`을 거부합니다.
+- HTML은 null 문자, 브라우저가 다르게 복구할 수 있는 비정상·미종료 주석, `script`·`iframe`·`object`·`embed`, `base`·`link`, 문자 참조 우회를 포함한 meta refresh, `on*` 이벤트 속성, `src`·`srcset`·`poster`·`data`·`action`·`formaction`·`ping`, 외부 URL·`@import`·`url()`을 거부합니다. `href`·`xlink:href`는 같은 문서의 `#fragment`만 허용합니다.
 - CSS는 null 문자, `@import`, `url()`, 외부 URL, `expression`, `behavior`, `-moz-binding`을 거부합니다.
 
 preflight를 통과하지 못한 source는 DOM·CSS 평가 어댑터를 호출하기 전에 거부합니다. 모든 검사 assertion과 기대값은 정적 콘텐츠로 브라우저에 전달하며 전부 공개 테스트입니다.

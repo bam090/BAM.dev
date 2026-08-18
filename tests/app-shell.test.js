@@ -83,19 +83,26 @@ test("기능 내비게이션 DTO는 순서와 빈 슬롯을 보존하며 Web Pro
       },
       {
         kind: "web-project",
-        content: '<nav data-feature="web-project">Web Project</nav>',
+        options: {
+          href: "#/web-projects",
+          isCurrent: false,
+          submittedCount: 1,
+          totalCount: 2,
+        },
       },
+      { kind: "unknown", content: '<script data-feature="unsafe"></script>' },
     ],
   });
 
   const reviewIndex = html.indexOf('class="review-nav"');
   const codingTestIndex = html.indexOf('class="coding-test-nav"');
-  const webProjectIndex = html.indexOf('data-feature="web-project"');
+  const webProjectIndex = html.indexOf('class="web-project-nav"');
 
   assert.ok(reviewIndex >= 0);
   assert.ok(codingTestIndex > reviewIndex);
   assert.ok(webProjectIndex > codingTestIndex);
   assert.doesNotMatch(html, /class="quest-nav"/);
+  assert.doesNotMatch(html, /data-feature="unsafe"/);
 });
 
 test("공통 셸은 표시 문자열과 퍼센트를 안전한 값으로 정규화한다", () => {
