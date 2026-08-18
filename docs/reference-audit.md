@@ -26,11 +26,32 @@
 
 객관식 문제는 원본에 완성된 정답 데이터가 없어 2차에서 별도 스키마로 작성했으며, 교안 근거·코드 실행 결과·모든 오답 설명을 독립 검증했습니다. Code Quest 5개도 3차에서 교안 개념을 바탕으로 새로 작성했습니다. 외부 문제의 문구·입출력·테스트를 복사하지 않았으며, 별도 콘텐츠 계약과 기준 풀이·대표 오답 fixture로 공개 테스트와 추가 경계를 독립 검증했습니다.
 
-## 확장 검증 샘플
+## HTML·CSS 정식 확장
 
-- 새 프로젝트 작성본: `content/lessons/html/document-structure-and-semantics.md`, `content/lessons/css/cascade-and-box-model.md`, `content/lessons/java/types-and-methods.md`와 언어별 객관식 파일
-- 범위: HTML·CSS·Java 교안과 객관식 각 1개
-- 원칙: 외부 교안이나 문제를 복사하지 않고 각 표준 문서를 근거로 프로젝트에서 새로 작성
+- 새 프로젝트 작성본: `content/lessons/html/` 교안 5개, `content/lessons/css/` 교안 6개, 언어별 객관식 각 12문항과 Code Quest HTML 5개·CSS 4개
+- 검증 fixture: HTML 기준 답안 5개·대표 오답 5개, CSS 기준 답안 4개·대표 오답 10개
+- 원칙: 외부 교안이나 문제의 문구·입출력·테스트를 복사하지 않고 교안에 명시한 표준과 접근성 가이드를 근거로 프로젝트에서 새로 작성
 - 공식문서 확인 기록일: 2026-08-18
 
-HTML 샘플은 [WHATWG HTML Standard의 sections](https://html.spec.whatwg.org/multipage/sections.html), CSS 샘플은 [CSS Cascading and Inheritance Level 5](https://www.w3.org/TR/css-cascade-5/), [CSS Box Model Level 3](https://www.w3.org/TR/css-box-3/), [CSS Box Sizing Level 3](https://www.w3.org/TR/css-sizing-3/)을 확인했습니다. Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했습니다. Java 코드를 브라우저에서 실행하거나 채점했다고 표현하지 않으며, 이번 게이트는 공통 콘텐츠·평가 계약만 검증합니다.
+HTML 교안은 다음 범위의 링크를 각 문서 끝에 직접 기록했습니다.
+
+- 문법·DOM·문서 구조: [WHATWG HTML 문법](https://html.spec.whatwg.org/multipage/syntax.html), [DOM과 의미](https://html.spec.whatwg.org/multipage/dom.html), [section과 landmark 요소](https://html.spec.whatwg.org/multipage/sections.html)
+- 텍스트·링크·데이터 구조: [WHATWG 링크](https://html.spec.whatwg.org/multipage/links.html), [이미지와 대체 텍스트](https://html.spec.whatwg.org/multipage/images.html), [목록](https://html.spec.whatwg.org/multipage/grouping-content.html), [표](https://html.spec.whatwg.org/multipage/tables.html)
+- 폼·검토: [WHATWG 폼](https://html.spec.whatwg.org/multipage/forms.html), [입력 요소](https://html.spec.whatwg.org/multipage/input.html), [HTML 파싱](https://html.spec.whatwg.org/multipage/parsing.html)
+- 접근성 관찰: [W3C WAI 링크 목적](https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html), [이미지 대체 텍스트 결정 트리](https://www.w3.org/WAI/tutorials/images/decision-tree/), [표 머리글](https://www.w3.org/WAI/tutorials/tables/two-headers/), [폼 레이블](https://www.w3.org/WAI/tutorials/forms/labels/), [기초 접근성 점검](https://www.w3.org/WAI/test-evaluate/preliminary/)
+
+CSS 교안은 다음 범위의 W3C 표준과 MDN 학습 자료를 교차 확인했습니다.
+
+- 규칙·선택자·값·캐스케이드: [Selectors Level 4](https://www.w3.org/TR/selectors-4/#structure), [CSS Cascading and Inheritance Level 5](https://www.w3.org/TR/css-cascade-5/), [CSS Values and Units Level 4](https://www.w3.org/TR/css-values-4/), [MDN 기본 선택자](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors)
+- 박스·흐름·배치: [CSS Box Model Level 3](https://www.w3.org/TR/css-box-3/), [CSS Display Level 3](https://www.w3.org/TR/css-display-3/), [CSS Overflow Level 3](https://www.w3.org/TR/css-overflow-3/), [CSS Positioned Layout Level 3](https://www.w3.org/TR/css-position-3/), [Flexbox Level 1](https://www.w3.org/TR/css-flexbox-1/), [Grid Level 2](https://www.w3.org/TR/css-grid-2/)
+- 반응형·상태·동작·계산값: [Media Queries Level 5](https://www.w3.org/TR/mediaqueries-5/), [CSS Transitions Level 1](https://www.w3.org/TR/css-transitions-1/), [CSS Transforms Level 1](https://www.w3.org/TR/css-transforms-1/), [CSS Animations Level 1](https://www.w3.org/TR/css-animations-1/), [CSSOM `getComputedStyle()`](https://www.w3.org/TR/cssom-1/#dom-window-getcomputedstyle), [MDN 반응형 웹 디자인](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design), [MDN `prefers-reduced-motion`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion)
+
+HTML·CSS 객관식과 Quest는 위 교안의 안정적인 `lessonId`·`conceptId`에 연결해 새로 작성했습니다. 기준 답안과 대표 오답도 프로젝트 로컬 fixture이며 외부 문제의 답안이나 테스트를 복제하지 않았습니다. 브라우저에 내려가는 구조·스타일 assertion은 모두 공개 검사입니다.
+
+## Java 확장 검증 샘플
+
+- 새 프로젝트 작성본: `content/lessons/java/types-and-methods.md`와 Java 객관식 1문항
+- 범위: 공통 교안·객관식 계약의 언어 독립성을 유지하는 읽기·추론 샘플
+- 공식문서 확인 기록일: 2026-08-18
+
+Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했습니다. Java 코드를 브라우저에서 실행하거나 채점했다고 표현하지 않으며, Java 정식 과정과 격리 채점기는 7차 범위입니다.

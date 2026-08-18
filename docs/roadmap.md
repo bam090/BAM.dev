@@ -8,10 +8,12 @@
 | 3차 JavaScript Code Quest | 완료 | 5개 Quest, 코드 편집·초안 복원, 공개 테스트 실행, 오류·실패 설명, 단계별 힌트, 완료 저장 |
 | 확장 검증 게이트 | 완료 | HTML·CSS·Java 교안·객관식 샘플 각 1개, 언어 전환, 공통 스키마·라우팅 검증 |
 | 4차 JavaScript 코딩테스트 | 완료 | 6문제, 검색·4종 필터, 반응형 분할 풀이, 공개 테스트 실행·제출, 초안·풀이 저장 |
-| 5차 HTML·CSS 정식 확장 | 예정 | 학습, 객관식, Quest |
+| 5차 HTML·CSS 정식 확장 | 완료 | HTML 5·CSS 6개 교안, 언어별 객관식 12문항, 직접 소스 Quest HTML 5·CSS 4개 |
 | 6차 Web Project | 예정 | 제출, 자동/수동 평가 분리, 부분 점수 |
 | 7차 Java 정식 확장 | 예정 | 격리 채점기 포함 전체 학습 흐름 |
 | 8차 Supabase·마이페이지 | 예정 | 인증, RLS, 진도 마이그레이션, 기록 |
 | 9차 학습 튜터 | 예정 | 교안·코드 근거 응답과 단계별 힌트 |
 
-0~3차는 `codex/js-foundation`에서 통합 검증한 뒤 `dev`에 병합했습니다. 확장 검증 게이트에서는 HTML·CSS·Java 샘플을 같은 콘텐츠·객관식 계약과 언어 라우팅으로 제공할 수 있음을 확인했습니다. 4차는 `codex/javascript-coding-test`에서 별도 콘텐츠·진도 계약으로 구현했으며, 다음 단계는 HTML·CSS 정식 확장입니다.
+0~3차는 `codex/js-foundation`에서 통합 검증한 뒤 `dev`에 병합했습니다. 확장 검증 게이트에서는 HTML·CSS·Java 샘플을 같은 콘텐츠·객관식 계약과 언어 라우팅으로 제공할 수 있음을 확인했고, 4차는 `codex/javascript-coding-test`에서 별도 콘텐츠·진도 계약으로 구현했습니다.
+
+5차에서는 HTML과 CSS를 `available` 정식 과정으로 전환했습니다. HTML은 직접 마크업을 inert DOM·doctype으로, CSS는 직접 스타일시트를 고정된 안전 HTML fixture와 CSSOM·미디어 규칙·계산 스타일로 평가합니다. JavaScript 함수를 JavaScript로 감싼 기존 계약을 HTML·CSS에 재사용하지 않으며, 브라우저에 전달되는 검사는 모두 공개 테스트입니다. 전체 콘텐츠 검증, 357개 자동 테스트, 정적 빌드와 HTML·CSS 실제 브라우저 smoke를 통과했습니다. 다음 제품 단계는 6차 Web Project입니다.

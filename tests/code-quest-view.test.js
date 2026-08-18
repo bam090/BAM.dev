@@ -238,6 +238,41 @@ test("리포트와 오류의 동적 문자열을 escape하고 비영속 안내�
   assert.match(html, /data-quest-error role="alert"/);
 });
 
+test("Quest 설명 prose는 백틱을 안전한 인라인 코드로 렌더링한다", () => {
+  const inlineQuest = structuredClone(quest);
+  inlineQuest.summary = "`summaryCode`와 <strong>요약</strong>";
+  inlineQuest.instructions =
+    "`calculateDeliveryFee(orderTotal, destination, hasMembership)`와 `destination`을 확인하세요.";
+  inlineQuest.functionContract.parameters[0].description = "`orderTotal`은 <img src=x> 금액입니다.";
+  inlineQuest.functionContract.returns.description = "`number`를 반환합니다.";
+  inlineQuest.functionContract.constraints = ["`orderTotal >= 0`을 만족합니다."];
+  inlineQuest.examples[0].explanation = "결과는 `0`입니다.";
+  inlineQuest.hints[0].title = "`if` 조건";
+  inlineQuest.hints[0].content = "`destination === \"island\"`를 먼저 관찰하세요.";
+  inlineQuest.failureExplanations[0].message = "`>=` 경계와 <iframe src=x>를 확인하세요.";
+
+  const html = render({
+    quest: inlineQuest,
+    visibleHintCount: 1,
+    report: createReport("wrong_answer"),
+  });
+
+  assert.match(
+    html,
+    /<code>calculateDeliveryFee\(orderTotal, destination, hasMembership\)<\/code>/,
+  );
+  assert.match(html, /<code>destination<\/code>/);
+  assert.match(html, /<code>orderTotal &gt;= 0<\/code>/);
+  assert.match(html, /<code>destination === &quot;island&quot;<\/code>/);
+  assert.match(html, /<code>&gt;=<\/code>/);
+  assert.doesNotMatch(html, /`calculateDeliveryFee|`destination`|`orderTotal &gt;= 0`/);
+  assert.doesNotMatch(html, /<(?:img|iframe)(?:\s|>)/);
+  assert.doesNotMatch(html, /<strong>요약<\/strong>/);
+  assert.match(html, /&lt;strong&gt;요약&lt;\/strong&gt;/);
+  assert.match(html, /&lt;img src=x&gt;/);
+  assert.match(html, /&lt;iframe src=x&gt;/);
+});
+
 test("초안 저장 상태 문구와 이전·다음 Quest 링크를 렌더링한다", () => {
   const html = render({
     draftStatus: "failed",
@@ -255,4 +290,62 @@ test("초안 저장 상태 문구와 이전·다음 Quest 링크를 렌더링한
   assert.match(html, /&quot; bad=&quot;x/);
   assert.match(html, /이전 &lt;Quest&gt;/);
   assert.match(html, /다음 Quest/);
+});
+
+test("HTML Quest는 함수 계약 대신 직접 마크업 요구사항과 비실행 구조 검사를 안내한다", () => {
+  const htmlQuest = {
+    ...quest,
+    entryPoint: undefined,
+    functionContract: undefined,
+    requirements: ["main 요소 안에 <h1>을 작성합니다."],
+    examples: [
+      {
+        source: '<main><h1 class="title">안녕</h1></main>',
+        explanation: "문서의 핵심 제목을 main 안에 둡니다.",
+      },
+    ],
+  };
+  const html = render({
+    languageName: "HTML",
+    evaluationKind: "html-dom-v1",
+    quest: htmlQuest,
+    source: '</textarea><script>bad()</script>',
+  });
+
+  assert.match(html, /공개 검사 요구사항/);
+  assert.match(html, /HTML 마크업/);
+  assert.match(html, /코드를 동작시키지 않고 공개된 문서 구조 검사만 수행/);
+  assert.match(html, /&lt;main&gt;&lt;h1 class=&quot;title&quot;&gt;안녕/);
+  assert.match(html, /main 요소 안에 &lt;h1&gt;을 작성합니다/);
+  assert.doesNotMatch(html, /함수 계약|함수 코드/);
+  assert.doesNotMatch(html, /<script>/);
+});
+
+test("CSS Quest는 제공 HTML을 escape해 보여 주고 직접 스타일시트 검사를 안내한다", () => {
+  const cssQuest = {
+    ...quest,
+    entryPoint: undefined,
+    functionContract: undefined,
+    requirements: [".card의 display를 grid로 지정합니다."],
+    fixtureHtml: '<article class="card"><img src=x onerror=bad()></article>',
+    examples: [
+      {
+        source: ".card { display: grid; }",
+        explanation: "카드를 그리드 컨테이너로 만듭니다.",
+      },
+    ],
+  };
+  const html = render({
+    languageName: "CSS",
+    evaluationKind: "css-style-v1",
+    quest: cssQuest,
+    source: ".card { display: grid; }",
+  });
+
+  assert.match(html, /CSS 스타일시트/);
+  assert.match(html, /제공 HTML/);
+  assert.match(html, /고정 HTML에 적용해 공개된 규칙·스타일 검사만 수행/);
+  assert.match(html, /&lt;article class=&quot;card&quot;&gt;&lt;img src=x onerror=bad\(\)&gt;/);
+  assert.match(html, /\.card \{ display: grid; \}/);
+  assert.doesNotMatch(html, /<article class="card">|<img src=x/);
 });

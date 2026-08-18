@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { BamLearningApp } from "../src/app.js";
+import {
+  BamLearningApp,
+  loadAvailableCodeQuestCollectionsSafely,
+} from "../src/app.js";
 
 const curriculum = JSON.parse(
   await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
@@ -49,6 +52,9 @@ function createRouteHarness(curriculumOverride = curriculum) {
     async openReviewRoute(languageId) {
       opened.push({ view: "review", languageId });
     },
+    async openCodeQuestRoute(languageId, slug) {
+      opened.push({ view: "quest", languageId, slug });
+    },
     async openLessonRoute() {
       opened.push({ view: "lesson" });
     },
@@ -56,7 +62,7 @@ function createRouteHarness(curriculumOverride = curriculum) {
   return { app, opened };
 }
 
-test("sample 언어의 객관식 해시를 JavaScript로 되돌리지 않고 연다", async (t) => {
+test("탐색 가능한 언어의 객관식 해시를 JavaScript로 되돌리지 않고 연다", async (t) => {
   const replacements = installWindow(t, "#/review/html");
   const { app, opened } = createRouteHarness();
 
@@ -64,6 +70,45 @@ test("sample 언어의 객관식 해시를 JavaScript로 되돌리지 않고 연
 
   assert.deepEqual(opened, [{ view: "review", languageId: "html" }]);
   assert.deepEqual(replacements, []);
+});
+
+test("HTML·CSS 정식 언어의 Code Quest 해시를 해당 언어로 연다", async (t) => {
+  const replacements = installWindow(t, "#/quest/html/document-structure");
+  const { app, opened } = createRouteHarness();
+
+  await app.openRoute();
+
+  assert.deepEqual(opened, [
+    { view: "quest", languageId: "html", slug: "document-structure" },
+  ]);
+  assert.deepEqual(replacements, []);
+});
+
+test("샘플 언어의 Code Quest 해시는 기본 JavaScript 교안으로 복귀한다", async (t) => {
+  const replacements = installWindow(t, "#/quest/java/types-and-methods");
+  const { app, opened } = createRouteHarness();
+
+  await app.openRoute();
+
+  assert.deepEqual(opened, [{ view: "lesson" }]);
+  assert.deepEqual(replacements, ["#/learn/javascript/javascript-and-runtime"]);
+});
+
+test("사용 가능한 Code Quest 컬렉션을 병렬 로드하고 언어별 실패를 격리한다", async () => {
+  const calls = [];
+  const collections = await loadAvailableCodeQuestCollectionsSafely(
+    curriculum,
+    async (languageId) => {
+      calls.push(languageId);
+      if (languageId === "css") throw new Error("CSS fixture failure");
+      return { languageId, quests: [] };
+    },
+  );
+
+  assert.deepEqual(new Set(calls), new Set(["javascript", "html", "css"]));
+  assert.deepEqual([...collections.keys()].sort(), ["html", "javascript"]);
+  assert.equal(collections.get("html").languageId, "html");
+  assert.equal(collections.has("css"), false);
 });
 
 test("등록되지 않은 객관식 언어는 기본 JavaScript 교안으로 안전하게 복귀한다", async (t) => {

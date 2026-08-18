@@ -14,17 +14,17 @@
       "id": "html",
       "name": "HTML",
       "shortName": "HTML",
-      "status": "sample",
+      "status": "available",
       "accent": "html",
-      "description": "문서의 의미와 구조를 설계합니다."
+      "description": "문서 구조부터 링크·콘텐츠·접근 가능한 폼까지 설계합니다."
     },
     {
       "id": "css",
       "name": "CSS",
       "shortName": "CSS",
-      "status": "sample",
+      "status": "available",
       "accent": "css",
-      "description": "레이아웃과 반응형 표현을 익힙니다."
+      "description": "선택자와 박스 모델부터 레이아웃·반응형 표현까지 익힙니다."
     },
     {
       "id": "java",
@@ -179,30 +179,203 @@
       "essentialQuestion": "화면 모양이 아니라 콘텐츠의 역할을 HTML 구조로 어떻게 설명할까요?",
       "objectives": [
         "HTML 문서의 기본 구조를 자신의 말로 설명할 수 있습니다.",
+        "요소와 속성이 DOM 트리를 만드는 관계를 읽을 수 있습니다.",
         "header, nav, main, section의 역할을 구분할 수 있습니다.",
-        "콘텐츠의 의미를 먼저 관찰한 뒤 적절한 요소를 선택할 수 있습니다."
+        "제목 구조와 콘텐츠의 의미를 먼저 관찰한 뒤 적절한 요소를 선택할 수 있습니다."
       ],
-      "estimatedMinutes": 20,
-      "conceptIds": ["html.document-structure", "html.semantics"],
+      "estimatedMinutes": 45,
+      "conceptIds": ["html.document-structure", "html.semantics", "html.language-role", "html.elements-attributes", "html.dom-tree", "html.heading-structure"],
       "contentFile": "content/lessons/html/document-structure-and-semantics.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "html-02-text-links",
+      "languageId": "html",
+      "order": 2,
+      "slug": "text-and-links",
+      "title": "텍스트 의미와 링크",
+      "summary": "텍스트의 역할을 요소로 표현하고 예측 가능한 링크 목적지를 설계합니다.",
+      "essentialQuestion": "글의 의미와 이동 목적을 HTML만으로 어떻게 분명하게 전달할까요?",
+      "objectives": [
+        "제목, 문단, 강조 요소가 표현하는 텍스트의 역할을 구분할 수 있습니다.",
+        "링크의 href와 링크 문구가 함께 이동 목적을 설명하도록 작성할 수 있습니다.",
+        "상대 URL, 절대 URL, 문서 조각 URL을 상황에 맞게 선택할 수 있습니다.",
+        "새 창 링크가 필요한지 판단하고 필요한 안내를 제공할 수 있습니다."
+      ],
+      "estimatedMinutes": 45,
+      "conceptIds": ["html.text-semantics", "html.hyperlinks", "html.urls"],
+      "contentFile": "content/lessons/html/text-and-links.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "html-03-images-lists-tables",
+      "languageId": "html",
+      "order": 3,
+      "slug": "images-lists-and-tables",
+      "title": "이미지·목록·표",
+      "summary": "콘텐츠 관계에 맞는 이미지 대체 텍스트, 목록 구조와 데이터 표를 작성합니다.",
+      "essentialQuestion": "시각적 콘텐츠와 반복되는 정보를 의미를 잃지 않고 어떻게 구조화할까요?",
+      "objectives": [
+        "이미지의 목적에 따라 적절한 alt 텍스트 또는 빈 alt를 선택할 수 있습니다.",
+        "순서의 의미에 따라 ul과 ol을 구분할 수 있습니다.",
+        "표의 제목과 행·열 머리글 관계를 caption, th, scope로 표현할 수 있습니다.",
+        "레이아웃을 위한 표와 데이터 관계를 위한 표를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 50,
+      "conceptIds": ["html.image-alternatives", "html.lists", "html.tabular-data"],
+      "contentFile": "content/lessons/html/images-lists-and-tables.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "html-04-forms-accessibility",
+      "languageId": "html",
+      "order": 4,
+      "slug": "forms-and-accessibility",
+      "title": "폼과 기본 접근성",
+      "summary": "사용자가 이해하고 제출할 수 있는 폼을 네이티브 HTML 관계와 검증 규칙으로 만듭니다.",
+      "essentialQuestion": "입력값의 의미와 제출 규칙을 모든 사용자에게 어떻게 전달할까요?",
+      "objectives": [
+        "폼 제출에서 name과 value가 맡는 역할을 설명할 수 있습니다.",
+        "label의 for와 입력 요소의 id를 명시적으로 연결할 수 있습니다.",
+        "입력 목적에 맞는 type과 autocomplete을 선택할 수 있습니다.",
+        "required, minlength 같은 내장 검증과 서버 검증의 역할을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 55,
+      "conceptIds": ["html.form-submission", "html.form-controls", "html.labels", "html.constraint-validation", "html.native-accessibility"],
+      "contentFile": "content/lessons/html/forms-and-accessibility.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "html-05-review-practice",
+      "languageId": "html",
+      "order": 5,
+      "slug": "review-and-practice",
+      "title": "HTML 복습과 구조 점검",
+      "summary": "콘텐츠 요구사항을 문서 구조로 옮기고 검사 도구와 수동 점검으로 개선합니다.",
+      "essentialQuestion": "완성한 HTML이 의미·관계·접근성 요구사항을 충족하는지 어떻게 확인할까요?",
+      "objectives": [
+        "요구사항을 문서 영역과 콘텐츠 관계로 나누어 설계할 수 있습니다.",
+        "HTML 검사기가 찾는 문법 문제와 찾지 못하는 의미 문제를 구분할 수 있습니다.",
+        "제목, 링크, 이미지, 표와 폼의 접근성 관계를 순서대로 점검할 수 있습니다.",
+        "발견한 문제를 작은 수정 단위로 고치고 다시 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": ["html.document-planning", "html.validation", "html.accessibility-audit"],
+      "contentFile": "content/lessons/html/review-and-practice.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "css-foundations-selectors",
+      "languageId": "css",
+      "order": 1,
+      "slug": "css-rules-selectors-values",
+      "title": "CSS 규칙·선택자·값",
+      "summary": "스타일시트를 연결하고 선택자와 선언을 읽어 원하는 요소에 값을 적용합니다.",
+      "essentialQuestion": "브라우저는 어떤 요소에 어떤 CSS 값을 적용할지 어떻게 알까요?",
+      "objectives": [
+        "CSS 규칙의 선택자, 속성, 값 구조를 설명할 수 있습니다.",
+        "외부 스타일시트를 HTML 문서에 연결할 수 있습니다.",
+        "타입·클래스·속성·결합 선택자를 목적에 맞게 사용할 수 있습니다.",
+        "상속 여부와 길이·색상 값의 기준을 개발자 도구로 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 45,
+      "conceptIds": ["css.syntax", "css.stylesheet-linking", "css.selectors", "css.inheritance", "css.values-units"],
+      "contentFile": "content/lessons/css/css-rules-selectors-values.md",
       "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
     },
     {
       "id": "css-01-cascade-box-model",
       "languageId": "css",
-      "order": 1,
+      "order": 2,
       "slug": "cascade-and-box-model",
       "title": "캐스케이드와 박스 모델",
       "summary": "스타일 충돌이 결정되는 흐름과 요소가 차지하는 공간의 층을 관찰합니다.",
       "essentialQuestion": "같은 요소의 스타일과 크기는 어떤 규칙으로 최종 결정될까요?",
       "objectives": [
         "캐스케이드가 여러 선언의 우선순위를 결정하는 과정임을 설명할 수 있습니다.",
+        "같은 출처와 중요도 안에서 specificity와 작성 순서를 구분할 수 있습니다.",
         "content, padding, border, margin 영역을 구분할 수 있습니다.",
         "box-sizing에 따라 선언한 크기의 해석이 달라지는 이유를 설명할 수 있습니다."
       ],
-      "estimatedMinutes": 20,
+      "estimatedMinutes": 45,
       "conceptIds": ["css.cascade", "css.box-model"],
       "contentFile": "content/lessons/css/cascade-and-box-model.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "css-flow-display-overflow",
+      "languageId": "css",
+      "order": 3,
+      "slug": "flow-display-and-overflow",
+      "title": "일반 흐름·display·overflow",
+      "summary": "기본 배치 흐름과 display 유형을 이해하고 간격과 넘침 문제를 진단합니다.",
+      "essentialQuestion": "요소가 차지하는 자리와 넘치는 콘텐츠는 어떤 규칙으로 결정될까요?",
+      "objectives": [
+        "일반 흐름에서 블록과 인라인 요소가 배치되는 방식을 설명할 수 있습니다.",
+        "display 값이 내부·외부 레이아웃 역할을 바꾸는 이유를 이해합니다.",
+        "margin, padding, gap 중 목적에 맞는 간격 도구를 선택할 수 있습니다.",
+        "overflow를 숨기기 전에 넘침의 원인을 찾아 수정할 수 있습니다."
+      ],
+      "estimatedMinutes": 50,
+      "conceptIds": ["css.normal-flow", "css.display", "css.spacing", "css.overflow"],
+      "contentFile": "content/lessons/css/flow-display-and-overflow.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "css-position-flex-grid",
+      "languageId": "css",
+      "order": 4,
+      "slug": "position-flex-and-grid",
+      "title": "위치 지정·Flexbox·Grid",
+      "summary": "겹침과 한 축·두 축 배치 요구사항에 맞는 레이아웃 도구를 선택합니다.",
+      "essentialQuestion": "콘텐츠 관계에 맞는 레이아웃 방식은 어떻게 선택할까요?",
+      "objectives": [
+        "relative, absolute, fixed, sticky의 기준 영역과 흐름 영향을 구분할 수 있습니다.",
+        "쌓임 맥락과 z-index가 단순한 큰 숫자 비교가 아닌 이유를 설명할 수 있습니다.",
+        "Flexbox의 주축과 교차축을 기준으로 항목을 정렬할 수 있습니다.",
+        "Grid의 행과 열을 사용해 두 축 레이아웃을 만들 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": ["css.positioning", "css.stacking-context", "css.flexbox", "css.grid"],
+      "contentFile": "content/lessons/css/position-flex-and-grid.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "css-responsive-states-motion",
+      "languageId": "css",
+      "order": 5,
+      "slug": "responsive-states-and-motion",
+      "title": "반응형·상태·모션",
+      "summary": "콘텐츠에 맞는 중단점과 상호작용 상태를 설계하고 모션 선호를 존중합니다.",
+      "essentialQuestion": "화면 크기와 사용자 상태가 달라져도 읽고 조작하기 쉬운 스타일은 어떻게 만들까요?",
+      "objectives": [
+        "모바일 우선 기본 규칙과 콘텐츠 기반 media query를 작성할 수 있습니다.",
+        "hover만이 아니라 focus-visible과 disabled 같은 상태를 함께 표현할 수 있습니다.",
+        "가상 클래스와 가상 요소의 역할을 구분할 수 있습니다.",
+        "prefers-reduced-motion을 사용해 불필요한 모션을 줄일 수 있습니다."
+      ],
+      "estimatedMinutes": 55,
+      "conceptIds": ["css.responsive-design", "css.media-queries", "css.pseudo-classes", "css.pseudo-elements", "css.motion-accessibility"],
+      "contentFile": "content/lessons/css/responsive-states-and-motion.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "css-review-practice",
+      "languageId": "css",
+      "order": 6,
+      "slug": "review-and-practice",
+      "title": "CSS 복습과 레이아웃 점검",
+      "summary": "레이아웃 요구사항을 나누고 캐스케이드·크기·반응형 문제를 체계적으로 디버깅합니다.",
+      "essentialQuestion": "예상과 다른 화면을 어떤 순서로 관찰하고 수정할까요?",
+      "objectives": [
+        "적용 여부, 캐스케이드, 계산값과 레이아웃 순서로 문제를 좁힐 수 있습니다.",
+        "콘텐츠 관계에 따라 일반 흐름, Flexbox, Grid와 position을 선택할 수 있습니다.",
+        "큰 화면과 작은 화면에서 넘침·포커스·가독성을 점검할 수 있습니다.",
+        "요구사항을 작은 CSS 변경과 검증 단계로 나눌 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": ["css.debugging", "css.layout-choice", "css.problem-decomposition", "css.accessibility-review"],
+      "contentFile": "content/lessons/css/review-and-practice.md",
       "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
     },
     {
