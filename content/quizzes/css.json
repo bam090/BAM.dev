@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "languageId": "css",
+  "title": "CSS 샘플 객관식 복습",
+  "questions": [
+    {
+      "id": "quiz-css-border-box",
+      "lessonId": "css-01-cascade-box-model",
+      "conceptId": "css.box-model",
+      "difficulty": "application",
+      "prompt": "다음 `.card`의 border box 너비가 240px일 때 content 영역의 가로 너비는 얼마인가요? 먼저 `width`가 어느 박스를 가리키는지와 좌우에서 빠지는 영역을 구분해 보세요.",
+      "code": ".card {\n  box-sizing: border-box;\n  width: 240px;\n  padding: 20px;\n  border: 4px solid royalblue;\n  margin: 12px;\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "192px",
+          "isCorrect": true,
+          "feedback": "맞습니다. `border-box`의 240px에는 좌우 padding 40px과 좌우 border 8px이 포함됩니다. 따라서 content 너비는 `240 - 40 - 8 = 192px`입니다. Margin은 border box 밖에 있으므로 이 계산에 포함하지 않습니다."
+        },
+        {
+          "id": "b",
+          "text": "216px",
+          "isCorrect": false,
+          "feedback": "틀립니다. 240px에서 좌우 margin 24px만 뺀 값입니다. Margin은 border box 밖의 간격이라 content 너비를 정할 때 빼지 않습니다. 대신 border box 안의 좌우 padding과 border를 빼야 합니다."
+        },
+        {
+          "id": "c",
+          "text": "240px",
+          "isCorrect": false,
+          "feedback": "틀립니다. `box-sizing: border-box`에서는 240px이 content만의 너비가 아니라 padding과 border를 포함한 border box 너비입니다. Content는 그 안에서 좌우 padding과 border를 제외한 192px입니다."
+        },
+        {
+          "id": "d",
+          "text": "288px",
+          "isCorrect": false,
+          "feedback": "틀립니다. 240px에 좌우 padding 40px과 좌우 border 8px을 더한 값은 `content-box`에서 240px을 content 너비로 지정했을 때의 border box 계산입니다. 이 코드는 `border-box`이므로 padding과 border가 이미 240px 안에 포함됩니다."
+        }
+      ]
+    }
+  ]
+}

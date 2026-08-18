@@ -29,6 +29,7 @@ import {
   PROGRESS_STORAGE_KEY,
 } from "./repositories/progress-repository.js";
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
+import { renderLanguageNavigation } from "./ui/language-navigation.js";
 import { escapeHtml, renderMarkdown } from "./ui/markdown.js";
 import {
   renderQuizLoadingView,
@@ -161,7 +162,16 @@ export class BamLearningApp {
 
     const reviewRoute = parseReviewHash(window.location.hash);
     if (reviewRoute) {
-      if (reviewRoute.languageId === DEFAULT_LANGUAGE_ID) {
+      const reviewLanguage = getLanguage(this.curriculum, reviewRoute.languageId);
+      const reviewLessons = getLessonsForLanguage(
+        this.curriculum,
+        reviewRoute.languageId,
+      );
+      if (
+        reviewLanguage &&
+        reviewLanguage.status !== "planned" &&
+        reviewLessons.length > 0
+      ) {
         await this.openReviewRoute(reviewRoute.languageId);
         return;
       }
@@ -998,6 +1008,11 @@ export class BamLearningApp {
             </div>
           </div>
 
+          ${renderLanguageNavigation({
+            curriculum: this.curriculum,
+            currentLanguageId: language.id,
+          })}
+
           <nav class="lesson-nav" aria-label="${escapeHtml(language.name)} 교안">
             <p class="nav-label">교안</p>
             <ol>
@@ -1155,6 +1170,11 @@ export class BamLearningApp {
             </div>
           </div>
 
+          ${renderLanguageNavigation({
+            curriculum: this.curriculum,
+            currentLanguageId: language.id,
+          })}
+
           <nav class="lesson-nav" aria-label="${escapeHtml(language.name)} 교안">
             <p class="nav-label">교안</p>
             <ol>
@@ -1274,6 +1294,11 @@ export class BamLearningApp {
               <span style="width: ${lessonProgressPercent}%"></span>
             </div>
           </div>
+
+          ${renderLanguageNavigation({
+            curriculum: this.curriculum,
+            currentLanguageId: language.id,
+          })}
 
           <nav class="lesson-nav" aria-label="${escapeHtml(language.name)} 교안">
             <p class="nav-label">교안</p>

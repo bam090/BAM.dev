@@ -193,7 +193,7 @@ test("객관식 저장은 세션당 한 번만 시도하고 비영속 상태를 
   assert.match(finishSource, /persistence\.isPersistent \? "saved" : "memory"/);
 });
 
-test("오답 재도전과 잘못된 언어 복귀의 앱 계약을 유지한다", async () => {
+test("오답 재도전과 지원하지 않는 언어 복귀의 앱 계약을 유지한다", async () => {
   const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
   const routeStart = appSource.indexOf("  async openRoute(");
   const routeEnd = appSource.indexOf("\n  async openLessonRoute(", routeStart);
@@ -208,7 +208,12 @@ test("오답 재도전과 잘못된 언어 복귀의 앱 계약을 유지한다"
   const routeSource = appSource.slice(routeStart, routeEnd);
   const retrySource = appSource.slice(retryStart, retryEnd);
   const sessionSource = appSource.slice(sessionStart, sessionEnd);
-  assert.match(routeSource, /reviewRoute\.languageId === DEFAULT_LANGUAGE_ID/);
+  assert.match(
+    routeSource,
+    /getLanguage\(this\.curriculum, reviewRoute\.languageId\)/,
+  );
+  assert.match(routeSource, /reviewLanguage\.status !== "planned"/);
+  assert.match(routeSource, /await this\.openReviewRoute\(reviewRoute\.languageId\)/);
   assert.match(routeSource, /getLessonsForLanguage\([\s\S]*DEFAULT_LANGUAGE_ID[\s\S]*\)\[0\]/);
   assert.match(
     routeSource,

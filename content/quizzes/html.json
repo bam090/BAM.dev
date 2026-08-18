@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "languageId": "html",
+  "title": "HTML 객관식 복습",
+  "questions": [
+    {
+      "id": "quiz-html-semantic-main",
+      "lessonId": "html-01-document-structure",
+      "conceptId": "html.semantics",
+      "difficulty": "basic",
+      "prompt": "사이트 공통 머리말·주요 메뉴·바닥글을 제외하고, 현재 페이지에만 있는 학습 본문 전체를 감싸려 합니다. `div class=\"lesson\"`을 대신할 요소로 가장 알맞은 것은 무엇인가요?",
+      "code": "<header>BAM.dev</header>\n<nav>주요 메뉴</nav>\n<div class=\"lesson\">\n  <h1>HTML 문서 구조</h1>\n  <p>현재 페이지의 학습 내용</p>\n</div>\n<footer>저작권 정보</footer>",
+      "options": [
+        {
+          "id": "a",
+          "text": "`header`",
+          "isCorrect": false,
+          "feedback": "틀립니다. `header`는 페이지나 콘텐츠 영역의 소개·탐색 보조 내용을 나타냅니다. 이 영역은 소개가 아니라 현재 페이지의 고유한 중심 본문입니다."
+        },
+        {
+          "id": "b",
+          "text": "`nav`",
+          "isCorrect": false,
+          "feedback": "틀립니다. `nav`는 다른 페이지나 페이지 내부로 이동하는 주요 링크 영역을 나타냅니다. 제시된 학습 본문은 이동 링크 묶음이 아닙니다."
+        },
+        {
+          "id": "c",
+          "text": "`main`",
+          "isCorrect": true,
+          "feedback": "맞습니다. `main`은 반복되는 사이트 머리말·탐색·바닥글과 구분되는 현재 문서의 중심 내용을 나타내므로, 이 학습 본문 전체의 역할과 일치합니다."
+        },
+        {
+          "id": "d",
+          "text": "`section`",
+          "isCorrect": false,
+          "feedback": "틀립니다. `section`은 보통 제목을 가진 하나의 주제 구역에 적합합니다. 학습 본문 안의 개별 주제를 나눌 때 쓸 수 있지만, 질문은 페이지 전체의 고유한 중심 내용을 감싸는 역할을 묻고 있으므로 `main`이 더 정확합니다."
+        }
+      ]
+    }
+  ]
+}

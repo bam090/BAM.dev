@@ -25,3 +25,12 @@
 - 위 변경은 새 프로젝트 복제본에만 적용했으며 읽기 전용 원본은 수정하지 않았습니다.
 
 객관식 문제는 원본에 완성된 정답 데이터가 없어 2차에서 별도 스키마로 작성했으며, 교안 근거·코드 실행 결과·모든 오답 설명을 독립 검증했습니다. Code Quest 5개도 3차에서 교안 개념을 바탕으로 새로 작성했습니다. 외부 문제의 문구·입출력·테스트를 복사하지 않았으며, 별도 콘텐츠 계약과 기준 풀이·대표 오답 fixture로 공개 테스트와 추가 경계를 독립 검증했습니다.
+
+## 확장 검증 샘플
+
+- 새 프로젝트 작성본: `content/lessons/html/document-structure-and-semantics.md`, `content/lessons/css/cascade-and-box-model.md`, `content/lessons/java/types-and-methods.md`와 언어별 객관식 파일
+- 범위: HTML·CSS·Java 교안과 객관식 각 1개
+- 원칙: 외부 교안이나 문제를 복사하지 않고 각 표준 문서를 근거로 프로젝트에서 새로 작성
+- 공식문서 확인 기록일: 2026-08-18
+
+HTML 샘플은 [WHATWG HTML Standard의 sections](https://html.spec.whatwg.org/multipage/sections.html), CSS 샘플은 [CSS Cascading and Inheritance Level 5](https://www.w3.org/TR/css-cascade-5/), [CSS Box Model Level 3](https://www.w3.org/TR/css-box-3/), [CSS Box Sizing Level 3](https://www.w3.org/TR/css-sizing-3/)을 확인했습니다. Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했습니다. Java 코드를 브라우저에서 실행하거나 채점했다고 표현하지 않으며, 이번 게이트는 공통 콘텐츠·평가 계약만 검증합니다.

@@ -55,23 +55,38 @@ export function parseQuestHash(hash) {
 }
 
 export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
+  const navigableLanguageIds = new Set(
+    (curriculum.languages ?? [])
+      .filter((language) => language.status !== "planned")
+      .map((language) => language.id),
+  );
   const parsed = parseLessonHash(hash);
   const routedLesson = parsed
     ? curriculum.lessons.find(
-        (lesson) => lesson.languageId === parsed.languageId && lesson.slug === parsed.slug,
+        (lesson) =>
+          navigableLanguageIds.has(lesson.languageId) &&
+          lesson.languageId === parsed.languageId &&
+          lesson.slug === parsed.slug,
       )
     : null;
 
   if (routedLesson) return routedLesson;
 
   const preferredLesson = preferredLessonId
-    ? curriculum.lessons.find((lesson) => lesson.id === preferredLessonId)
+    ? curriculum.lessons.find(
+        (lesson) =>
+          navigableLanguageIds.has(lesson.languageId) && lesson.id === preferredLessonId,
+      )
     : null;
   if (preferredLesson) return preferredLesson;
 
   return (
-    curriculum.lessons.find((lesson) => lesson.languageId === DEFAULT_LANGUAGE_ID) ??
-    curriculum.lessons[0] ??
+    curriculum.lessons.find(
+      (lesson) =>
+        navigableLanguageIds.has(lesson.languageId) &&
+        lesson.languageId === DEFAULT_LANGUAGE_ID,
+    ) ??
+    curriculum.lessons.find((lesson) => navigableLanguageIds.has(lesson.languageId)) ??
     null
   );
 }

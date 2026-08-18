@@ -14,7 +14,7 @@
       "id": "html",
       "name": "HTML",
       "shortName": "HTML",
-      "status": "planned",
+      "status": "sample",
       "accent": "html",
       "description": "문서의 의미와 구조를 설계합니다."
     },
@@ -22,7 +22,7 @@
       "id": "css",
       "name": "CSS",
       "shortName": "CSS",
-      "status": "planned",
+      "status": "sample",
       "accent": "css",
       "description": "레이아웃과 반응형 표현을 익힙니다."
     },
@@ -30,7 +30,7 @@
       "id": "java",
       "name": "Java",
       "shortName": "Java",
-      "status": "planned",
+      "status": "sample",
       "accent": "java",
       "description": "타입과 객체 중심으로 프로그램을 설계합니다."
     }
@@ -168,6 +168,60 @@
       "conceptIds": ["js.data-flow", "js.problem-decomposition", "js.debugging"],
       "contentFile": "content/lessons/javascript/review-and-practice.md",
       "source": { "kind": "user-authored", "verifiedAt": "2026-08-17" }
+    },
+    {
+      "id": "html-01-document-structure",
+      "languageId": "html",
+      "order": 1,
+      "slug": "document-structure-and-semantics",
+      "title": "문서 구조와 의미 있는 HTML",
+      "summary": "문서의 큰 영역을 나누고 콘텐츠의 역할에 맞는 HTML 요소를 선택합니다.",
+      "essentialQuestion": "화면 모양이 아니라 콘텐츠의 역할을 HTML 구조로 어떻게 설명할까요?",
+      "objectives": [
+        "HTML 문서의 기본 구조를 자신의 말로 설명할 수 있습니다.",
+        "header, nav, main, section의 역할을 구분할 수 있습니다.",
+        "콘텐츠의 의미를 먼저 관찰한 뒤 적절한 요소를 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 20,
+      "conceptIds": ["html.document-structure", "html.semantics"],
+      "contentFile": "content/lessons/html/document-structure-and-semantics.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "css-01-cascade-box-model",
+      "languageId": "css",
+      "order": 1,
+      "slug": "cascade-and-box-model",
+      "title": "캐스케이드와 박스 모델",
+      "summary": "스타일 충돌이 결정되는 흐름과 요소가 차지하는 공간의 층을 관찰합니다.",
+      "essentialQuestion": "같은 요소의 스타일과 크기는 어떤 규칙으로 최종 결정될까요?",
+      "objectives": [
+        "캐스케이드가 여러 선언의 우선순위를 결정하는 과정임을 설명할 수 있습니다.",
+        "content, padding, border, margin 영역을 구분할 수 있습니다.",
+        "box-sizing에 따라 선언한 크기의 해석이 달라지는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 20,
+      "conceptIds": ["css.cascade", "css.box-model"],
+      "contentFile": "content/lessons/css/cascade-and-box-model.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+    },
+    {
+      "id": "java-01-types-methods",
+      "languageId": "java",
+      "order": 1,
+      "slug": "types-and-methods",
+      "title": "타입과 메서드 계약",
+      "summary": "값의 타입과 메서드의 입력·반환 타입을 읽어 코드의 약속을 설명합니다.",
+      "essentialQuestion": "Java 코드는 값과 메서드가 주고받는 약속을 어떻게 드러낼까요?",
+      "objectives": [
+        "기본 타입과 참조 타입이 표현하는 값의 역할을 구분할 수 있습니다.",
+        "메서드 선언에서 매개변수 타입과 반환 타입을 찾을 수 있습니다.",
+        "호출 코드가 메서드 계약과 맞는지 타입을 기준으로 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 20,
+      "conceptIds": ["java.types", "java.methods"],
+      "contentFile": "content/lessons/java/types-and-methods.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
     }
   ]
 }
