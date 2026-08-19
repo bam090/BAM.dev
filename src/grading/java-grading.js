@@ -105,10 +105,11 @@ function isPlainRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
-function assertExactRequestFields(request) {
+function readExactRequestFields(request) {
   if (!isPlainRecord(request)) {
     throw new TypeError("Java 실행 요청은 일반 객체여야 합니다.");
   }
+  const values = Object.create(null);
   const fields = Reflect.ownKeys(request);
   for (const field of fields) {
     if (typeof field !== "string" || !JAVA_REQUEST_FIELDS.has(field)) {
@@ -118,12 +119,14 @@ function assertExactRequestFields(request) {
     if (!descriptor?.enumerable || !Object.hasOwn(descriptor, "value")) {
       throw new TypeError(`Java 실행 요청.${field}는 열거 가능한 값 필드여야 합니다.`);
     }
+    values[field] = descriptor.value;
   }
   for (const field of JAVA_REQUEST_FIELDS) {
-    if (!Object.hasOwn(request, field)) {
+    if (!Object.hasOwn(values, field)) {
       throw new TypeError(`Java 실행 요청.${field}는 필수 필드입니다.`);
     }
   }
+  return values;
 }
 
 export function normalizeJavaType(type) {
@@ -253,39 +256,40 @@ function assertJavaTestValues(tests, parameterTypes, returnType) {
 }
 
 export function createJavaExecutionRequestSnapshot(request, limitOverrides) {
+  let requestValues;
   try {
-    assertExactRequestFields(request);
+    requestValues = readExactRequestFields(request);
   } catch (error) {
     if (error instanceof TypeError) throw error;
     throw new TypeError("Java 실행 요청을 안전하게 확인할 수 없습니다.");
   }
-  if (request.languageId !== "java") {
+  if (requestValues.languageId !== "java") {
     throw new TypeError('Java 실행 요청 languageId는 "java"여야 합니다.');
   }
   if (
-    typeof request.entryPoint !== "string" ||
-    !JAVA_IDENTIFIER_PATTERN.test(request.entryPoint) ||
-    JAVA_RESERVED_WORDS.has(request.entryPoint)
+    typeof requestValues.entryPoint !== "string" ||
+    !JAVA_IDENTIFIER_PATTERN.test(requestValues.entryPoint) ||
+    JAVA_RESERVED_WORDS.has(requestValues.entryPoint)
   ) {
     throw new TypeError("entryPoint는 예약어가 아닌 안정적인 Java 식별자여야 합니다.");
   }
-  if (!Array.isArray(request.parameterTypes)) {
+  if (!Array.isArray(requestValues.parameterTypes)) {
     throw new TypeError("Java 실행 요청 parameterTypes 배열이 필요합니다.");
   }
 
-  const parameterTypes = request.parameterTypes.map(normalizeJavaType);
-  const returnType = normalizeJavaType(request.returnType);
+  const parameterTypes = requestValues.parameterTypes.map(normalizeJavaType);
+  const returnType = normalizeJavaType(requestValues.returnType);
   const baseSnapshot = createExecutionRequestSnapshot(
     {
-      requestId: request.requestId,
-      contractVersion: request.contractVersion,
-      questId: request.questId,
-      questRevision: request.questRevision,
+      requestId: requestValues.requestId,
+      contractVersion: requestValues.contractVersion,
+      questId: requestValues.questId,
+      questRevision: requestValues.questRevision,
       languageId: "javascript",
-      suite: request.suite,
-      source: request.source,
+      suite: requestValues.suite,
+      source: requestValues.source,
       entryPoint: "solution",
-      tests: request.tests,
+      tests: requestValues.tests,
     },
     limitOverrides,
   );
@@ -294,7 +298,7 @@ export function createJavaExecutionRequestSnapshot(request, limitOverrides) {
   return Object.freeze({
     ...baseSnapshot,
     languageId: "java",
-    entryPoint: request.entryPoint,
+    entryPoint: requestValues.entryPoint,
     parameterTypes: Object.freeze(parameterTypes),
     returnType,
   });

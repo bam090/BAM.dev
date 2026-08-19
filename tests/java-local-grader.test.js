@@ -177,6 +177,28 @@ test("고정 digest가 아닌 이미지는 실행 인자를 만들기 전에 거
   );
 });
 
+test("Java 타이머 제한은 Node 타이머 최대 지연값을 넘지 않는다", () => {
+  const maximumTimerDelayMs = 2_147_483_647;
+  for (const field of [
+    "compileTimeoutMs",
+    "testTimeoutMs",
+    "runTimeoutMs",
+    "dockerControlTimeoutMs",
+  ]) {
+    assert.doesNotThrow(
+      () => new LocalJavaGrader({ limits: { [field]: maximumTimerDelayMs } }),
+    );
+    assert.throws(
+      () => new LocalJavaGrader({ limits: { [field]: maximumTimerDelayMs + 1 } }),
+      new RegExp(`${field}.*${maximumTimerDelayMs}ms 이하`, "u"),
+    );
+  }
+
+  assert.doesNotThrow(
+    () => new LocalJavaGrader({ limits: { maxSourceBytes: maximumTimerDelayMs + 1 } }),
+  );
+});
+
 test("Docker daemon을 사용할 수 없으면 임의 host 실행 대신 engine_error를 반환한다", async () => {
   const grader = new LocalJavaGrader({
     dockerExecutable: "/definitely/missing/docker",

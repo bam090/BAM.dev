@@ -53,6 +53,14 @@ export const DEFAULT_LOCAL_JAVA_LIMITS = Object.freeze({
   dockerControlTimeoutMs: 4_000,
 });
 
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
+const TIMER_LIMIT_FIELDS = new Set([
+  "compileTimeoutMs",
+  "testTimeoutMs",
+  "runTimeoutMs",
+  "dockerControlTimeoutMs",
+]);
+
 export class JavaRequestValidationError extends Error {
   constructor(message) {
     super(message);
@@ -80,6 +88,11 @@ function mergeLimits(overrides) {
   for (const [key, value] of Object.entries(limits)) {
     if (!Number.isSafeInteger(value) || value <= 0) {
       throw new TypeError(`Java 실행 제한 ${key}는 0보다 큰 안전한 정수여야 합니다.`);
+    }
+    if (TIMER_LIMIT_FIELDS.has(key) && value > MAX_TIMER_DELAY_MS) {
+      throw new TypeError(
+        `Java 실행 제한 ${key}는 ${MAX_TIMER_DELAY_MS}ms 이하여야 합니다.`,
+      );
     }
   }
   return Object.freeze(limits);

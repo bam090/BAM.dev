@@ -75,6 +75,24 @@ test("Java 실행 요청은 Java에서 유효한 JavaScript 예약어 메서드�
   }
 });
 
+test("Java 실행 요청은 검증한 own data 값만 스냅샷에 사용한다", () => {
+  let entryPointReads = 0;
+  const request = new Proxy(createRequest({ entryPoint: "delete" }), {
+    get(target, property, receiver) {
+      if (property === "entryPoint") {
+        entryPointReads += 1;
+        return entryPointReads <= 3 ? "delete" : "class";
+      }
+      return Reflect.get(target, property, receiver);
+    },
+  });
+
+  const snapshot = createJavaExecutionRequestSnapshot(request);
+  assert.equal(snapshot.entryPoint, "delete");
+  assert.equal(entryPointReads, 0);
+  assert.ok(Object.isFrozen(snapshot));
+});
+
 test("Java 실행 요청은 타입과 맞지 않는 값·예약어·추가 필드를 거부한다", () => {
   assert.throws(
     () => createJavaExecutionRequestSnapshot(createRequest({ tests: [{ id: "bad", args: [1, 2], expected: 3.5 }] })),
