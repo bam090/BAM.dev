@@ -509,7 +509,7 @@ export class LocalJavaGrader {
       this.dockerExecutable,
       dockerClientArguments(argumentsList),
       {
-        cwd: "/var/empty",
+        cwd: tmpdir(),
         environment: dockerClientEnvironment(),
         timeoutMs: this.limits.dockerControlTimeoutMs,
         outputLimitBytes: DOCKER_CONTROL_OUTPUT_BYTES,
