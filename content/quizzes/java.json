@@ -1,39 +1,412 @@
 {
   "schemaVersion": 1,
   "languageId": "java",
-  "title": "Java 샘플 객관식 복습",
+  "title": "Java 객관식 복습",
   "questions": [
+    {
+      "id": "quiz-java-type-kinds",
+      "lessonId": "java-01-types-methods",
+      "conceptId": "java.types",
+      "difficulty": "basic",
+      "prompt": "다음 지역 변수 선언에서 기본 타입 변수와 참조 타입 변수를 정확히 분류한 것은 무엇인가요?",
+      "code": "int score = 80;\nboolean passed = true;\nString learner = \"Bam\";\nint[] recentScores = {70, 80};",
+      "options": [
+        {
+          "id": "a",
+          "text": "기본 타입: int, boolean, String / 참조 타입: int[]",
+          "isCorrect": false,
+          "feedback": "틀립니다. String은 Java가 미리 정의한 기본 타입 키워드가 아니라 클래스 타입이므로 참조 타입입니다."
+        },
+        {
+          "id": "b",
+          "text": "기본 타입: int / 참조 타입: boolean, String, int[]",
+          "isCorrect": false,
+          "feedback": "틀립니다. boolean은 true와 false를 표현하는 Java의 기본 타입입니다. String과 배열 타입인 int[]만 참조 타입입니다."
+        },
+        {
+          "id": "c",
+          "text": "기본 타입: int, boolean / 참조 타입: String, int[]",
+          "isCorrect": true,
+          "feedback": "맞습니다. int와 boolean은 기본 타입이고, 클래스 타입인 String과 배열 타입인 int[]는 객체를 가리키는 참조 값을 다루는 참조 타입입니다."
+        },
+        {
+          "id": "d",
+          "text": "네 변수의 타입은 모두 참조 타입이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. String과 int[]는 참조 타입이지만 int와 boolean은 기본 타입입니다."
+        }
+      ]
+    },
     {
       "id": "quiz-java-method-return",
       "lessonId": "java-01-types-methods",
       "conceptId": "java.methods",
       "difficulty": "application",
-      "prompt": "다음 메서드가 점수에 `점`을 붙인 문자열을 반환하도록 본문은 그대로 둘 때, 선언된 입력·출력 타입 계약을 맞추는 수정은 무엇인가요?",
+      "prompt": "다음 메서드가 점수에 '점'을 붙인 문자열을 반환하도록 본문은 그대로 둘 때, 선언된 입력·출력 타입 계약을 맞추는 수정은 무엇인가요?",
       "code": "static int makeLabel(int score) {\n    return score + \"점\";\n}",
       "options": [
         {
           "id": "a",
-          "text": "반환 타입만 `String`으로 바꿔 `static String makeLabel(int score)`로 선언한다.",
+          "text": "반환 타입만 String으로 바꿔 static String makeLabel(int score)로 선언한다.",
           "isCorrect": true,
-          "feedback": "맞습니다. `score + \"점\"`은 문자열 연결 결과인 `String`을 만들고, 입력 점수는 계속 `int`로 받으므로 반환 타입만 `String`으로 바꾸면 선언과 본문이 같은 계약을 표현합니다."
+          "feedback": "맞습니다. score + \"점\"은 문자열 연결 결과인 String을 만들고, 입력 점수는 계속 int로 받으므로 반환 타입만 String으로 바꾸면 선언과 본문이 같은 계약을 표현합니다."
         },
         {
           "id": "b",
-          "text": "매개변수 타입만 `String`으로 바꿔 `static int makeLabel(String score)`로 선언한다.",
+          "text": "매개변수 타입만 String으로 바꿔 static int makeLabel(String score)로 선언한다.",
           "isCorrect": false,
-          "feedback": "틀립니다. 매개변수를 `String`으로 바꿔도 `score + \"점\"`의 결과는 여전히 `String`인데 선언된 반환 타입은 `int`이므로 출력 계약의 불일치가 남습니다."
+          "feedback": "틀립니다. 매개변수를 String으로 바꿔도 score + \"점\"의 결과는 여전히 String인데 선언된 반환 타입은 int이므로 출력 계약의 불일치가 남습니다."
         },
         {
           "id": "c",
-          "text": "반환 타입을 `void`로 바꿔 `static void makeLabel(int score)`로 선언한다.",
+          "text": "반환 타입을 void로 바꿔 static void makeLabel(int score)로 선언한다.",
           "isCorrect": false,
-          "feedback": "틀립니다. `void`는 결과 값을 반환하지 않는 메서드를 나타내므로 `return score + \"점\";`처럼 값을 돌려주는 현재 본문과 맞지 않습니다."
+          "feedback": "틀립니다. void는 결과 값을 반환하지 않는 메서드를 나타내므로 return score + \"점\";처럼 값을 돌려주는 현재 본문과 맞지 않습니다."
         },
         {
           "id": "d",
-          "text": "반환 타입을 `boolean`으로 바꿔 `static boolean makeLabel(int score)`로 선언한다.",
+          "text": "반환 타입을 boolean으로 바꿔 static boolean makeLabel(int score)로 선언한다.",
           "isCorrect": false,
-          "feedback": "틀립니다. `boolean`은 `true` 또는 `false`를 나타내지만 현재 반환 표현식은 `String`을 만듭니다. 반환 타입은 실제 반환 값의 타입과 맞아야 합니다."
+          "feedback": "틀립니다. boolean은 true 또는 false를 나타내지만 현재 반환 표현식은 String을 만듭니다. 반환 타입은 실제 반환 값의 타입과 맞아야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-control-flow-branch",
+      "lessonId": "java-02-control-flow-arrays",
+      "conceptId": "java.control-flow",
+      "difficulty": "basic",
+      "prompt": "다음 Java 프로그램이 출력하는 문자열은 무엇인가요?",
+      "code": "class Main {\n    public static void main(String[] args) {\n        int score = 59;\n        boolean submitted = true;\n\n        if (score >= 60 && submitted) {\n            System.out.println(\"통과\");\n        } else {\n            System.out.println(\"재도전\");\n        }\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "통과",
+          "isCorrect": false,
+          "feedback": "틀립니다. submitted는 true이지만 score >= 60이 false입니다. &&로 연결된 두 조건이 모두 참이어야 첫 번째 분기가 실행됩니다."
+        },
+        {
+          "id": "b",
+          "text": "true",
+          "isCorrect": false,
+          "feedback": "틀립니다. 조건식은 boolean으로 평가되지만 프로그램은 조건값 자체를 출력하지 않습니다. 선택된 분기 안의 문자열을 출력합니다."
+        },
+        {
+          "id": "c",
+          "text": "아무것도 출력하지 않는다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 왼쪽 조건이 거짓이면 &&의 오른쪽 평가는 생략되지만 if 문 전체가 끝나는 것은 아닙니다. 조건이 거짓이므로 else 블록이 실행됩니다."
+        },
+        {
+          "id": "d",
+          "text": "재도전",
+          "isCorrect": true,
+          "feedback": "맞습니다. 59 >= 60이 거짓이므로 전체 조건이 거짓이 되고 else 블록이 재도전을 출력합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-array-loop-bound",
+      "lessonId": "java-02-control-flow-arrays",
+      "conceptId": "java.arrays",
+      "difficulty": "application",
+      "prompt": "다음 프로그램이 예외 없이 모든 배열 요소의 합 240을 출력하게 하는 가장 작은 올바른 수정은 무엇인가요?",
+      "code": "class Main {\n    public static void main(String[] args) {\n        int[] scores = {70, 80, 90};\n        int total = 0;\n\n        for (int i = 0; i <= scores.length; i++) {\n            total += scores[i];\n        }\n\n        System.out.println(total);\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "반복문의 시작값을 int i = 1로 바꾼다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 첫 번째 요소를 합산하지 못할 뿐 아니라 조건이 그대로이므로 결국 i == 3에서 존재하지 않는 scores[3]에 접근합니다."
+        },
+        {
+          "id": "b",
+          "text": "반복 조건의 i <= scores.length를 i < scores.length로 바꾼다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 길이가 3인 배열의 유효한 인덱스는 0, 1, 2입니다. i < scores.length는 세 요소를 정확히 한 번씩 방문하고 i == 3인 접근을 막습니다."
+        },
+        {
+          "id": "c",
+          "text": "scores[i]를 scores[1]로 바꾼다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 범위를 벗어난 접근은 피하지만 값 80만 네 번 더해 320이 됩니다. 모든 요소의 합을 구한다는 요구사항을 충족하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "반복 조건의 scores.length를 scores.length + 1로 바꾼다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 반복 범위를 더 늘리므로 i == 3에서 이미 배열 범위를 벗어나며, 이후 인덱스도 유효하지 않습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-constructor-field-initialization",
+      "lessonId": "java-03-classes-objects",
+      "conceptId": "java.constructors",
+      "difficulty": "basic",
+      "prompt": "다음 프로그램이 Java를 출력하는 이유를 가장 정확히 설명한 것은 무엇인가요?",
+      "code": "class Course {\n    private String title;\n\n    Course(String title) {\n        this.title = title;\n    }\n\n    String title() {\n        return title;\n    }\n}\n\nclass Main {\n    public static void main(String[] args) {\n        Course course = new Course(\"Java\");\n        System.out.println(course.title());\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "new Course(\"Java\")가 생성자를 호출하고, this.title = title이 인수로 받은 값을 새 객체의 필드에 대입하기 때문이다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. 생성자의 매개변수 title은 인수 \"Java\"를 받고, this.title은 지금 생성 중인 객체의 필드를 가리킵니다."
+        },
+        {
+          "id": "b",
+          "text": "생성자가 문자열 Java를 반환하고 그 반환값이 course에 저장되기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 생성자는 메서드처럼 반환 타입을 선언하거나 문자열을 반환하지 않습니다. new 표현식은 생성자를 사용해 만든 Course 객체의 참조를 결과로 냅니다."
+        },
+        {
+          "id": "c",
+          "text": "this.title = title이 호출 코드의 문자열 인수 자체를 새 값으로 변경하기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 대입문은 생성자 매개변수의 참조 값을 객체 필드에 저장합니다. 호출 코드의 문자열 객체를 변경하는 동작이 아닙니다."
+        },
+        {
+          "id": "d",
+          "text": "private 필드는 자동으로 클래스 이름과 같은 문자열로 초기화되기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 초기화하지 않은 String 인스턴스 필드의 기본값은 null입니다. 이 코드에서 Java가 되는 이유는 생성자 대입문이 실행되기 때문입니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-private-balance-update",
+      "lessonId": "java-03-classes-objects",
+      "conceptId": "java.encapsulation",
+      "difficulty": "application",
+      "prompt": "주석 위치에 한 줄을 넣어 100을 출력하면서 Account가 정한 양수 입금 규칙과 접근 제한을 지키려면 무엇을 작성해야 하나요?",
+      "code": "class Account {\n    private int balance = 0;\n\n    public void deposit(int amount) {\n        if (amount > 0) {\n            balance += amount;\n        }\n    }\n\n    public int getBalance() {\n        return balance;\n    }\n}\n\nclass Main {\n    public static void main(String[] args) {\n        Account account = new Account();\n        // 이 자리에 한 줄을 작성합니다.\n        System.out.println(account.getBalance());\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "account.balance = 100;",
+          "isCorrect": false,
+          "feedback": "틀립니다. balance는 private이므로 Account 클래스 본문 밖의 Main에서 직접 접근할 수 없습니다. 또한 직접 대입하면 deposit()의 검증 규칙을 우회합니다."
+        },
+        {
+          "id": "b",
+          "text": "account.getBalance() = 100;",
+          "isCorrect": false,
+          "feedback": "틀립니다. 메서드 호출 결과는 대입할 수 있는 필드가 아닙니다. getBalance()는 현재 잔액 값을 읽어 반환할 뿐 상태를 변경하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "account.deposit(100);",
+          "isCorrect": true,
+          "feedback": "맞습니다. 공개된 deposit() 메서드가 양수인지 확인한 뒤 객체 내부의 private 필드를 변경하므로 클래스가 정한 규칙을 유지합니다."
+        },
+        {
+          "id": "d",
+          "text": "account.deposit(-100);",
+          "isCorrect": false,
+          "feedback": "틀립니다. deposit()은 양수인 금액만 더하므로 -100은 잔액을 바꾸지 않습니다. 따라서 getBalance()는 100이 아니라 기존 값 0을 반환합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-generic-list-element",
+      "lessonId": "java-04-collections-generics",
+      "conceptId": "java.generics",
+      "difficulty": "basic",
+      "prompt": "다음 프로그램이 names.add(10)에서 컴파일되지 않는 이유는 무엇인가요?",
+      "code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Main {\n    public static void main(String[] args) {\n        List<String> names = new ArrayList<>();\n        names.add(\"Bam\");\n        names.add(10);\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "ArrayList에는 요소를 한 개만 넣을 수 있기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. ArrayList는 여러 요소를 담을 수 있습니다. 문제는 현재 요소 개수가 아니라 선언된 요소 타입과 두 번째 인수의 타입이 다르다는 점입니다."
+        },
+        {
+          "id": "b",
+          "text": "List<String>의 add는 String 요소를 요구하지만 10은 String으로 변환되지 않기 때문이다.",
+          "isCorrect": true,
+          "feedback": "맞습니다. List<String>으로 매개변수화하면 이 목록의 요소 타입은 String입니다. 정수 리터럴 10은 필요하다면 Integer로 박싱될 수 있지만 String으로 자동 변환되지는 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "타입이 다른 값은 일단 저장된 뒤 get()으로 읽을 때만 오류가 발생하기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 원시 타입을 사용한 오래된 코드와 달리 List<String>은 잘못된 타입의 add 호출을 컴파일 단계에서 거부합니다."
+        },
+        {
+          "id": "d",
+          "text": "List는 변경 불가능한 컬렉션이라 두 번째 add 호출부터 항상 거부하기 때문이다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 이 변수는 변경 가능한 ArrayList 객체를 가리킵니다. 같은 String 타입의 값이라면 두 번째 이후에도 추가할 수 있습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-map-put-replacement",
+      "lessonId": "java-04-collections-generics",
+      "conceptId": "java.map",
+      "difficulty": "application",
+      "prompt": "다음 Java 프로그램이 출력하는 두 값의 조합은 무엇인가요?",
+      "code": "import java.util.HashMap;\nimport java.util.Map;\n\nclass Main {\n    public static void main(String[] args) {\n        Map<String, Integer> scores = new HashMap<>();\n        scores.put(\"bam\", 70);\n        Integer previous = scores.put(\"bam\", 90);\n\n        System.out.println(previous + \" \" + scores.get(\"bam\"));\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "null 70",
+          "isCorrect": false,
+          "feedback": "틀립니다. 두 번째 put() 시점에는 bam 키에 이미 값 70이 연결되어 있습니다. 새 값 90으로 교체되므로 최종 조회값도 70이 아닙니다."
+        },
+        {
+          "id": "b",
+          "text": "null 90",
+          "isCorrect": false,
+          "feedback": "틀립니다. 최종 조회값 90은 맞지만, 두 번째 put()은 새 키 추가가 아니라 기존 키의 값 교체이므로 이전 값 70을 반환합니다."
+        },
+        {
+          "id": "c",
+          "text": "90 70",
+          "isCorrect": false,
+          "feedback": "틀립니다. put()은 새로 저장한 값이 아니라 그 키에 연결되어 있던 이전 값을 반환합니다. 그리고 맵에는 새 값 90이 남습니다."
+        },
+        {
+          "id": "d",
+          "text": "70 90",
+          "isCorrect": true,
+          "feedback": "맞습니다. 두 번째 put(\"bam\", 90)은 이전 값 70을 반환하고 같은 키의 매핑을 90으로 교체합니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-number-format-catch",
+      "lessonId": "java-05-exceptions-debugging",
+      "conceptId": "java.exceptions",
+      "difficulty": "basic",
+      "prompt": "다음 Java 프로그램이 출력하는 문자열은 무엇인가요?",
+      "code": "class Main {\n    public static void main(String[] args) {\n        try {\n            int score = Integer.parseInt(\"80점\");\n            System.out.println(score);\n        } catch (NumberFormatException error) {\n            System.out.println(\"형식 오류\");\n        }\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "80",
+          "isCorrect": false,
+          "feedback": "틀립니다. Integer.parseInt()는 숫자 뒤의 한글을 자동으로 무시하지 않습니다. 전체 문자열이 십진수 int 형식이어야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "80점",
+          "isCorrect": false,
+          "feedback": "틀립니다. parseInt()의 반환 타입은 int이며 원본 문자열을 출력하는 메서드가 아닙니다. 이 입력에서는 정상 반환도 하지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "형식 오류",
+          "isCorrect": true,
+          "feedback": "맞습니다. \"80점\"은 파싱 가능한 십진 정수 문자열이 아니므로 NumberFormatException이 발생하고, 대응하는 catch 블록이 실행됩니다."
+        },
+        {
+          "id": "d",
+          "text": "NumberFormatException을 throws로 선언하지 않았다는 컴파일 오류",
+          "isCorrect": false,
+          "feedback": "틀립니다. NumberFormatException은 RuntimeException의 하위 클래스인 비검사 예외입니다. 반드시 throws로 선언할 필요가 없으며 이 코드에서는 직접 잡고 있습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-checked-read-all-lines",
+      "lessonId": "java-05-exceptions-debugging",
+      "conceptId": "java.checked-exceptions",
+      "difficulty": "application",
+      "prompt": "Files.readAllLines(path)가 선언한 검사 예외 때문에 다음 메서드가 컴파일되지 않습니다. 본문을 그대로 두고 호출자에게 예외 처리를 맡기려면 어떤 선언으로 바꿔야 하나요?",
+      "code": "import java.io.IOException;\nimport java.nio.file.Files;\nimport java.nio.file.Path;\n\nclass Notes {\n    static String firstLine(Path path) {\n        return Files.readAllLines(path).get(0);\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "static String firstLine(Path path) throws IOException",
+          "isCorrect": true,
+          "feedback": "맞습니다. Files.readAllLines(Path)는 읽기 실패 시 검사 예외인 IOException을 던질 수 있으므로 메서드가 직접 잡지 않는다면 throws IOException으로 호출자에게 전파해야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "static String firstLine(Path path) throws NumberFormatException",
+          "isCorrect": false,
+          "feedback": "틀립니다. 본문에는 숫자 파싱이 없고 NumberFormatException을 선언해도 Files.readAllLines()의 검사 예외인 IOException을 처리하거나 전파한 것이 되지 않습니다."
+        },
+        {
+          "id": "c",
+          "text": "static String firstLine(Path path) throws RuntimeException",
+          "isCorrect": false,
+          "feedback": "틀립니다. RuntimeException 선언은 비검사 예외 계층만 나타냅니다. IOException은 그 하위 타입이 아니므로 컴파일러가 요구하는 검사 예외 계약을 충족하지 않습니다."
+        },
+        {
+          "id": "d",
+          "text": "static String firstLine(Path path) throws Error",
+          "isCorrect": false,
+          "feedback": "틀립니다. Error와 IOException은 서로 다른 예외 계층입니다. throws Error는 readAllLines()가 선언한 IOException을 전파하는 계약이 아닙니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-problem-decomposition-contracts",
+      "lessonId": "java-06-review-practice",
+      "conceptId": "java.problem-decomposition",
+      "difficulty": "basic",
+      "prompt": "점수 기능을 입력 유효성 검사, 통과 판정, 표시 문장 생성의 세 역할로 나누고 각 단계의 결과를 다음 단계에 명시적으로 전달하려 합니다. 가장 잘 맞는 메서드 계약 묶음은 무엇인가요?",
+      "options": [
+        {
+          "id": "a",
+          "text": "static String process(int score) 하나에서 검증, 판정, 문자열 생성을 모두 처리한다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 최종 동작은 만들 수 있지만 세 역할을 독립적으로 확인하려는 요구사항과 맞지 않습니다. 어느 단계에서 문제가 생겼는지도 좁히기 어렵습니다."
+        },
+        {
+          "id": "b",
+          "text": "static void validate(), static void calculate(), static void print()가 모두 공유 필드만 읽고 쓴다.",
+          "isCorrect": false,
+          "feedback": "틀립니다. 이름은 나뉘었지만 입력과 출력이 계약에 드러나지 않고 숨은 공유 상태에 의존합니다. 단계 사이에 어떤 값이 전달되는지 호출 코드에서 확인하기 어렵습니다."
+        },
+        {
+          "id": "c",
+          "text": "static boolean isValidScore(String score), static int isPassing(int score), static boolean formatResult(boolean passed)",
+          "isCorrect": false,
+          "feedback": "틀립니다. 점수 입력을 int로 다룬다는 요구와 첫 계약이 맞지 않고, 통과 판정은 boolean을 반환해야 하며 표시 생성은 String을 반환해야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "static boolean isValidScore(int score), static boolean isPassing(int score), static String formatResult(int score, boolean passed)",
+          "isCorrect": true,
+          "feedback": "맞습니다. 각 메서드가 한 역할을 맡고 필요한 입력과 반환 타입을 선언에 드러냅니다. 유효성, 판정, 표현 단계를 따로 호출하고 검증할 수 있습니다."
+        }
+      ]
+    },
+    {
+      "id": "quiz-java-boundary-test-expectations",
+      "lessonId": "java-06-review-practice",
+      "conceptId": "java.testing",
+      "difficulty": "application",
+      "prompt": "유효 범위의 바로 바깥과 안쪽, 통과 기준의 양쪽을 확인하기 위해 -1, 0, 59, 60, 100, 101을 테스트합니다. 다음 메서드의 올바른 기대 결과 조합은 무엇인가요?",
+      "code": "class Grader {\n    static String grade(int score) {\n        if (score < 0 || score > 100) {\n            return \"invalid\";\n        }\n        if (score >= 60) {\n            return \"pass\";\n        }\n        return \"retry\";\n    }\n}",
+      "options": [
+        {
+          "id": "a",
+          "text": "-1→invalid, 0→invalid, 59→retry, 60→pass, 100→pass, 101→invalid",
+          "isCorrect": false,
+          "feedback": "틀립니다. 0은 score < 0도 score > 100도 아니므로 유효 범위 안입니다. 통과 기준에는 못 미쳐 retry가 되어야 합니다."
+        },
+        {
+          "id": "b",
+          "text": "-1→invalid, 0→retry, 59→retry, 60→pass, 100→pass, 101→invalid",
+          "isCorrect": true,
+          "feedback": "맞습니다. -1과 101은 유효 범위 밖이고, 0과 59는 유효하지만 60 미만이며, 60과 100은 유효하면서 통과 기준 이상입니다."
+        },
+        {
+          "id": "c",
+          "text": "-1→invalid, 0→retry, 59→pass, 60→retry, 100→pass, 101→invalid",
+          "isCorrect": false,
+          "feedback": "틀립니다. 통과 조건은 score >= 60입니다. 따라서 59는 retry, 경계값 60은 pass여야 합니다."
+        },
+        {
+          "id": "d",
+          "text": "-1→invalid, 0→retry, 59→retry, 60→pass, 100→invalid, 101→invalid",
+          "isCorrect": false,
+          "feedback": "틀립니다. 잘못된 상한 조건은 score > 100이므로 100은 유효합니다. 또한 통과 기준 이상이므로 pass가 되어야 합니다."
         }
       ]
     }

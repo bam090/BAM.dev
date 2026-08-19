@@ -1,6 +1,6 @@
 # Code Quest 작성 계약
 
-Code Quest는 교안의 개념을 학습자가 언어의 실제 작성 단위로 직접 구현하도록 돕는 콘텐츠입니다. JavaScript 학습자는 작은 순수 함수를, HTML 학습자는 마크업을, CSS 학습자는 스타일시트를 작성합니다. HTML·CSS 소스를 JavaScript 함수 문자열로 감싸지 않습니다.
+Code Quest는 교안의 개념을 학습자가 언어의 실제 작성 단위로 직접 구현하도록 돕는 콘텐츠입니다. JavaScript 학습자는 작은 순수 함수를, Java 학습자는 `public class Solution`의 정적 메서드를, HTML 학습자는 마크업을, CSS 학습자는 스타일시트를 작성합니다. Java 소스를 JavaScript로 흉내 내거나 HTML·CSS 소스를 JavaScript 함수 문자열로 감싸지 않습니다.
 
 문제 설명, 시작 소스, 단계별 힌트와 브라우저에 전달되는 공개 테스트는 `content/quests/<languageId>.json`에 둡니다. 기준 답안과 대표 오답은 빌드 대상이 아닌 `tests/fixtures/`에 둡니다. 브라우저에 전달되는 문제·assertion·기대값은 개발자 도구에서 확인할 수 있으므로 모든 언어에서 공개 테스트라고 부릅니다.
 
@@ -13,7 +13,7 @@ Code Quest는 교안의 개념을 학습자가 언어의 실제 작성 단위로
 | `schemaVersion` | 콘텐츠 스키마 버전. 현재 값은 `1` |
 | `contractVersion` | 채점 요청 계약 버전. 현재 값은 `1` |
 | `languageId` | 파일명과 커리큘럼 언어 ID에 연결되는 값 |
-| `evaluationKind` | HTML은 `html-dom-v1`, CSS는 `css-style-v1`. 기존 JavaScript 함수 컬렉션은 생략 |
+| `evaluationKind` | HTML은 `html-dom-v1`, CSS는 `css-style-v1`. JavaScript·Java 함수 컬렉션은 생략하고 `languageId`로 구분 |
 | `title` | 컬렉션의 화면 제목 |
 | `quests` | 해당 언어의 Quest 배열 |
 
@@ -50,6 +50,14 @@ JavaScript 공개 테스트 DTO는 다음 네 필드만 사용합니다.
 ```
 
 각 테스트의 `args` 항목 수와 순서는 `functionContract.parameters`와 같아야 합니다. 정상값뿐 아니라 최솟값, 최댓값, 조건 경계와 빈 배열 같은 예외적인 경계를 포함합니다.
+
+## Java 정적 메서드 계약
+
+Java Quest도 `functionContract`, `entryPoint`, `examples`, `publicTests`를 사용하지만 `starterCode`와 학습자 답안은 Java 파일 전체입니다. 패키지 선언이 없는 `public class Solution` 안에 문제에서 지정한 `public static` 메서드를 두며, 매개변수 이름·순서·타입과 반환 타입은 `functionContract`에 정확히 맞춥니다.
+
+현재 실행 DTO가 허용하는 타입은 `int`, `boolean`, `String`, `int[]`, `String[]`입니다. 각 공개 테스트의 `args`와 `expected`도 해당 Java 타입으로 변환 가능한 값이어야 합니다. Java 소스는 `javac -proc:none -encoding UTF-8 --release 21`로 컴파일하고, 화면에 공개된 테스트만 고정된 Java 21 Docker 환경의 서로 분리된 실행에서 호출합니다. 브라우저가 임의 테스트를 추가하거나 Java 실행 결과를 추측하지 않습니다.
+
+Java 채점기는 same-origin `/api/java/execute` 경계를 사용합니다. 로컬 Docker daemon과 문서에 고정한 이미지가 준비되지 않았거나 컴파일·실행·정리가 안전하게 완료되지 않으면 무격리 host JDK로 전환하지 않고 `engine_error`로 중단합니다. 네트워크·파일시스템·권한·CPU·메모리·프로세스·시간·출력 제한과 금지 API 범위, 남는 보안 한계는 [ADR 0005](decisions/0005-local-java-grader.md)를 따릅니다.
 
 ## HTML 직접 마크업 계약
 
@@ -100,9 +108,9 @@ preflight와 iframe CSP는 위험한 입력과 외부 요청을 줄이는 로컬
 
 ## 실행 요청과 결과
 
-공통 실행 요청은 안정적인 `requestId`, `contractVersion`, `questId`, `questRevision`, `languageId`, `suite: "public"`, 학습자 `source`와 공개 테스트를 가집니다. HTML·CSS 요청은 명시적인 `evaluationKind`를 추가하고 HTML은 `fixtureHtml: null`, CSS는 승인된 `fixtureHtml`을 사용합니다. 요청은 허용 필드만 사본으로 만든 뒤 재검증·동결하고, 원본 객체를 평가 중 다시 읽지 않습니다.
+공통 실행 요청은 안정적인 `requestId`, `contractVersion`, `questId`, `questRevision`, `languageId`, `suite: "public"`, 학습자 `source`와 공개 테스트를 가집니다. Java 요청은 정식 `functionContract`에서 만든 `parameterTypes`와 `returnType`을 추가합니다. HTML·CSS 요청은 명시적인 `evaluationKind`를 추가하고 HTML은 `fixtureHtml: null`, CSS는 승인된 `fixtureHtml`을 사용합니다. 요청은 허용 필드만 사본으로 만든 뒤 재검증·동결하고, 원본 객체를 평가 중 다시 읽지 않습니다.
 
-`CodeQuestRunnerRouter`는 JavaScript 함수 요청을 Worker runner로, HTML·CSS 요청을 Web runner로 전달합니다. Web runner도 테스트별 `passed`, `wrong_answer`, `syntax_error`, `cancelled`, `engine_error`, `not_run`과 기대값·실제값을 공통 report 형태로 반환합니다. HTML·CSS는 학습자 코드를 실행하지 않으므로 JavaScript의 무한 루프·console 출력 제한을 그대로 적용한다고 표현하지 않습니다.
+`CodeQuestRunnerRouter`는 JavaScript 함수 요청을 Worker runner로, Java 요청을 same-origin API를 사용하는 Java runner로, HTML·CSS 요청을 Web runner로 전달합니다. 세 runner는 테스트별 상태와 기대값·실제값을 공통 report 형태로 반환하되, 실행 환경에 맞지 않는 제한을 동일하다고 표현하지 않습니다. HTML·CSS는 학습자 코드를 실행하지 않으며 Java는 브라우저 Worker가 아니라 로컬 Docker에서 컴파일·실행됩니다.
 
 ## 독립 검증
 
@@ -112,9 +120,9 @@ fixture 파일은 Quest마다 다음 자료를 보관합니다.
 - 정상적으로 파싱되지만 지정된 공개 테스트에서 실패하는 대표 오답
 - 대표 오답이 실패해야 하는 공개 테스트 ID 목록
 
-현재 `tests/fixtures/code-quest-solutions.js`에는 JavaScript 기준 풀이 5개와 기존 독립 사례·대표 오답이 있습니다. `html-code-quest-solutions.js`에는 기준 마크업 5개와 대표 오답 5개, `css-code-quest-solutions.js`에는 기준 스타일시트 4개와 대표 오답 10개가 있습니다. 이 fixture는 빌드 결과에 포함하지 않습니다.
+현재 `tests/fixtures/code-quest-solutions.js`에는 JavaScript 기준 풀이 5개와 기존 독립 사례·대표 오답이 있습니다. `html-code-quest-solutions.js`에는 기준 마크업 5개와 대표 오답 5개, `css-code-quest-solutions.js`에는 기준 스타일시트 4개와 대표 오답 10개가 있습니다. `java-code-quest-solutions.js`에는 Java 기준 풀이 5개, 공개 테스트와 겹치지 않는 독립 사례 6개, 대표 오답 5개가 있습니다. 이 fixture는 빌드 결과에 포함하지 않습니다.
 
-자동 검증은 컬렉션 스키마와 런타임 계약, ID·slug·order, 교안·개념 연결, 공개 테스트와 실패 설명의 1:1 관계, 힌트 단계, preflight, 기준 답안 통과, 대표 오답의 지정 실패를 확인합니다. 특정 요소·선택자·메서드 사용이나 포괄적 접근성 품질처럼 현재 assertion으로 관찰하지 않는 요구는 합격 조건으로 달성했다고 표현하지 않고 비채점 자기점검으로 분리합니다.
+자동 검증은 컬렉션 스키마와 런타임 계약, ID·slug·order, 교안·개념 연결, 공개 테스트와 실패 설명의 1:1 관계, 힌트 단계, preflight, 기준 답안 통과, 대표 오답의 지정 실패를 확인합니다. Java fixture는 `javac --release 21`로 기준 풀이·starter·대표 오답을 실제 컴파일하고 공개·독립 사례의 반환값을 실행해 비교합니다. 특정 요소·선택자·클래스 내부 구조나 점근 복잡도처럼 현재 출력 assertion으로 직접 관찰하지 않는 요구는 합격 조건으로 달성했다고 표현하지 않고 비채점 자기점검으로 분리합니다.
 
 ```bash
 npm run check

@@ -1,0 +1,710 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "languageId": "java",
+  "title": "Java 코딩테스트",
+  "problems": [
+    {
+      "id": "coding-test-java-count-vowels",
+      "slug": "java-count-vowels",
+      "revision": 1,
+      "order": 1,
+      "lessonId": "java-01-types-methods",
+      "conceptIds": ["java.types", "java.methods"],
+      "difficulty": "beginner",
+      "type": "string",
+      "tags": ["문자열", "메서드", "카운팅"],
+      "estimatedMinutes": 15,
+      "title": "영문 모음 개수 세기",
+      "summary": "문자열을 순회하며 대소문자 영문 모음을 모두 같은 규칙으로 셉니다.",
+      "description": "`public class Solution`의 `public static int countVowels(String text)` 메서드를 작성하세요. text에 등장하는 영문 모음 a, e, i, o, u와 A, E, I, O, U의 총개수를 반환합니다. 다른 문자와 공백은 세지 않습니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "text",
+            "type": "String",
+            "description": "길이 0 이상 1,000 이하인 문자열입니다."
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "description": "대소문자를 모두 포함한 영문 모음의 개수입니다."
+        },
+        "constraints": [
+          "text는 null이 아닙니다.",
+          "영문 모음은 a, e, i, o, u의 대문자와 소문자만 뜻합니다.",
+          "한글, 숫자, 기호와 공백은 결과에 포함하지 않습니다."
+        ],
+        "complexity": {
+          "time": "O(n), n = text의 길이",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "countVowels",
+      "starterCode": "public class Solution {\n  public static int countVowels(String text) {\n    int count = 0;\n    // 각 문자가 영문 모음인지 확인해 count를 갱신하세요.\n    return count;\n  }\n}\n",
+      "examples": [
+        {
+          "args": ["Java CODE"],
+          "expected": 4,
+          "explanation": "Java의 a 두 개와 CODE의 O, E를 합쳐 4개입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-vowels-empty",
+          "label": "빈 문자열",
+          "args": [""],
+          "expected": 0
+        },
+        {
+          "id": "java-vowels-none",
+          "label": "모음이 없는 문자열",
+          "args": ["rhythm 123"],
+          "expected": 0
+        },
+        {
+          "id": "java-vowels-lowercase",
+          "label": "소문자 모음이 섞인 단어",
+          "args": ["education"],
+          "expected": 5
+        },
+        {
+          "id": "java-vowels-uppercase",
+          "label": "대문자 모음 다섯 개",
+          "args": ["AEIOU"],
+          "expected": 5
+        },
+        {
+          "id": "java-vowels-mixed-case",
+          "label": "대소문자와 공백이 섞인 문자열",
+          "args": ["Java CODE"],
+          "expected": 4
+        },
+        {
+          "id": "java-vowels-repeated",
+          "label": "같은 모음이 반복되는 문자열",
+          "args": ["bbbAaaa"],
+          "expected": 4
+        }
+      ],
+      "runTestIds": ["java-vowels-lowercase", "java-vowels-uppercase", "java-vowels-mixed-case"],
+      "failureExplanations": [
+        {
+          "testId": "java-vowels-empty",
+          "message": "빈 문자열에서는 반복문이 실행되지 않으므로 초기 개수 0을 반환해야 합니다."
+        },
+        {
+          "testId": "java-vowels-none",
+          "message": "자음, 숫자와 공백을 모음으로 세지 않았는지 확인하세요."
+        },
+        {
+          "testId": "java-vowels-lowercase",
+          "message": "a, e, i, o, u 중 하나를 조건에서 빠뜨리지 않았는지 확인하세요."
+        },
+        {
+          "testId": "java-vowels-uppercase",
+          "message": "대문자 모음도 소문자와 같은 모음으로 세어야 합니다."
+        },
+        {
+          "testId": "java-vowels-mixed-case",
+          "message": "각 문자를 한 가지 대소문자로 바꿔 비교하거나 대문자 조건을 함께 처리하세요."
+        },
+        {
+          "testId": "java-vowels-repeated",
+          "message": "모음을 한 번 찾은 뒤 끝내지 말고 문자열 전체에서 등장할 때마다 누적하세요."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-java-merge-alternating",
+      "slug": "java-merge-alternating",
+      "revision": 1,
+      "order": 2,
+      "lessonId": "java-02-control-flow-arrays",
+      "conceptIds": ["java.control-flow", "java.arrays"],
+      "difficulty": "beginner",
+      "type": "array",
+      "tags": ["배열", "인덱스", "병합"],
+      "estimatedMinutes": 20,
+      "title": "두 배열 번갈아 합치기",
+      "summary": "길이가 다른 두 int 배열을 같은 인덱스끼리 번갈아 배치하고 남은 원소를 이어 붙입니다.",
+      "description": "`public class Solution`의 `public static int[] mergeAlternating(int[] left, int[] right)` 메서드를 작성하세요. 인덱스 0부터 left[i], right[i] 순으로 결과에 넣습니다. 한 배열의 원소가 먼저 끝나면 다른 배열의 남은 원소를 원래 순서대로 모두 넣으세요.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "left",
+            "type": "int[]",
+            "description": "길이 0 이상 100 이하인 첫 번째 정수 배열입니다."
+          },
+          {
+            "name": "right",
+            "type": "int[]",
+            "description": "길이 0 이상 100 이하인 두 번째 정수 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "int[]",
+          "description": "두 배열을 번갈아 배치하고 남은 원소까지 포함한 새 배열입니다."
+        },
+        "constraints": [
+          "left와 right는 null이 아닙니다.",
+          "반환 배열의 길이는 left.length + right.length입니다.",
+          "입력 배열의 원소 순서는 각각 유지합니다."
+        ],
+        "complexity": {
+          "time": "O(n + m), n = left의 길이, m = right의 길이",
+          "space": "O(n + m)"
+        }
+      },
+      "entryPoint": "mergeAlternating",
+      "starterCode": "public class Solution {\n  public static int[] mergeAlternating(int[] left, int[] right) {\n    int[] merged = new int[left.length + right.length];\n    // 두 입력의 현재 인덱스와 merged의 쓰기 위치를 관리하세요.\n    return merged;\n  }\n}\n",
+      "examples": [
+        {
+          "args": [[1, 2, 3], [10, 20]],
+          "expected": [1, 10, 2, 20, 3],
+          "explanation": "두 배열에서 두 번씩 번갈아 가져온 뒤 left에 남은 3을 마지막에 넣습니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-merge-both-empty",
+          "label": "두 배열이 모두 빈 경우",
+          "args": [[], []],
+          "expected": []
+        },
+        {
+          "id": "java-merge-equal-length",
+          "label": "길이가 같은 두 배열",
+          "args": [[1, 2], [10, 20]],
+          "expected": [1, 10, 2, 20]
+        },
+        {
+          "id": "java-merge-left-longer",
+          "label": "왼쪽 배열이 더 긴 경우",
+          "args": [[1, 2, 3], [10, 20]],
+          "expected": [1, 10, 2, 20, 3]
+        },
+        {
+          "id": "java-merge-right-longer",
+          "label": "오른쪽 배열이 더 긴 경우",
+          "args": [[1], [7, 8, 9]],
+          "expected": [1, 7, 8, 9]
+        },
+        {
+          "id": "java-merge-left-empty",
+          "label": "왼쪽 배열만 빈 경우",
+          "args": [[], [-2, -1]],
+          "expected": [-2, -1]
+        },
+        {
+          "id": "java-merge-right-empty",
+          "label": "오른쪽 배열만 빈 경우",
+          "args": [[4, 5], []],
+          "expected": [4, 5]
+        }
+      ],
+      "runTestIds": ["java-merge-equal-length", "java-merge-left-longer", "java-merge-right-longer"],
+      "failureExplanations": [
+        {
+          "testId": "java-merge-both-empty",
+          "message": "두 길이의 합이 0이면 길이 0인 int[]을 반환해야 합니다."
+        },
+        {
+          "testId": "java-merge-equal-length",
+          "message": "같은 인덱스에서 left 원소를 먼저, right 원소를 다음에 배치하세요."
+        },
+        {
+          "testId": "java-merge-left-longer",
+          "message": "번갈아 넣는 구간이 끝난 뒤 left에 남은 원소를 결과 끝에 복사하세요."
+        },
+        {
+          "testId": "java-merge-right-longer",
+          "message": "left가 먼저 끝나도 right의 현재 인덱스부터 마지막까지 계속 복사해야 합니다."
+        },
+        {
+          "testId": "java-merge-left-empty",
+          "message": "한 배열이 처음부터 비어 있어도 다른 배열의 모든 원소를 결과에 보존해야 합니다."
+        },
+        {
+          "testId": "java-merge-right-empty",
+          "message": "right가 비어 있으면 left를 같은 순서로 담은 새 배열이 결과입니다."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-java-classify-students",
+      "slug": "java-classify-students",
+      "revision": 1,
+      "order": 3,
+      "lessonId": "java-03-classes-objects",
+      "conceptIds": ["java.classes", "java.objects", "java.constructors", "java.encapsulation"],
+      "difficulty": "beginner",
+      "type": "object",
+      "tags": ["클래스", "생성자", "배열"],
+      "estimatedMinutes": 24,
+      "title": "학생 결과 객체로 분류하기",
+      "summary": "이름과 점수를 객체 상태로 묶고 인스턴스 메서드가 합격 여부를 표시하게 합니다.",
+      "description": "`public class Solution`의 `public static String[] classifyStudents(String[] names, int[] scores)` 메서드를 작성하세요. 같은 인덱스의 이름과 점수를 학생 한 명으로 보고, 점수가 60 이상이면 `name:PASS`, 60 미만이면 `name:RETRY`를 반환 배열에 담습니다. 제공된 private 중첩 클래스와 생성자는 이름과 점수를 캡슐화해 보는 권장 구현 방식입니다. 스스로 객체를 사용했는지 확인할 수 있지만 자동 채점은 반환 배열의 값과 순서만 검사하며 내부 클래스 구조는 판정하지 않습니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "names",
+            "type": "String[]",
+            "description": "학생 이름을 순서대로 담은 길이 0 이상 100 이하의 배열입니다."
+          },
+          {
+            "name": "scores",
+            "type": "int[]",
+            "description": "names와 같은 길이이며 0 이상 100 이하의 점수를 담은 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "String[]",
+          "description": "입력 순서대로 만든 `name:PASS` 또는 `name:RETRY` 문자열 배열입니다."
+        },
+        "constraints": [
+          "names와 scores는 null이 아니며 길이가 같습니다.",
+          "각 name은 null이 아니고 각 score는 0 이상 100 이하입니다.",
+          "합격 경계값 60은 PASS에 포함합니다.",
+          "private 중첩 클래스 사용은 권장 구현의 스스로 확인 항목이며 자동 채점은 반환 배열만 검사합니다."
+        ],
+        "complexity": {
+          "time": "O(n + c), n = names의 길이, c = 모든 이름 길이의 합",
+          "space": "O(n + c), n = 반환 항목 수, c = 결과에 복사되는 이름 길이의 합"
+        }
+      },
+      "entryPoint": "classifyStudents",
+      "starterCode": "public class Solution {\n  private static class StudentResult {\n    private final String name;\n    private final int score;\n\n    StudentResult(String name, int score) {\n      this.name = name;\n      this.score = score;\n    }\n\n    String label() {\n      return name;\n    }\n  }\n\n  public static String[] classifyStudents(String[] names, int[] scores) {\n    // 각 인덱스의 값으로 StudentResult를 만들고 label() 결과를 담으세요.\n    return new String[0];\n  }\n}\n",
+      "examples": [
+        {
+          "args": [["A", "B", "C"], [0, 60, 61]],
+          "expected": ["A:RETRY", "B:PASS", "C:PASS"],
+          "explanation": "0점은 재도전이고, 합격 경계 60점과 그보다 높은 61점은 모두 합격입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-students-empty",
+          "label": "학생이 없는 경우",
+          "args": [[], []],
+          "expected": []
+        },
+        {
+          "id": "java-students-below",
+          "label": "경계 바로 아래 점수",
+          "args": [["Bo"], [59]],
+          "expected": ["Bo:RETRY"]
+        },
+        {
+          "id": "java-students-boundary",
+          "label": "합격 경계와 같은 점수",
+          "args": [["Ara"], [60]],
+          "expected": ["Ara:PASS"]
+        },
+        {
+          "id": "java-students-maximum",
+          "label": "최고 점수",
+          "args": [["Mina"], [100]],
+          "expected": ["Mina:PASS"]
+        },
+        {
+          "id": "java-students-mixed",
+          "label": "여러 경계 점수가 섞인 경우",
+          "args": [["A", "B", "C"], [0, 60, 61]],
+          "expected": ["A:RETRY", "B:PASS", "C:PASS"]
+        },
+        {
+          "id": "java-students-repeated-name",
+          "label": "같은 이름에 서로 다른 결과",
+          "args": [["Kim", "Kim"], [59, 60]],
+          "expected": ["Kim:RETRY", "Kim:PASS"]
+        }
+      ],
+      "runTestIds": ["java-students-below", "java-students-boundary", "java-students-mixed"],
+      "failureExplanations": [
+        {
+          "testId": "java-students-empty",
+          "message": "입력 길이가 0이면 결과도 길이 0인 String[]이어야 합니다."
+        },
+        {
+          "testId": "java-students-below",
+          "message": "60보다 작은 점수에는 이름 뒤에 `:RETRY`를 붙이세요."
+        },
+        {
+          "testId": "java-students-boundary",
+          "message": "60점은 PASS입니다. 비교 연산자에 같은 값이 포함되는지 확인하세요."
+        },
+        {
+          "testId": "java-students-maximum",
+          "message": "점수를 문자열에 붙이는 것이 아니라 합격 여부인 `:PASS`를 붙여야 합니다."
+        },
+        {
+          "testId": "java-students-mixed",
+          "message": "각 인덱스마다 새 객체를 만들고 그 학생의 score로 독립적으로 분류하세요."
+        },
+        {
+          "testId": "java-students-repeated-name",
+          "message": "이름이 같아도 서로 다른 학생 항목입니다. 이름을 키로 합치지 말고 입력 인덱스를 보존하세요."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-java-frequency-report",
+      "slug": "java-frequency-report",
+      "revision": 1,
+      "order": 4,
+      "lessonId": "java-04-collections-generics",
+      "conceptIds": ["java.collections", "java.generics", "java.list", "java.map"],
+      "difficulty": "intermediate",
+      "type": "object",
+      "tags": ["Map", "제네릭", "빈도"],
+      "estimatedMinutes": 28,
+      "title": "단어 빈도 보고서 만들기",
+      "summary": "단어별 빈도를 Map에 누적하고 최초 등장 순서의 String 배열로 변환합니다.",
+      "description": "`public class Solution`의 `public static String[] frequencyReport(String[] words)` 메서드를 작성하세요. 서로 같은 문자열의 등장 횟수를 세고, 각 고유 단어를 처음 등장한 순서대로 `word=count` 형식에 담아 반환하세요. 비교는 대소문자를 구분합니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "words",
+            "type": "String[]",
+            "description": "길이 0 이상 200 이하이며 null 원소가 없는 단어 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "String[]",
+          "description": "최초 등장 순서로 정렬된 `word=count` 문자열 배열입니다."
+        },
+        "constraints": [
+          "words와 각 원소는 null이 아닙니다.",
+          "String 비교는 대소문자를 구분합니다.",
+          "각 고유 단어는 반환 배열에 정확히 한 번만 등장합니다."
+        ],
+        "complexity": {
+          "time": "O(n + c + u log(n + 1)) 평균, n = words의 길이, c = 모든 단어 길이의 합, u = 고유 단어 수 (LinkedHashMap 연산 평균 O(1) 가정)",
+          "space": "O(u + c + u log(n + 1)), c = 모든 단어 길이의 합, u = 고유 단어 수"
+        }
+      },
+      "entryPoint": "frequencyReport",
+      "starterCode": "import java.util.LinkedHashMap;\nimport java.util.Map;\n\npublic class Solution {\n  public static String[] frequencyReport(String[] words) {\n    Map<String, Integer> counts = new LinkedHashMap<>();\n    // 빈도를 누적한 뒤 `word=count` 형식의 배열을 만드세요.\n    return new String[0];\n  }\n}\n",
+      "examples": [
+        {
+          "args": [["red", "blue", "red", "green", "blue", "red"]],
+          "expected": ["red=3", "blue=2", "green=1"],
+          "explanation": "빈도는 모두 누적하지만 항목 순서는 red, blue, green의 최초 등장 순서를 따릅니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-frequency-empty",
+          "label": "빈 단어 배열",
+          "args": [[]],
+          "expected": []
+        },
+        {
+          "id": "java-frequency-single",
+          "label": "단어 하나",
+          "args": [["code"]],
+          "expected": ["code=1"]
+        },
+        {
+          "id": "java-frequency-repeated",
+          "label": "한 단어만 반복",
+          "args": [["go", "go", "go"]],
+          "expected": ["go=3"]
+        },
+        {
+          "id": "java-frequency-first-order",
+          "label": "빈도와 최초 등장 순서가 다른 경우",
+          "args": [["red", "blue", "red", "green", "blue", "red"]],
+          "expected": ["red=3", "blue=2", "green=1"]
+        },
+        {
+          "id": "java-frequency-case-sensitive",
+          "label": "대소문자가 다른 단어",
+          "args": [["java", "Java", "java"]],
+          "expected": ["java=2", "Java=1"]
+        },
+        {
+          "id": "java-frequency-empty-word",
+          "label": "빈 문자열도 하나의 단어인 경우",
+          "args": [["", "a", ""]],
+          "expected": ["=2", "a=1"]
+        }
+      ],
+      "runTestIds": ["java-frequency-repeated", "java-frequency-first-order", "java-frequency-case-sensitive"],
+      "failureExplanations": [
+        {
+          "testId": "java-frequency-empty",
+          "message": "고유 단어가 없으면 길이 0인 String[]을 반환해야 합니다."
+        },
+        {
+          "testId": "java-frequency-single",
+          "message": "처음 본 단어의 초기 빈도는 1이어야 하며 `word=count` 형식을 지켜야 합니다."
+        },
+        {
+          "testId": "java-frequency-repeated",
+          "message": "같은 키를 다시 만나면 기존 빈도에 1을 더하고 항목을 새로 만들지 마세요."
+        },
+        {
+          "testId": "java-frequency-first-order",
+          "message": "빈도순이나 사전순으로 정렬하지 말고 Map에서 최초 등장 순서를 보존하세요."
+        },
+        {
+          "testId": "java-frequency-case-sensitive",
+          "message": "java와 Java를 같은 키로 바꾸지 마세요. 원본 String을 그대로 Map 키로 사용하세요."
+        },
+        {
+          "testId": "java-frequency-empty-word",
+          "message": "빈 문자열도 null이 아닌 유효한 키입니다. `=count` 형식으로 결과에 포함하세요."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-java-sum-valid-integers",
+      "slug": "java-sum-valid-integers",
+      "revision": 1,
+      "order": 5,
+      "lessonId": "java-05-exceptions-debugging",
+      "conceptIds": ["java.exceptions", "java.debugging"],
+      "difficulty": "intermediate",
+      "type": "string",
+      "tags": ["예외", "문자열 변환", "누적"],
+      "estimatedMinutes": 25,
+      "title": "변환 가능한 정수만 합산하기",
+      "summary": "여러 문자열을 독립적으로 변환하고 실패한 항목만 건너뛰며 합계를 유지합니다.",
+      "description": "`public class Solution`의 `public static int sumValidIntegers(String[] tokens)` 메서드를 작성하세요. 각 문자열에 Integer.parseInt를 적용해 성공한 int만 합산하고 NumberFormatException이 발생한 문자열은 건너뛰세요. 한 항목의 실패 때문에 나머지 항목 처리를 중단하면 안 됩니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "tokens",
+            "type": "String[]",
+            "description": "길이 0 이상 200 이하이며 null 원소가 없는 문자열 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "description": "Integer.parseInt에 성공한 모든 값의 합입니다."
+        },
+        "constraints": [
+          "tokens와 각 원소는 null이 아닙니다.",
+          "문자열을 trim하지 않고 Integer.parseInt(token)의 계약을 사용합니다.",
+          "변환에 성공한 값의 합은 int 범위 안에 있습니다."
+        ],
+        "complexity": {
+          "time": "O(c), c = 모든 문자열 길이의 합",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "sumValidIntegers",
+      "starterCode": "public class Solution {\n  public static int sumValidIntegers(String[] tokens) {\n    int total = 0;\n    // 각 token을 별도의 try-catch에서 변환해 성공한 값만 더하세요.\n    return total;\n  }\n}\n",
+      "examples": [
+        {
+          "args": [["7", "x", "-2", "4.5", "3"]],
+          "expected": 8,
+          "explanation": "7, -2, 3만 int로 변환되므로 합은 8입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-sum-empty",
+          "label": "빈 문자열 배열",
+          "args": [[]],
+          "expected": 0
+        },
+        {
+          "id": "java-sum-positive",
+          "label": "모두 양의 정수인 경우",
+          "args": [["1", "20", "300"]],
+          "expected": 321
+        },
+        {
+          "id": "java-sum-negative",
+          "label": "음수와 양수가 섞인 경우",
+          "args": [["-5", "2", "-3"]],
+          "expected": -6
+        },
+        {
+          "id": "java-sum-invalid-between",
+          "label": "유효하지 않은 문자열 사이의 정수",
+          "args": [["7", "x", "-2", "4.5", "3"]],
+          "expected": 8
+        },
+        {
+          "id": "java-sum-whitespace-invalid",
+          "label": "앞뒤 공백이 있는 문자열",
+          "args": [[" 5", "5 ", "6"]],
+          "expected": 6
+        },
+        {
+          "id": "java-sum-overflow-invalid",
+          "label": "int 범위를 넘는 문자열",
+          "args": [["2147483648", "-2147483649", "9"]],
+          "expected": 9
+        },
+        {
+          "id": "java-sum-plus-sign",
+          "label": "더하기 부호가 있는 정수",
+          "args": [["+8", "0"]],
+          "expected": 8
+        }
+      ],
+      "runTestIds": ["java-sum-positive", "java-sum-invalid-between", "java-sum-overflow-invalid"],
+      "failureExplanations": [
+        {
+          "testId": "java-sum-empty",
+          "message": "입력이 비어 있으면 초기 합계 0을 반환해야 합니다."
+        },
+        {
+          "testId": "java-sum-positive",
+          "message": "변환에 성공한 모든 항목을 끝까지 순회하며 누적하세요."
+        },
+        {
+          "testId": "java-sum-negative",
+          "message": "음수 문자열도 유효한 int입니다. 부호를 제거하거나 해당 값을 건너뛰지 마세요."
+        },
+        {
+          "testId": "java-sum-invalid-between",
+          "message": "한 문자열의 변환 실패를 처리한 뒤에도 다음 문자열 순회를 계속해야 합니다."
+        },
+        {
+          "testId": "java-sum-whitespace-invalid",
+          "message": "문제는 trim을 요구하지 않습니다. 공백이 포함된 두 항목은 실패로 건너뛰고 6만 더하세요."
+        },
+        {
+          "testId": "java-sum-overflow-invalid",
+          "message": "숫자 문자만 있어도 int 범위를 넘으면 변환 실패입니다. NumberFormatException을 처리하세요."
+        },
+        {
+          "testId": "java-sum-plus-sign",
+          "message": "Integer.parseInt는 앞의 더하기 부호를 허용하므로 +8도 합계에 포함해야 합니다."
+        }
+      ]
+    },
+    {
+      "id": "coding-test-java-maximum-window-sum",
+      "slug": "java-maximum-window-sum",
+      "revision": 1,
+      "order": 6,
+      "lessonId": "java-06-review-practice",
+      "conceptIds": ["java.problem-decomposition", "java.testing", "java.complexity"],
+      "difficulty": "advanced",
+      "type": "array",
+      "tags": ["배열", "슬라이딩 윈도", "복잡도"],
+      "estimatedMinutes": 35,
+      "title": "고정 길이 구간의 최대 합",
+      "summary": "첫 구간 합을 만든 뒤 빠지는 값과 들어오는 값만 갱신해 모든 연속 구간을 O(n)에 비교합니다.",
+      "description": "`public class Solution`의 `public static int maximumWindowSum(int[] values, int windowSize)` 메서드를 작성하세요. values에서 서로 이어진 정확히 windowSize개 원소의 합 중 최댓값을 반환하세요. 첫 구간의 합을 구한 뒤 창을 한 칸 옮길 때 빠지는 값과 들어오는 값만 반영해 O(n)에 해결하세요.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "values",
+            "type": "int[]",
+            "description": "길이 1 이상 10,000 이하인 정수 배열입니다."
+          },
+          {
+            "name": "windowSize",
+            "type": "int",
+            "description": "1 이상 values.length 이하인 연속 구간 길이입니다."
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "description": "길이가 windowSize인 모든 연속 구간 합의 최댓값입니다."
+        },
+        "constraints": [
+          "values는 null이 아니며 길이는 1 이상 10,000 이하입니다.",
+          "windowSize는 1 이상 values.length 이하입니다.",
+          "모든 구간 합은 int 범위 안에 있습니다."
+        ],
+        "complexity": {
+          "time": "O(n), n = values의 길이",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "maximumWindowSum",
+      "starterCode": "public class Solution {\n  public static int maximumWindowSum(int[] values, int windowSize) {\n    int windowSum = 0;\n    // 첫 구간 합을 만든 뒤 한 칸씩 옮기며 최댓값을 갱신하세요.\n    return windowSum;\n  }\n}\n",
+      "examples": [
+        {
+          "args": [[1, 4, 2, 10, -3, 2], 3],
+          "expected": 16,
+          "explanation": "길이 3인 구간 중 [4, 2, 10]의 합 16이 가장 큽니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-window-size-one",
+          "label": "창 길이가 1인 경우",
+          "args": [[3, -2, 5], 1],
+          "expected": 5
+        },
+        {
+          "id": "java-window-full-length",
+          "label": "창 길이가 배열 전체인 경우",
+          "args": [[2, -1, 4], 3],
+          "expected": 5
+        },
+        {
+          "id": "java-window-middle-maximum",
+          "label": "가운데 구간의 합이 최대인 경우",
+          "args": [[1, 4, 2, 10, -3, 2], 3],
+          "expected": 16
+        },
+        {
+          "id": "java-window-all-negative",
+          "label": "모든 값이 음수인 경우",
+          "args": [[-8, -3, -5, -4], 2],
+          "expected": -8
+        },
+        {
+          "id": "java-window-last-maximum",
+          "label": "마지막 구간의 합이 최대인 경우",
+          "args": [[9, -10, 1, 2, 20], 2],
+          "expected": 22
+        },
+        {
+          "id": "java-window-tied-maximum",
+          "label": "여러 구간의 최대 합이 같은 경우",
+          "args": [[2, 2, 2, 2], 2],
+          "expected": 4
+        },
+        {
+          "id": "java-window-single-negative",
+          "label": "음수 하나만 있는 배열",
+          "args": [[-7], 1],
+          "expected": -7
+        }
+      ],
+      "runTestIds": ["java-window-size-one", "java-window-middle-maximum", "java-window-all-negative"],
+      "failureExplanations": [
+        {
+          "testId": "java-window-size-one",
+          "message": "windowSize가 1이면 각 원소 하나가 구간이며 가장 큰 원소가 답입니다."
+        },
+        {
+          "testId": "java-window-full-length",
+          "message": "창이 배열 전체를 덮으면 가능한 구간은 하나뿐이며 모든 값을 더한 합을 반환해야 합니다."
+        },
+        {
+          "testId": "java-window-middle-maximum",
+          "message": "창을 옮길 때 이전 창의 첫 값을 빼고 새 끝 값을 더한 뒤 최댓값과 비교하세요."
+        },
+        {
+          "testId": "java-window-all-negative",
+          "message": "최댓값을 0으로 시작하면 실제 합이 모두 음수일 때 틀립니다. 첫 번째 구간 합으로 초기화하세요."
+        },
+        {
+          "testId": "java-window-last-maximum",
+          "message": "마지막으로 시작할 수 있는 인덱스까지 창을 옮겼는지 반복문의 끝 조건을 확인하세요."
+        },
+        {
+          "testId": "java-window-tied-maximum",
+          "message": "최대 구간의 위치가 아니라 합만 반환하므로 동률이어도 같은 최댓값을 유지하면 됩니다."
+        },
+        {
+          "testId": "java-window-single-negative",
+          "message": "원소가 하나이고 windowSize가 1이면 그 음수 자체가 유일한 구간 합입니다."
+        }
+      ]
+    }
+  ]
+}

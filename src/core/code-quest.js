@@ -3,6 +3,11 @@ import {
   validateExecutionRequest,
 } from "../grading/code-grading.js";
 import {
+  createJavaExecutionRequestSnapshot,
+  hasJavaSolutionEntryPointDeclaration,
+  normalizeJavaFunctionContract,
+} from "../grading/java-grading.js";
+import {
   assertValidWebCodeQuestCollection,
   createWebCodeQuestExecutionRequest,
 } from "./web-code-quest.js";
@@ -581,6 +586,17 @@ function validateCodeQuestCollectionInternal(collectionValue, curriculum) {
       `${label}.functionContract`,
       errors,
     );
+    if (languageId === "java") {
+      try {
+        normalizeJavaFunctionContract(quest.functionContract);
+      } catch (error) {
+        errors.push(
+          `${label}.functionContract: ${
+            error instanceof Error ? error.message : "Java 함수 타입을 확인할 수 없습니다."
+          }`,
+        );
+      }
+    }
     if (!isNonEmptyString(quest.entryPoint) || !ENTRY_POINT_PATTERN.test(quest.entryPoint)) {
       errors.push(`${label}.entryPoint 형식이 올바르지 않습니다.`);
     } else if (
@@ -595,10 +611,25 @@ function validateCodeQuestCollectionInternal(collectionValue, curriculum) {
     if (
       isNonEmptyString(quest.entryPoint) &&
       ENTRY_POINT_PATTERN.test(quest.entryPoint) &&
-      isNonEmptyString(quest.starterCode) &&
-      !new RegExp(`\\b${quest.entryPoint}\\b`).test(quest.starterCode)
+      isNonEmptyString(quest.starterCode)
     ) {
-      errors.push(`${label}.starterCode에 entryPoint가 포함되어야 합니다.`);
+      if (
+        languageId === "java" &&
+        !hasJavaSolutionEntryPointDeclaration(
+          quest.starterCode,
+          quest.entryPoint,
+          quest.functionContract,
+        )
+      ) {
+        errors.push(
+          `${label}.starterCode에 public class Solution의 public static entryPoint 선언이 필요합니다.`,
+        );
+      } else if (
+        languageId !== "java" &&
+        !new RegExp(`\\b${quest.entryPoint}\\b`).test(quest.starterCode)
+      ) {
+        errors.push(`${label}.starterCode에 entryPoint가 포함되어야 합니다.`);
+      }
     }
 
     validateExamples(quest.examples, `${label}.examples`, parameterCount, errors);
@@ -709,6 +740,30 @@ export function createCodeQuestExecutionRequest(collection, quest, source, reque
       source,
       requestId,
     );
+  }
+
+  if (collection.languageId === "java") {
+    const { parameterTypes, returnType } = normalizeJavaFunctionContract(
+      canonicalQuest.functionContract,
+    );
+    return createJavaExecutionRequestSnapshot({
+      requestId,
+      contractVersion: collection.contractVersion,
+      questId: canonicalQuest.id,
+      questRevision: canonicalQuest.revision,
+      languageId: collection.languageId,
+      suite: "public",
+      source,
+      entryPoint: canonicalQuest.entryPoint,
+      parameterTypes,
+      returnType,
+      tests: canonicalQuest.publicTests.map(({ id, label, args, expected }) => ({
+        id,
+        label,
+        args,
+        expected,
+      })),
+    });
   }
 
   return createExecutionRequestSnapshot({

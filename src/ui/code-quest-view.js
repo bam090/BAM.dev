@@ -234,14 +234,14 @@ function renderQuestReport(report, quest, persistenceStatus) {
   `;
 }
 
-function renderFunctionContract(quest) {
+function renderFunctionContract(quest, languageId = "javascript") {
   const contract = quest?.functionContract ?? {};
   const parameters = Array.isArray(contract.parameters) ? contract.parameters : [];
   const constraints = Array.isArray(contract.constraints) ? contract.constraints : [];
 
   return `
     <section class="quest-section" aria-labelledby="quest-contract-title">
-      <p class="quest-section-label">함수 계약</p>
+      <p class="quest-section-label">${languageId === "java" ? "정적 메서드" : "함수"} 계약</p>
       <h2 id="quest-contract-title"><code>${escapeHtml(quest?.entryPoint ?? "함수")}</code></h2>
       <dl class="quest-contract-list">
         ${parameters
@@ -342,7 +342,7 @@ function renderWebExamples(examples, languageId) {
   `;
 }
 
-function getEditorCopy(evaluationKind, languageName, entryPoint) {
+function getEditorCopy(evaluationKind, languageId, languageName, entryPoint) {
   if (evaluationKind === "html-dom-v1") {
     return {
       label: "HTML 마크업",
@@ -355,9 +355,15 @@ function getEditorCopy(evaluationKind, languageName, entryPoint) {
       help: "CSS를 직접 작성하세요. 실행하면 제공된 고정 HTML에 적용해 공개된 규칙·스타일 검사만 수행합니다.",
     };
   }
+  if (languageId === "java") {
+    return {
+      label: `Solution.${entryPoint || "메서드"} 정적 메서드 코드`,
+      help: "public class Solution과 public static 메서드를 포함한 Java 코드를 작성하세요. 실행하면 로컬 Java 채점기가 화면에 공개된 테스트만 평가합니다.",
+    };
+  }
   return {
     label: `${entryPoint || "함수"} 함수 코드`,
-    help: `함수 선언을 포함한 ${languageName} 코드를 작성하세요. 실행하면 이 브라우저에서 공개 테스트만 평가합니다.`,
+    help: `함수 선언을 포함한 ${languageName} 코드를 작성하세요. 실행하면 화면에 공개된 테스트만 평가합니다.`,
   };
 }
 
@@ -473,7 +479,12 @@ export function renderCodeQuestView({
       : evaluationKind === "css-style-v1"
         ? "css"
         : languageId;
-  const editorCopy = getEditorCopy(evaluationKind, languageName, quest?.entryPoint);
+  const editorCopy = getEditorCopy(
+    evaluationKind,
+    languageId,
+    languageName,
+    quest?.entryPoint,
+  );
 
   return `
     <main class="main-area quest-main" id="lesson-content" tabindex="-1">
@@ -501,7 +512,7 @@ export function renderCodeQuestView({
               <h2 id="quest-instructions-title">구현 목표</h2>
               <p class="quest-prose">${renderQuestProse(quest?.instructions)}</p>
             </section>
-            ${isWebQuest ? renderWebRequirements(quest, evaluationKind) : renderFunctionContract(quest)}
+            ${isWebQuest ? renderWebRequirements(quest, evaluationKind) : renderFunctionContract(quest, languageId)}
             ${isWebQuest ? renderWebExamples(quest?.examples, sourceLanguage) : renderExamples(quest?.examples)}
             ${renderHints(quest, visibleHintCount)}
           </article>

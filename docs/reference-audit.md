@@ -48,10 +48,15 @@ CSS 교안은 다음 범위의 W3C 표준과 MDN 학습 자료를 교차 확인�
 
 HTML·CSS 객관식과 Quest는 위 교안의 안정적인 `lessonId`·`conceptId`에 연결해 새로 작성했습니다. 기준 답안과 대표 오답도 프로젝트 로컬 fixture이며 외부 문제의 답안이나 테스트를 복제하지 않았습니다. 브라우저에 내려가는 구조·스타일 assertion은 모두 공개 검사입니다.
 
-## Java 확장 검증 샘플
+## Java 정식 확장
 
-- 새 프로젝트 작성본: `content/lessons/java/types-and-methods.md`와 Java 객관식 1문항
-- 범위: 공통 교안·객관식 계약의 언어 독립성을 유지하는 읽기·추론 샘플
-- 공식문서 확인 기록일: 2026-08-18
+- 새 프로젝트 작성본: `content/lessons/java/` 교안 6개, Java 객관식 12문항, Code Quest 5문제, 코딩테스트 6문제
+- 범위: 타입·컴파일·메서드, 연산·제어문·배열, 클래스·객체·캡슐화, 컬렉션·제네릭, 예외·디버깅, 문제 분해·테스트·복잡도
+- 검증 fixture: Quest 기준 풀이 5개·독립 사례 6개·대표 오답 5개, 코딩테스트 기준 풀이 6개·독립 사례 7개·대표 오답 6개
+- 원칙: 외부 교안이나 문제의 문구·입출력·테스트·답안을 복제하지 않고 Java SE 공식 명세와 API 계약을 근거로 프로젝트에서 새로 작성
+- 공식문서 확인 기록일: 2026-08-19
+- 상세 검증 기록: `docs/references/java-official-sources.md`
 
-Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했습니다. Java 코드를 브라우저에서 실행하거나 채점했다고 표현하지 않으며, Java 정식 과정과 격리 채점기는 7차 범위입니다.
+교안의 언어 규칙은 [Java Language Specification SE 25](https://docs.oracle.com/javase/specs/jls/se25/html/)에서, `List`·`Map`·예외·파일 읽기 API는 [Java SE 25 API](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/module-summary.html)에서 확인했습니다. 학습 예제의 필수 문법과 API는 Java 21 호환 범위로 제한했습니다. Java 객관식은 각 교안의 안정적인 `lessonId`와 `conceptId`에 연결해 새로 작성했고, 정답 하나와 모든 오답의 구체적인 실패 이유를 포함합니다.
+
+Java Quest와 코딩테스트도 연결 교안의 개념을 직접 연습하도록 BAM.dev에서 새로 작성했습니다. `tests/fixtures/java-code-quest-solutions.js`와 `tests/fixtures/java-coding-test-solutions.js`의 기준 풀이·독립 사례·대표 오답 역시 외부 문제 사이트나 답안을 옮기지 않은 프로젝트 자체 검증 자료입니다. 공개 테스트 67개와 독립 사례 13개를 Java 21로 실제 컴파일·실행했고, 대표 오답 11개가 선언한 사례에서 실패하는지 별도로 확인했습니다. 브라우저와 빌드 결과에 포함되는 사례는 모두 공개 테스트입니다.

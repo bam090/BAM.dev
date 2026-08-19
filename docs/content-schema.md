@@ -55,11 +55,11 @@
 
 ## Code Quest 컬렉션
 
-`content/quests/<languageId>.json`은 학습한 개념을 언어의 실제 작성 단위로 구현하는 문제를 정의합니다. 공통 메타데이터는 `schemaVersion`, 실행 DTO와 맞추는 `contractVersion`, `languageId`, 화면 제목과 `quests` 배열입니다. HTML·CSS 컬렉션은 평가기를 고르는 `evaluationKind`도 가집니다. JavaScript 함수 계약은 `content/schema/code-quest.schema.json`, HTML·CSS 직접 소스 계약은 `content/schema/web-code-quest.schema.json`을 따릅니다.
+`content/quests/<languageId>.json`은 학습한 개념을 언어의 실제 작성 단위로 구현하는 문제를 정의합니다. 공통 메타데이터는 `schemaVersion`, 실행 DTO와 맞추는 `contractVersion`, `languageId`, 화면 제목과 `quests` 배열입니다. HTML·CSS 컬렉션은 평가기를 고르는 `evaluationKind`도 가집니다. JavaScript·Java 함수/메서드 계약은 `content/schema/code-quest.schema.json`, HTML·CSS 직접 소스 계약은 `content/schema/web-code-quest.schema.json`을 따릅니다.
 
 | 공통 필드 | 의미 |
 | --- | --- |
-| `evaluationKind` | HTML은 `html-dom-v1`, CSS는 `css-style-v1`. 기존 JavaScript 컬렉션은 생략하고 함수 실행기로 라우팅 |
+| `evaluationKind` | HTML은 `html-dom-v1`, CSS는 `css-style-v1`. JavaScript·Java 컬렉션은 생략하고 `languageId`로 함수/메서드 실행기를 라우팅 |
 | `quest.id` | `quest-<languageId>-...` 형식의 안정적인 전역 ID |
 | `slug` | Quest 해시 URL에 쓰는 언어 내 고유 문자열 |
 | `revision` | 계약·공개 테스트가 바뀔 때 올리는 양의 정수 |
@@ -76,6 +76,10 @@
 
 JavaScript Quest는 `functionContract`, `entryPoint`, 인수·기대값을 가진 `examples`와 `publicTests`를 사용합니다. 각 예시와 공개 테스트의 `args` 개수는 함수 매개변수 개수와 같아야 합니다. JSON 입출력은 경로당 컨테이너 512단계와 테스트별 16 KiB 제한을 지킵니다. 학습자 함수는 테스트마다 새 Worker에서 호출되고 반환값을 기대값과 비교합니다.
 
+### Java 정적 메서드 Quest
+
+Java Quest는 `public class Solution`과 `public static <반환 타입> <entryPoint>(...)` 메서드를 포함한 전체 소스를 `starterCode`로 사용합니다. 매개변수와 반환값은 `int`, `boolean`, `String`, `int[]`, `String[]`만 허용합니다. 로컬 채점기는 `javac --release 21 -proc:none`로 컴파일하고, 화면에 공개된 각 테스트를 독립 JVM 프로세스에서 실행합니다.
+
 ### HTML·CSS 직접 소스 Quest
 
 HTML·CSS Quest는 함수를 선언하지 않습니다. `instructions`, 문자열 배열 `requirements`, 실제 HTML 또는 CSS 문자열과 설명으로 구성된 `examples`, assertion 기반 `publicTests`를 사용합니다. 학습자 소스는 UTF-8 20 KiB 이하여야 합니다.
@@ -89,7 +93,7 @@ HTML doctype은 source 첫 선언과 문서 파서 결과를 함께 확인하고
 
 HTML·CSS의 시작 코드·예시·fixture·학습자 소스는 평가 전에 공통 preflight를 통과해야 합니다. HTML은 비정상·미종료 주석, 실행 요소, 이벤트 속성, 문자 참조 우회를 포함한 meta refresh, `ping` 등 외부 리소스와 탐색을 시작할 수 있는 속성을 거부하며 `href`는 같은 문서의 `#fragment`만 허용합니다. CSS는 `@import`, `url()`, 외부 URL과 레거시 실행 구문을 거부합니다. 상세 경계와 한계는 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)에 기록합니다.
 
-Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 참조, 평가 종류와 언어의 일치, `failureExplanations`의 1:1 대응, 힌트 단계 순서는 `npm run validate:content`와 전용 콘텐츠 테스트로 검증합니다. 현재 콘텐츠는 JavaScript 5개, HTML 5개, CSS 4개입니다. 브라우저에 포함되는 모든 assertion과 기대값은 공개 테스트이며 비밀 또는 숨김 테스트라고 표현하지 않습니다. 전체 작성 규칙은 [Code Quest 작성 가이드](code-quest-authoring.md)를 따릅니다.
+Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 참조, 평가 종류와 언어의 일치, `failureExplanations`의 1:1 대응, 힌트 단계 순서는 `npm run validate:content`와 전용 콘텐츠 테스트로 검증합니다. 현재 콘텐츠는 JavaScript 5개, HTML 5개, CSS 4개, Java 5개입니다. 화면에 제공되는 모든 assertion·입력·기대값은 공개 테스트이며 비밀 또는 숨김 테스트라고 표현하지 않습니다. 전체 작성 규칙은 [Code Quest 작성 가이드](code-quest-authoring.md)를 따릅니다.
 
 ## 코딩테스트 컬렉션
 
@@ -105,11 +109,11 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 | `description`, `functionContract` | 문제 설명, 매개변수·반환·제한·목표 복잡도 |
 | `entryPoint`, `starterCode` | 호출할 함수 이름과 초기 코드 |
 | `examples` | 공개 테스트와 실제 입출력이 일치하는 예제 |
-| `publicTests` | 제출 시 모두 실행하는 브라우저 포함 공개 테스트 |
+| `publicTests` | 제출 시 모두 실행하는 화면 공개 테스트 |
 | `runTestIds` | 빠른 실행에 쓰는 `publicTests`의 진부분집합 |
 | `failureExplanations` | 각 공개 테스트에 정확히 하나씩 대응하는 확인 지점 |
 
-`테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 같은 브라우저 공개 데이터이며 비밀·숨김 테스트가 아닙니다. 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/coding-test-content.test.js`에서 실제 JavaScript 런타임으로 검증합니다.
+`테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 화면에 공개된 같은 데이터이며 비밀·숨김 테스트가 아닙니다. JavaScript는 one-shot Worker에서, Java는 로컬 격리 채점기에서 실행합니다. 언어별 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/*coding-test-content.test.js`로 실제 언어 런타임에서 검증합니다.
 
 ## Web Project 컬렉션
 

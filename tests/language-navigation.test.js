@@ -7,7 +7,7 @@ const curriculum = JSON.parse(
   await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
 );
 
-test("HTML·CSS 정식 과정과 Java 샘플을 첫 교안으로 연결한다", () => {
+test("JavaScript·HTML·CSS·Java 정식 과정을 첫 교안으로 연결한다", () => {
   const html = renderLanguageNavigation({
     curriculum,
     currentLanguageId: "css",
@@ -15,8 +15,8 @@ test("HTML·CSS 정식 과정과 Java 샘플을 첫 교안으로 연결한다", 
 
   assert.match(html, /<nav class="language-nav" aria-label="언어 선택">/);
   assert.equal((html.match(/class="language-nav-link/g) ?? []).length, 4);
-  assert.equal((html.match(/>정식 과정</g) ?? []).length, 3);
-  assert.equal((html.match(/>샘플</g) ?? []).length, 1);
+  assert.equal((html.match(/>정식 과정</g) ?? []).length, 4);
+  assert.equal((html.match(/>샘플</g) ?? []).length, 0);
   assert.match(html, /href="#\/learn\/html\/document-structure-and-semantics"/);
   assert.match(html, /href="#\/learn\/css\/css-rules-selectors-values"[^>]*aria-current="true"/);
   assert.match(html, /href="#\/learn\/java\/types-and-methods"/);
