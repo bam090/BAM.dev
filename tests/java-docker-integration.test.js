@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import test from "node:test";
@@ -13,9 +14,26 @@ import {
 } from "../scripts/java-grader/index.mjs";
 
 const execFileAsync = promisify(execFile);
-const dockerExecutable = "/usr/local/bin/docker";
+const dockerExecutableCandidates = process.platform === "linux"
+  ? ["/usr/bin/docker", "/usr/local/bin/docker"]
+  : ["/usr/local/bin/docker", "/opt/homebrew/bin/docker", "/usr/bin/docker"];
+const dockerExecutable = process.env.BAM_JAVA_DOCKER_EXECUTABLE ??
+  dockerExecutableCandidates.find((candidate) => existsSync(candidate)) ??
+  dockerExecutableCandidates[0];
+const dockerSocketCandidates = [
+  ...(process.platform === "darwin"
+    ? [path.join(homedir(), ".docker", "run", "docker.sock")]
+    : []),
+  ...(path.isAbsolute(process.env.XDG_RUNTIME_DIR ?? "")
+    ? [path.join(process.env.XDG_RUNTIME_DIR, "docker.sock")]
+    : []),
+  "/var/run/docker.sock",
+];
+const dockerSocket = process.env.BAM_JAVA_DOCKER_SOCKET ??
+  dockerSocketCandidates.find((candidate) => existsSync(candidate)) ??
+  dockerSocketCandidates.at(-1);
 const dockerGlobalArguments = [
-  "--host=unix:///var/run/docker.sock",
+  `--host=unix://${dockerSocket}`,
   "--config=/var/empty",
 ];
 const dockerEnvironment = {
@@ -233,6 +251,7 @@ test(
         compileTimeoutMs: 5_000,
         testTimeoutMs: 5_000,
         runTimeoutMs: 10_000,
+        maxConcurrentRuns: 1,
       });
       const running = isolationGrader.execute(
         createRequest({

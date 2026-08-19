@@ -284,7 +284,7 @@ export function createJavaExecutionRequestSnapshot(request, limitOverrides) {
       languageId: "javascript",
       suite: request.suite,
       source: request.source,
-      entryPoint: request.entryPoint,
+      entryPoint: "solution",
       tests: request.tests,
     },
     limitOverrides,
@@ -294,6 +294,7 @@ export function createJavaExecutionRequestSnapshot(request, limitOverrides) {
   return Object.freeze({
     ...baseSnapshot,
     languageId: "java",
+    entryPoint: request.entryPoint,
     parameterTypes: Object.freeze(parameterTypes),
     returnType,
   });

@@ -62,6 +62,7 @@ test("Java preflight는 package·추가 public 타입·native와 위험 API를 �
     "public class Solution {} public class Other {}",
     "public class Solution { public native int run(); }",
     "public class Solution { public static void run() { System.exit(0); } }",
+    "import static java.lang.System.*; public class Solution { public static int run() { exit(0); return 1; } }",
     "public class Solution { public static void run() { System.loadLibrary(\"x\"); } }",
     "public class Solution { public static void run() throws Exception { Class.forName(\"X\"); } }",
     "import com.sun.tools.attach.VirtualMachine; public class Solution {}",
@@ -200,6 +201,7 @@ test("고정 이미지가 없으면 pull·create 없이 fail-closed한다", asyn
   try {
     const grader = new LocalJavaGrader({
       dockerExecutable: fake.executable,
+      dockerSocket: "/tmp/bam-java-test.sock",
       userId: 501,
       groupId: 20,
     });
@@ -207,6 +209,7 @@ test("고정 이미지가 없으면 pull·create 없이 fail-closed한다", asyn
     assert.equal(report.outcome, "engine_error");
     assert.equal(report.error.type, "java_docker_image_unavailable");
     const calls = await readFile(fake.logPath, "utf8");
+    assert.match(calls, /--host=unix:\/\/\/tmp\/bam-java-test\.sock/u);
     assert.match(calls, / image inspect /u);
     assert.doesNotMatch(calls, /\bpull\b|\bcreate\b/u);
   } finally {
@@ -274,6 +277,37 @@ test("stdin token marker가 중복되면 정답처럼 보여도 engine_error로 
     assert.equal(report.outcome, "engine_error");
     assert.equal(report.tests[0].error.type, "java_invalid_harness_result");
     assert.doesNotMatch(await readFile(fake.logPath, "utf8"), /BAM_[a-f0-9]{32}/u);
+  } finally {
+    await rm(fake.directory, { recursive: true, force: true });
+  }
+});
+
+test("console 미리보기는 UTF-8 바이트 상한에서도 문자 경계를 보존한다", async () => {
+  const fake = await createFakeDockerScript([
+    'case "$*" in',
+    '  *" version "*) echo "27.0"; exit 0 ;;',
+    '  *" image inspect "*) echo "sha256:fixed"; exit 0 ;;',
+    '  *" create "*) echo "container-id"; exit 0 ;;',
+    '  *" start "*"test-"*)',
+    '    IFS= read -r token',
+    '    printf "가나다\\n"',
+    '    printf "%s\\tOK\\tNQ==\\n" "$token"',
+    "    exit 0 ;;",
+    '  *" start "*) exit 0 ;;',
+    '  *" rm --force "*) exit 0 ;;',
+    "  *) exit 99 ;;",
+    "esac",
+  ]);
+  try {
+    const grader = new LocalJavaGrader({
+      dockerExecutable: fake.executable,
+      limits: { maxConsoleBytes: 5 },
+      userId: 501,
+      groupId: 20,
+    });
+    const report = await grader.execute(createRequest());
+    assert.equal(report.outcome, "passed");
+    assert.deepEqual(report.tests[0].console, [{ method: "log", preview: "가" }]);
   } finally {
     await rm(fake.directory, { recursive: true, force: true });
   }

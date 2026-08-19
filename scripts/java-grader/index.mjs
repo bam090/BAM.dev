@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { existsSync } from "node:fs";
 import {
   mkdir,
   mkdtemp,
@@ -7,7 +8,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import path from "node:path";
 import { performance } from "node:perf_hooks";
 
@@ -322,12 +323,14 @@ function createConsoleEntries(stdout, stderr, token, limits) {
     if (entries.length >= limits.maxConsoleEntries) break;
     const availableBytes = limits.maxConsoleBytes - bytes;
     if (availableBytes <= 0) break;
-    let preview = candidate.preview;
-    while (Buffer.byteLength(preview, "utf8") > availableBytes && preview.length > 0) {
-      preview = preview.slice(0, -1);
+    const encoded = Buffer.from(candidate.preview, "utf8");
+    let end = Math.min(encoded.byteLength, availableBytes);
+    while (end > 0 && end < encoded.byteLength && (encoded[end] & 0xc0) === 0x80) {
+      end -= 1;
     }
+    const preview = encoded.subarray(0, end).toString("utf8");
     if (!preview) break;
-    bytes += Buffer.byteLength(preview, "utf8");
+    bytes += end;
     entries.push({ method: candidate.method, preview });
   }
   return entries;
@@ -363,9 +366,34 @@ function dockerClientEnvironment() {
   };
 }
 
-function dockerClientArguments(argumentsList) {
+function resolveDefaultDockerExecutable() {
+  if (process.env.BAM_JAVA_DOCKER_EXECUTABLE !== undefined) {
+    return process.env.BAM_JAVA_DOCKER_EXECUTABLE;
+  }
+  const candidates = process.platform === "linux"
+    ? ["/usr/bin/docker", "/usr/local/bin/docker"]
+    : ["/usr/local/bin/docker", "/opt/homebrew/bin/docker", "/usr/bin/docker"];
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
+}
+
+function resolveDefaultDockerSocket() {
+  if (process.env.BAM_JAVA_DOCKER_SOCKET !== undefined) {
+    return process.env.BAM_JAVA_DOCKER_SOCKET;
+  }
+  const candidates = [];
+  if (process.platform === "darwin") {
+    candidates.push(path.join(homedir(), ".docker", "run", "docker.sock"));
+  }
+  if (path.isAbsolute(process.env.XDG_RUNTIME_DIR ?? "")) {
+    candidates.push(path.join(process.env.XDG_RUNTIME_DIR, "docker.sock"));
+  }
+  candidates.push("/var/run/docker.sock");
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates.at(-1);
+}
+
+function dockerClientArguments(argumentsList, dockerSocket) {
   return [
-    "--host=unix:///var/run/docker.sock",
+    `--host=unix://${dockerSocket}`,
     "--config=/var/empty",
     ...argumentsList,
   ];
@@ -401,7 +429,8 @@ function waitForCleanupRetry(delayMs) {
 export class LocalJavaGrader {
   constructor({
     limits,
-    dockerExecutable = "/usr/local/bin/docker",
+    dockerExecutable = resolveDefaultDockerExecutable(),
+    dockerSocket = resolveDefaultDockerSocket(),
     containerNamePrefix = LOCAL_JAVA_CONTAINER_PREFIX,
     temporaryDirectoryPrefix = "bam-java-grader-",
     userId = process.getuid?.(),
@@ -414,6 +443,13 @@ export class LocalJavaGrader {
       /[\u0000\r\n]/u.test(dockerExecutable)
     ) {
       throw new TypeError("dockerExecutable은 안전한 절대 경로여야 합니다.");
+    }
+    if (
+      typeof dockerSocket !== "string" ||
+      !path.isAbsolute(dockerSocket) ||
+      /[\u0000\r\n]/u.test(dockerSocket)
+    ) {
+      throw new TypeError("dockerSocket은 안전한 절대 경로여야 합니다.");
     }
     assertDockerName(containerNamePrefix, "containerNamePrefix");
     if (containerNamePrefix.length > 48) {
@@ -428,6 +464,7 @@ export class LocalJavaGrader {
       throw new TypeError("temporaryDirectoryPrefix는 안전한 임시 디렉터리 접두사여야 합니다.");
     }
     this.dockerExecutable = dockerExecutable;
+    this.dockerSocket = dockerSocket;
     this.containerNamePrefix = containerNamePrefix;
     this.temporaryDirectoryPrefix = temporaryDirectoryPrefix;
     this.userId = userId;
@@ -507,7 +544,7 @@ export class LocalJavaGrader {
   async #runDockerControl(argumentsList, { signal } = {}) {
     return runBoundedProcess(
       this.dockerExecutable,
-      dockerClientArguments(argumentsList),
+      dockerClientArguments(argumentsList, this.dockerSocket),
       {
         cwd: tmpdir(),
         environment: dockerClientEnvironment(),
@@ -592,7 +629,7 @@ export class LocalJavaGrader {
     });
     const createResult = await runBoundedProcess(
       this.dockerExecutable,
-      dockerClientArguments([...dockerArguments, ...commandArguments]),
+      dockerClientArguments([...dockerArguments, ...commandArguments], this.dockerSocket),
       {
         cwd: temporaryDirectory,
         environment: dockerClientEnvironment(),
@@ -616,7 +653,7 @@ export class LocalJavaGrader {
           "--attach",
           ...(stdinInput === undefined ? [] : ["--interactive"]),
           containerName,
-        ]),
+        ], this.dockerSocket),
         {
           cwd: temporaryDirectory,
           environment: dockerClientEnvironment(),

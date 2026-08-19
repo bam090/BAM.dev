@@ -165,6 +165,24 @@ export async function handleJavaExecution(request, response, javaGrader) {
   }
 }
 
+function finishFailedRequest(response) {
+  try {
+    const canSendErrorBody = !response.headersSent;
+    if (!response.headersSent) {
+      response.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+    }
+    if (!response.writableEnded) {
+      response.end(canSendErrorBody ? "Internal Server Error" : undefined);
+    }
+  } catch {
+    try {
+      if (!response.destroyed) response.destroy();
+    } catch {
+      // The request callback must never leave a rejected promise behind.
+    }
+  }
+}
+
 export function createDevServer({
   staticRoot = rootDirectory,
   javaGrader = new LocalJavaGrader(),
@@ -173,7 +191,7 @@ export function createDevServer({
     throw new TypeError("execute()를 제공하는 Java 채점기가 필요합니다.");
   }
 
-  return createServer(async (request, response) => {
+  const handleRequest = async (request, response) => {
     let pathname = null;
     try {
       pathname = request.url ? new URL(request.url, "http://localhost").pathname : null;
@@ -213,6 +231,10 @@ export function createDevServer({
       response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       response.end("Not Found");
     }
+  };
+
+  return createServer((request, response) => {
+    void handleRequest(request, response).catch(() => finishFailedRequest(response));
   });
 }
 

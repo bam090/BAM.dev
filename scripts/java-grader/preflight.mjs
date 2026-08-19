@@ -222,6 +222,9 @@ export function inspectJavaSourcePreflight(source) {
   if (tokens.includes("native")) {
     issues.push("native 선언은 사용할 수 없습니다.");
   }
+  if (includesSequence(tokens, ["import", "static"])) {
+    issues.push("static import 선언은 사용할 수 없습니다.");
+  }
 
   const publicTypes = findPublicTopLevelTypes(tokens);
   if (

@@ -58,6 +58,7 @@
 | [JLS §11 Exceptions](https://docs.oracle.com/javase/specs/jls/se25/html/jls-11.html) | 예외 발생·전파, 검사 예외와 비검사 예외 분류, 컴파일 시점 검사 | 05 |
 | [Java SE 25 API `RuntimeException`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/RuntimeException.html) | 합리적인 프로그램에서 보통 의무적으로 선언할 필요가 없는 비검사 예외 계층 | 05 |
 | [Java SE 25 API `Files.readString`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html#readString(java.nio.file.Path)) | UTF-8 텍스트 읽기와 `IOException` 계약 | 05 |
+| [Java SE 25 API `Files.readAllLines`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html#readAllLines(java.nio.file.Path)) | 전체 줄 읽기와 검사 예외인 `IOException` 선언 계약 | 05 |
 | [Java SE 25 API `Integer.parseInt`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html#parseInt(java.lang.String)) | 문자열의 정수 변환과 `NumberFormatException` 계약 | 05 |
 | [Java SE 25 API `AssertionError`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/AssertionError.html) | 학습용 예상값 비교 실패를 명시하는 최소 오류 타입 | 06 |
 

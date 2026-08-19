@@ -68,6 +68,13 @@ test("Java 실행 요청은 machine-readable 타입과 공개 테스트를 동�
   assert.ok(Object.isFrozen(snapshot.tests[0].args));
 });
 
+test("Java 실행 요청은 Java에서 유효한 JavaScript 예약어 메서드명을 허용한다", () => {
+  for (const entryPoint of ["delete", "typeof", "let", "function"]) {
+    const snapshot = createJavaExecutionRequestSnapshot(createRequest({ entryPoint }));
+    assert.equal(snapshot.entryPoint, entryPoint);
+  }
+});
+
 test("Java 실행 요청은 타입과 맞지 않는 값·예약어·추가 필드를 거부한다", () => {
   assert.throws(
     () => createJavaExecutionRequestSnapshot(createRequest({ tests: [{ id: "bad", args: [1, 2], expected: 3.5 }] })),

@@ -27,7 +27,7 @@ javac -proc:none -encoding UTF-8 --release 21
 
 실행 JVM은 `-Xms16m -Xmx64m -Xss256k -XX:ActiveProcessorCount=1 -XX:-UsePerfData`를 적용한다. 컴파일·테스트·전체 실행 시간, 프로세스별·전체 출력, 반환값, 동시 실행 수를 제한한다. 옵션의 의미는 Oracle의 Java 21 [`javac` 문서](https://docs.oracle.com/en/java/javase/21/docs/specs/man/javac.html)와 [`java` 문서](https://docs.oracle.com/en/java/javase/21/docs/specs/man/java.html)를 기준으로 한다.
 
-Java 21 실행 환경은 tag가 아닌 content digest로 고정한 로컬 이미지 `maven@sha256:3a4ab3276a087bf276f79cae96b1af04f53731bec53fb2e651aca79e4b10211e`만 사용한다. Docker client는 로컬 `unix:///var/run/docker.sock`만 가리키고 빈 client config를 사용해 원격 context를 따르지 않는다. 실행 전 daemon과 정확한 이미지가 이미 로컬에 있는지 검사하며 `--pull=never`를 고정한다. daemon이나 이미지가 없으면 설치·실행 안내와 함께 `engine_error`로 fail-closed하고, host JDK나 무격리 프로세스로 전환하는 환경 변수는 제공하지 않는다.
+Java 21 실행 환경은 tag가 아닌 content digest로 고정한 로컬 이미지 `maven@sha256:3a4ab3276a087bf276f79cae96b1af04f53731bec53fb2e651aca79e4b10211e`만 사용한다. Docker client는 운영체제의 로컬 Unix socket만 자동 탐지하고 빈 client config를 사용해 원격 context를 따르지 않는다. 표준 경로가 아닌 로컬 설치는 `BAM_JAVA_DOCKER_EXECUTABLE`과 `BAM_JAVA_DOCKER_SOCKET`에 각각 절대 경로만 지정할 수 있으며 TCP 원격 daemon은 허용하지 않는다. 실행 전 daemon과 정확한 이미지가 이미 로컬에 있는지 검사하며 `--pull=never`를 고정한다. daemon이나 이미지가 없으면 설치·실행 안내와 함께 `engine_error`로 fail-closed하고, host JDK나 무격리 프로세스로 전환하는 환경 변수는 제공하지 않는다.
 
 컴파일과 각 공개 테스트는 예측할 수 없는 고유 이름의 별도 컨테이너를 `docker create` 후 `docker start --attach`로 실행한다. 공통 경계는 `--network=none`, read-only root filesystem, `--cap-drop=ALL`, `no-new-privileges`, PID 64개, CPU 1개, 고정 memory/swap, 64 MiB `/tmp` tmpfs와 host의 non-root uid:gid다. host에서는 요청 임시 디렉터리 하나만 `/workspace`에 bind한다. 컴파일 컨테이너만 class 출력을 위해 이 mount를 쓸 수 있고, 테스트 컨테이너는 read-only로 다시 mount해 학습자 코드가 다음 테스트의 class나 harness를 바꾸지 못하게 한다.
 

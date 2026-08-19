@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { Readable } from "node:stream";
 import test from "node:test";
 import {
+  createDevServer,
   handleJavaExecution,
   isSameOriginRequest,
   pipeReadableResponse,
@@ -31,6 +32,7 @@ class ResponseStub extends EventEmitter {
   constructor() {
     super();
     this.destroyed = false;
+    this.headersSent = false;
     this.writableEnded = false;
     this.statusCode = null;
     this.headers = {};
@@ -40,6 +42,7 @@ class ResponseStub extends EventEmitter {
   writeHead(statusCode, headers = {}) {
     this.statusCode = statusCode;
     this.headers = headers;
+    this.headersSent = true;
     return this;
   }
 
@@ -90,6 +93,46 @@ test("개발 서버 파일 스트림 오류는 이미 시작된 응답을 파기
   readable.emit("error", new Error("simulated read failure"));
 
   assert.equal(destroyCalls, 1);
+});
+
+test("개발 서버 요청 콜백은 비동기 처리 실패를 500으로 끝내고 응답 실패 시 파기한다", async () => {
+  const server = createDevServer({ javaGrader: createCountingGrader() });
+  const requestListener = server.listeners("request")[0];
+  const createFailingRequest = () => {
+    const request = { method: "GET" };
+    Object.defineProperty(request, "url", {
+      get() {
+        throw new Error("simulated request failure");
+      },
+    });
+    return request;
+  };
+
+  const response = new ResponseStub();
+  const returned = requestListener(createFailingRequest(), response);
+
+  assert.equal(returned, undefined);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(response.statusCode, 500);
+  assert.equal(response.body, "Internal Server Error");
+  assert.equal(response.writableEnded, true);
+
+  const startedResponse = new ResponseStub();
+  startedResponse.writeHead(200);
+  startedResponse.body = "partial";
+  assert.equal(requestListener(createFailingRequest(), startedResponse), undefined);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(startedResponse.statusCode, 200);
+  assert.equal(startedResponse.body, "partial");
+  assert.equal(startedResponse.writableEnded, true);
+
+  const brokenResponse = new ResponseStub();
+  brokenResponse.writeHead = () => {
+    throw new Error("simulated response failure");
+  };
+  assert.equal(requestListener(createFailingRequest(), brokenResponse), undefined);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(brokenResponse.destroyed, true);
 });
 
 test("Java API는 loopback Host와 일치하는 same-origin 요청만 허용한다", () => {
