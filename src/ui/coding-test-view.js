@@ -1,4 +1,4 @@
-import { escapeHtml } from "./markdown.js";
+import { escapeHtml, renderInlineCodeText } from "./markdown.js";
 
 const DIFFICULTY_LABELS = Object.freeze({
   beginner: "입문",
@@ -128,6 +128,17 @@ function getHref(problemId, hrefByProblemId) {
   return typeof href === "string" ? href : "#";
 }
 
+function getMappedString(key, values, fallback) {
+  let value;
+  if (values instanceof Map) {
+    value = values.get(key);
+  } else if (values && typeof values === "object") {
+    const descriptor = Object.getOwnPropertyDescriptor(values, key);
+    if (descriptor && "value" in descriptor) value = descriptor.value;
+  }
+  return typeof value === "string" && value.length > 0 ? value : fallback;
+}
+
 function getTypeLabel(type, typeOptions = []) {
   const match = normalizeOptions(typeOptions).find((option) => option.value === type);
   return match?.label ?? TYPE_LABELS[type] ?? String(type || "유형 미지정");
@@ -141,6 +152,11 @@ function renderProblemCard(problem, index, options) {
   const visibleTags = tags.length > 0 ? tags : conceptIds;
   const problemOrder = Math.max(1, safeInteger(problem?.order, index + 1));
   const href = getHref(problem?.id, options.hrefByProblemId);
+  const languageName = getMappedString(
+    problem?.id,
+    options.languageNameByProblemId,
+    options.languageName,
+  );
 
   return `
     <li class="coding-test-list-item">
@@ -148,13 +164,13 @@ function renderProblemCard(problem, index, options) {
         <div class="coding-test-card-meta">
           <span>문제 ${problemOrder}</span>
           <span>${escapeHtml(getDifficultyLabel(problem?.difficulty))}</span>
-          <span>${escapeHtml(options.languageName)}</span>
+          <span>${escapeHtml(languageName)}</span>
           <span>${escapeHtml(getTypeLabel(problem?.type, options.typeOptions))}</span>
         </div>
         <div class="coding-test-card-heading">
           <div>
             <h2 id="coding-test-card-title-${index}"><a data-coding-test-link href="${escapeHtml(href)}">${escapeHtml(problem?.title ?? "제목 없는 문제")}</a></h2>
-            <p>${escapeHtml(problem?.summary ?? "")}</p>
+            <p>${renderInlineCodeText(problem?.summary ?? "")}</p>
           </div>
           <span class="coding-test-status${isSolved ? " is-solved" : ""}" data-coding-test-status>${isSolved ? "풀이 완료" : "미풀이"}</span>
         </div>
@@ -247,7 +263,7 @@ function renderTestResult(testResult, index, failureByTestId) {
         ${testResult?.hasActual === true ? renderResultValue("실제값", actualDisplay) : ""}
       </dl>
       ${errorMessage ? `<p class="coding-test-test-error"><strong>실행 안내</strong>${escapeHtml(errorMessage)}</p>` : ""}
-      ${failureExplanation ? `<p class="coding-test-failure-explanation"><strong>확인할 점</strong>${escapeHtml(failureExplanation)}</p>` : ""}
+      ${failureExplanation ? `<p class="coding-test-failure-explanation"><strong>확인할 점</strong>${renderInlineCodeText(failureExplanation)}</p>` : ""}
       ${renderConsoleEntries(testResult?.console)}
     </article>
   `;
@@ -273,7 +289,7 @@ function renderExecutionReport({ problem, report, mode, persistenceStatus, isRun
     return `<p class="coding-test-results-state">${mode === "submit" ? "제출 테스트를 채점하고 있습니다…" : "실행 테스트를 확인하고 있습니다…"}</p>`;
   }
   if (!report) {
-    return `<p class="coding-test-results-state">코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 브라우저에 포함된 공개 테스트 ${submitCount}개를 모두 채점합니다.</p>`;
+    return `<p class="coding-test-results-state">코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 화면에 공개된 테스트 ${submitCount}개를 모두 채점합니다.</p>`;
   }
 
   const outcome = normalizeOutcome(report?.outcome);
@@ -307,7 +323,7 @@ function renderExecutionReport({ problem, report, mode, persistenceStatus, isRun
   `;
 }
 
-function renderFunctionContract(problem) {
+function renderFunctionContract(problem, languageId = "javascript") {
   const contract = problem?.functionContract ?? {};
   const parameters = Array.isArray(contract.parameters) ? contract.parameters : [];
   const constraints = toStringArray(contract.constraints);
@@ -316,26 +332,26 @@ function renderFunctionContract(problem) {
   return `
     <section class="coding-test-section" aria-labelledby="coding-test-contract-title">
       <p class="coding-test-section-label">입력과 출력</p>
-      <h2 id="coding-test-contract-title"><code>${escapeHtml(problem?.entryPoint ?? "함수")}</code> 함수 계약</h2>
+      <h2 id="coding-test-contract-title"><code>${escapeHtml(problem?.entryPoint ?? (languageId === "java" ? "메서드" : "함수"))}</code> ${languageId === "java" ? "정적 메서드" : "함수"} 계약</h2>
       <dl class="coding-test-contract-list">
         ${parameters
           .map(
             (parameter) => `
               <div>
                 <dt>입력 <code>${escapeHtml(parameter?.name ?? "인수")}</code> <span>${escapeHtml(parameter?.type ?? "")}</span></dt>
-                <dd>${escapeHtml(parameter?.description ?? "")}</dd>
+                <dd>${renderInlineCodeText(parameter?.description ?? "")}</dd>
               </div>
             `,
           )
           .join("")}
         <div>
           <dt>출력 <span>${escapeHtml(returns?.type ?? "")}</span></dt>
-          <dd>${escapeHtml(returns?.description ?? "")}</dd>
+          <dd>${renderInlineCodeText(returns?.description ?? "")}</dd>
         </div>
       </dl>
       <h3>제한사항</h3>
       <ul class="coding-test-constraints">
-        ${constraints.map((constraint) => `<li>${escapeHtml(constraint)}</li>`).join("")}
+        ${constraints.map((constraint) => `<li>${renderInlineCodeText(constraint)}</li>`).join("")}
       </ul>
       <dl class="coding-test-complexity" aria-label="목표 복잡도">
         <div><dt>시간</dt><dd><code>${escapeHtml(contract.complexity?.time ?? "-")}</code></dd></div>
@@ -360,7 +376,7 @@ function renderExamples(examples) {
                   ${renderResultValue("입력 인수", formatJsonValue(example?.args))}
                   ${renderResultValue("출력", formatJsonValue(example?.expected))}
                 </dl>
-                <p>${escapeHtml(example?.explanation ?? "")}</p>
+                <p>${renderInlineCodeText(example?.explanation ?? "")}</p>
               </article>
             `,
           )
@@ -410,6 +426,7 @@ export function renderCodingTestListView({
   totalCount,
   filters = {},
   languageName = "JavaScript",
+  languageNameByProblemId = {},
   languageOptions = [{ value: "javascript", label: "JavaScript" }],
   typeOptions = [],
   solvedProblemIds = [],
@@ -460,7 +477,7 @@ export function renderCodingTestListView({
         </section>
 
         <div class="coding-test-list-summary">
-          <p data-coding-test-count>전체 ${safeTotal}문제 중 ${visibleProblems.length}문제</p>
+          <p role="status" aria-live="polite" aria-atomic="true" data-coding-test-count>전체 ${safeTotal}문제 중 ${visibleProblems.length}문제</p>
           <p>${solvedIds.size}문제 풀이 완료</p>
         </div>
 
@@ -472,6 +489,7 @@ export function renderCodingTestListView({
                     solvedIds,
                     hrefByProblemId,
                     languageName,
+                    languageNameByProblemId,
                     typeOptions: derivedTypeOptions,
                   }),
                 )
@@ -484,6 +502,7 @@ export function renderCodingTestListView({
 }
 
 export function renderCodingTestView({
+  languageId = "javascript",
   languageName = "JavaScript",
   collectionTitle = "JavaScript 코딩테스트",
   listHref = "#/coding-tests",
@@ -506,6 +525,13 @@ export function renderCodingTestView({
   const typeLabel = getTypeLabel(problem?.type);
   const publicTestCount = Array.isArray(problem?.publicTests) ? problem.publicTests.length : 0;
   const runTestCount = toStringArray(problem?.runTestIds).length;
+  const isJava = languageId === "java";
+  const editorLabel = isJava
+    ? `Solution.${problem?.entryPoint ?? "메서드"} 정적 메서드를 포함한 클래스 코드`
+    : `${problem?.entryPoint ?? "함수"} 함수 코드`;
+  const editorHelp = isJava
+    ? "public class Solution과 public static 메서드를 포함한 Java 코드를 작성하세요. 로컬 Java 채점기는 화면에 공개된 테스트만 사용합니다."
+    : "실행과 제출 채점에는 화면에 공개된 테스트만 사용합니다.";
 
   return `
     <main class="main-area coding-test-main" id="lesson-content" tabindex="-1">
@@ -524,7 +550,7 @@ export function renderCodingTestView({
             </div>
             <span class="coding-test-solved-badge${isSolved ? " is-solved" : ""}">${isSolved ? "풀이 완료" : "미풀이"}</span>
           </div>
-          <p class="coding-test-summary">${escapeHtml(problem?.summary ?? "")}</p>
+          <p class="coding-test-summary">${renderInlineCodeText(problem?.summary ?? "")}</p>
         </header>
 
         <div class="coding-test-workspace">
@@ -532,9 +558,9 @@ export function renderCodingTestView({
             <section class="coding-test-section">
               <p class="coding-test-section-label">문제 설명</p>
               <h2 id="coding-test-description-title">구현할 기능</h2>
-              <p class="coding-test-description">${escapeHtml(problem?.description ?? "")}</p>
+              <p class="coding-test-description">${renderInlineCodeText(problem?.description ?? "")}</p>
             </section>
-            ${renderFunctionContract(problem)}
+            ${renderFunctionContract(problem, languageId)}
             ${renderExamples(problem?.examples)}
           </article>
 
@@ -547,9 +573,9 @@ export function renderCodingTestView({
                 </div>
                 <span>실행 ${runTestCount}개 · 제출 ${publicTestCount}개</span>
               </header>
-              <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${escapeHtml(problem?.entryPoint ?? "함수")} 함수 코드</label>
+              <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${escapeHtml(editorLabel)}</label>
               <textarea id="coding-test-source" data-coding-test-source aria-labelledby="coding-test-source-label" aria-describedby="coding-test-editor-help coding-test-draft-status" rows="18" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorReadonly}>${escapeHtml(source)}</textarea>
-              <p class="coding-test-editor-help" id="coding-test-editor-help">실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다.</p>
+              <p class="coding-test-editor-help" id="coding-test-editor-help">${escapeHtml(editorHelp)}</p>
               <p class="coding-test-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(normalizedDraftStatus)}</p>
               <div class="coding-test-actions">
                 <button class="button button--secondary" type="button" data-coding-test-run aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : "테스트 실행"}</button>
@@ -561,7 +587,7 @@ export function renderCodingTestView({
 
             <section class="coding-test-results-panel" data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title" aria-busy="${String(isRunning)}">
               <header class="coding-test-results-heading">
-                <p class="coding-test-section-label">브라우저 공개 채점</p>
+                <p class="coding-test-section-label">공개 테스트 채점</p>
                 <h2 id="coding-test-results-title">실행 결과</h2>
               </header>
               ${renderExecutionReport({

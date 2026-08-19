@@ -14,9 +14,10 @@ function assertRunner(runner, label) {
  * HTML/CSS evaluation kinds to the direct-source web runner.
  */
 export class CodeQuestRunnerRouter {
-  constructor({ javascriptRunner, webRunner } = {}) {
+  constructor({ javascriptRunner, webRunner, javaRunner } = {}) {
     this.javascriptRunner = assertRunner(javascriptRunner, "JavaScript Code Quest runner");
     this.webRunner = assertRunner(webRunner, "Web Code Quest runner");
+    this.javaRunner = assertRunner(javaRunner, "Java Code Quest runner");
   }
 
   #runnerFor(request) {
@@ -27,6 +28,12 @@ export class CodeQuestRunnerRouter {
       (request.evaluationKind === undefined || request.evaluationKind === "javascript-function-v1")
     ) {
       return this.javascriptRunner;
+    }
+    if (
+      request.languageId === "java" &&
+      (request.evaluationKind === undefined || request.evaluationKind === "java-function-v1")
+    ) {
+      return this.javaRunner;
     }
     return null;
   }

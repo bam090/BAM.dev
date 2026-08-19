@@ -11,6 +11,10 @@ const collection = JSON.parse(
   await readFile(new URL("../content/coding-tests/javascript.json", import.meta.url), "utf8"),
 );
 const problem = collection.problems[0];
+const javaCollection = JSON.parse(
+  await readFile(new URL("../content/coding-tests/java.json", import.meta.url), "utf8"),
+);
+const javaProblem = javaCollection.problems[0];
 
 function createInput(mode, overrides = {}) {
   return {
@@ -155,5 +159,53 @@ test("runner가 요청과 다른 식별자나 suite를 반환하면 결과를 �
   assert.throws(
     () => adaptCodingTestRunnerReport(wrongSuite, execution),
     /실행 결과가 요청과 일치하지 않습니다/,
+  );
+});
+
+test("다중 언어 어댑터는 Java 코딩테스트를 Java runner로 보내고 타입 DTO를 보존한다", async () => {
+  let javascriptCalls = 0;
+  const javaCalls = [];
+  const javascriptRunner = {
+    async run() {
+      javascriptCalls += 1;
+      throw new Error("Java 요청이 JavaScript runner로 전달되었습니다.");
+    },
+  };
+  const javaRunner = {
+    async run(request) {
+      javaCalls.push(request);
+      return createPassingRunnerReport(request);
+    },
+  };
+  const adapter = new CodingTestRunnerAdapter({ javascriptRunner, javaRunner });
+  const report = await adapter.run({
+    collection: javaCollection,
+    problem: javaProblem,
+    source: javaProblem.starterCode,
+    requestId: "java-coding-adapter",
+    mode: "run",
+  });
+
+  assert.equal(javascriptCalls, 0);
+  assert.equal(javaCalls.length, 1);
+  assert.equal(javaCalls[0].languageId, "java");
+  assert.deepEqual(
+    javaCalls[0].parameterTypes,
+    javaProblem.functionContract.parameters.map((parameter) => parameter.type),
+  );
+  assert.equal(javaCalls[0].returnType, javaProblem.functionContract.returns.type);
+  assert.equal(report.languageId, "java");
+  assert.equal(report.problemId, javaProblem.id);
+});
+
+test("다중 언어 어댑터는 JavaScript·Java runner를 모두 요구한다", () => {
+  const runner = { async run() {} };
+  assert.throws(
+    () => new CodingTestRunnerAdapter({ javascriptRunner: runner }),
+    /Java 실행기/,
+  );
+  assert.throws(
+    () => new CodingTestRunnerAdapter({ javaRunner: runner }),
+    /JavaScript 실행기/,
   );
 });

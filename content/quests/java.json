@@ -1,0 +1,693 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "languageId": "java",
+  "title": "Java Code Quest",
+  "quests": [
+    {
+      "id": "quest-java-level-label",
+      "slug": "java-level-label",
+      "revision": 1,
+      "order": 1,
+      "lessonId": "java-01-types-methods",
+      "conceptIds": ["java.types", "java.variables", "java.methods"],
+      "difficulty": "beginner",
+      "estimatedMinutes": 12,
+      "title": "레벨 이름표 만들기",
+      "summary": "String과 int 매개변수를 하나의 표시 문자열로 조합해 메서드의 반환 계약을 연습합니다.",
+      "instructions": "`public class Solution`의 `public static String formatLevelLabel(String name, int level)` 메서드를 완성하세요. 결과는 이름, 가운데점, `Lv.`와 레벨을 차례로 이어 붙인 `name · Lv.level` 형식이어야 합니다. 레벨이 0이어도 생략하지 마세요.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "name",
+            "type": "String",
+            "description": "길이 0 이상 20 이하인 이름입니다. 전달된 문자열을 그대로 사용합니다."
+          },
+          {
+            "name": "level",
+            "type": "int",
+            "description": "0 이상 99 이하인 레벨입니다."
+          }
+        ],
+        "returns": {
+          "type": "String",
+          "description": "`name · Lv.level` 형식의 이름표입니다."
+        },
+        "constraints": [
+          "name은 null이 아닙니다.",
+          "level은 0 이상 99 이하입니다.",
+          "이름과 가운데점 사이, 가운데점과 Lv. 사이에 공백을 하나씩 둡니다."
+        ],
+        "complexity": {
+          "time": "O(n), n = name의 길이",
+          "space": "O(n), n = 반환 문자열의 길이"
+        }
+      },
+      "entryPoint": "formatLevelLabel",
+      "starterCode": "public class Solution {\n  public static String formatLevelLabel(String name, int level) {\n    // name과 level을 요구된 순서와 구분 기호로 연결하세요.\n    return name;\n  }\n}\n",
+      "examples": [
+        {
+          "args": ["Ada", 3],
+          "expected": "Ada · Lv.3",
+          "explanation": "이름 뒤에 가운데점과 Lv.3을 공백과 함께 붙입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-level-zero",
+          "label": "레벨이 0인 이름표",
+          "args": ["Ada", 0],
+          "expected": "Ada · Lv.0"
+        },
+        {
+          "id": "java-level-one",
+          "label": "한글 이름과 레벨 1",
+          "args": ["민수", 1],
+          "expected": "민수 · Lv.1"
+        },
+        {
+          "id": "java-level-two-digits",
+          "label": "두 자리 레벨",
+          "args": ["Kai", 12],
+          "expected": "Kai · Lv.12"
+        },
+        {
+          "id": "java-level-empty-name",
+          "label": "빈 이름 문자열",
+          "args": ["", 7],
+          "expected": " · Lv.7"
+        },
+        {
+          "id": "java-level-example",
+          "label": "입출력 예의 일반 이름표",
+          "args": ["Ada", 3],
+          "expected": "Ada · Lv.3"
+        },
+        {
+          "id": "java-level-maximum",
+          "label": "최대 레벨",
+          "args": ["Zoe", 99],
+          "expected": "Zoe · Lv.99"
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "java-level-zero",
+          "message": "0도 유효한 int 값입니다. level이 0일 때도 `Lv.0`을 결과에 포함하세요."
+        },
+        {
+          "testId": "java-level-one",
+          "message": "name을 변경하거나 영문으로 가정하지 말고 전달된 문자열을 그대로 연결하세요."
+        },
+        {
+          "testId": "java-level-two-digits",
+          "message": "level을 한 글자로 처리하지 말고 int 전체를 문자열 연결에 사용하세요."
+        },
+        {
+          "testId": "java-level-empty-name",
+          "message": "name이 빈 문자열이어도 구분 기호와 레벨 부분은 정해진 형식으로 남아야 합니다."
+        },
+        {
+          "testId": "java-level-example",
+          "message": "이름, 공백, 가운데점, 공백, `Lv.`와 숫자의 순서를 다시 확인하세요."
+        },
+        {
+          "testId": "java-level-maximum",
+          "message": "최대 레벨 99도 잘리지 않고 결과 문자열에 모두 포함되어야 합니다."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "문자열 연결의 결과 타입",
+          "content": "Java에서 String과 int를 `+`로 연결하면 int가 문자열 표현으로 바뀌고 전체 결과는 String이 됩니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "고정 부분과 바뀌는 부분 나누기",
+          "content": "` · Lv.`는 항상 같고 name과 level만 호출마다 달라집니다. 예시 결과에서 각 조각의 경계를 표시해 보세요."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "왼쪽부터 차례로 연결하기",
+          "content": "`name + \" · Lv.\" + level`처럼 String 조각을 먼저 두고 왼쪽부터 연결하면 덧셈과 혼동하지 않을 수 있습니다."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "java-omit-zero-level",
+          "title": "레벨 0을 없는 값처럼 생략하기",
+          "explanation": "int의 0은 유효한 레벨입니다. 조건으로 0을 제외하면 이름표의 반환 형식이 입력에 따라 달라집니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-java-count-at-least",
+      "slug": "java-count-at-least",
+      "revision": 1,
+      "order": 2,
+      "lessonId": "java-02-control-flow-arrays",
+      "conceptIds": ["java.operators", "java.control-flow", "java.arrays"],
+      "difficulty": "beginner",
+      "estimatedMinutes": 18,
+      "title": "기준 이상 점수 세기",
+      "summary": "int 배열을 순회하며 경계값을 포함하는 비교 조건으로 개수를 누적합니다.",
+      "instructions": "`public class Solution`의 `public static int countAtLeast(int[] scores, int minimum)` 메서드를 완성하세요. scores에서 minimum 이상인 값의 개수를 반환하세요. minimum과 같은 값도 포함해야 하며 빈 배열이면 0을 반환합니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "scores",
+            "type": "int[]",
+            "description": "길이 0 이상 100 이하인 정수 점수 배열입니다."
+          },
+          {
+            "name": "minimum",
+            "type": "int",
+            "description": "포함 여부를 판단할 기준 정수입니다."
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "description": "minimum 이상인 배열 원소의 개수입니다."
+        },
+        "constraints": [
+          "scores는 null이 아니며 길이는 0 이상 100 이하입니다.",
+          "scores의 각 값과 minimum은 -1,000 이상 1,000 이하입니다.",
+          "minimum과 같은 값은 결과 개수에 포함합니다."
+        ],
+        "complexity": {
+          "time": "O(n), n = scores의 길이",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "countAtLeast",
+      "starterCode": "public class Solution {\n  public static int countAtLeast(int[] scores, int minimum) {\n    int count = 0;\n    // 모든 점수를 순회하며 minimum 이상인 값을 세세요.\n    return count;\n  }\n}\n",
+      "examples": [
+        {
+          "args": [[70, 85, 85, 40], 85],
+          "expected": 2,
+          "explanation": "85와 같은 두 값이 모두 기준 이상입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-at-least-empty",
+          "label": "빈 점수 배열",
+          "args": [[], 50],
+          "expected": 0
+        },
+        {
+          "id": "java-at-least-below",
+          "label": "모든 점수가 기준 미만",
+          "args": [[10, 20, 30], 40],
+          "expected": 0
+        },
+        {
+          "id": "java-at-least-equal-boundary",
+          "label": "기준과 같은 점수가 반복",
+          "args": [[70, 85, 85, 40], 85],
+          "expected": 2
+        },
+        {
+          "id": "java-at-least-mixed",
+          "label": "기준 미만·같음·초과가 섞인 배열",
+          "args": [[-2, 0, 3, 4, 9], 3],
+          "expected": 3
+        },
+        {
+          "id": "java-at-least-all",
+          "label": "모든 점수가 기준 이상",
+          "args": [[5, 6, 7], 5],
+          "expected": 3
+        },
+        {
+          "id": "java-at-least-negative-threshold",
+          "label": "음수 기준의 경계값",
+          "args": [[-1000, -5, -4, 0], -5],
+          "expected": 3
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "java-at-least-empty",
+          "message": "빈 배열에서는 반복문이 실행되지 않으므로 초기 개수 0을 그대로 반환해야 합니다."
+        },
+        {
+          "testId": "java-at-least-below",
+          "message": "기준보다 작은 값은 count를 늘리지 않아야 합니다."
+        },
+        {
+          "testId": "java-at-least-equal-boundary",
+          "message": "`이상`은 같은 값도 포함합니다. `>`가 아니라 `>=` 비교가 필요합니다."
+        },
+        {
+          "testId": "java-at-least-mixed",
+          "message": "조건을 만족한 모든 원소를 끝까지 순회하며 하나씩 누적했는지 확인하세요."
+        },
+        {
+          "testId": "java-at-least-all",
+          "message": "첫 번째 일치에서 반환하지 말고 배열 전체의 일치 개수를 세어야 합니다."
+        },
+        {
+          "testId": "java-at-least-negative-threshold",
+          "message": "음수에서도 대소 비교 규칙은 같습니다. -5와 같은 값도 포함하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "배열 순회와 누적",
+          "content": "결과 개수는 0에서 시작하고 조건을 만족하는 원소를 만날 때마다 1씩 증가합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "경계값 직접 비교하기",
+          "content": "minimum이 85일 때 84, 85, 86이 각각 포함되는지 표로 적으면 필요한 비교 연산자가 드러납니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "향상된 for문 사용하기",
+          "content": "`for (int score : scores)`로 각 값을 읽고 `score >= minimum`일 때 count를 증가시켜 보세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "java-strict-threshold",
+          "title": "기준보다 큰 값만 세기",
+          "explanation": "`>`를 사용하면 minimum과 정확히 같은 경계값이 빠집니다. 문제의 `이상` 조건은 `>=`에 해당합니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-java-remaining-seats",
+      "slug": "java-remaining-seats",
+      "revision": 1,
+      "order": 3,
+      "lessonId": "java-03-classes-objects",
+      "conceptIds": ["java.classes", "java.objects", "java.constructors", "java.encapsulation"],
+      "difficulty": "beginner",
+      "estimatedMinutes": 22,
+      "title": "좌석 객체의 남은 수 계산하기",
+      "summary": "생성자로 객체 상태를 초기화하고 캡슐화된 필드를 인스턴스 메서드에서 계산합니다.",
+      "instructions": "`public class Solution`의 `public static int calculateRemainingSeats(int capacity, int reserved)`가 전체 좌석에서 예약 좌석을 뺀 값을 반환하도록 완성하세요. 제공된 `SeatCounter` 생성자와 `remaining()` 메서드를 완성하는 방식은 클래스·캡슐화를 연습하기 위한 권장 구현입니다. 스스로 필드를 private로 유지하고 `this`로 초기화했는지 확인하세요. 자동 채점은 공개 진입점의 반환값만 검사하며 내부 클래스 구조는 판정하지 않습니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "capacity",
+            "type": "int",
+            "description": "1 이상 10,000 이하인 전체 좌석 수입니다."
+          },
+          {
+            "name": "reserved",
+            "type": "int",
+            "description": "0 이상 capacity 이하인 예약 좌석 수입니다."
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "description": "capacity - reserved로 계산한 남은 좌석 수입니다."
+        },
+        "constraints": [
+          "capacity는 1 이상 10,000 이하입니다.",
+          "reserved는 0 이상 capacity 이하입니다.",
+          "SeatCounter의 두 필드를 private로 유지하는 것은 권장 구현의 스스로 확인 항목이며 자동 채점은 반환값만 검사합니다."
+        ],
+        "complexity": {
+          "time": "O(1)",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "calculateRemainingSeats",
+      "starterCode": "public class Solution {\n  private static class SeatCounter {\n    private int capacity;\n    private int reserved;\n\n    SeatCounter(int capacity, int reserved) {\n      // 매개변수를 같은 이름의 필드에 저장하세요.\n      this.capacity = 0;\n      this.reserved = 0;\n    }\n\n    int remaining() {\n      return 0;\n    }\n  }\n\n  public static int calculateRemainingSeats(int capacity, int reserved) {\n    SeatCounter counter = new SeatCounter(capacity, reserved);\n    return counter.remaining();\n  }\n}\n",
+      "examples": [
+        {
+          "args": [30, 12],
+          "expected": 18,
+          "explanation": "SeatCounter 객체가 capacity 30과 reserved 12를 저장하고 30 - 12를 반환합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-seats-none-reserved",
+          "label": "예약 좌석이 없는 경우",
+          "args": [10, 0],
+          "expected": 10
+        },
+        {
+          "id": "java-seats-partial",
+          "label": "일부 좌석이 예약된 경우",
+          "args": [30, 12],
+          "expected": 18
+        },
+        {
+          "id": "java-seats-full",
+          "label": "모든 좌석이 예약된 경우",
+          "args": [20, 20],
+          "expected": 0
+        },
+        {
+          "id": "java-seats-single-open",
+          "label": "좌석 하나가 비어 있는 경우",
+          "args": [1, 0],
+          "expected": 1
+        },
+        {
+          "id": "java-seats-maximum",
+          "label": "최대 전체 좌석에서 하나가 남은 경우",
+          "args": [10000, 9999],
+          "expected": 1
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "java-seats-none-reserved",
+          "message": "reserved가 0이면 capacity 전체가 남습니다. 생성자가 입력 capacity를 필드에 저장했는지 확인하세요."
+        },
+        {
+          "testId": "java-seats-partial",
+          "message": "remaining()은 reserved - capacity가 아니라 capacity - reserved를 반환해야 합니다."
+        },
+        {
+          "testId": "java-seats-full",
+          "message": "두 필드가 같을 때 남은 좌석은 0입니다. 별도의 최소 1 보정은 필요하지 않습니다."
+        },
+        {
+          "testId": "java-seats-single-open",
+          "message": "가장 작은 capacity에서도 생성자에 전달된 1과 0을 그대로 보존해야 합니다."
+        },
+        {
+          "testId": "java-seats-maximum",
+          "message": "큰 입력을 고정값으로 바꾸지 말고 객체 필드에 전달된 값을 그대로 계산하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "객체마다 갖는 상태",
+          "content": "SeatCounter 객체는 capacity와 reserved라는 두 필드에 생성 시점의 상태를 저장합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "같은 이름 구분하기",
+          "content": "생성자의 `capacity`는 매개변수이고 `this.capacity`는 지금 만드는 객체의 필드입니다. 두 이름이 같을 때 this가 구분 기준입니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "생성 후 인스턴스 메서드 호출하기",
+          "content": "생성자에서 `this.capacity = capacity`와 같이 저장한 뒤 remaining()에서 두 필드의 차를 반환하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "java-shadowed-constructor-fields",
+          "title": "생성자 매개변수를 자기 자신에게 대입하기",
+          "explanation": "`capacity = capacity`는 필드를 바꾸지 않습니다. 왼쪽에 `this.capacity`를 사용해야 새 객체의 필드가 초기화됩니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-java-distinct-names",
+      "slug": "java-distinct-names",
+      "revision": 2,
+      "order": 4,
+      "lessonId": "java-04-collections-generics",
+      "conceptIds": ["java.collections", "java.generics", "java.list"],
+      "difficulty": "beginner",
+      "estimatedMinutes": 24,
+      "title": "처음 등장한 이름만 남기기",
+      "summary": "제네릭 컬렉션으로 중복을 확인하면서 최초 등장 순서를 보존한 String 배열을 만듭니다.",
+      "instructions": "`public class Solution`의 `public static String[] distinctNames(String[] names)` 메서드를 완성하세요. 같은 문자열이 여러 번 나오면 처음 등장한 한 번만 남기고, 처음 등장한 순서를 유지한 새 String[]을 반환하세요. 대소문자가 다른 문자열은 서로 다른 이름입니다.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "names",
+            "type": "String[]",
+            "description": "길이 0 이상 100 이하이며 null 원소가 없는 이름 배열입니다."
+          }
+        ],
+        "returns": {
+          "type": "String[]",
+          "description": "각 이름을 최초 등장 순서로 한 번씩 담은 새 배열입니다."
+        },
+        "constraints": [
+          "names와 각 원소는 null이 아닙니다.",
+          "문자열 비교는 대소문자를 구분합니다.",
+          "중복 제거를 위해 결과의 순서를 정렬하면 안 됩니다."
+        ],
+        "complexity": {
+          "time": "O(n² + n·c) 최악, n = names의 길이, c = 모든 이름 길이의 합 (List.contains의 선형 탐색과 String 비교 비용 포함)",
+          "space": "O(n) 추가 공간, n = names의 길이"
+        }
+      },
+      "entryPoint": "distinctNames",
+      "starterCode": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Solution {\n  public static String[] distinctNames(String[] names) {\n    List<String> result = new ArrayList<>();\n    // result에 아직 없는 이름만 추가하세요.\n    return result.toArray(new String[0]);\n  }\n}\n",
+      "examples": [
+        {
+          "args": [["Mina", "Joon", "Mina", "Ara"]],
+          "expected": ["Mina", "Joon", "Ara"],
+          "explanation": "두 번째 Mina만 제거하고 나머지 이름의 최초 등장 순서를 유지합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-names-empty",
+          "label": "빈 이름 배열",
+          "args": [[]],
+          "expected": []
+        },
+        {
+          "id": "java-names-unique-order",
+          "label": "이미 순서대로 고유한 이름",
+          "args": [["Ara", "Bora", "Mina"]],
+          "expected": ["Ara", "Bora", "Mina"]
+        },
+        {
+          "id": "java-names-consecutive-duplicate",
+          "label": "연속 중복 이름",
+          "args": [["Ana", "Ana", "Bo"]],
+          "expected": ["Ana", "Bo"]
+        },
+        {
+          "id": "java-names-separated-repeat",
+          "label": "떨어져 다시 등장한 이름",
+          "args": [["Mina", "Joon", "Mina", "Ara"]],
+          "expected": ["Mina", "Joon", "Ara"]
+        },
+        {
+          "id": "java-names-case-sensitive",
+          "label": "대소문자가 다른 이름",
+          "args": [["java", "Java", "java"]],
+          "expected": ["java", "Java"]
+        },
+        {
+          "id": "java-names-many-repeats",
+          "label": "순서가 섞인 여러 중복",
+          "args": [["z", "a", "z", "m", "a", "b"]],
+          "expected": ["z", "a", "m", "b"]
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "java-names-empty",
+          "message": "입력에 이름이 없으면 길이 0인 String[]을 반환해야 합니다."
+        },
+        {
+          "testId": "java-names-unique-order",
+          "message": "중복이 없으면 모든 이름을 원래 순서 그대로 반환해야 합니다."
+        },
+        {
+          "testId": "java-names-consecutive-duplicate",
+          "message": "result.contains(name)이 true인 이름은 result에 다시 추가하지 마세요."
+        },
+        {
+          "testId": "java-names-separated-repeat",
+          "message": "직전 이름만 비교하지 말고 앞에서 한 번이라도 본 모든 이름을 기억해야 합니다."
+        },
+        {
+          "testId": "java-names-case-sensitive",
+          "message": "문자열을 소문자로 바꾸지 마세요. Java의 String equals는 대소문자를 구분합니다."
+        },
+        {
+          "testId": "java-names-many-repeats",
+          "message": "중복을 제거한 뒤 결과를 정렬하지 말고 입력에서 처음 등장한 순서를 List에 그대로 기록하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "List에서 같은 값 찾기",
+          "content": "List의 contains는 같은 값이 이미 들어 있는지 boolean으로 알려 줍니다. 결과 List 자체를 앞에서 본 이름의 기록으로 사용할 수 있습니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "추가 전 contains 결과 관찰하기",
+          "content": "result.contains(name)이 false라면 아직 남기지 않은 이름입니다. String 비교는 대소문자를 구분하므로 java와 Java는 서로 다릅니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "처음 본 순간에만 List에 추가하기",
+          "content": "names를 순회하면서 `!result.contains(name)`일 때만 result.add(name)을 실행하고 마지막에 배열로 바꾸세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "java-sort-instead-of-preserve",
+          "title": "결과 List를 정렬해 처음 등장 순서를 바꾸기",
+          "explanation": "중복 제거와 정렬은 다른 작업입니다. 고유한 이름을 모은 List를 다시 정렬하면 최초 등장 순서 계약을 잃습니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-java-parse-fallback",
+      "slug": "java-parse-fallback",
+      "revision": 1,
+      "order": 5,
+      "lessonId": "java-05-exceptions-debugging",
+      "conceptIds": ["java.exceptions", "java.debugging"],
+      "difficulty": "beginner",
+      "estimatedMinutes": 18,
+      "title": "정수 변환 실패에 기본값 사용하기",
+      "summary": "문자열을 int로 변환하고 NumberFormatException이 발생한 경로만 기본값으로 복구합니다.",
+      "instructions": "`public class Solution`의 `public static int parseOrFallback(String value, int fallback)` 메서드를 완성하세요. value가 Java의 유효한 int 문자열이면 Integer.parseInt의 결과를 반환하고, 빈 문자열·숫자가 아닌 문자·int 범위 초과 등으로 NumberFormatException이 발생하면 fallback을 반환하세요.",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "value",
+            "type": "String",
+            "description": "길이 0 이상 30 이하인 변환 대상 문자열입니다."
+          },
+          {
+            "name": "fallback",
+            "type": "int",
+            "description": "정수 변환에 실패했을 때 반환할 값입니다."
+          }
+        ],
+        "returns": {
+          "type": "int",
+          "description": "변환된 int 또는 변환 실패 시 fallback입니다."
+        },
+        "constraints": [
+          "value는 null이 아닙니다.",
+          "공백을 임의로 제거하지 말고 Integer.parseInt(value)의 계약을 따릅니다.",
+          "NumberFormatException만 변환 실패로 처리합니다."
+        ],
+        "complexity": {
+          "time": "O(n), n = value의 길이",
+          "space": "O(1)"
+        }
+      },
+      "entryPoint": "parseOrFallback",
+      "starterCode": "public class Solution {\n  public static int parseOrFallback(String value, int fallback) {\n    // Integer.parseInt(value)를 시도하고 NumberFormatException을 처리하세요.\n    return fallback;\n  }\n}\n",
+      "examples": [
+        {
+          "args": ["42", -1],
+          "expected": 42,
+          "explanation": "42는 int 범위의 유효한 정수 문자열이므로 변환값을 반환합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "java-parse-positive",
+          "label": "양의 정수 문자열",
+          "args": ["42", -1],
+          "expected": 42
+        },
+        {
+          "id": "java-parse-negative",
+          "label": "음의 정수 문자열",
+          "args": ["-17", 9],
+          "expected": -17
+        },
+        {
+          "id": "java-parse-plus-sign",
+          "label": "더하기 부호가 있는 정수",
+          "args": ["+8", 0],
+          "expected": 8
+        },
+        {
+          "id": "java-parse-empty",
+          "label": "빈 문자열",
+          "args": ["", 5],
+          "expected": 5
+        },
+        {
+          "id": "java-parse-invalid-character",
+          "label": "숫자 아닌 문자가 섞인 문자열",
+          "args": ["12x", 7],
+          "expected": 7
+        },
+        {
+          "id": "java-parse-overflow",
+          "label": "int 최댓값을 넘는 문자열",
+          "args": ["2147483648", -3],
+          "expected": -3
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "java-parse-positive",
+          "message": "변환에 성공하면 fallback이 아니라 Integer.parseInt가 만든 값을 반환해야 합니다."
+        },
+        {
+          "testId": "java-parse-negative",
+          "message": "앞의 빼기 부호는 유효한 정수 표현입니다. 직접 문자만 검사하기보다 parseInt의 결과를 사용하세요."
+        },
+        {
+          "testId": "java-parse-plus-sign",
+          "message": "Integer.parseInt는 앞의 더하기 부호도 허용합니다. 변환을 먼저 시도하세요."
+        },
+        {
+          "testId": "java-parse-empty",
+          "message": "빈 문자열에서 발생하는 NumberFormatException을 잡아 fallback을 반환해야 합니다."
+        },
+        {
+          "testId": "java-parse-invalid-character",
+          "message": "일부 숫자만 읽지 말고 문자열 전체가 int로 변환되지 않으면 fallback을 반환하세요."
+        },
+        {
+          "testId": "java-parse-overflow",
+          "message": "숫자 문자로만 이루어져도 int 범위를 넘으면 NumberFormatException이 발생합니다. 같은 실패 경로로 처리하세요."
+        }
+      ],
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "정상 경로와 예외 경로",
+          "content": "try 블록에는 성공할 때 필요한 변환을 두고, catch 블록에는 변환할 수 없을 때의 복구값을 둡니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "실패 종류를 하나씩 관찰하기",
+          "content": "빈 문자열, 문자가 섞인 문자열, int 범위를 넘는 문자열은 원인은 달라도 모두 NumberFormatException으로 관찰됩니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "필요한 예외만 잡기",
+          "content": "try에서 `return Integer.parseInt(value);`를 실행하고 `catch (NumberFormatException error)`에서 fallback을 반환하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "java-reject-signed-integers",
+          "title": "숫자 문자만 허용해 부호 있는 정수를 거부하기",
+          "explanation": "직접 `0`부터 `9`까지만 검사하면 `-17`과 `+8`도 실패로 처리됩니다. parseInt의 정수 문법을 그대로 활용하세요."
+        }
+      ]
+    }
+  ]
+}

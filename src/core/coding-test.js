@@ -3,6 +3,10 @@ import {
   serializedJsonByteLength,
   validateExecutionRequest,
 } from "../grading/code-grading.js";
+import {
+  hasJavaSolutionEntryPointDeclaration,
+  normalizeJavaFunctionContract,
+} from "../grading/java-grading.js";
 
 const COLLECTION_FIELDS = new Set([
   "schemaVersion",
@@ -271,6 +275,17 @@ function validateProblem(problemValue, index, collection, lessonMap, allTestIds,
     `${label}.functionContract`,
     errors,
   );
+  if (collection.languageId === "java") {
+    try {
+      normalizeJavaFunctionContract(problem.functionContract);
+    } catch (error) {
+      errors.push(
+        `${label}.functionContract: ${
+          error instanceof Error ? error.message : "Java 함수 타입을 확인할 수 없습니다."
+        }`,
+      );
+    }
+  }
   if (!isNonEmptyString(problem.entryPoint) || !ENTRY_POINT_PATTERN.test(problem.entryPoint)) {
     errors.push(`${label}.entryPoint 형식이 올바르지 않습니다.`);
   }
@@ -278,10 +293,25 @@ function validateProblem(problemValue, index, collection, lessonMap, allTestIds,
   if (
     isNonEmptyString(problem.entryPoint) &&
     ENTRY_POINT_PATTERN.test(problem.entryPoint) &&
-    isNonEmptyString(problem.starterCode) &&
-    !new RegExp(`\\b${problem.entryPoint}\\b`).test(problem.starterCode)
+    isNonEmptyString(problem.starterCode)
   ) {
-    errors.push(`${label}.starterCode에 entryPoint가 포함되어야 합니다.`);
+    if (
+      collection.languageId === "java" &&
+      !hasJavaSolutionEntryPointDeclaration(
+        problem.starterCode,
+        problem.entryPoint,
+        problem.functionContract,
+      )
+    ) {
+      errors.push(
+        `${label}.starterCode에 public class Solution의 public static entryPoint 선언이 필요합니다.`,
+      );
+    } else if (
+      collection.languageId !== "java" &&
+      !new RegExp(`\\b${problem.entryPoint}\\b`).test(problem.starterCode)
+    ) {
+      errors.push(`${label}.starterCode에 entryPoint가 포함되어야 합니다.`);
+    }
   }
 
   const publicTests = inspectArray(problem.publicTests, `${label}.publicTests`, errors, 4, 12);

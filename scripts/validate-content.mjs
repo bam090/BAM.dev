@@ -2,6 +2,7 @@ import { access, readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertValidCurriculum } from "../src/core/content.js";
+import { createCodeQuestExecutionRequest } from "../src/core/code-quest.js";
 import { assertValidQuizCollection } from "../src/core/quiz.js";
 import { assertValidCodingTestCollection } from "../src/core/coding-test.js";
 import {
@@ -9,10 +10,8 @@ import {
   createWebCodeQuestExecutionRequest,
 } from "../src/core/web-code-quest.js";
 import { assertValidWebProjectCollection } from "../src/core/web-project.js";
-import {
-  areJsonValuesEqual,
-  assertValidExecutionRequest,
-} from "../src/grading/code-grading.js";
+import { areJsonValuesEqual } from "../src/grading/code-grading.js";
+import { createCodingTestRunnerRequest } from "../src/grading/coding-test-runner-adapter.js";
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HINT_STAGES = ["concept", "observation", "implementation"];
@@ -245,21 +244,36 @@ function validateCodeQuestCollection(collection, curriculum, schema) {
 
     if (isNonEmptyString(quest.entryPoint) && isNonEmptyString(quest.starterCode)) {
       const escapedEntryPoint = quest.entryPoint.replaceAll(/[$]/g, "\\$");
+      const isJava = collection.languageId === "java";
       const declaration = quest.starterCode.match(
-        new RegExp(`function\\s+${escapedEntryPoint}\\s*\\(([^)]*)\\)`),
+        isJava
+          ? new RegExp(
+              `\\bpublic\\s+static\\s+(?:int|boolean|String)(?:\\s*\\[\\s*\\])?\\s+${escapedEntryPoint}\\s*\\(([^)]*)\\)`,
+            )
+          : new RegExp(`function\\s+${escapedEntryPoint}\\s*\\(([^)]*)\\)`),
       );
       if (!declaration) {
-        errors.push(`${label}.starterCode: entryPoint 함수 선언을 찾을 수 없습니다.`);
+        errors.push(
+          `${label}.starterCode: entryPoint ${isJava ? "public static 메서드" : "함수"} 선언을 찾을 수 없습니다.`,
+        );
       } else if (Array.isArray(quest.functionContract?.parameters)) {
         const declaredParameters = declaration[1]
           .split(",")
           .map((parameter) => parameter.trim())
           .filter(Boolean);
+        const declaredParameterNames = isJava
+          ? declaredParameters.map(
+              (parameter) =>
+                /([A-Za-z_][A-Za-z0-9_]*)$/u.exec(parameter)?.[1] ?? "",
+            )
+          : declaredParameters;
         const contractedParameters = quest.functionContract.parameters.map(
           (parameter) => parameter.name,
         );
-        if (JSON.stringify(declaredParameters) !== JSON.stringify(contractedParameters)) {
-          errors.push(`${label}.starterCode: 함수 매개변수 계약과 다릅니다.`);
+        if (JSON.stringify(declaredParameterNames) !== JSON.stringify(contractedParameters)) {
+          errors.push(
+            `${label}.starterCode: ${isJava ? "메서드" : "함수"} 매개변수 계약과 다릅니다.`,
+          );
         }
       }
     }
@@ -552,23 +566,13 @@ for (const fileName of questFileNames) {
           quest.starterCode,
           `validate-${quest.id}`,
         );
-      } else if (languageId === "javascript") {
-        assertValidExecutionRequest({
-          requestId: `validate-${quest.id}`,
-          contractVersion: collection.contractVersion,
-          questId: quest.id,
-          questRevision: quest.revision,
-          languageId: collection.languageId,
-          suite: "public",
-          source: quest.starterCode,
-          entryPoint: quest.entryPoint,
-          tests: quest.publicTests.map(({ id, label, args, expected }) => ({
-            id,
-            label,
-            args,
-            expected,
-          })),
-        });
+      } else if (["javascript", "java"].includes(languageId)) {
+        createCodeQuestExecutionRequest(
+          collection,
+          quest,
+          quest.starterCode,
+          `validate-${quest.id}`,
+        );
       }
     }
 
@@ -660,6 +664,17 @@ for (const fileName of codingTestFileNames) {
         }
         codingTestPublicTestIds.add(publicTest.id);
       }
+      if (["javascript", "java"].includes(languageId)) {
+        for (const mode of ["run", "submit"]) {
+          createCodingTestRunnerRequest({
+            collection,
+            problem,
+            source: problem.starterCode,
+            requestId: `validate-${mode}-${problem.id}`,
+            mode,
+          });
+        }
+      }
     }
     codingTestCollections.set(languageId, collection);
   } catch (error) {
@@ -668,8 +683,11 @@ for (const fileName of codingTestFileNames) {
   }
 }
 
-if (!codingTestCollections.has("javascript")) {
-  contentErrors.push("javascript: 4차 코딩테스트 콘텐츠가 없습니다.");
+for (const languageId of ["javascript", "java"]) {
+  const language = curriculum.languages.find((item) => item.id === languageId);
+  if (language?.status === "available" && !codingTestCollections.has(languageId)) {
+    contentErrors.push(`${languageId}: 정식 코딩테스트 콘텐츠가 없습니다.`);
+  }
 }
 
 const webProjectSchemaPath = path.join(

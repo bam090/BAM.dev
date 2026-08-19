@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   BamLearningApp,
+  CODING_TEST_LANGUAGE_IDS,
+  loadAvailableCodingTestCollectionsSafely,
   loadCodingTestCollectionSafely,
+  supportsCodingTests,
 } from "../src/app.js";
 import { DraftSaveCoordinator } from "../src/core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "../src/core/execution-coordinator.js";
@@ -334,9 +337,14 @@ test("코딩테스트 목록 진입은 진행 중인 이전 화면 렌더를 무
   });
 
   const app = Object.create(BamLearningApp.prototype);
+  const javaCollection = { languageId: "java", title: "Java 코딩테스트" };
   Object.assign(app, {
     renderSequence: 4,
-    codingTestCollection: { title: "JavaScript 코딩테스트" },
+    currentView: "coding-test",
+    currentLesson: { languageId: "javascript" },
+    quizCollection: { languageId: "javascript" },
+    codingTestCollections: new Map([["java", javaCollection]]),
+    codingTestCollection: javaCollection,
     hasRenderedView: false,
     syncMenuState() {},
     renderCodingTestList() {},
@@ -346,6 +354,7 @@ test("코딩테스트 목록 진입은 진행 중인 이전 화면 렌더를 무
 
   assert.equal(app.renderSequence, 5);
   assert.equal(app.currentView, "coding-test-list");
+  assert.equal(app.codingTestCollection.languageId, "java");
 });
 
 test("코딩테스트 콘텐츠 로드 실패는 다른 학습 기능의 시작을 막지 않도록 격리한다", async () => {
@@ -365,6 +374,40 @@ test("코딩테스트 콘텐츠 로드 실패는 다른 학습 기능의 시작�
   assert.equal(successful, loaded);
   assert.deepEqual(loadArguments, [["javascript", curriculum]]);
   assert.equal(failed, null);
+});
+
+test("사용 가능한 언어별 코딩테스트를 독립적으로 로드하고 오류를 격리한다", async () => {
+  const availableCurriculum = {
+    languages: [
+      { id: "javascript", status: "available" },
+      { id: "java", status: "available" },
+      { id: "html", status: "available" },
+      { id: "css", status: "planned" },
+    ],
+  };
+  const loadArguments = [];
+  const collections = await loadAvailableCodingTestCollectionsSafely(
+    availableCurriculum,
+    async (languageId, receivedCurriculum) => {
+      loadArguments.push([languageId, receivedCurriculum]);
+      if (languageId === "java") throw new Error("Java 콘텐츠 오류");
+      return { languageId, title: `${languageId} 코딩테스트` };
+    },
+  );
+
+  assert.deepEqual(
+    loadArguments.map(([languageId]) => languageId).sort(),
+    ["java", "javascript"],
+  );
+  assert.equal(loadArguments.every(([, value]) => value === availableCurriculum), true);
+  assert.equal(collections.size, 1);
+  assert.equal(collections.get("javascript")?.languageId, "javascript");
+  assert.equal(collections.has("java"), false);
+  assert.equal(collections.has("html"), false);
+  assert.deepEqual(CODING_TEST_LANGUAGE_IDS, ["javascript", "java"]);
+  assert.equal(supportsCodingTests("javascript"), true);
+  assert.equal(supportsCodingTests("java"), true);
+  assert.equal(supportsCodingTests("html"), false);
 });
 
 test("코딩테스트 검색은 빠른 연속 입력을 최신 값 한 번으로 렌더한다", (t) => {
@@ -553,4 +596,60 @@ test("코딩테스트 목록은 한 번 읽은 진도 스냅샷을 셸과 완료
   assert.equal(progressReadCount, 1);
   assert.equal(shellArguments[1], progress);
   assert.equal(shellArguments[2].has(codingTestCollection.problems[0].id), true);
+});
+
+test("코딩테스트 목록은 JavaScript와 Java 문제를 합치고 언어별로 필터한다", () => {
+  const javaProblem = {
+    ...codingTestCollection.problems[0],
+    id: "coding-test-java-sum-values",
+    slug: "sum-values",
+    title: "배열 합계 계산하기",
+    starterCode:
+      "public class Solution { public static int sumValues(int[] values) { return 0; } }",
+  };
+  const javaCollection = {
+    ...codingTestCollection,
+    languageId: "java",
+    title: "Java 코딩테스트",
+    problems: [javaProblem],
+  };
+  let rendered = "";
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    curriculum,
+    codingTestCollections: new Map([
+      ["javascript", codingTestCollection],
+      ["java", javaCollection],
+    ]),
+    codingTestCollection,
+    codingTestFilters: {
+      query: "",
+      difficulty: "all",
+      language: "all",
+      type: "all",
+      status: "all",
+    },
+    pendingCodingTestSearchRender: null,
+    codingTestSearchRenderTimer: null,
+    progressRepository: {
+      getProgress() {
+        return { completedCodingTestProblems: [] };
+      },
+    },
+    renderCodingTestShell(mainContent) {
+      rendered = mainContent;
+    },
+  });
+
+  app.renderCodingTestList();
+  assert.match(rendered, /JavaScript/);
+  assert.match(rendered, /Java/);
+  assert.match(rendered, /#\/coding-tests\/javascript\//);
+  assert.match(rendered, /#\/coding-tests\/java\/sum-values/);
+
+  app.codingTestFilters.language = "java";
+  app.renderCodingTestList();
+  assert.match(rendered, /배열 합계 계산하기/);
+  assert.doesNotMatch(rendered, /장바구니 합계 계산하기/);
+  assert.equal(app.codingTestCollection.languageId, "java");
 });

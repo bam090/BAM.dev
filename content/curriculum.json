@@ -30,9 +30,9 @@
       "id": "java",
       "name": "Java",
       "shortName": "Java",
-      "status": "sample",
+      "status": "available",
       "accent": "java",
-      "description": "타입과 객체 중심으로 프로그램을 설계합니다."
+      "description": "타입과 객체부터 컬렉션·예외·테스트까지 연결합니다."
     }
   ],
   "lessons": [
@@ -383,18 +383,114 @@
       "languageId": "java",
       "order": 1,
       "slug": "types-and-methods",
-      "title": "타입과 메서드 계약",
-      "summary": "값의 타입과 메서드의 입력·반환 타입을 읽어 코드의 약속을 설명합니다.",
-      "essentialQuestion": "Java 코드는 값과 메서드가 주고받는 약속을 어떻게 드러낼까요?",
+      "title": "타입·컴파일·메서드 계약",
+      "summary": "소스 코드가 컴파일되는 흐름을 관찰하고 변수와 메서드의 타입 계약을 읽습니다.",
+      "essentialQuestion": "Java는 실행 전에 값과 메서드의 약속을 어떻게 확인할까요?",
       "objectives": [
         "기본 타입과 참조 타입이 표현하는 값의 역할을 구분할 수 있습니다.",
-        "메서드 선언에서 매개변수 타입과 반환 타입을 찾을 수 있습니다.",
-        "호출 코드가 메서드 계약과 맞는지 타입을 기준으로 설명할 수 있습니다."
+        "변수의 선언 타입과 대입되는 값의 타입 관계를 설명할 수 있습니다.",
+        "메서드 선언에서 매개변수 타입과 반환 타입을 입력·출력 계약으로 읽을 수 있습니다.",
+        "소스 파일이 컴파일되어 클래스 파일이 되는 흐름과 컴파일 오류의 의미를 설명할 수 있습니다."
       ],
-      "estimatedMinutes": 20,
-      "conceptIds": ["java.types", "java.methods"],
+      "estimatedMinutes": 50,
+      "conceptIds": ["java.types", "java.variables", "java.methods", "java.compilation"],
       "contentFile": "content/lessons/java/types-and-methods.md",
-      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-18" }
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
+    },
+    {
+      "id": "java-02-control-flow-arrays",
+      "languageId": "java",
+      "order": 2,
+      "slug": "operators-control-flow-and-arrays",
+      "title": "연산·제어문·배열",
+      "summary": "연산 결과를 조건과 반복에 연결하고 고정 길이 배열의 경계를 안전하게 순회합니다.",
+      "essentialQuestion": "여러 값을 조건에 따라 처리하는 실행 흐름을 어떻게 예측할까요?",
+      "objectives": [
+        "산술·비교·논리 연산자의 결과 타입과 평가 순서를 확인할 수 있습니다.",
+        "if와 반복문이 boolean 조건으로 실행 흐름을 나누는 과정을 설명할 수 있습니다.",
+        "배열의 길이와 0부터 시작하는 인덱스 경계를 구분할 수 있습니다.",
+        "배열을 순회하며 합계나 개수를 계산하는 최소 메서드를 구현할 수 있습니다."
+      ],
+      "estimatedMinutes": 55,
+      "conceptIds": ["java.operators", "java.control-flow", "java.arrays"],
+      "contentFile": "content/lessons/java/operators-control-flow-and-arrays.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
+    },
+    {
+      "id": "java-03-classes-objects",
+      "languageId": "java",
+      "order": 3,
+      "slug": "classes-objects-and-encapsulation",
+      "title": "클래스·객체·생성자·캡슐화",
+      "summary": "상태와 동작을 클래스로 묶고 생성자와 접근 제어로 유효한 객체를 만듭니다.",
+      "essentialQuestion": "관련된 데이터와 규칙을 한 객체의 책임으로 어떻게 묶을까요?",
+      "objectives": [
+        "클래스 선언과 new 표현식으로 생성된 객체를 구분할 수 있습니다.",
+        "필드와 메서드가 객체의 상태와 동작을 나타내는 방식을 설명할 수 있습니다.",
+        "생성자가 새 객체의 초기 상태를 정하는 과정을 읽을 수 있습니다.",
+        "private 필드와 공개 메서드로 상태 변경 규칙을 보호할 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": ["java.classes", "java.objects", "java.constructors", "java.encapsulation"],
+      "contentFile": "content/lessons/java/classes-objects-and-encapsulation.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
+    },
+    {
+      "id": "java-04-collections-generics",
+      "languageId": "java",
+      "order": 4,
+      "slug": "collections-generics-list-and-map",
+      "title": "컬렉션·제네릭·List·Map",
+      "summary": "크기가 변하는 데이터와 키·값 관계를 제네릭 컬렉션으로 안전하게 표현합니다.",
+      "essentialQuestion": "여러 데이터를 목적에 맞는 컬렉션과 타입으로 어떻게 구조화할까요?",
+      "objectives": [
+        "배열과 컬렉션의 크기·연산 계약 차이를 설명할 수 있습니다.",
+        "제네릭 타입 인수가 컬렉션 원소의 타입 계약을 드러내는 방식을 이해합니다.",
+        "순서와 인덱스가 필요한 경우 List를 선택하고 기본 연산을 사용할 수 있습니다.",
+        "고유한 키로 값을 찾는 경우 Map을 선택하고 put·get·containsKey를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": ["java.collections", "java.generics", "java.list", "java.map"],
+      "contentFile": "content/lessons/java/collections-generics-list-and-map.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
+    },
+    {
+      "id": "java-05-exceptions-debugging",
+      "languageId": "java",
+      "order": 5,
+      "slug": "exceptions-and-debugging",
+      "title": "예외·디버깅",
+      "summary": "예외의 원인과 전파 경로를 읽고 컴파일·실행·논리 문제를 단계적으로 좁힙니다.",
+      "essentialQuestion": "예상하지 못한 상황과 잘못된 결과의 원인을 어떤 근거로 좁힐까요?",
+      "objectives": [
+        "예외가 정상 흐름을 중단하고 호출자 쪽으로 전파될 수 있음을 설명할 수 있습니다.",
+        "검사 예외와 비검사 예외가 컴파일 단계에서 다르게 다뤄지는 이유를 이해합니다.",
+        "try·catch와 throws 중 책임에 맞는 처리 방식을 선택할 수 있습니다.",
+        "컴파일 오류·런타임 예외·잘못된 결과를 구분해 재현 입력과 관찰 지점을 기록할 수 있습니다."
+      ],
+      "estimatedMinutes": 55,
+      "conceptIds": ["java.exceptions", "java.checked-exceptions", "java.debugging"],
+      "contentFile": "content/lessons/java/exceptions-and-debugging.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
+    },
+    {
+      "id": "java-06-review-practice",
+      "languageId": "java",
+      "order": 6,
+      "slug": "review-problem-solving-and-testing",
+      "title": "복습·문제 분해·테스트·복잡도",
+      "summary": "요구사항을 작은 메서드로 나누고 경계 테스트와 시간 복잡도로 풀이를 점검합니다.",
+      "essentialQuestion": "동작하는 코드를 넘어 설명하고 검증할 수 있는 풀이를 어떻게 만들까요?",
+      "objectives": [
+        "문제를 입력·출력·규칙·경계 사례로 나눌 수 있습니다.",
+        "각 책임을 작은 메서드와 명확한 타입 계약으로 표현할 수 있습니다.",
+        "정상·경계·잘못된 입력 사례를 독립적으로 확인하는 테스트를 작성할 수 있습니다.",
+        "반복 횟수를 기준으로 O(1)·O(n)·O(n²)의 차이를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": ["java.problem-decomposition", "java.testing", "java.complexity"],
+      "contentFile": "content/lessons/java/review-problem-solving-and-testing.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
     }
   ]
 }

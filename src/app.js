@@ -43,6 +43,7 @@ import { gradeQuestion, loadQuizCollection, summarizeQuiz } from "./core/quiz.js
 import { DraftSaveCoordinator } from "./core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "./core/execution-coordinator.js";
 import { BrowserCodeQuestRunner } from "./grading/browser-code-quest-runner.js";
+import { BrowserJavaCodeQuestRunner } from "./grading/java-code-quest-runner.js";
 import { BrowserWebCodeQuestRunner } from "./grading/browser-web-code-quest-runner.js";
 import { CodeQuestRunnerRouter } from "./grading/code-quest-runner-router.js";
 import { CodingTestRunnerAdapter } from "./grading/coding-test-runner-adapter.js";
@@ -90,6 +91,12 @@ import { createWebProjectPreviewDocument } from "./ui/web-project-preview.js";
 const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
 const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
 const WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS = 250;
+export const CODING_TEST_LANGUAGE_IDS = Object.freeze(["javascript", "java"]);
+const CODING_TEST_LANGUAGE_ID_SET = new Set(CODING_TEST_LANGUAGE_IDS);
+
+export function supportsCodingTests(languageId) {
+  return CODING_TEST_LANGUAGE_ID_SET.has(languageId);
+}
 
 function createDefaultCodingTestFilters() {
   return {
@@ -110,6 +117,31 @@ export async function loadCodingTestCollectionSafely(
   } catch {
     return null;
   }
+}
+
+export async function loadAvailableCodingTestCollectionsSafely(
+  curriculum,
+  loader = loadCodingTestCollection,
+) {
+  const collections = new Map();
+  const languages = Array.isArray(curriculum?.languages)
+    ? curriculum.languages.filter(
+        (language) =>
+          language.status === "available" && supportsCodingTests(language.id),
+      )
+    : [];
+
+  await Promise.all(
+    languages.map(async (language) => {
+      try {
+        const collection = await loader(language.id, curriculum);
+        collections.set(language.id, collection);
+      } catch {
+        // 한 언어의 코딩테스트 콘텐츠 오류가 다른 학습 기능을 막지 않게 격리한다.
+      }
+    }),
+  );
+  return collections;
 }
 
 export async function loadAvailableCodeQuestCollectionsSafely(
@@ -200,17 +232,21 @@ export class BamLearningApp {
     this.codeQuestCollection = null;
     this.codeQuestState = null;
     this.javascriptCodeQuestRunner = new BrowserCodeQuestRunner();
+    this.javaCodeQuestRunner = new BrowserJavaCodeQuestRunner();
     this.webCodeQuestRunner = new BrowserWebCodeQuestRunner();
     this.codeQuestRunner = new CodeQuestRunnerRouter({
       javascriptRunner: this.javascriptCodeQuestRunner,
       webRunner: this.webCodeQuestRunner,
+      javaRunner: this.javaCodeQuestRunner,
     });
+    this.codingTestCollections = new Map();
     this.codingTestCollection = null;
     this.codingTestFilters = createDefaultCodingTestFilters();
     this.codingTestState = null;
-    this.codingTestRunner = new CodingTestRunnerAdapter(
-      this.javascriptCodeQuestRunner,
-    );
+    this.codingTestRunner = new CodingTestRunnerAdapter({
+      javascriptRunner: this.javascriptCodeQuestRunner,
+      javaRunner: this.javaCodeQuestRunner,
+    });
     this.webProjectCollection = null;
     this.webProjectState = null;
     this.webProjectRunner = new BrowserWebProjectRunner();
@@ -244,9 +280,13 @@ export class BamLearningApp {
       );
       this.codeQuestCollection =
         this.codeQuestCollections.get(DEFAULT_LANGUAGE_ID) ?? null;
-      this.codingTestCollection = await loadCodingTestCollectionSafely(
+      this.codingTestCollections = await loadAvailableCodingTestCollectionsSafely(
         this.curriculum,
       );
+      this.codingTestCollection =
+        this.codingTestCollections.get(DEFAULT_LANGUAGE_ID) ??
+        this.codingTestCollections.values().next().value ??
+        null;
       this.webProjectCollection = await loadWebProjectCollectionSafely(
         this.curriculum,
       );
@@ -344,6 +384,11 @@ export class BamLearningApp {
       return;
     }
     if (codingTestRoute?.kind === "problem") {
+      if (!supportsCodingTests(codingTestRoute.languageId)) {
+        window.history.replaceState(null, "", buildCodingTestListHash());
+        this.openCodingTestListRoute();
+        return;
+      }
       await this.openCodingTestRoute(
         codingTestRoute.languageId,
         codingTestRoute.slug,
@@ -607,7 +652,27 @@ export class BamLearningApp {
   }
 
   openCodingTestListRoute() {
+    const originLanguageId =
+      this.currentView === "lesson"
+        ? this.currentLesson?.languageId
+        : this.currentView === "review"
+          ? this.quizCollection?.languageId
+          : this.currentView === "quest"
+            ? this.codeQuestCollection?.languageId
+            : this.currentView === "coding-test"
+              ? this.codingTestCollection?.languageId
+              : null;
+    const originCollection = originLanguageId
+      ? this.getCodingTestCollectionForLanguage(originLanguageId)
+      : null;
+    if (originCollection) this.codingTestCollection = originCollection;
     this.enterView("coding-test-list");
+    if (!this.codingTestCollection && this.codingTestCollections?.size > 0) {
+      this.codingTestCollection =
+        this.codingTestCollections.get(DEFAULT_LANGUAGE_ID) ??
+        this.codingTestCollections.values().next().value ??
+        null;
+    }
     if (!this.codingTestCollection) {
       this.renderFatalError(new Error("등록된 코딩테스트가 없습니다."));
       return;
@@ -619,7 +684,7 @@ export class BamLearningApp {
     }
 
     this.renderCodingTestList();
-    document.title = `${this.codingTestCollection.title} · BAM.dev`;
+    document.title = `코딩테스트 문제 목록 · BAM.dev`;
     window.scrollTo({ top: 0, behavior: "instant" });
     if (this.hasRenderedView) {
       window.requestAnimationFrame(() => {
@@ -633,8 +698,8 @@ export class BamLearningApp {
     const language = getLanguage(this.curriculum, languageId);
     if (
       !language ||
-      language.status === "planned" ||
-      languageId !== DEFAULT_LANGUAGE_ID
+      language.status !== "available" ||
+      !supportsCodingTests(languageId)
     ) {
       window.history.replaceState(null, "", buildCodingTestListHash());
       this.openCodingTestListRoute();
@@ -645,18 +710,21 @@ export class BamLearningApp {
     this.root.innerHTML = renderCodingTestLoadingView({ title: language.name });
 
     try {
-      if (
-        !this.codingTestCollection ||
-        this.codingTestCollection.languageId !== languageId
-      ) {
-        this.codingTestCollection = await loadCodingTestCollection(
+      let collection = this.codingTestCollections?.get(languageId) ?? null;
+      if (!collection) {
+        collection = await loadCodingTestCollection(
           languageId,
           this.curriculum,
         );
+        if (!(this.codingTestCollections instanceof Map)) {
+          this.codingTestCollections = new Map();
+        }
+        this.codingTestCollections.set(languageId, collection);
       }
       if (sequence !== this.renderSequence) return;
+      this.codingTestCollection = collection;
 
-      const problem = findCodingTestProblemBySlug(this.codingTestCollection, slug);
+      const problem = findCodingTestProblemBySlug(collection, slug);
       if (!problem) {
         window.history.replaceState(null, "", buildCodingTestListHash());
         this.openCodingTestListRoute();
@@ -2324,11 +2392,15 @@ export class BamLearningApp {
     const completedCodeQuestCount = codeQuests.filter((item) =>
       progress.completedQuestIds.includes(item.id),
     ).length;
-    const codingTestProblems =
-      language.id === this.codingTestCollection?.languageId
-        ? getCodingTestProblemsInOrder(this.codingTestCollection)
-        : [];
-    const solvedCodingTestProblemIds = this.getSolvedCodingTestProblemIds(progress);
+    const languageCodingTestCollection =
+      this.getCodingTestCollectionForLanguage(language.id);
+    const codingTestProblems = getCodingTestProblemsInOrder(
+      languageCodingTestCollection,
+    );
+    const solvedCodingTestProblemIds = this.getSolvedCodingTestProblemIds(
+      progress,
+      languageCodingTestCollection,
+    );
 
     const mainContent = `
       <main class="main-area" id="lesson-content" tabindex="-1">
@@ -2454,11 +2526,15 @@ export class BamLearningApp {
     const completedCodeQuestCount = codeQuests.filter((item) =>
       progress.completedQuestIds.includes(item.id),
     ).length;
-    const codingTestProblems =
-      language.id === this.codingTestCollection?.languageId
-        ? getCodingTestProblemsInOrder(this.codingTestCollection)
-        : [];
-    const solvedCodingTestProblemIds = this.getSolvedCodingTestProblemIds(progress);
+    const languageCodingTestCollection =
+      this.getCodingTestCollectionForLanguage(language.id);
+    const codingTestProblems = getCodingTestProblemsInOrder(
+      languageCodingTestCollection,
+    );
+    const solvedCodingTestProblemIds = this.getSolvedCodingTestProblemIds(
+      progress,
+      languageCodingTestCollection,
+    );
     const session = this.quizSession;
     const question = this.getCurrentQuizQuestion();
     const mainContent =
@@ -2566,13 +2642,17 @@ export class BamLearningApp {
     const completedQuestCount = quests.filter((quest) =>
       completedQuestIds.has(quest.id),
     ).length;
-    const codingTestProblems =
-      language.id === this.codingTestCollection?.languageId
-        ? getCodingTestProblemsInOrder(this.codingTestCollection)
-        : [];
+    const languageCodingTestCollection =
+      this.getCodingTestCollectionForLanguage(language.id);
+    const codingTestProblems = getCodingTestProblemsInOrder(
+      languageCodingTestCollection,
+    );
     const solvedCodingTestProblemIds =
       codingTestProblems.length > 0
-        ? this.getSolvedCodingTestProblemIds(progress)
+        ? this.getSolvedCodingTestProblemIds(
+            progress,
+            languageCodingTestCollection,
+          )
         : new Set();
     const firstLessonHref = buildLessonHash(lessons[0].languageId, lessons[0].slug);
     const currentQuestHref = buildQuestHash(language.id, state.quest.slug);
@@ -2782,13 +2862,17 @@ export class BamLearningApp {
     const completedQuestCount = quests.filter((quest) =>
       progress.completedQuestIds.includes(quest.id),
     ).length;
-    const codingTestProblems =
-      language.id === this.codingTestCollection?.languageId
-        ? getCodingTestProblemsInOrder(this.codingTestCollection)
-        : [];
+    const languageCodingTestCollection =
+      this.getCodingTestCollectionForLanguage(language.id);
+    const codingTestProblems = getCodingTestProblemsInOrder(
+      languageCodingTestCollection,
+    );
     const solvedCodingTestProblemIds =
       codingTestProblems.length > 0
-        ? this.getSolvedCodingTestProblemIds(progress)
+        ? this.getSolvedCodingTestProblemIds(
+            progress,
+            languageCodingTestCollection,
+          )
         : new Set();
     const firstLessonHref = buildLessonHash(
       lessons[0].languageId,
@@ -2853,15 +2937,57 @@ export class BamLearningApp {
     this.syncMenuState();
   }
 
-  getSolvedCodingTestProblemIds(progress = this.progressRepository.getProgress()) {
+  getCodingTestCollectionForLanguage(languageId) {
+    const loaded =
+      this.codingTestCollections instanceof Map
+        ? this.codingTestCollections.get(languageId)
+        : null;
+    if (loaded) return loaded;
+    return this.codingTestCollection?.languageId === languageId
+      ? this.codingTestCollection
+      : null;
+  }
+
+  getCodingTestCollectionsInCurriculumOrder() {
+    const collections = [];
+    const seen = new Set();
+    for (const language of this.curriculum?.languages ?? []) {
+      const collection = this.getCodingTestCollectionForLanguage(language.id);
+      if (!collection || seen.has(collection.languageId)) continue;
+      collections.push(collection);
+      seen.add(collection.languageId);
+    }
+    if (
+      this.codingTestCollection &&
+      !seen.has(this.codingTestCollection.languageId)
+    ) {
+      collections.push(this.codingTestCollection);
+    }
+    return collections;
+  }
+
+  getSolvedCodingTestProblemIds(
+    progress = this.progressRepository.getProgress(),
+    source = this.codingTestCollection,
+  ) {
     const completions = Array.isArray(progress.completedCodingTestProblems)
       ? progress.completedCodingTestProblems
       : [];
+    const collections =
+      source instanceof Map
+        ? [...source.values()]
+        : Array.isArray(source)
+          ? source
+          : source
+            ? [source]
+            : [];
     const revisionByProblemId = new Map(
-      getCodingTestProblemsInOrder(this.codingTestCollection).map((problem) => [
-        problem.id,
-        problem.revision,
-      ]),
+      collections.flatMap((collection) =>
+        getCodingTestProblemsInOrder(collection).map((problem) => [
+          problem.id,
+          problem.revision,
+        ]),
+      ),
     );
     return new Set(
       completions
@@ -2876,44 +3002,81 @@ export class BamLearningApp {
 
   renderCodingTestList({ focusSelector = null, cursorPosition = null } = {}) {
     this.cancelPendingCodingTestSearchRender();
-    const collection = this.codingTestCollection;
-    if (!this.curriculum || !collection) return;
-    const language = getLanguage(this.curriculum, collection.languageId);
-    if (!language) return;
-
-    const allProblems = getCodingTestProblemsInOrder(collection);
+    const collections = this.getCodingTestCollectionsInCurriculumOrder();
+    if (!this.curriculum || collections.length === 0) return;
+    if (
+      this.codingTestFilters.language !== "all" &&
+      this.getCodingTestCollectionForLanguage(this.codingTestFilters.language)
+    ) {
+      this.codingTestCollection = this.getCodingTestCollectionForLanguage(
+        this.codingTestFilters.language,
+      );
+    }
+    const entries = collections.flatMap((collection) => {
+      const language = getLanguage(this.curriculum, collection.languageId);
+      return getCodingTestProblemsInOrder(collection).map((problem) => ({
+        problem,
+        collection,
+        language,
+      }));
+    });
+    const allProblems = entries.map((entry) => entry.problem);
     const progress = this.progressRepository.getProgress();
-    const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
-    const languageMatches =
-      this.codingTestFilters.language === "all" ||
-      this.codingTestFilters.language === collection.languageId;
-    const visibleProblems = languageMatches
-      ? filterCodingTestProblems(collection, {
+    const solvedProblemIds = this.getSolvedCodingTestProblemIds(
+      progress,
+      collections,
+    );
+    const visibleProblems = collections.flatMap((collection) => {
+      if (
+        this.codingTestFilters.language !== "all" &&
+        this.codingTestFilters.language !== collection.languageId
+      ) {
+        return [];
+      }
+      return filterCodingTestProblems(collection, {
           query: this.codingTestFilters.query,
           difficulty: this.codingTestFilters.difficulty,
           type: this.codingTestFilters.type,
           status: this.codingTestFilters.status,
           completedProblemIds: solvedProblemIds,
-        })
-      : [];
+        });
+    });
     const hrefByProblemId = Object.fromEntries(
-      allProblems.map((problem) => [
+      entries.map(({ problem, collection }) => [
         problem.id,
         buildCodingTestHash(collection.languageId, problem.slug),
       ]),
     );
+    const languageNameByProblemId = Object.fromEntries(
+      entries.map(({ problem, language, collection }) => [
+        problem.id,
+        language?.name ?? collection.languageId,
+      ]),
+    );
+    const languageOptions = collections.map((collection) => {
+      const language = getLanguage(this.curriculum, collection.languageId);
+      return {
+        value: collection.languageId,
+        label: language?.name ?? collection.languageId,
+      };
+    });
     const mainContent = renderCodingTestListView({
-      title: collection.title,
+      title: "코딩테스트 문제 목록",
       problems: visibleProblems,
       totalCount: allProblems.length,
       filters: this.codingTestFilters,
-      languageName: language.name,
-      languageOptions: [{ value: language.id, label: language.name }],
+      languageName: "학습 언어",
+      languageNameByProblemId,
+      languageOptions,
       typeOptions: [...new Set(allProblems.map((problem) => problem.type))],
       solvedProblemIds,
       hrefByProblemId,
     });
-    this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
+    const activeSolvedProblemIds = this.getSolvedCodingTestProblemIds(
+      progress,
+      this.codingTestCollection,
+    );
+    this.renderCodingTestShell(mainContent, progress, activeSolvedProblemIds);
 
     if (focusSelector) {
       window.requestAnimationFrame(() => {
@@ -2938,6 +3101,7 @@ export class BamLearningApp {
     const progress = this.progressRepository.getProgress();
     const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
     const mainContent = renderCodingTestView({
+      languageId: collection.languageId,
       languageName: language.name,
       collectionTitle: collection.title,
       listHref: buildCodingTestListHash(),

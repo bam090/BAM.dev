@@ -158,6 +158,28 @@ test("Quest 편집기와 JSON 예제는 원본 입력을 유지하며 안전하�
   assert.match(html, new RegExp(`<textarea[^>]*>${quest.starterCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}<\\/textarea>`));
 });
 
+test("Java Quest는 Solution 정적 메서드와 로컬 채점기 경계를 안내한다", () => {
+  const javaQuest = {
+    ...quest,
+    entryPoint: "sum",
+    starterCode:
+      "public class Solution {\n  public static int sum(int[] values) {\n    return 0;\n  }\n}",
+  };
+  const html = render({
+    languageId: "java",
+    languageName: "Java",
+    evaluationKind: "java-function-v1",
+    quest: javaQuest,
+    source: javaQuest.starterCode,
+  });
+
+  assert.match(html, /Solution\.sum 정적 메서드 코드/);
+  assert.match(html, /정적 메서드 계약/);
+  assert.match(html, /public class Solution/);
+  assert.match(html, /로컬 Java 채점기가 화면에 공개된 테스트만 평가합니다/);
+  assert.match(html, /class="language-java"/);
+});
+
 test("실행 중에는 편집과 중복 실행을 막고 실제 취소 버튼만 제공한다", () => {
   const html = render({ isRunning: true });
   assert.match(html, /quest-run-panel[^>]*aria-busy="true"/);

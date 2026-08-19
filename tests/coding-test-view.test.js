@@ -166,6 +166,15 @@ test("필터 결과가 없으면 이름 있는 빈 상태와 초기화 안내를
   assert.doesNotMatch(html, /data-coding-test-list>/);
 });
 
+test("필터 결과 개수 변경을 보조 기술에 알린다", () => {
+  const html = renderCodingTestListView({ problems: [problem], totalCount: 3 });
+
+  assert.match(
+    html,
+    /role="status" aria-live="polite" aria-atomic="true" data-coding-test-count>전체 3문제 중 1문제/,
+  );
+});
+
 test("상세 화면은 좌측 문제와 우측 편집기·결과의 접근성 계약을 제공한다", () => {
   const html = renderDetail({
     source: '</textarea><script>globalThis.bad = true</script>',
@@ -192,9 +201,23 @@ test("상세 화면은 좌측 문제와 우측 편집기·결과의 접근성 �
     /data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title"/,
   );
   assert.doesNotMatch(html, /data-coding-test-results[^>]*(?:role="status"|aria-live)/);
-  assert.match(html, /모든 테스트는 이 브라우저에 포함된 공개 테스트입니다/);
-  assert.match(html, /브라우저에 포함된 공개 테스트 3개를 모두 채점합니다/);
+  assert.match(html, /화면에 공개된 테스트만 사용합니다/);
+  assert.match(html, /화면에 공개된 테스트 3개를 모두 채점합니다/);
   assert.doesNotMatch(html, /비밀\s*테스트|숨김\s*테스트|secret\s*test|hidden\s*test/i);
+});
+
+test("Java 상세 화면은 Solution 정적 메서드와 로컬 채점 경계를 안내한다", () => {
+  const html = renderDetail({
+    languageId: "java",
+    languageName: "Java",
+    collectionTitle: "Java 코딩테스트",
+  });
+
+  assert.match(html, /Solution\.calculateCartTotal 정적 메서드를 포함한 클래스 코드/);
+  assert.match(html, /정적 메서드 계약/);
+  assert.match(html, /로컬 Java 채점기/);
+  assert.match(html, /공개 테스트 채점/);
+  assert.doesNotMatch(html, /비밀\s*테스트|숨김\s*테스트/i);
 });
 
 test("실행 중에는 편집·실행·제출을 막고 취소 상태를 명확히 표시한다", () => {
@@ -318,4 +341,35 @@ test("상속 프로퍼티와 알 수 없는 초안 상태는 초기 코드 안�
     assert.match(html, /class="coding-test-draft-status"[^>]*>초기 코드를 불러왔습니다/);
     assert.doesNotMatch(html, /coding-test-draft-status is-warning/);
   }
+});
+
+test("저자 설명의 백틱 코드는 code 요소로 표시하면서 HTML은 escape한다", () => {
+  const inlineCodeProblem = structuredClone(problem);
+  inlineCodeProblem.summary = "`sum`을 호출하고 <img src=x>를 출력하지 않습니다.";
+  inlineCodeProblem.description = "`public static` 메서드를 구현하세요.";
+  inlineCodeProblem.functionContract.parameters[0].description = "`prices` 배열입니다.";
+  inlineCodeProblem.functionContract.returns.description = "`int` 합계입니다.";
+  inlineCodeProblem.functionContract.constraints = ["`null`은 입력되지 않습니다."];
+  inlineCodeProblem.examples[0].explanation = "`1000 + 2500`은 3500입니다.";
+  inlineCodeProblem.failureExplanations[0].message = "`return` 값을 확인하세요.";
+  inlineCodeProblem.publicTests = [inlineCodeProblem.publicTests[0]];
+  inlineCodeProblem.runTestIds = ["cart-basic"];
+
+  const detailHtml = renderCodingTestView({
+    problem: inlineCodeProblem,
+    source: inlineCodeProblem.starterCode,
+    executionMode: "run",
+    report: createReport("wrong_answer"),
+  });
+  const listHtml = renderCodingTestListView({ problems: [inlineCodeProblem] });
+
+  assert.match(detailHtml, /<code>sum<\/code>을 호출하고 &lt;img src=x&gt;/);
+  assert.match(detailHtml, /<code>public static<\/code> 메서드/);
+  assert.match(detailHtml, /<code>prices<\/code> 배열/);
+  assert.match(detailHtml, /<code>int<\/code> 합계/);
+  assert.match(detailHtml, /<code>null<\/code>은 입력되지/);
+  assert.match(detailHtml, /<code>1000 \+ 2500<\/code>은 3500/);
+  assert.match(detailHtml, /<code>return<\/code> 값을 확인/);
+  assert.match(listHtml, /<code>sum<\/code>을 호출하고 &lt;img src=x&gt;/);
+  assert.doesNotMatch(detailHtml, /<(?:img|script|iframe)(?:\s|>)/);
 });

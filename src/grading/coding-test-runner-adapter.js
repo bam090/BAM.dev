@@ -1,6 +1,10 @@
 import { getCodingTestPublicTestsForMode } from "../core/coding-test.js";
 import { BrowserCodeQuestRunner } from "./browser-code-quest-runner.js";
 import { createExecutionRequestSnapshot } from "./code-grading.js";
+import {
+  createJavaExecutionRequestSnapshot,
+  normalizeJavaFunctionContract,
+} from "./java-grading.js";
 
 const MODES = new Set(["run", "submit"]);
 
@@ -38,7 +42,7 @@ export function createCodingTestRunnerRequest({
   }
   const canonicalProblem = getCanonicalProblem(collection, problem);
   const publicTests = getCodingTestPublicTestsForMode(canonicalProblem, mode);
-  const runnerRequest = createExecutionRequestSnapshot({
+  const baseRequest = {
     requestId,
     contractVersion: collection.contractVersion,
     questId: canonicalProblem.id,
@@ -53,7 +57,14 @@ export function createCodingTestRunnerRequest({
       args,
       expected,
     })),
-  });
+  };
+  const runnerRequest =
+    collection.languageId === "java"
+      ? createJavaExecutionRequestSnapshot({
+          ...baseRequest,
+          ...normalizeJavaFunctionContract(canonicalProblem.functionContract),
+        })
+      : createExecutionRequestSnapshot(baseRequest);
 
   return Object.freeze({
     problemId: canonicalProblem.id,
@@ -104,16 +115,38 @@ export function adaptCodingTestRunnerReport(report, execution) {
 }
 
 export class CodingTestRunnerAdapter {
-  constructor(runner = new BrowserCodeQuestRunner()) {
-    if (!runner || typeof runner.run !== "function") {
+  constructor(runners = new BrowserCodeQuestRunner()) {
+    if (
+      isPlainRecord(runners) &&
+      (Object.hasOwn(runners, "javascriptRunner") || Object.hasOwn(runners, "javaRunner"))
+    ) {
+      if (!runners.javascriptRunner || typeof runners.javascriptRunner.run !== "function") {
+        throw new TypeError("run()을 제공하는 JavaScript 실행기가 필요합니다.");
+      }
+      if (!runners.javaRunner || typeof runners.javaRunner.run !== "function") {
+        throw new TypeError("run()을 제공하는 Java 실행기가 필요합니다.");
+      }
+      this.runners = Object.freeze({
+        javascript: runners.javascriptRunner,
+        java: runners.javaRunner,
+      });
+      this.runner = runners.javascriptRunner;
+      return;
+    }
+    if (!runners || typeof runners.run !== "function") {
       throw new TypeError("run()을 제공하는 JavaScript 실행기가 필요합니다.");
     }
-    this.runner = runner;
+    this.runners = Object.freeze({ javascript: runners });
+    this.runner = runners;
   }
 
   async run(input, options = {}) {
     const execution = createCodingTestRunnerRequest(input);
-    const report = await this.runner.run(execution.runnerRequest, options);
+    const runner = this.runners[execution.runnerRequest.languageId];
+    if (!runner) {
+      throw new Error(`이 코딩테스트 언어를 처리할 실행기가 없습니다: ${execution.runnerRequest.languageId}`);
+    }
+    const report = await runner.run(execution.runnerRequest, options);
     return adaptCodingTestRunnerReport(report, execution);
   }
 }
