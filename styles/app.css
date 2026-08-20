@@ -643,10 +643,9 @@ a.language-nav-link:hover {
 
 .lesson-body :not(pre) > code {
   padding: 0.13em 0.38em;
-  border: 1px solid rgba(239, 98, 98, 0.22);
+  border: 1px solid transparent;
   border-radius: 5px;
-  background: rgba(239, 98, 98, 0.1);
-  color: #ff9fa8;
+  background: #292929;
   font-family: var(--font-mono);
   font-size: 0.88em;
   overflow-wrap: anywhere;
@@ -1363,10 +1362,9 @@ a.language-nav-link:hover {
 
 .quiz-card :not(pre) > code {
   padding: 0.12em 0.34em;
-  border: 1px solid rgba(239, 98, 98, 0.22);
+  border: 1px solid transparent;
   border-radius: 0.35rem;
-  color: #ff9fa8;
-  background: rgba(239, 98, 98, 0.1);
+  background: #292929;
   font-family: var(--font-mono);
   font-size: 0.9em;
   overflow-wrap: anywhere;
@@ -1888,10 +1886,9 @@ a.language-nav-link:hover {
 
 .quest-prose code {
   padding: 0.08em 0.32em;
-  border: 1px solid rgba(239, 98, 98, 0.22);
+  border: 1px solid transparent;
   border-radius: 5px;
-  background: rgba(239, 98, 98, 0.1);
-  color: #ff9fa8;
+  background: #292929;
   font-family: var(--font-mono);
   font-size: 0.9em;
   overflow-wrap: anywhere;
@@ -3968,7 +3965,7 @@ a.language-nav-link:hover {
 }
 
 #lesson-content :not(pre) > code {
-  color: #ff9fa8;
+  color: #e26b60;
 }
 
 .quiz-answer-summary.is-incorrect h3,
