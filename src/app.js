@@ -9,12 +9,14 @@ import {
   buildCodingTestHash,
   buildCodingTestListHash,
   buildLessonHash,
+  buildMyPageHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
   buildWebProjectListHash,
   getAdjacentLessons,
   parseCodingTestHash,
+  parseMyPageHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -51,6 +53,7 @@ import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js
 import { scoreWebProject } from "./grading/web-project-scoring.js";
 import {
   createBrowserStorage,
+  getCurrentCompletedQuestIds,
   LocalStorageProgressRepository,
   PROGRESS_STORAGE_KEY,
 } from "./repositories/progress-repository.js";
@@ -62,6 +65,7 @@ import {
 } from "./repositories/web-project-repository.js";
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
 import { renderAppShell } from "./ui/app-shell.js";
+import { renderMyPageView } from "./ui/my-page-view.js";
 import { renderLanguageNavigation } from "./ui/language-navigation.js";
 import { escapeHtml, renderHighlightedCode, renderMarkdown } from "./ui/markdown.js";
 import {
@@ -313,14 +317,16 @@ export class BamLearningApp {
     });
     window.addEventListener("storage", (event) => {
       if (event.key === WEB_PROJECT_STORAGE_KEY) {
-        if (this.currentView === "web-project-list") this.renderWebProjectList();
+        if (this.currentView === "my-page") this.renderMyPage();
+        else if (this.currentView === "web-project-list") this.renderWebProjectList();
         else if (this.currentView === "web-project" && this.webProjectState) {
           this.handleExternalWebProjectStorageChange();
         }
         return;
       }
       if (event.key !== PROGRESS_STORAGE_KEY) return;
-      if (this.currentLesson) this.renderLesson();
+      if (this.currentView === "my-page") this.renderMyPage();
+      else if (this.currentLesson) this.renderLesson();
       else if (this.currentView === "review" && this.quizCollection) {
         this.refreshQuizHistory();
         this.renderQuiz();
@@ -360,6 +366,17 @@ export class BamLearningApp {
     this.leaveCurrentView();
     if (!this.curriculum) {
       this.enterView(this.currentView ?? "lesson");
+      return;
+    }
+
+    const myPageRoute = parseMyPageHash(window.location.hash);
+    if (myPageRoute) {
+      this.openMyPageRoute();
+      return;
+    }
+    if (/^#\/my(?:\/|$)/u.test(String(window.location.hash))) {
+      window.history.replaceState(null, "", buildMyPageHash());
+      this.openMyPageRoute();
       return;
     }
 
@@ -474,6 +491,23 @@ export class BamLearningApp {
     }
 
     await this.openLessonRoute({ useLastLesson });
+  }
+
+  openMyPageRoute() {
+    this.enterView("my-page");
+    const canonicalHash = buildMyPageHash();
+    if (window.location.hash !== canonicalHash) {
+      window.history.replaceState(null, "", canonicalHash);
+    }
+    this.renderMyPage();
+    document.title = "마이페이지 · BAM.dev";
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (this.hasRenderedView) {
+      window.requestAnimationFrame(() => {
+        focusMainContent(document.querySelector("#lesson-content"));
+      });
+    }
+    this.hasRenderedView = true;
   }
 
   leaveCurrentView(reason = "navigation") {
@@ -2362,6 +2396,136 @@ export class BamLearningApp {
     }
   }
 
+  renderMyPage() {
+    if (!this.curriculum) return;
+
+    let progress = {};
+    let webProjectState = {};
+    let isPersistent = true;
+    try {
+      progress = this.progressRepository.getProgress();
+      isPersistent =
+        this.progressRepository.getPersistenceStatus().isPersistent === true;
+    } catch {
+      isPersistent = false;
+    }
+    try {
+      webProjectState = this.webProjectRepository.getState();
+      isPersistent =
+        isPersistent &&
+        this.webProjectRepository.getPersistenceStatus().isPersistent === true;
+    } catch {
+      isPersistent = false;
+    }
+
+    const mainContent = renderMyPageView({
+      curriculum: this.curriculum,
+      progress,
+      codeQuestCollections: this.codeQuestCollections,
+      codingTestCollections: this.codingTestCollections,
+      webProjectCollection: this.webProjectCollection,
+      webProjectState,
+      isPersistent,
+    });
+    const lastLesson = this.curriculum.lessons.find(
+      (lesson) => lesson.id === progress.lastLessonId,
+    );
+    const language =
+      getLanguage(this.curriculum, lastLesson?.languageId) ??
+      getLanguage(this.curriculum, DEFAULT_LANGUAGE_ID);
+    const lessons = language
+      ? getLessonsForLanguage(this.curriculum, language.id)
+      : [];
+    if (!language || lessons.length === 0) {
+      this.root.innerHTML = mainContent;
+      return;
+    }
+
+    const completedLessonIds = new Set(progress.completedLessonIds ?? []);
+    const completedLessonCount = lessons.filter((lesson) =>
+      completedLessonIds.has(lesson.id),
+    ).length;
+    const questCollection = this.codeQuestCollections.get(language.id) ?? null;
+    const quests = getCodeQuestsInOrder(questCollection);
+    const completedQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      quests,
+    ).size;
+    const codingTestCollection = this.getCodingTestCollectionForLanguage(
+      language.id,
+    );
+    const codingTestProblems = getCodingTestProblemsInOrder(
+      codingTestCollection,
+    );
+    const solvedProblemIds = this.getSolvedCodingTestProblemIds(
+      progress,
+      codingTestCollection,
+    );
+    const firstLessonHref = buildLessonHash(
+      lessons[0].languageId,
+      lessons[0].slug,
+    );
+
+    this.root.innerHTML = renderAppShell({
+      homeHref: firstLessonHref,
+      menuOpen: this.menuOpen,
+      language,
+      lessonProgress: {
+        completedCount: completedLessonCount,
+        totalCount: lessons.length,
+        percent: Math.round((completedLessonCount / lessons.length) * 100),
+      },
+      languageNavigation: renderLanguageNavigation({
+        curriculum: this.curriculum,
+        currentLanguageId: language.id,
+      }),
+      lessonNavigationItems: lessons
+        .map((lesson) =>
+          this.renderLessonLink(lesson, null, completedLessonIds),
+        )
+        .join(""),
+      featureNavigation: [
+        {
+          kind: "review",
+          options: {
+            href: buildReviewHash(language.id),
+            isCurrent: false,
+          },
+        },
+        {
+          kind: "code-quest",
+          options: quests[0]
+            ? {
+                href: buildQuestHash(language.id, quests[0].slug),
+                isCurrent: false,
+                completedCount: completedQuestCount,
+                totalCount: quests.length,
+              }
+            : null,
+        },
+        {
+          kind: "coding-test",
+          options:
+            codingTestProblems.length > 0
+              ? {
+                  href: buildCodingTestListHash(),
+                  isCurrent: false,
+                  solvedCount: solvedProblemIds.size,
+                  totalCount: codingTestProblems.length,
+                }
+              : null,
+        },
+        {
+          kind: "web-project",
+          options: this.getWebProjectNavigationOptions(false),
+        },
+      ],
+      myPageCurrent: true,
+      mainContent,
+    });
+    this.syncMenuState();
+  }
+
   renderLoadingLesson(lesson) {
     this.root.innerHTML = `
       <main class="loading-page" id="lesson-content" tabindex="-1">
@@ -2389,9 +2553,10 @@ export class BamLearningApp {
       this.codeQuestCollections.get(language.id) ?? null;
     const codeQuests = getCodeQuestsInOrder(languageQuestCollection);
     const firstCodeQuest = codeQuests[0] ?? null;
-    const completedCodeQuestCount = codeQuests.filter((item) =>
-      progress.completedQuestIds.includes(item.id),
-    ).length;
+    const completedCodeQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      codeQuests,
+    ).size;
     const languageCodingTestCollection =
       this.getCodingTestCollectionForLanguage(language.id);
     const codingTestProblems = getCodingTestProblemsInOrder(
@@ -2523,9 +2688,10 @@ export class BamLearningApp {
       this.codeQuestCollections.get(language.id) ?? null;
     const codeQuests = getCodeQuestsInOrder(languageQuestCollection);
     const firstCodeQuest = codeQuests[0] ?? null;
-    const completedCodeQuestCount = codeQuests.filter((item) =>
-      progress.completedQuestIds.includes(item.id),
-    ).length;
+    const completedCodeQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      codeQuests,
+    ).size;
     const languageCodingTestCollection =
       this.getCodingTestCollectionForLanguage(language.id);
     const codingTestProblems = getCodingTestProblemsInOrder(
@@ -2638,10 +2804,8 @@ export class BamLearningApp {
     const quests = getCodeQuestsInOrder(collection);
     const currentIndex = quests.findIndex((quest) => quest.id === state.quest.id);
     const adjacent = getAdjacentCodeQuests(collection, state.quest.id);
-    const completedQuestIds = new Set(progress.completedQuestIds);
-    const completedQuestCount = quests.filter((quest) =>
-      completedQuestIds.has(quest.id),
-    ).length;
+    const completedQuestIds = getCurrentCompletedQuestIds(progress, quests);
+    const completedQuestCount = completedQuestIds.size;
     const languageCodingTestCollection =
       this.getCodingTestCollectionForLanguage(language.id);
     const codingTestProblems = getCodingTestProblemsInOrder(
@@ -2859,9 +3023,10 @@ export class BamLearningApp {
     );
     const questCollection = this.codeQuestCollections.get(language.id) ?? null;
     const quests = getCodeQuestsInOrder(questCollection);
-    const completedQuestCount = quests.filter((quest) =>
-      progress.completedQuestIds.includes(quest.id),
-    ).length;
+    const completedQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      quests,
+    ).size;
     const languageCodingTestCollection =
       this.getCodingTestCollectionForLanguage(language.id);
     const codingTestProblems = getCodingTestProblemsInOrder(
@@ -3143,9 +3308,10 @@ export class BamLearningApp {
     const languageQuestCollection =
       this.codeQuestCollections.get(language.id) ?? null;
     const quests = getCodeQuestsInOrder(languageQuestCollection);
-    const completedQuestCount = quests.filter((quest) =>
-      progress.completedQuestIds.includes(quest.id),
-    ).length;
+    const completedQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      quests,
+    ).size;
     const problems = getCodingTestProblemsInOrder(collection);
     const firstLessonHref = buildLessonHash(lessons[0].languageId, lessons[0].slug);
 

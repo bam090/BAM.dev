@@ -28,6 +28,10 @@ export function buildWebProjectHash(slug) {
   return `#/web-projects/${encodeURIComponent(slug)}`;
 }
 
+export function buildMyPageHash() {
+  return "#/my";
+}
+
 export function parseLessonHash(hash) {
   const cleanHash = String(hash ?? "").replace(/^#/, "");
   const match = cleanHash.match(/^\/learn\/([^/]+)\/([^/]+)\/?$/);
@@ -103,6 +107,11 @@ export function parseWebProjectHash(hash) {
   } catch {
     return null;
   }
+}
+
+export function parseMyPageHash(hash) {
+  const cleanHash = String(hash ?? "").replace(/^#/, "");
+  return /^\/my\/?$/.test(cleanHash) ? { kind: "my-page" } : null;
 }
 
 export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {

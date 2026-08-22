@@ -6,6 +6,7 @@ import {
   MemoryStorage,
   PROGRESS_STORAGE_KEY,
   createEmptyProgress,
+  getCurrentCompletedQuestIds,
   normalizeProgress,
 } from "../src/repositories/progress-repository.js";
 
@@ -32,6 +33,7 @@ test("최근 교안과 완료 상태를 같은 버전 데이터에 저장한다"
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    completedQuestRevisions: [],
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
@@ -72,6 +74,7 @@ test("1차 저장 형식을 읽을 때 객관식 필드를 빈 배열로 보완�
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    completedQuestRevisions: [],
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
@@ -343,6 +346,7 @@ test("Code Quest 제출 요약을 저장하고 완전 통과한 Quest만 완료 
   });
 
   assert.deepEqual(wrong.completedQuestIds, []);
+  assert.deepEqual(wrong.completedQuestRevisions, []);
   assert.equal(Object.hasOwn(wrong.questAttempts[0], "source"), false);
 
   const passed = repository.recordQuestAttempt({
@@ -354,6 +358,13 @@ test("Code Quest 제출 요약을 저장하고 완전 통과한 Quest만 완료 
     total: 2,
   });
   assert.deepEqual(passed.completedQuestIds, ["quest-javascript-sum-values"]);
+  assert.deepEqual(passed.completedQuestRevisions, [
+    {
+      questId: "quest-javascript-sum-values",
+      questRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
   assert.equal(passed.questAttempts.length, 2);
   assert.equal(passed.questAttempts[1].questRevision, 2);
   assert.equal(passed.questAttempts[1].completedAt, "2026-08-16T12:00:00.000Z");
@@ -391,6 +402,137 @@ test("보관 한도 밖의 유효한 통과 기록도 완료 상태 복구에 �
   assert.equal(progress.questAttempts.length, 50);
   assert.equal(progress.questAttempts.some((attempt) => attempt.id === oldPassedAttempt.id), false);
   assert.deepEqual(progress.completedQuestIds, ["quest-javascript-old-passed"]);
+  assert.deepEqual(progress.completedQuestRevisions, [
+    {
+      questId: "quest-javascript-old-passed",
+      questRevision: 1,
+      completedAt,
+    },
+  ]);
+});
+
+test("Quest 통과가 실행 보관 한도 밖으로 밀려도 현재 리비전 완료를 유지한다", () => {
+  const repository = new LocalStorageProgressRepository(
+    new MemoryStorage(),
+    fixedClock,
+  );
+  const questId = "quest-javascript-retained-completion";
+  repository.recordQuestAttempt({
+    questId,
+    questRevision: 2,
+    languageId: "javascript",
+    outcome: "passed",
+    passed: 1,
+    total: 1,
+  });
+  for (let index = 0; index < 50; index += 1) {
+    repository.recordQuestAttempt({
+      questId,
+      questRevision: 2,
+      languageId: "javascript",
+      outcome: "wrong_answer",
+      passed: 0,
+      total: 1,
+    });
+  }
+
+  const progress = repository.getProgress();
+  assert.equal(
+    progress.questAttempts.some((attempt) => attempt.outcome === "passed"),
+    false,
+  );
+  assert.deepEqual(progress.completedQuestRevisions, [
+    {
+      questId,
+      questRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
+  assert.deepEqual(
+    [...getCurrentCompletedQuestIds(progress, [{ id: questId, revision: 2 }])],
+    [questId],
+  );
+});
+
+test("Quest 완료 selector는 정확한 리비전만 인정하고 revision 1 legacy ID만 보존한다", () => {
+  const revisionTwoQuest = {
+    id: "quest-javascript-versioned",
+    revision: 2,
+  };
+  const legacyQuest = {
+    id: "quest-javascript-legacy",
+    revision: 1,
+  };
+  const completedAt = "2026-08-16T12:00:00.000Z";
+
+  assert.deepEqual(
+    [
+      ...getCurrentCompletedQuestIds(
+        {
+          completedQuestIds: [revisionTwoQuest.id, legacyQuest.id],
+          completedQuestRevisions: [
+            {
+              questId: revisionTwoQuest.id,
+              questRevision: 1,
+              completedAt,
+            },
+          ],
+        },
+        [revisionTwoQuest, legacyQuest],
+      ),
+    ],
+    [legacyQuest.id],
+  );
+
+  assert.deepEqual(
+    [
+      ...getCurrentCompletedQuestIds(
+        {
+          completedQuestIds: [revisionTwoQuest.id],
+          completedQuestRevisions: [
+            {
+              questId: revisionTwoQuest.id,
+              questRevision: 2,
+              completedAt,
+            },
+          ],
+        },
+        [revisionTwoQuest],
+      ),
+    ],
+    [revisionTwoQuest.id],
+  );
+});
+
+test("높은 Quest 완료 리비전은 나중에 기록된 구버전 통과로 내려가지 않는다", () => {
+  const progress = normalizeProgress({
+    ...createEmptyProgress(),
+    completedQuestRevisions: [
+      {
+        questId: "quest-javascript-stale-tab",
+        questRevision: 2,
+        completedAt: "2026-08-16T12:00:00.000Z",
+      },
+      {
+        questId: "quest-javascript-stale-tab",
+        questRevision: 1,
+        completedAt: "2026-08-16T12:00:01.000Z",
+      },
+      {
+        questId: "quest-javascript-invalid",
+        questRevision: 0,
+        completedAt: "2026-08-16T12:00:02.000Z",
+      },
+    ],
+  });
+
+  assert.deepEqual(progress.completedQuestRevisions, [
+    {
+      questId: "quest-javascript-stale-tab",
+      questRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
 });
 
 test("Code Quest 제출 결과의 ID·리비전·점수·결과 일관성을 거부한다", () => {

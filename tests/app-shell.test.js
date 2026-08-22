@@ -60,8 +60,21 @@ test("공통 앱 셸은 모바일 메뉴·코스 진도·본문·announcer 계�
   assert.match(html, /aria-label="JavaScript 학습 진도"/);
   assert.match(html, /aria-valuenow="40"/);
   assert.match(html, /class="sidebar-backdrop is-visible" data-close-menu/);
+  assert.match(html, /class="my-page-nav"/);
+  assert.match(html, /href="#\/my"/);
   assert.match(html, /<main id="lesson-content" tabindex="-1">본문<\/main>/);
   assert.match(html, /class="announcer sr-only" aria-live="polite" aria-atomic="true"/);
+});
+
+test("마이페이지 내비게이션은 모든 셸에 한 번 있고 현재 화면을 알린다", () => {
+  const html = renderShell({ myPageCurrent: true });
+
+  assert.equal((html.match(/class="my-page-nav"/g) ?? []).length, 1);
+  assert.match(
+    html,
+    /class="my-page-nav-link is-current" href="#\/my" aria-current="page"/,
+  );
+  assert.match(html, /학습 기록과 재도전/);
 });
 
 test("기능 내비게이션 DTO는 순서와 빈 슬롯을 보존하며 Web Project를 확장할 수 있다", () => {

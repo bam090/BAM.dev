@@ -3,6 +3,7 @@ import { renderReviewNavigationLink } from "./quiz-view.js";
 import { renderCodeQuestNavigationLink } from "./code-quest-view.js";
 import { renderCodingTestNavigationLink } from "./coding-test-view.js";
 import { renderWebProjectNavigationLink } from "./web-project-view.js";
+import { renderMyPageNavigationLink } from "./my-page-view.js";
 
 const FEATURE_NAVIGATION_RENDERERS = Object.freeze({
   review: renderReviewNavigationLink,
@@ -42,6 +43,7 @@ export function renderAppShell({
   languageNavigation = "",
   lessonNavigationItems = "",
   featureNavigation = [],
+  myPageCurrent = false,
   mainContent = "",
 } = {}) {
   const completedCount = normalizeCount(lessonProgress.completedCount);
@@ -97,6 +99,7 @@ export function renderAppShell({
         </nav>
 
         ${renderFeatureNavigation(featureNavigation)}
+        ${renderMyPageNavigationLink({ isCurrent: myPageCurrent })}
       </aside>
 
       <div class="sidebar-backdrop${menuOpen ? " is-visible" : ""}" data-close-menu aria-hidden="true"></div>

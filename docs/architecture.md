@@ -37,9 +37,10 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - 코딩테스트: 목록 검색과 난이도·언어·유형·풀이 상태 필터를 순수 도메인 함수로 분리합니다. 빠른 실행은 공개 테스트 일부, 제출은 전부를 사용하며 `CodingTestRunnerAdapter`가 JavaScript Worker 또는 Java 로컬 runner를 선택한 뒤 문제 ID와 실행 모드로 결과를 복원합니다.
 - Web Project: `index.html`과 `styles.css`를 하나의 제출 snapshot으로 만들고, 보수적인 source preflight 뒤 sandbox 미리보기와 HTML DOM·CSSOM 평가 어댑터에 전달합니다. 공개 자동 기준 70점과 검증되지 않은 자가평가 30점을 별도 결과로 계산하며, 평가기 오류·취소·미실행은 0점으로 확정하지 않습니다.
 - 공개성: 브라우저에 내려가는 Quest·코딩테스트·Web Project의 문제, assertion, 기대값은 개발자 도구로 확인할 수 있습니다. 모두 공개 테스트 또는 공개 기준이며 비밀 또는 숨김 테스트로 표현하지 않습니다.
-- 진도: `ProgressRepository` 계약과 `LocalStorageProgressRepository` 구현을 분리합니다. 학습 완료, 객관식 시도·오답 ID, Quest 초안·실행·완료와 코딩테스트 초안·제출·리비전별 완료를 `bam.dev.progress.v1` 안의 독립 배열로 관리합니다. Quest ID의 언어 네임스페이스로 HTML·CSS 상태를 기존 계약 안에서 구분하며 실행·제출 기록에는 사용자 소스를 저장하지 않습니다.
+- 진도: `ProgressRepository` 계약과 `LocalStorageProgressRepository` 구현을 분리합니다. 학습 완료, 객관식 시도·오답 ID, Quest 초안·실행·호환용 완료 ID·리비전별 완료와 코딩테스트 초안·제출·리비전별 완료를 `bam.dev.progress.v1` 안의 독립 배열로 관리합니다. Quest 완료 selector는 현재 콘텐츠 리비전과 정확히 일치하는 기록만 사용하며, 리비전 정보가 없던 기존 완료 ID는 revision 1 콘텐츠에서만 보수적으로 인정합니다. Quest ID의 언어 네임스페이스로 HTML·CSS 상태를 기존 계약 안에서 구분하며 실행·제출 기록에는 사용자 소스를 저장하지 않습니다.
 - Web Project 저장: `WebProjectRepository` 계약과 `LocalStorageWebProjectRepository` 구현을 분리합니다. 초안은 프로젝트·리비전별 `bam.dev.web-projects.v1.records.v1.draft.*`, 제출 요약은 프로젝트·리비전·제출 ID별 `bam.dev.web-projects.v1.records.v1.submission.*` 독립 키에 저장해 서로 다른 레코드가 하나의 read-modify-write 경합으로 함께 사라지지 않게 합니다. `bam.dev.web-projects.v1`은 기존 aggregate v1 데이터를 처음 읽을 때 레코드로 옮기는 입력이자, 이후 탭 간 변경 알림용 manifest입니다. 최신 source는 최대 10개 초안에만, source·assertion·배점을 제외한 불변 제출 요약은 최대 20개 저장합니다.
 - Web Project 동시성: 서로 다른 초안과 프로젝트·리비전·제출 ID가 다른 제출은 독립 키라 보존되며 manifest는 레코드 탐색 보조 정보일 뿐 진실 원본이 아닙니다. 같은 프로젝트·revision 초안은 `expectedDraftToken`으로 발견 가능한 stale 쓰기를 거부합니다. legacy aggregate는 해당 독립 레코드가 아직 없을 때만 가져오며, 레코드가 생긴 뒤에는 그것을 진실 원본으로 유지합니다. 다만 Web Storage에는 compare-and-set 트랜잭션이 없으므로 같은 초안 레코드의 토큰 확인 직후 또는 같은 복합 제출 ID의 존재 확인 직후 두 탭이 동시에 쓰는 극히 좁은 구간은 last-write-wins입니다. 강한 교차 탭 보장은 실제 Web Storage처럼 키를 열거할 수 있는 `MemoryStorage`·`ResilientBrowserStorage` 구현을 전제로 합니다. 다중 사용자·강한 원자성이 필요해지면 저장소 구현을 IndexedDB 트랜잭션이나 원격 저장소로 교체합니다.
+- 마이페이지: `#/my`는 두 로컬 저장소가 정규화한 읽기 전용 스냅샷으로 전체·언어별 교안 진도, 오답과 아직 통과하지 못한 항목, 최근 풀이·제출 10건을 집계합니다. Web Project 점수는 `isVerified: false` 계약에 따라 자가평가 포함 임시 점수로만 표시합니다. 계정·프로필을 꾸며내거나 `localStorage`를 직접 읽지 않습니다.
 - 저장 장애: 브라우저 저장소 접근이 막히면 메모리 저장소로 전환하며 저장소 계약이 영속 여부를 화면에 제공합니다.
 - 언어 전환: 사이드바의 공통 언어 내비게이션은 `available`과 `sample` 언어를 첫 교안으로 연결하고, `planned` 언어는 비활성 상태로 표시합니다.
 - 반응형: 데스크톱은 208px 사이드바와 Quest·코딩테스트·Web Project 분할 화면을 사용합니다. 모바일은 상단 메뉴, 오버레이 내비게이션과 문제→편집기→결과 1열 흐름을 사용합니다.
@@ -67,7 +68,7 @@ HTML·CSS 소스, 작성 예시와 CSS 고정 fixture는 평가기 호출 전에
 ## 향후 확장
 
 - 공개 다중사용자 Java 채점이 필요해지면 로컬 Docker Desktop이 아니라 컨테이너 또는 VM 기반 원격 실행 경계를 별도로 설계합니다. 대화형 API 후보는 안정적인 HTTPS endpoint를 제공하는 [Cloud Run Service](https://docs.cloud.google.com/run/docs/overview/what-is-cloud-run)이며, 요청을 수신하지 않고 실행 후 종료하는 [Cloud Run Job](https://docs.cloud.google.com/run/docs/create-jobs)은 직접 대체재가 아닙니다. Job은 [가격 문서](https://cloud.google.com/run/pricing)상 실행 인스턴스당 최소 1분 과금 경계도 있으므로 이번 무료 로컬 단계에서는 어떤 클라우드 리소스도 만들지 않고 배포 결정을 보류합니다. [OCI Functions](https://docs.oracle.com/en-us/iaas/Content/Functions/Concepts/functionsoverview.htm) 역시 계정·IAM·과금 승인이 필요한 별도 대안으로만 기록합니다.
-- Supabase 도입 시 원격 저장소 구현과 `bam.dev.progress.v1` 로컬 데이터의 원격 마이그레이션 계층만 추가합니다.
+- Supabase 도입 시 동기식 초안 저장 계약은 localStorage에 유지하고, 인증 뒤 원격 hydrate·동기화와 명시적인 로컬 데이터 가져오기를 담당하는 비동기 계층을 추가합니다. 원격 데이터가 있는 계정에 로컬 상태를 자동 병합하거나 덮어쓰지 않으며 검증 전 로컬 원본을 삭제하지 않습니다.
 - Web Project에 학습자 JavaScript가 필요해지면 네트워크·DOM 권한과 무한 실행을 다루는 별도 sandbox 계약을 먼저 설계합니다.
 
 ## 보안과 접근성

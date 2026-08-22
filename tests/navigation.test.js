@@ -5,6 +5,7 @@ import {
   buildCodingTestHash,
   buildCodingTestListHash,
   buildLessonHash,
+  buildMyPageHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
@@ -12,6 +13,7 @@ import {
   getAdjacentLessons,
   parseCodingTestHash,
   parseLessonHash,
+  parseMyPageHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -103,6 +105,14 @@ test("잘못된 Web Project 해시는 해석하지 않는다", () => {
   assert.equal(parseWebProjectHash("#/web-projects/one/two"), null);
   assert.equal(parseWebProjectHash("#/web-projects/%E0%A4%A"), null);
   assert.equal(parseWebProjectHash("#/web-project"), null);
+});
+
+test("마이페이지 해시를 만들고 정확한 경로만 해석한다", () => {
+  assert.equal(buildMyPageHash(), "#/my");
+  assert.deepEqual(parseMyPageHash("#/my"), { kind: "my-page" });
+  assert.deepEqual(parseMyPageHash("#/my/"), { kind: "my-page" });
+  assert.equal(parseMyPageHash("#/my/records"), null);
+  assert.equal(parseMyPageHash("#/my-page"), null);
 });
 
 test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한다", () => {
