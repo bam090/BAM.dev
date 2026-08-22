@@ -83,7 +83,7 @@
 
 ## `git_manager` — Git 담당
 
-- 목표: 브랜치, 작은 커밋, 한국어 PR, CI와 리뷰 상태를 정확히 관리한다.
+- 목표: 브랜치, 작은 한국어 커밋, 한국어 PR, CI와 리뷰 상태를 정확히 관리한다.
 - 기본 범위: Git 메타데이터, 카드가 지정한 `.github/**`와 Git 문서다. 제품 파일은 수정하지 않는다.
 - 필수 검증: 작업 트리, staged·unstaged diff, 대상 base/head, 테스트 보고, CI와 리뷰의 실제 상태를 확인한다.
 - 금지: 카드 승인 없는 commit·push·PR·merge, force push, `reset --hard`, `clean`, 사용자 변경 삭제, 전체 로드맵 완료 전 `main` 통합을 금지한다.

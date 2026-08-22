@@ -10,14 +10,15 @@
 - 작업 ID: {task_id}
 - 현재 단계: {phase}
 - 작업 목표: {task_goal}
-- 저장소 경로: /Users/goonbam/Documents/BAM.dev프로젝트/BAM.dev
+- 저장소 경로: {repository_path}
 - 현재 브랜치: {branch}
 - 허용된 수정 경로: {allowed_paths}
 - 수정 금지 경로: {forbidden_paths}
 - 입력 자료: {inputs}
 - 준수할 계약·문서: {contracts}
 - 선행 작업 결과: {dependencies}
-- 검증 명령: {verification_commands}
+- 필수 검증 명령: npm run check
+- 추가 검증 명령: {additional_verification_commands}
 - 허용된 Git·외부 작업: {allowed_external_actions}
 - 승인된 삭제·이동·대규모 덮어쓰기: {approved_destructive_actions}
 
