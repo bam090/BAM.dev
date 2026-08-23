@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { getLessonsForCourse } from "../src/core/content.js";
 import {
   buildCodingTestHash,
   buildCodingTestListHash,
@@ -28,7 +29,7 @@ test("교안 해시를 만들고 다시 해석한다", () => {
   const hash = buildLessonHash("javascript", "functions-scope-closure");
   assert.equal(hash, "#/learn/javascript/functions-scope-closure");
   assert.deepEqual(parseLessonHash(hash), {
-    languageId: "javascript",
+    courseId: "javascript",
     slug: "functions-scope-closure",
   });
 });
@@ -120,9 +121,18 @@ test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한�
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "not-found").order, 1);
 });
 
-test("planned 언어의 직접 경로와 최근 교안은 탐색 가능한 기본 교안으로 복귀한다", () => {
+test("기본 교안은 저장 배열 순서와 무관하게 가장 낮은 order를 선택한다", () => {
+  const reversed = {
+    ...curriculum,
+    lessons: [...curriculum.lessons].reverse(),
+  };
+
+  assert.equal(resolveLessonRoute(reversed, "#/missing", "not-found").id, "js-01-runtime");
+});
+
+test("planned 과정의 직접 경로와 최근 교안은 탐색 가능한 기본 교안으로 복귀한다", () => {
   const planned = structuredClone(curriculum);
-  planned.languages.find((language) => language.id === "html").status = "planned";
+  planned.courses.find((course) => course.id === "html").status = "planned";
 
   const direct = resolveLessonRoute(
     planned,
@@ -134,9 +144,42 @@ test("planned 언어의 직접 경로와 최근 교안은 탐색 가능한 기�
   assert.equal(restored.id, "js-01-runtime");
 });
 
+test("기존 JavaScript 알고리즘 딥링크 8개를 알고리즘 과정으로 호환 이동한다", () => {
+  const legacySlugs = [
+    "implementation-and-string-simulation",
+    "hash-map-set",
+    "stack-and-queue",
+    "sorting-two-pointers-sliding-window",
+    "brute-force-backtracking-recursion",
+    "bfs-dfs-graph-grid",
+    "heap-and-greedy",
+    "binary-search-and-dynamic-programming",
+  ];
+
+  for (const slug of legacySlugs) {
+    const lesson = resolveLessonRoute(curriculum, `#/learn/javascript/${slug}`);
+    assert.equal(lesson.courseId, "algorithm", slug);
+  }
+});
+
+test("planned 카테고리 아래 과정은 직접 학습 경로를 열지 않는다", () => {
+  const planned = structuredClone(curriculum);
+  planned.categories.find((category) => category.id === "algorithm").status = "planned";
+  const algorithmLesson = getLessonsForCourse(planned, "algorithm")[0];
+
+  const resolved = resolveLessonRoute(
+    planned,
+    buildLessonHash(algorithmLesson.courseId, algorithmLesson.slug),
+  );
+
+  assert.equal(resolved.id, "js-01-runtime");
+});
+
 test("현재 교안의 이전과 다음을 계산한다", () => {
-  const lessons = curriculum.lessons.filter((lesson) => lesson.languageId === "javascript");
-  assert.equal(getAdjacentLessons(lessons, "js-01-runtime").previous, null);
-  assert.equal(getAdjacentLessons(lessons, "js-01-runtime").next.order, 2);
-  assert.equal(getAdjacentLessons(lessons, "js-07-review-practice").next, null);
+  for (const courseId of ["javascript", "algorithm"]) {
+    const lessons = getLessonsForCourse(curriculum, courseId);
+    assert.equal(getAdjacentLessons(lessons, lessons[0].id).previous, null);
+    assert.equal(getAdjacentLessons(lessons, lessons[0].id).next?.order ?? null, 2);
+    assert.equal(getAdjacentLessons(lessons, lessons.at(-1).id).next, null);
+  }
 });

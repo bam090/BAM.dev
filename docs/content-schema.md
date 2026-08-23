@@ -1,6 +1,21 @@
 # 콘텐츠 스키마
 
-`content/curriculum.json`은 언어와 교안 메타데이터를 정의하고 본문은 별도 Markdown 파일로 둡니다.
+`content/curriculum.json`은 상위 카테고리, 과정, 실행 언어와 교안 메타데이터를 정의하고 본문은 별도 Markdown 파일로 둡니다.
+
+## 카테고리와 과정
+
+`categories`는 사이드바의 `언어`, `알고리즘`, `CS` 같은 상위 분류입니다. `courses`는 실제 목차와 진도를 나누는 단위이며 각 과정은 `categoryId`로 카테고리, `languageId`로 예제·평가의 실행 언어를 가리킵니다. 따라서 JavaScript로 예제를 실행하는 `algorithm` 과정도 JavaScript 언어 과정과 별도 목차와 진도를 가집니다.
+
+| 과정 필드 | 의미 |
+| --- | --- |
+| `id` | 학습 URL, 목차와 진도 구분에 쓰는 안정 ID |
+| `categoryId` | 상위 카테고리 ID |
+| `languageId` | 예제와 평가가 사용하는 실행 언어 ID |
+| `name`, `shortName` | 화면 이름과 작은 배지용 이름 |
+| `status` | `available`, `sample`, `planned` 중 하나 |
+| `accent` | CSS에서 허용한 테마 키 |
+
+`available`과 `sample` 과정에는 적어도 교안 하나가 필요합니다. `planned` 카테고리와 과정은 직접 탐색하거나 최근 학습 위치로 복원하지 않습니다. 평가 컬렉션은 여전히 실행 언어별 파일로 관리하며, 교안만 제공하는 과정은 평가 링크를 노출하지 않을 수 있습니다.
 
 ## 언어
 
@@ -12,15 +27,16 @@
 | `status` | `available`, `sample`, `planned` 중 하나 |
 | `accent` | CSS에서 허용한 테마 키 |
 
-`available`은 현재 단계에서 정식으로 제공하는 언어, `sample`은 계약의 언어 독립성을 확인하는 최소 콘텐츠, `planned`는 아직 탐색할 수 없는 예정 언어를 뜻합니다. `available`과 `sample` 언어에는 적어도 교안 하나와 객관식 컬렉션 하나가 있어야 합니다. 두 상태의 콘텐츠는 학습·복습 링크를 제공하며, `planned` 언어는 교안 파일이 미리 있어도 직접 탐색하거나 최근 학습 위치로 복원하지 않습니다.
+언어 메타데이터는 코드 실행기와 언어별 평가 컬렉션을 선택할 때 사용합니다. 학습 화면의 탐색 가능 여부와 목차는 위 과정 상태를 기준으로 판단합니다.
 
 ## 교안
 
 | 필드 | 의미 |
 | --- | --- |
 | `id` | 진도와 평가가 참조하는 변경하지 않는 ID |
+| `courseId` | 목차·진도·학습 URL을 나누는 과정 ID |
 | `languageId` | 언어 ID |
-| `order` | 언어 안에서 1부터 시작하는 연속 순서 |
+| `order` | 과정 안에서 1부터 시작하는 연속 순서 |
 | `slug` | 해시 URL에 쓰는 고유 문자열 |
 | `title` | 화면 제목 |
 | `summary` | 목록에 보이는 한 문장 설명 |
@@ -31,7 +47,7 @@
 | `contentFile` | 저장소 루트 기준 Markdown 경로 |
 | `source` | 원본 성격과 검증일을 기록하는 메타데이터 |
 
-새 교안을 추가하면 `npm run validate:content`로 필수 필드, ID·slug 중복, 순서 연속성, 콘텐츠 파일 존재 여부를 확인합니다. `contentFile`은 반드시 해당 언어의 `content/lessons/<languageId>/` 아래를 가리켜야 합니다. 외부 응답이 없어도 실행되어야 하는 교안 예제 데이터는 `content/fixtures/<languageId>/`에 프로젝트가 관리하는 정적 JSON으로 두고 same-origin 경로로 요청합니다. `content/` 전체가 빌드 결과에 포함되므로 별도 원격 API에 의존하지 않습니다.
+새 교안을 추가하면 `npm run validate:content`로 필수 필드, ID·과정별 slug 중복, 과정별 순서 연속성, 콘텐츠 파일 존재 여부를 확인합니다. `contentFile`은 반드시 해당 과정의 `content/lessons/<courseId>/` 아래를 가리켜야 합니다. 외부 응답이 없어도 실행되어야 하는 교안 예제 데이터는 실행 언어 기준 `content/fixtures/<languageId>/`에 프로젝트가 관리하는 정적 JSON으로 두고 same-origin 경로로 요청합니다. `content/` 전체가 빌드 결과에 포함되므로 별도 원격 API에 의존하지 않습니다.
 
 ## 객관식 컬렉션
 

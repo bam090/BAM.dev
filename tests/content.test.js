@@ -7,7 +7,12 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { runInNewContext } from "node:vm";
-import { assertValidCurriculum, getLessonsForLanguage, validateCurriculum } from "../src/core/content.js";
+import {
+  assertValidCurriculum,
+  getLessonsForCourse,
+  getLessonsForLanguage,
+  validateCurriculum,
+} from "../src/core/content.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -21,7 +26,7 @@ test("커리큘럼 메타데이터가 유효하다", () => {
 });
 
 test("JavaScript 교안은 1부터 7까지 순서대로 제공된다", () => {
-  const lessons = getLessonsForLanguage(curriculum, "javascript");
+  const lessons = getLessonsForCourse(curriculum, "javascript");
   assert.equal(lessons.length, 7);
   assert.deepEqual(
     lessons.map((lesson) => lesson.order),

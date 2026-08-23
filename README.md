@@ -2,7 +2,7 @@
 
 BAM.dev는 프로그래밍 문법을 읽는 데서 멈추지 않고, 개념을 설명하고 직접 구현하며 한 명의 개발자로 성장하도록 돕는 학습 가이드입니다.
 
-현재 구현 범위는 **0~7차와 확장 검증 게이트**입니다. JavaScript·HTML·CSS·Java 4개 언어를 정식 과정으로 제공합니다. 전체 콘텐츠는 교안 24개(JavaScript 7·HTML 5·CSS 6·Java 6), 객관식 50문항(14·12·12·12), Code Quest 19개(JavaScript 5·HTML 5·CSS 4·Java 5), JavaScript·Java 코딩테스트 각 6문제와 HTML·CSS Web Project 1개입니다.
+현재 구현 범위는 **0~7차와 확장 검증 게이트**입니다. JavaScript·HTML·CSS·Java 4개 언어 과정과 JavaScript 실행 기반 알고리즘 과정을 제공합니다. 전체 콘텐츠는 교안 36개(JavaScript 언어 7·알고리즘 12·HTML 5·CSS 6·Java 6), 객관식 50문항(14·12·12·12), Code Quest 19개(JavaScript 5·HTML 5·CSS 4·Java 5), JavaScript·Java 코딩테스트 각 6문제와 HTML·CSS Web Project 1개입니다. CS 과정은 상위 분류만 마련했으며 아직 준비 중입니다.
 
 Code Quest에서는 언어의 실제 작성 단위를 그대로 편집합니다. JavaScript는 함수를, HTML은 JavaScript 래퍼 없는 마크업을, CSS는 JavaScript 래퍼 없는 스타일시트를, Java는 `public class Solution`의 `public static` 메서드를 작성합니다. HTML은 inert DOM과 doctype을, CSS는 고정 HTML fixture에 적용한 CSSOM 규칙·미디어 조건·계산 스타일을 공개 검사합니다. Java는 로컬 개발 서버가 Java 21 호환 소스로 컴파일한 뒤 매 테스트를 분리 프로세스에서 실행합니다. Web Project에서는 HTML과 CSS 두 파일을 함께 편집하고 안전 미리보기, 공개 자동 검사 70점과 자가평가 30점으로 결과를 점검합니다. 화면에 전달되는 모든 테스트와 assertion은 공개됩니다.
 

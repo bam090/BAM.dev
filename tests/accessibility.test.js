@@ -285,10 +285,10 @@ test("오답 재도전과 지원하지 않는 언어 복귀의 앱 계약을 유
   );
   assert.match(routeSource, /reviewLanguage\.status !== "planned"/);
   assert.match(routeSource, /await this\.openReviewRoute\(reviewRoute\.languageId\)/);
-  assert.match(routeSource, /getLessonsForLanguage\([\s\S]*DEFAULT_LANGUAGE_ID[\s\S]*\)\[0\]/);
+  assert.match(routeSource, /getLessonsForCourse\([\s\S]*DEFAULT_COURSE_ID[\s\S]*\)\[0\]/);
   assert.match(
     routeSource,
-    /buildLessonHash\(fallbackLesson\.languageId, fallbackLesson\.slug\)/,
+    /buildLessonHash\(fallbackLesson\.courseId, fallbackLesson\.slug\)/,
   );
   assert.match(routeSource, /await this\.openLessonRoute\(\)/);
   assert.match(retrySource, /mode === "incorrect"/);
@@ -312,7 +312,7 @@ test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 �
   assert.match(routeSource, /questLanguage\?\.status === "available"/);
   assert.match(routeSource, /questLessons\.length > 0/);
   assert.match(routeSource, /openCodeQuestRoute\(questRoute\.languageId, questRoute\.slug\)/);
-  assert.match(routeSource, /buildLessonHash\(fallbackLesson\.languageId, fallbackLesson\.slug\)/);
+  assert.match(routeSource, /buildLessonHash\(fallbackLesson\.courseId, fallbackLesson\.slug\)/);
   assert.match(questSource, /findCodeQuestBySlug\(collection, slug\) \?\? quests\[0\]/);
   assert.match(questSource, /buildQuestHash\(languageId, quest\.slug\)/);
   assert.match(questSource, /window\.history\.replaceState\(null, "", canonicalHash\)/);

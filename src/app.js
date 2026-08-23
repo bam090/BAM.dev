@@ -1,10 +1,12 @@
 import {
+  getCourse,
   getLanguage,
-  getLessonsForLanguage,
+  getLessonsForCourse,
   loadCurriculum,
   loadLessonMarkdown,
 } from "./core/content.js";
 import {
+  DEFAULT_COURSE_ID,
   DEFAULT_LANGUAGE_ID,
   buildCodingTestHash,
   buildCodingTestListHash,
@@ -97,6 +99,15 @@ const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
 const WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS = 250;
 export const CODING_TEST_LANGUAGE_IDS = Object.freeze(["javascript", "java"]);
 const CODING_TEST_LANGUAGE_ID_SET = new Set(CODING_TEST_LANGUAGE_IDS);
+
+function getLanguageCourse(curriculum, languageId) {
+  return (
+    (curriculum?.courses ?? []).find(
+      (course) =>
+        course.categoryId === "language" && course.languageId === languageId,
+    ) ?? null
+  );
+}
 
 export function supportsCodingTests(languageId) {
   return CODING_TEST_LANGUAGE_ID_SET.has(languageId);
@@ -424,10 +435,10 @@ export class BamLearningApp {
         this.curriculum,
         questRoute.languageId,
       );
-      const questLessons = getLessonsForLanguage(
-        this.curriculum,
-        questRoute.languageId,
-      );
+      const questCourse = getLanguageCourse(this.curriculum, questRoute.languageId);
+      const questLessons = questCourse
+        ? getLessonsForCourse(this.curriculum, questCourse.id)
+        : [];
       if (
         questLanguage?.status === "available" &&
         questLessons.length > 0
@@ -436,9 +447,9 @@ export class BamLearningApp {
         return;
       }
 
-      const fallbackLesson = getLessonsForLanguage(
+      const fallbackLesson = getLessonsForCourse(
         this.curriculum,
-        DEFAULT_LANGUAGE_ID,
+        DEFAULT_COURSE_ID,
       )[0];
       if (!fallbackLesson) {
         this.enterView("lesson");
@@ -449,7 +460,7 @@ export class BamLearningApp {
       window.history.replaceState(
         null,
         "",
-        buildLessonHash(fallbackLesson.languageId, fallbackLesson.slug),
+        buildLessonHash(fallbackLesson.courseId, fallbackLesson.slug),
       );
       await this.openLessonRoute();
       return;
@@ -458,22 +469,23 @@ export class BamLearningApp {
     const reviewRoute = parseReviewHash(window.location.hash);
     if (reviewRoute) {
       const reviewLanguage = getLanguage(this.curriculum, reviewRoute.languageId);
-      const reviewLessons = getLessonsForLanguage(
-        this.curriculum,
-        reviewRoute.languageId,
-      );
+      const reviewCourse = getLanguageCourse(this.curriculum, reviewRoute.languageId);
+      const reviewLessons = reviewCourse
+        ? getLessonsForCourse(this.curriculum, reviewCourse.id)
+        : [];
       if (
         reviewLanguage &&
         reviewLanguage.status !== "planned" &&
+        reviewCourse?.status !== "planned" &&
         reviewLessons.length > 0
       ) {
         await this.openReviewRoute(reviewRoute.languageId);
         return;
       }
 
-      const fallbackLesson = getLessonsForLanguage(
+      const fallbackLesson = getLessonsForCourse(
         this.curriculum,
-        DEFAULT_LANGUAGE_ID,
+        DEFAULT_COURSE_ID,
       )[0];
       if (!fallbackLesson) {
         this.enterView("lesson");
@@ -484,7 +496,7 @@ export class BamLearningApp {
       window.history.replaceState(
         null,
         "",
-        buildLessonHash(fallbackLesson.languageId, fallbackLesson.slug),
+        buildLessonHash(fallbackLesson.courseId, fallbackLesson.slug),
       );
       await this.openLessonRoute();
       return;
@@ -554,7 +566,7 @@ export class BamLearningApp {
       return;
     }
 
-    const canonicalHash = buildLessonHash(lesson.languageId, lesson.slug);
+    const canonicalHash = buildLessonHash(lesson.courseId, lesson.slug);
     if (window.location.hash !== canonicalHash) {
       window.history.replaceState(null, "", canonicalHash);
     }
@@ -620,8 +632,14 @@ export class BamLearningApp {
 
   async openCodeQuestRoute(languageId, slug) {
     const language = getLanguage(this.curriculum, languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, languageId);
-    if (!language || language.status !== "available" || lessons.length === 0) {
+    const course = getLanguageCourse(this.curriculum, languageId);
+    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
+    if (
+      !language ||
+      language.status !== "available" ||
+      course?.status !== "available" ||
+      lessons.length === 0
+    ) {
       await this.openLessonRoute();
       return;
     }
@@ -2418,8 +2436,31 @@ export class BamLearningApp {
       isPersistent = false;
     }
 
+    const navigableLanguageCategoryIds = new Set(
+      (this.curriculum.categories ?? [])
+        .filter(
+          (category) =>
+            category.id === "language" && category.status !== "planned",
+        )
+        .map((category) => category.id),
+    );
+    const languageCourseIds = new Set(
+      (this.curriculum.courses ?? [])
+        .filter(
+          (course) =>
+            course.status !== "planned" &&
+            navigableLanguageCategoryIds.has(course.categoryId),
+        )
+        .map((course) => course.id),
+    );
+    const languageLessons = this.curriculum.lessons.filter((lesson) =>
+      languageCourseIds.has(lesson.courseId),
+    );
     const mainContent = renderMyPageView({
-      curriculum: this.curriculum,
+      curriculum: {
+        ...this.curriculum,
+        lessons: languageLessons,
+      },
       progress,
       codeQuestCollections: this.codeQuestCollections,
       codingTestCollections: this.codingTestCollections,
@@ -2427,16 +2468,20 @@ export class BamLearningApp {
       webProjectState,
       isPersistent,
     });
-    const lastLesson = this.curriculum.lessons.find(
+    const lastLesson = languageLessons.find(
       (lesson) => lesson.id === progress.lastLessonId,
     );
-    const language =
-      getLanguage(this.curriculum, lastLesson?.languageId) ??
-      getLanguage(this.curriculum, DEFAULT_LANGUAGE_ID);
-    const lessons = language
-      ? getLessonsForLanguage(this.curriculum, language.id)
-      : [];
-    if (!language || lessons.length === 0) {
+    const course =
+      getCourse(this.curriculum, lastLesson?.courseId) ??
+      getCourse(
+        this.curriculum,
+        languageCourseIds.has(DEFAULT_COURSE_ID)
+          ? DEFAULT_COURSE_ID
+          : languageLessons[0]?.courseId,
+      );
+    const language = getLanguage(this.curriculum, course?.languageId);
+    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
+    if (!course || !language || lessons.length === 0) {
       this.root.innerHTML = mainContent;
       return;
     }
@@ -2462,14 +2507,15 @@ export class BamLearningApp {
       codingTestCollection,
     );
     const firstLessonHref = buildLessonHash(
-      lessons[0].languageId,
+      lessons[0].courseId,
       lessons[0].slug,
     );
+    const supportsLanguageFeatures = course.categoryId === "language";
 
     this.root.innerHTML = renderAppShell({
       homeHref: firstLessonHref,
       menuOpen: this.menuOpen,
-      language,
+      language: course,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -2478,13 +2524,14 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
+        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) =>
           this.renderLessonLink(lesson, null, completedLessonIds),
         )
         .join(""),
-      featureNavigation: [
+      featureNavigation: supportsLanguageFeatures ? [
         {
           kind: "review",
           options: {
@@ -2519,7 +2566,7 @@ export class BamLearningApp {
           kind: "web-project",
           options: this.getWebProjectNavigationOptions(false),
         },
-      ],
+      ] : [],
       myPageCurrent: true,
       mainContent,
     });
@@ -2541,8 +2588,10 @@ export class BamLearningApp {
     const lesson = this.currentLesson;
     if (!lesson || !this.curriculum) return;
 
+    const course = getCourse(this.curriculum, lesson.courseId);
     const language = getLanguage(this.curriculum, lesson.languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, lesson.languageId);
+    const lessons = getLessonsForCourse(this.curriculum, lesson.courseId);
+    if (!course || !language || lessons.length === 0) return;
     const progress = this.progressRepository.getProgress();
     const completedIds = new Set(progress.completedLessonIds);
     const isCompleted = completedIds.has(lesson.id);
@@ -2566,13 +2615,14 @@ export class BamLearningApp {
       progress,
       languageCodingTestCollection,
     );
+    const supportsLanguageFeatures = course.categoryId === "language";
 
     const mainContent = `
       <main class="main-area" id="lesson-content" tabindex="-1">
           <div class="lesson-container">
             <header class="lesson-hero">
               <div class="eyebrow">
-                <span>${escapeHtml(language.name)}</span>
+                <span>${escapeHtml(course.name)}</span>
                 <span aria-hidden="true">·</span>
                 <span>${lesson.order}/${lessons.length}단원</span>
                 <span aria-hidden="true">·</span>
@@ -2616,9 +2666,9 @@ export class BamLearningApp {
       </main>
     `;
     this.root.innerHTML = renderAppShell({
-      homeHref: buildLessonHash(lessons[0].languageId, lessons[0].slug),
+      homeHref: buildLessonHash(lessons[0].courseId, lessons[0].slug),
       menuOpen: this.menuOpen,
-      language,
+      language: course,
       lessonProgress: {
         completedCount,
         totalCount: lessons.length,
@@ -2627,11 +2677,12 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
+        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((item) => this.renderLessonLink(item, lesson.id, completedIds))
         .join(""),
-      featureNavigation: [
+      featureNavigation: supportsLanguageFeatures ? [
         {
           kind: "review",
           options: {
@@ -2666,7 +2717,7 @@ export class BamLearningApp {
           kind: "web-project",
           options: this.getWebProjectNavigationOptions(false),
         },
-      ],
+      ] : [],
       mainContent,
     });
     this.syncMenuState();
@@ -2676,14 +2727,15 @@ export class BamLearningApp {
     if (!this.curriculum || !this.quizCollection || !this.quizSession) return;
 
     const language = getLanguage(this.curriculum, this.quizCollection.languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, this.quizCollection.languageId);
-    if (!language || lessons.length === 0) return;
+    const course = getLanguageCourse(this.curriculum, this.quizCollection.languageId);
+    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
+    if (!language || !course || lessons.length === 0) return;
 
     const progress = this.progressRepository.getProgress();
     const completedIds = new Set(progress.completedLessonIds);
     const completedCount = lessons.filter((lesson) => completedIds.has(lesson.id)).length;
     const progressPercent = Math.round((completedCount / lessons.length) * 100);
-    const firstLessonHref = buildLessonHash(lessons[0].languageId, lessons[0].slug);
+    const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
     const languageQuestCollection =
       this.codeQuestCollections.get(language.id) ?? null;
     const codeQuests = getCodeQuestsInOrder(languageQuestCollection);
@@ -2730,7 +2782,7 @@ export class BamLearningApp {
     this.root.innerHTML = renderAppShell({
       homeHref: firstLessonHref,
       menuOpen: this.menuOpen,
-      language,
+      language: course,
       lessonProgress: {
         completedCount,
         totalCount: lessons.length,
@@ -2739,6 +2791,7 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
+        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) => this.renderLessonLink(lesson, null, completedIds))
@@ -2790,8 +2843,9 @@ export class BamLearningApp {
     if (!this.curriculum || !collection || !state) return;
 
     const language = getLanguage(this.curriculum, collection.languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
-    if (!language || lessons.length === 0) return;
+    const course = getLanguageCourse(this.curriculum, collection.languageId);
+    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
+    if (!language || !course || lessons.length === 0) return;
 
     const progress = this.progressRepository.getProgress();
     const completedLessonIds = new Set(progress.completedLessonIds);
@@ -2818,7 +2872,7 @@ export class BamLearningApp {
             languageCodingTestCollection,
           )
         : new Set();
-    const firstLessonHref = buildLessonHash(lessons[0].languageId, lessons[0].slug);
+    const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
     const currentQuestHref = buildQuestHash(language.id, state.quest.slug);
     const mainContent = renderCodeQuestView({
       languageId: collection.languageId,
@@ -2854,7 +2908,7 @@ export class BamLearningApp {
     this.root.innerHTML = renderAppShell({
       homeHref: firstLessonHref,
       menuOpen: this.menuOpen,
-      language,
+      language: course,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -2863,6 +2917,7 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
+        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) => this.renderLessonLink(lesson, null, completedLessonIds))
@@ -2944,13 +2999,12 @@ export class BamLearningApp {
     const referencedLesson = this.curriculum?.lessons.find((lesson) =>
       referencedLessonIds.has(lesson.id),
     );
-    const language =
-      getLanguage(this.curriculum, referencedLesson?.languageId) ??
-      getLanguage(this.curriculum, DEFAULT_LANGUAGE_ID);
-    const lessons = language
-      ? getLessonsForLanguage(this.curriculum, language.id)
-      : [];
-    return { language, lessons };
+    const course =
+      getLanguageCourse(this.curriculum, referencedLesson?.languageId) ??
+      getCourse(this.curriculum, DEFAULT_COURSE_ID);
+    const language = getLanguage(this.curriculum, course?.languageId);
+    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
+    return { language, course, lessons };
   }
 
   renderWebProjectList() {
@@ -3008,8 +3062,8 @@ export class BamLearningApp {
   }
 
   renderWebProjectShell(mainContent, project) {
-    const { language, lessons } = this.getWebProjectShellContext(project);
-    if (!language || lessons.length === 0) {
+    const { language, course, lessons } = this.getWebProjectShellContext(project);
+    if (!language || !course || lessons.length === 0) {
       this.root.innerHTML = mainContent;
       return;
     }
@@ -3040,13 +3094,13 @@ export class BamLearningApp {
           )
         : new Set();
     const firstLessonHref = buildLessonHash(
-      lessons[0].languageId,
+      lessons[0].courseId,
       lessons[0].slug,
     );
     this.root.innerHTML = renderAppShell({
       homeHref: firstLessonHref,
       menuOpen: this.menuOpen,
-      language,
+      language: course,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -3055,6 +3109,7 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
+        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) =>
@@ -3292,8 +3347,9 @@ export class BamLearningApp {
     const collection = this.codingTestCollection;
     if (!this.curriculum || !collection) return;
     const language = getLanguage(this.curriculum, collection.languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
-    if (!language || lessons.length === 0) return;
+    const course = getLanguageCourse(this.curriculum, collection.languageId);
+    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
+    if (!language || !course || lessons.length === 0) return;
 
     const progress = progressSnapshot ?? this.progressRepository.getProgress();
     const solvedProblemIds =
@@ -3313,12 +3369,12 @@ export class BamLearningApp {
       quests,
     ).size;
     const problems = getCodingTestProblemsInOrder(collection);
-    const firstLessonHref = buildLessonHash(lessons[0].languageId, lessons[0].slug);
+    const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
 
     this.root.innerHTML = renderAppShell({
       homeHref: firstLessonHref,
       menuOpen: this.menuOpen,
-      language,
+      language: course,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -3327,6 +3383,7 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
+        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) => this.renderLessonLink(lesson, null, completedLessonIds))
@@ -3390,7 +3447,7 @@ export class BamLearningApp {
     const isComplete = completedIds.has(lesson.id);
     return `
       <li>
-        <a class="lesson-link${isCurrent ? " is-current" : ""}" href="${buildLessonHash(lesson.languageId, lesson.slug)}"${isCurrent ? ' aria-current="page"' : ""}>
+        <a class="lesson-link${isCurrent ? " is-current" : ""}" href="${buildLessonHash(lesson.courseId, lesson.slug)}"${isCurrent ? ' aria-current="page"' : ""}>
           <span class="lesson-number${isComplete ? " is-complete" : ""}" aria-hidden="true">${isComplete ? "✓" : lesson.order}</span>
           <span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.estimatedMinutes}분</small></span>
         </a>
@@ -3402,7 +3459,7 @@ export class BamLearningApp {
     if (!lesson) return '<span class="pagination-spacer" aria-hidden="true"></span>';
     const isPrevious = direction === "previous";
     return `
-      <a class="pagination-link pagination-link--${direction}" href="${buildLessonHash(lesson.languageId, lesson.slug)}">
+      <a class="pagination-link pagination-link--${direction}" href="${buildLessonHash(lesson.courseId, lesson.slug)}">
         <span aria-hidden="true">${isPrevious ? "←" : "→"}</span>
         <span><small>${isPrevious ? "이전 단원" : "다음 단원"}</small><strong>${escapeHtml(lesson.title)}</strong></span>
       </a>

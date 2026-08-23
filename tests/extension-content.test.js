@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { getLessonsForLanguage, validateCurriculum } from "../src/core/content.js";
+import {
+  getLessonsForCourse,
+  getLessonsForLanguage,
+  validateCurriculum,
+} from "../src/core/content.js";
 import { validateQuizCollection } from "../src/core/quiz.js";
 
 const curriculum = JSON.parse(
@@ -224,10 +228,10 @@ test("모든 정식·샘플 언어가 학습 링크와 짝을 이루는 객관�
   }
 });
 
-test("탐색 가능한 언어의 교안 누락과 다른 언어 디렉터리 경로를 거부한다", () => {
+test("탐색 가능한 과정의 교안 누락과 다른 과정 디렉터리 경로를 거부한다", () => {
   const missingAvailableLesson = structuredClone(curriculum);
   missingAvailableLesson.lessons = missingAvailableLesson.lessons.filter(
-    (lesson) => lesson.languageId !== "html",
+    (lesson) => lesson.courseId !== "html",
   );
   assert.ok(
     validateCurriculum(missingAvailableLesson).some(
@@ -236,11 +240,11 @@ test("탐색 가능한 언어의 교안 누락과 다른 언어 디렉터리 경
   );
 
   const crossedPath = structuredClone(curriculum);
-  crossedPath.lessons.find((lesson) => lesson.languageId === "css").contentFile =
+  crossedPath.lessons.find((lesson) => lesson.courseId === "css").contentFile =
     "content/lessons/html/cascade-and-box-model.md";
   assert.ok(
     validateCurriculum(crossedPath).some((error) =>
-      error.includes("해당 언어 디렉터리"),
+      error.includes("해당 과정 디렉터리"),
     ),
   );
 });

@@ -63,7 +63,7 @@ export function renderAppShell({
           <span>BAM.dev</span>
         </a>
         <button class="icon-button" type="button" data-toggle-menu aria-controls="course-sidebar" aria-expanded="${Boolean(menuOpen)}">
-          <span aria-hidden="true">☰</span><span class="sr-only">교안 메뉴 열기</span>
+          <span aria-hidden="true">☰</span><span class="sr-only">목차 메뉴 열기</span>
         </button>
       </header>
 
@@ -74,7 +74,7 @@ export function renderAppShell({
             <span><strong>BAM.dev</strong><small>배우고, 만들고, 성장하기</small></span>
           </a>
           <button class="icon-button sidebar-close" type="button" data-close-menu>
-            <span aria-hidden="true">×</span><span class="sr-only">교안 메뉴 닫기</span>
+            <span aria-hidden="true">×</span><span class="sr-only">목차 메뉴 닫기</span>
           </button>
         </div>
 
@@ -91,8 +91,8 @@ export function renderAppShell({
 
         ${languageNavigation}
 
-        <nav class="lesson-nav" aria-label="${safeLanguageName} 교안">
-          <p class="nav-label">교안</p>
+        <nav class="lesson-nav" aria-label="${safeLanguageName} 목차">
+          <p class="nav-label">목차</p>
           <ol>
             ${lessonNavigationItems}
           </ol>
