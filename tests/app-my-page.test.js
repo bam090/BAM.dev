@@ -41,7 +41,7 @@ const totalCodingTestCount = [...codingTestCollections.values()].reduce(
   0,
 );
 
-test("마이페이지 본문과 셸은 알고리즘 최근 기록을 언어 과정 진도에 섞지 않는다", () => {
+test("마이페이지 본문과 셸은 비언어·준비 중 과정의 최근 기록을 언어 진도에 섞지 않는다", () => {
   const root = { innerHTML: "" };
   const algorithmLesson = curriculum.lessons.find(
     (lesson) => lesson.courseId === "algorithm",
@@ -97,6 +97,44 @@ test("마이페이지 본문과 셸은 알고리즘 최근 기록을 언어 과�
   assert.equal((lessonNavigation.match(/class="lesson-link/g) ?? []).length, 7);
   assert.doesNotMatch(lessonNavigation, /#\/learn\/algorithm\//);
   assert.match(root.innerHTML, /이 브라우저에 저장 중/);
+
+  const plannedCurriculum = structuredClone(curriculum);
+  const htmlCourse = plannedCurriculum.courses.find(
+    (course) => course.id === "html",
+  );
+  const htmlLesson = plannedCurriculum.lessons.find(
+    (lesson) => lesson.courseId === htmlCourse.id,
+  );
+  htmlCourse.status = "planned";
+  progress.completedLessonIds = [htmlLesson.id];
+  progress.lastLessonId = htmlLesson.id;
+  app.curriculum = plannedCurriculum;
+
+  app.renderMyPage();
+
+  const languageProgress =
+    root.innerHTML.match(/<ul class="my-page-language-list">[\s\S]*?<\/ul>/)?.[0] ??
+    "";
+  const plannedLessonNavigation =
+    root.innerHTML.match(/<nav class="lesson-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
+  assert.doesNotMatch(languageProgress, /<strong>HTML<\/strong>/);
+  assert.match(
+    root.innerHTML,
+    /<dt>완료한 교안<\/dt><dd>0<span>\//,
+  );
+  assert.match(
+    root.innerHTML,
+    /class="button button--primary my-page-continue" href="#\/learn\/javascript\/javascript-and-runtime"/,
+  );
+  assert.match(
+    root.innerHTML,
+    /class="course-heading"[\s\S]*?<strong>JavaScript<\/strong>/,
+  );
+  assert.equal(
+    (plannedLessonNavigation.match(/class="lesson-link/g) ?? []).length,
+    7,
+  );
+  assert.doesNotMatch(plannedLessonNavigation, /#\/learn\/html\//);
 });
 
 test("마이페이지 본문과 앱 셸은 같은 현재 Quest 리비전 완료 판정을 쓴다", () => {

@@ -2436,9 +2436,21 @@ export class BamLearningApp {
       isPersistent = false;
     }
 
+    const navigableLanguageCategoryIds = new Set(
+      (this.curriculum.categories ?? [])
+        .filter(
+          (category) =>
+            category.id === "language" && category.status !== "planned",
+        )
+        .map((category) => category.id),
+    );
     const languageCourseIds = new Set(
       (this.curriculum.courses ?? [])
-        .filter((course) => course.categoryId === "language")
+        .filter(
+          (course) =>
+            course.status !== "planned" &&
+            navigableLanguageCategoryIds.has(course.categoryId),
+        )
         .map((course) => course.id),
     );
     const languageLessons = this.curriculum.lessons.filter((lesson) =>
@@ -2461,7 +2473,12 @@ export class BamLearningApp {
     );
     const course =
       getCourse(this.curriculum, lastLesson?.courseId) ??
-      getCourse(this.curriculum, DEFAULT_COURSE_ID);
+      getCourse(
+        this.curriculum,
+        languageCourseIds.has(DEFAULT_COURSE_ID)
+          ? DEFAULT_COURSE_ID
+          : languageLessons[0]?.courseId,
+      );
     const language = getLanguage(this.curriculum, course?.languageId);
     const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
     if (!course || !language || lessons.length === 0) {
