@@ -31,6 +31,15 @@ const codingTestCollections = new Map(
     ]),
   ),
 );
+const totalQuestCount = [...codeQuestCollections.values()].reduce(
+  (total, collection) => total + collection.quests.length,
+  0,
+);
+const javascriptQuestCount = codeQuestCollections.get("javascript").quests.length;
+const totalCodingTestCount = [...codingTestCollections.values()].reduce(
+  (total, collection) => total + collection.problems.length,
+  0,
+);
 
 test("앱은 두 로컬 저장소의 스냅샷으로 마이페이지 셸을 렌더링한다", () => {
   const root = { innerHTML: "" };
@@ -82,6 +91,7 @@ test("앱은 두 로컬 저장소의 스냅샷으로 마이페이지 셸을 렌�
 test("마이페이지 본문과 앱 셸은 같은 현재 Quest 리비전 완료 판정을 쓴다", () => {
   const root = { innerHTML: "" };
   const quest = codeQuestCollections.get("javascript").quests[0];
+  const mismatchedQuestRevision = quest.revision === 1 ? 2 : 1;
   const progress = {
     completedLessonIds: [],
     lastLessonId: "js-01-runtime",
@@ -101,7 +111,7 @@ test("마이페이지 본문과 앱 셸은 같은 현재 Quest 리비전 완료 
     completedQuestRevisions: [
       {
         questId: quest.id,
-        questRevision: quest.revision - 1,
+        questRevision: mismatchedQuestRevision,
         completedAt: "2026-08-22T12:00:00.000Z",
       },
     ],
@@ -132,9 +142,13 @@ test("마이페이지 본문과 앱 셸은 같은 현재 Quest 리비전 완료 
 
   app.renderMyPage();
 
-  assert.match(root.innerHTML, /완료한 Quest<\/dt><dd>0<span>\/19<\/span>/);
-  assert.match(root.innerHTML, /Code Quest<\/strong><small>0\/5 완료/);
-  assert.match(root.innerHTML, new RegExp(quest.title));
+  assert.ok(
+    root.innerHTML.includes(`완료한 Quest</dt><dd>0<span>/${totalQuestCount}</span>`),
+  );
+  assert.ok(
+    root.innerHTML.includes(`Code Quest</strong><small>0/${javascriptQuestCount} 완료`),
+  );
+  assert.ok(root.innerHTML.includes(quest.title));
 });
 
 test("저장소 읽기에 실패해도 마이페이지는 임시 저장 경고와 빈 기록으로 열린다", () => {
@@ -254,8 +268,10 @@ test("실제 로컬 저장소 API로 기록한 진도와 제출을 마이페이�
   app.renderMyPage();
 
   assert.match(root.innerHTML, /저장된 오답 1개/);
-  assert.match(root.innerHTML, new RegExp(quest.title));
-  assert.match(root.innerHTML, /푼 코딩테스트<\/dt><dd>1<span>\/12/);
+  assert.ok(root.innerHTML.includes(quest.title));
+  assert.ok(
+    root.innerHTML.includes(`푼 코딩테스트</dt><dd>1<span>/${totalCodingTestCount}`),
+  );
   assert.match(root.innerHTML, /Web Project 제출<\/dt><dd>1<span>건/);
   assert.match(root.innerHTML, /제출 평가 미완료/);
 });
@@ -307,4 +323,12 @@ test("마이페이지 라우트 이동은 포커스 가능한 본문으로 초�
 
   assert.equal(focused, true);
   assert.equal(document.title, "마이페이지 · BAM.dev");
+});
+
+test("마이페이지 언어별 학습 링크는 실제 44px 터치 타깃을 만든다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const languageLinkRule = css.match(/\.my-page-language-item a\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.match(languageLinkRule, /display:\s*inline-flex/);
+  assert.match(languageLinkRule, /min-height:\s*44px/);
 });

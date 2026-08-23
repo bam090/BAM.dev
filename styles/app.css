@@ -4239,6 +4239,7 @@ a.language-nav-link:hover {
 }
 
 .my-page-language-item a {
+  display: inline-flex;
   min-height: 44px;
   padding: 13px 2px;
   color: var(--color-primary-strong);
