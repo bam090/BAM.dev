@@ -1,5 +1,6 @@
 const REQUIRED_LESSON_FIELDS = [
   "id",
+  "courseId",
   "languageId",
   "order",
   "slug",
@@ -24,8 +25,16 @@ export function validateCurriculum(curriculum) {
     errors.push("지원하는 schemaVersion은 1입니다.");
   }
 
+  if (!Array.isArray(curriculum.categories) || curriculum.categories.length === 0) {
+    errors.push("categories에는 한 개 이상의 카테고리가 필요합니다.");
+  }
+
   if (!Array.isArray(curriculum.languages) || curriculum.languages.length === 0) {
     errors.push("languages에는 한 개 이상의 언어가 필요합니다.");
+  }
+
+  if (!Array.isArray(curriculum.courses) || curriculum.courses.length === 0) {
+    errors.push("courses에는 한 개 이상의 과정이 필요합니다.");
   }
 
   if (!Array.isArray(curriculum.lessons) || curriculum.lessons.length === 0) {
@@ -33,8 +42,28 @@ export function validateCurriculum(curriculum) {
     return errors;
   }
 
+  const categories = Array.isArray(curriculum.categories) ? curriculum.categories : [];
+  const languages = Array.isArray(curriculum.languages) ? curriculum.languages : [];
+  const courses = Array.isArray(curriculum.courses) ? curriculum.courses : [];
+
+  const categoryIds = new Set();
+  for (const [index, category] of categories.entries()) {
+    const label = `categories[${index}]`;
+    if (!category?.id || !/^[a-z][a-z0-9-]*$/.test(category.id)) {
+      errors.push(`${label}.id 형식이 올바르지 않습니다.`);
+      continue;
+    }
+    if (categoryIds.has(category.id)) {
+      errors.push(`카테고리 ID가 중복됩니다: ${category.id}`);
+    }
+    categoryIds.add(category.id);
+    if (!["available", "sample", "planned"].includes(category.status)) {
+      errors.push(`${label}.status가 올바르지 않습니다.`);
+    }
+  }
+
   const languageIds = new Set();
-  for (const [index, language] of (curriculum.languages ?? []).entries()) {
+  for (const [index, language] of languages.entries()) {
     const label = `languages[${index}]`;
     if (!language?.id || !/^[a-z][a-z0-9-]*$/.test(language.id)) {
       errors.push(`${label}.id 형식이 올바르지 않습니다.`);
@@ -49,9 +78,33 @@ export function validateCurriculum(curriculum) {
     }
   }
 
+  const courseIds = new Set();
+  const coursesById = new Map();
+  for (const [index, course] of courses.entries()) {
+    const label = `courses[${index}]`;
+    if (!course?.id || !/^[a-z][a-z0-9-]*$/.test(course.id)) {
+      errors.push(`${label}.id 형식이 올바르지 않습니다.`);
+      continue;
+    }
+    if (courseIds.has(course.id)) {
+      errors.push(`과정 ID가 중복됩니다: ${course.id}`);
+    }
+    courseIds.add(course.id);
+    coursesById.set(course.id, course);
+    if (!categoryIds.has(course.categoryId)) {
+      errors.push(`${label}.categoryId가 존재하지 않는 카테고리를 가리킵니다.`);
+    }
+    if (!languageIds.has(course.languageId)) {
+      errors.push(`${label}.languageId가 존재하지 않는 언어를 가리킵니다.`);
+    }
+    if (!["available", "sample", "planned"].includes(course.status)) {
+      errors.push(`${label}.status가 올바르지 않습니다.`);
+    }
+  }
+
   const lessonIds = new Set();
   const lessonSlugs = new Set();
-  const lessonsByLanguage = new Map();
+  const lessonsByCourse = new Map();
 
   for (const [index, lesson] of curriculum.lessons.entries()) {
     const label = `lessons[${index}]`;
@@ -68,7 +121,7 @@ export function validateCurriculum(curriculum) {
     }
     lessonIds.add(lesson?.id);
 
-    const routeKey = `${lesson?.languageId}/${lesson?.slug}`;
+    const routeKey = `${lesson?.courseId}/${lesson?.slug}`;
     if (!lesson?.slug || !/^[a-z0-9-]+$/.test(lesson.slug)) {
       errors.push(`${label}.slug 형식이 올바르지 않습니다.`);
     } else if (lessonSlugs.has(routeKey)) {
@@ -78,6 +131,12 @@ export function validateCurriculum(curriculum) {
 
     if (!languageIds.has(lesson?.languageId)) {
       errors.push(`${label}.languageId가 존재하지 않는 언어를 가리킵니다.`);
+    }
+    const course = coursesById.get(lesson?.courseId);
+    if (!courseIds.has(lesson?.courseId)) {
+      errors.push(`${label}.courseId가 존재하지 않는 과정을 가리킵니다.`);
+    } else if (course.languageId !== lesson.languageId) {
+      errors.push(`${label}.languageId가 과정의 실행 언어와 다릅니다.`);
     }
     if (!Number.isInteger(lesson?.order) || lesson.order < 1) {
       errors.push(`${label}.order는 1 이상의 정수여야 합니다.`);
@@ -91,32 +150,32 @@ export function validateCurriculum(curriculum) {
     if (!/^content\/lessons\/.+\.md$/.test(lesson?.contentFile ?? "")) {
       errors.push(`${label}.contentFile 경로가 올바르지 않습니다.`);
     } else if (
-      languageIds.has(lesson?.languageId) &&
-      !lesson.contentFile.startsWith(`content/lessons/${lesson.languageId}/`)
+      courseIds.has(lesson?.courseId) &&
+      !lesson.contentFile.startsWith(`content/lessons/${lesson.courseId}/`)
     ) {
-      errors.push(`${label}.contentFile은 해당 언어 디렉터리 안에 있어야 합니다.`);
+      errors.push(`${label}.contentFile은 해당 과정 디렉터리 안에 있어야 합니다.`);
     }
 
-    if (!lessonsByLanguage.has(lesson?.languageId)) {
-      lessonsByLanguage.set(lesson?.languageId, []);
+    if (!lessonsByCourse.has(lesson?.courseId)) {
+      lessonsByCourse.set(lesson?.courseId, []);
     }
-    lessonsByLanguage.get(lesson?.languageId).push(lesson);
+    lessonsByCourse.get(lesson?.courseId).push(lesson);
   }
 
-  for (const [languageId, lessons] of lessonsByLanguage) {
+  for (const [courseId, lessons] of lessonsByCourse) {
     const orders = lessons.map((lesson) => lesson.order).sort((a, b) => a - b);
     const expected = Array.from({ length: orders.length }, (_, index) => index + 1);
     if (orders.some((order, index) => order !== expected[index])) {
-      errors.push(`${languageId} 교안의 order는 1부터 연속되어야 합니다.`);
+      errors.push(`${courseId} 과정 교안의 order는 1부터 연속되어야 합니다.`);
     }
   }
 
-  for (const language of curriculum.languages ?? []) {
+  for (const course of courses) {
     if (
-      ["available", "sample"].includes(language?.status) &&
-      (lessonsByLanguage.get(language.id)?.length ?? 0) === 0
+      ["available", "sample"].includes(course?.status) &&
+      (lessonsByCourse.get(course.id)?.length ?? 0) === 0
     ) {
-      errors.push(`${language.id}: available 또는 sample 언어에는 교안이 필요합니다.`);
+      errors.push(`${course.id}: available 또는 sample 과정에는 교안이 필요합니다.`);
     }
   }
 
@@ -133,6 +192,16 @@ export function assertValidCurriculum(curriculum) {
 
 export function getLanguage(curriculum, languageId) {
   return curriculum.languages.find((language) => language.id === languageId) ?? null;
+}
+
+export function getCourse(curriculum, courseId) {
+  return curriculum.courses.find((course) => course.id === courseId) ?? null;
+}
+
+export function getLessonsForCourse(curriculum, courseId) {
+  return curriculum.lessons
+    .filter((lesson) => lesson.courseId === courseId)
+    .sort((a, b) => a.order - b.order);
 }
 
 export function getLessonsForLanguage(curriculum, languageId) {

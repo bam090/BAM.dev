@@ -21,11 +21,11 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
                                       └──► WebProjectRepository ─► localStorage
 ```
 
-콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. 현재 정식 언어는 JavaScript·HTML·CSS·Java 4개입니다.
+콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 상위 카테고리는 `언어 / 알고리즘 / CS`, 실제 목차와 진도 단위는 `course.id`, 예제·평가 실행기는 `languageId`로 구분합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. 현재 정식 언어는 JavaScript·HTML·CSS·Java 4개이며 알고리즘 과정은 JavaScript를 실행 언어로 사용합니다.
 
 ## 브라우저 앱
 
-- 해시 라우팅: 학습은 `#/learn/<language>/<lesson>`, 복습은 `#/review/<language>`, Quest는 `#/quest/<language>/<quest>`, 코딩테스트 목록·문제는 `#/coding-tests`와 `#/coding-tests/<language>/<problem>`, Web Project 목록·과제는 `#/web-projects`와 `#/web-projects/<project>`를 사용합니다.
+- 해시 라우팅: 학습은 `#/learn/<courseId>/<lesson>`, 복습은 `#/review/<language>`, Quest는 `#/quest/<language>/<quest>`, 코딩테스트 목록·문제는 `#/coding-tests`와 `#/coding-tests/<language>/<problem>`, Web Project 목록·과제는 `#/web-projects`와 `#/web-projects/<project>`를 사용합니다. 분리 전 JavaScript 알고리즘 학습 링크 8개는 같은 slug의 `algorithm` 과정 주소로 호환 이동합니다.
 - 콘텐츠 로딩: `curriculum.json` 검증 후 선택한 Markdown과 언어별 객관식·Quest·코딩테스트 JSON 및 Web Project 컬렉션을 각 계약으로 검증합니다. 교안의 실행 예제 데이터는 `content/fixtures/<languageId>/`에 두고 same-origin으로 불러오며 `content/` 전체와 함께 정적 빌드에 포함합니다.
 - Markdown: 프로젝트가 신뢰하는 제한된 문법만 HTML로 변환하며 원시 HTML은 항상 이스케이프합니다.
 - 객관식: 콘텐츠 검증, 한 문제 채점, 전체 요약을 순수 도메인 함수로 분리합니다. 선택 전에는 정답 정보를 화면에 렌더링하지 않고 채점 후 네 선택지의 근거를 모두 표시합니다.
@@ -42,7 +42,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - Web Project 동시성: 서로 다른 초안과 프로젝트·리비전·제출 ID가 다른 제출은 독립 키라 보존되며 manifest는 레코드 탐색 보조 정보일 뿐 진실 원본이 아닙니다. 같은 프로젝트·revision 초안은 `expectedDraftToken`으로 발견 가능한 stale 쓰기를 거부합니다. legacy aggregate는 해당 독립 레코드가 아직 없을 때만 가져오며, 레코드가 생긴 뒤에는 그것을 진실 원본으로 유지합니다. 다만 Web Storage에는 compare-and-set 트랜잭션이 없으므로 같은 초안 레코드의 토큰 확인 직후 또는 같은 복합 제출 ID의 존재 확인 직후 두 탭이 동시에 쓰는 극히 좁은 구간은 last-write-wins입니다. 강한 교차 탭 보장은 실제 Web Storage처럼 키를 열거할 수 있는 `MemoryStorage`·`ResilientBrowserStorage` 구현을 전제로 합니다. 다중 사용자·강한 원자성이 필요해지면 저장소 구현을 IndexedDB 트랜잭션이나 원격 저장소로 교체합니다.
 - 마이페이지: `#/my`는 두 로컬 저장소가 정규화한 읽기 전용 스냅샷으로 전체·언어별 교안 진도, 오답과 아직 통과하지 못한 항목, 최근 풀이·제출 10건을 집계합니다. Web Project 점수는 `isVerified: false` 계약에 따라 자가평가 포함 임시 점수로만 표시합니다. 계정·프로필을 꾸며내거나 `localStorage`를 직접 읽지 않습니다.
 - 저장 장애: 브라우저 저장소 접근이 막히면 메모리 저장소로 전환하며 저장소 계약이 영속 여부를 화면에 제공합니다.
-- 언어 전환: 사이드바의 공통 언어 내비게이션은 `available`과 `sample` 언어를 첫 교안으로 연결하고, `planned` 언어는 비활성 상태로 표시합니다.
+- 과정 전환: 사이드바는 카테고리별 과정을 표시하고 `available`과 `sample` 과정을 첫 교안으로 연결합니다. `planned` 카테고리·과정은 비활성 상태로 표시하며 목차, 완료 수와 이전·다음 이동은 `courseId`별로 계산합니다.
 - 반응형: 데스크톱은 208px 사이드바와 Quest·코딩테스트·Web Project 분할 화면을 사용합니다. 모바일은 상단 메뉴, 오버레이 내비게이션과 문제→편집기→결과 1열 흐름을 사용합니다.
 
 ## Web Code Quest 안전 경계

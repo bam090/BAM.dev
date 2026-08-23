@@ -54,10 +54,15 @@ test("공통 앱 셸은 모바일 메뉴·코스 진도·본문·announcer 계�
 
   assert.equal((html.match(/class="app-shell"/g) ?? []).length, 1);
   assert.match(html, /class="mobile-header"/);
+  assert.match(html, /목차 메뉴 열기/);
+  assert.match(html, /목차 메뉴 닫기/);
+  assert.doesNotMatch(html, /교안 메뉴/);
   assert.match(html, /data-toggle-menu aria-controls="course-sidebar" aria-expanded="true"/);
   assert.match(html, /class="sidebar is-open" id="course-sidebar"/);
   assert.match(html, /2\/5 완료/);
   assert.match(html, /aria-label="JavaScript 학습 진도"/);
+  assert.match(html, /<nav class="lesson-nav" aria-label="JavaScript 목차">/);
+  assert.match(html, /<p class="nav-label">목차<\/p>/);
   assert.match(html, /aria-valuenow="40"/);
   assert.match(html, /class="sidebar-backdrop is-visible" data-close-menu/);
   assert.match(html, /class="my-page-nav"/);

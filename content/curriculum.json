@@ -1,6 +1,78 @@
 {
   "schemaVersion": 1,
   "product": "BAM.dev",
+  "categories": [
+    {
+      "id": "language",
+      "name": "언어",
+      "status": "available",
+      "description": "프로그래밍 언어와 웹 기술의 문법과 실행 원리를 학습합니다."
+    },
+    {
+      "id": "algorithm",
+      "name": "알고리즘",
+      "status": "available",
+      "description": "자료구조와 문제 해결 방법의 원리와 선택 기준을 학습합니다."
+    },
+    {
+      "id": "cs",
+      "name": "CS",
+      "status": "planned",
+      "description": "컴퓨터 과학의 기초 개념을 다루는 과정입니다."
+    }
+  ],
+  "courses": [
+    {
+      "id": "java",
+      "categoryId": "language",
+      "languageId": "java",
+      "name": "Java",
+      "shortName": "Java",
+      "status": "available",
+      "accent": "java",
+      "description": "타입과 객체부터 컬렉션·예외·테스트까지 연결합니다."
+    },
+    {
+      "id": "javascript",
+      "categoryId": "language",
+      "languageId": "javascript",
+      "name": "JavaScript",
+      "shortName": "JS",
+      "status": "available",
+      "accent": "javascript",
+      "description": "값의 흐름부터 DOM과 비동기 처리까지 연결합니다."
+    },
+    {
+      "id": "css",
+      "categoryId": "language",
+      "languageId": "css",
+      "name": "CSS",
+      "shortName": "CSS",
+      "status": "available",
+      "accent": "css",
+      "description": "선택자와 박스 모델부터 레이아웃·반응형 표현까지 익힙니다."
+    },
+    {
+      "id": "html",
+      "categoryId": "language",
+      "languageId": "html",
+      "name": "HTML",
+      "shortName": "HTML",
+      "status": "available",
+      "accent": "html",
+      "description": "문서 구조부터 링크·콘텐츠·접근 가능한 폼까지 설계합니다."
+    },
+    {
+      "id": "algorithm",
+      "categoryId": "algorithm",
+      "languageId": "javascript",
+      "name": "알고리즘",
+      "shortName": "ALGO",
+      "status": "available",
+      "accent": "javascript",
+      "description": "기본 자료구조부터 그래프와 동적 계획법까지 문제 해결 원리를 익힙니다."
+    }
+  ],
   "languages": [
     {
       "id": "javascript",
@@ -39,6 +111,7 @@
     {
       "id": "js-01-runtime",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 1,
       "slug": "javascript-and-runtime",
       "title": "JavaScript와 실행",
@@ -58,6 +131,7 @@
     {
       "id": "js-02-values-control-flow",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 2,
       "slug": "values-variables-control-flow",
       "title": "값·변수·연산자·제어문",
@@ -77,6 +151,7 @@
     {
       "id": "js-03-functions-scope-closure",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 3,
       "slug": "functions-scope-closure",
       "title": "함수·스코프·클로저",
@@ -96,6 +171,7 @@
     {
       "id": "js-04-collections",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 4,
       "slug": "arrays-objects-built-ins",
       "title": "배열·객체·표준 내장 객체",
@@ -115,6 +191,7 @@
     {
       "id": "js-05-dom-events",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 5,
       "slug": "dom-and-events",
       "title": "DOM과 이벤트",
@@ -134,6 +211,7 @@
     {
       "id": "js-06-async-fetch",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 6,
       "slug": "async-await-fetch",
       "title": "Promise·async/await·fetch",
@@ -153,6 +231,7 @@
     {
       "id": "js-07-review-practice",
       "languageId": "javascript",
+      "courseId": "javascript",
       "order": 7,
       "slug": "review-and-practice",
       "title": "복습과 실습",
@@ -172,6 +251,7 @@
     {
       "id": "html-01-document-structure",
       "languageId": "html",
+      "courseId": "html",
       "order": 1,
       "slug": "document-structure-and-semantics",
       "title": "문서 구조와 의미 있는 HTML",
@@ -191,6 +271,7 @@
     {
       "id": "html-02-text-links",
       "languageId": "html",
+      "courseId": "html",
       "order": 2,
       "slug": "text-and-links",
       "title": "텍스트 의미와 링크",
@@ -210,6 +291,7 @@
     {
       "id": "html-03-images-lists-tables",
       "languageId": "html",
+      "courseId": "html",
       "order": 3,
       "slug": "images-lists-and-tables",
       "title": "이미지·목록·표",
@@ -229,6 +311,7 @@
     {
       "id": "html-04-forms-accessibility",
       "languageId": "html",
+      "courseId": "html",
       "order": 4,
       "slug": "forms-and-accessibility",
       "title": "폼과 기본 접근성",
@@ -248,6 +331,7 @@
     {
       "id": "html-05-review-practice",
       "languageId": "html",
+      "courseId": "html",
       "order": 5,
       "slug": "review-and-practice",
       "title": "HTML 복습과 구조 점검",
@@ -267,6 +351,7 @@
     {
       "id": "css-foundations-selectors",
       "languageId": "css",
+      "courseId": "css",
       "order": 1,
       "slug": "css-rules-selectors-values",
       "title": "CSS 규칙·선택자·값",
@@ -286,6 +371,7 @@
     {
       "id": "css-01-cascade-box-model",
       "languageId": "css",
+      "courseId": "css",
       "order": 2,
       "slug": "cascade-and-box-model",
       "title": "캐스케이드와 박스 모델",
@@ -305,6 +391,7 @@
     {
       "id": "css-flow-display-overflow",
       "languageId": "css",
+      "courseId": "css",
       "order": 3,
       "slug": "flow-display-and-overflow",
       "title": "일반 흐름·display·overflow",
@@ -324,6 +411,7 @@
     {
       "id": "css-position-flex-grid",
       "languageId": "css",
+      "courseId": "css",
       "order": 4,
       "slug": "position-flex-and-grid",
       "title": "위치 지정·Flexbox·Grid",
@@ -343,6 +431,7 @@
     {
       "id": "css-responsive-states-motion",
       "languageId": "css",
+      "courseId": "css",
       "order": 5,
       "slug": "responsive-states-and-motion",
       "title": "반응형·상태·모션",
@@ -362,6 +451,7 @@
     {
       "id": "css-review-practice",
       "languageId": "css",
+      "courseId": "css",
       "order": 6,
       "slug": "review-and-practice",
       "title": "CSS 복습과 레이아웃 점검",
@@ -381,6 +471,7 @@
     {
       "id": "java-01-types-methods",
       "languageId": "java",
+      "courseId": "java",
       "order": 1,
       "slug": "types-and-methods",
       "title": "타입·컴파일·메서드 계약",
@@ -400,6 +491,7 @@
     {
       "id": "java-02-control-flow-arrays",
       "languageId": "java",
+      "courseId": "java",
       "order": 2,
       "slug": "operators-control-flow-and-arrays",
       "title": "연산·제어문·배열",
@@ -419,6 +511,7 @@
     {
       "id": "java-03-classes-objects",
       "languageId": "java",
+      "courseId": "java",
       "order": 3,
       "slug": "classes-objects-and-encapsulation",
       "title": "클래스·객체·생성자·캡슐화",
@@ -438,6 +531,7 @@
     {
       "id": "java-04-collections-generics",
       "languageId": "java",
+      "courseId": "java",
       "order": 4,
       "slug": "collections-generics-list-and-map",
       "title": "컬렉션·제네릭·List·Map",
@@ -457,6 +551,7 @@
     {
       "id": "java-05-exceptions-debugging",
       "languageId": "java",
+      "courseId": "java",
       "order": 5,
       "slug": "exceptions-and-debugging",
       "title": "예외·디버깅",
@@ -476,6 +571,7 @@
     {
       "id": "java-06-review-practice",
       "languageId": "java",
+      "courseId": "java",
       "order": 6,
       "slug": "review-problem-solving-and-testing",
       "title": "복습·문제 분해·테스트·복잡도",
@@ -491,6 +587,246 @@
       "conceptIds": ["java.problem-decomposition", "java.testing", "java.complexity"],
       "contentFile": "content/lessons/java/review-problem-solving-and-testing.md",
       "source": { "kind": "bam-authored", "verifiedAt": "2026-08-19" }
+    },
+    {
+      "id": "js-10-stack-queue",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "stack-and-queue",
+      "title": "리스트·조건문·딕셔너리·스택과 큐",
+      "summary": "알고리즘 풀이에 사용하는 기본 도구와 값을 꺼내는 순서를 구분합니다.",
+      "essentialQuestion": "여러 값을 저장하고 조건에 따라 알맞은 순서로 처리하려면 어떤 도구가 필요할까요?",
+      "objectives": [
+        "리스트와 딕셔너리가 각각 어떤 데이터를 저장하는지 설명할 수 있습니다.",
+        "조건문으로 자료구조의 상태에 따라 처리 흐름을 나눌 수 있습니다.",
+        "스택의 LIFO와 큐의 FIFO 순서를 구분할 수 있습니다.",
+        "배열로 스택과 머리 인덱스를 사용하는 큐를 구현할 수 있습니다."
+      ],
+      "estimatedMinutes": 50,
+      "conceptIds": ["algo.list", "algo.condition", "algo.dictionary", "algo.stack", "algo.queue"],
+      "contentFile": "content/lessons/algorithm/stack-and-queue.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-23" }
+    },
+    {
+      "id": "js-08-implementation-simulation",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "implementation-and-string-simulation",
+      "title": "구현과 문자열 시뮬레이션",
+      "summary": "문제의 규칙을 상태와 변화 순서로 나누어 코드로 정확하게 옮깁니다.",
+      "essentialQuestion": "긴 문제 설명을 빠뜨리지 않고 실행 가능한 단계로 바꾸려면 어떻게 할까요?",
+      "objectives": [
+        "구현과 시뮬레이션 문제가 무엇을 평가하는지 설명할 수 있습니다.",
+        "문제의 입력, 상태, 한 단계의 변화와 출력을 구분할 수 있습니다.",
+        "문자열 입력을 필요한 단위로 나누고 순서대로 처리할 수 있습니다.",
+        "경계값과 상태 갱신 순서를 예제로 검증할 수 있습니다."
+      ],
+      "estimatedMinutes": 50,
+      "conceptIds": ["algo.simulation", "algo.string-processing"],
+      "contentFile": "content/lessons/algorithm/implementation-and-string-simulation.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-20" }
+    },
+    {
+      "id": "js-09-hash-map-set",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 3,
+      "slug": "hash-map-set",
+      "title": "해시와 Map·Set",
+      "summary": "키로 값을 찾고 중복을 관리하는 Map과 Set의 사용 기준을 익힙니다.",
+      "essentialQuestion": "많은 값에서 원하는 항목과 중복 여부를 빠르게 확인하려면 무엇을 저장해야 할까요?",
+      "objectives": [
+        "해시가 키를 저장 위치와 연결하는 생각임을 설명할 수 있습니다.",
+        "Map의 키·값 저장과 Set의 중복 없는 값 저장을 구분할 수 있습니다.",
+        "빈도 계산과 방문 여부 확인에 알맞은 컬렉션을 선택할 수 있습니다.",
+        "객체 키의 동일성과 존재하지 않는 키의 결과를 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 55,
+      "conceptIds": ["algo.hashing", "js.map-collection", "js.set-collection"],
+      "contentFile": "content/lessons/algorithm/hash-map-set.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-23" }
+    },
+    {
+      "id": "js-11-sorting-window",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 4,
+      "slug": "sorting-two-pointers-sliding-window",
+      "title": "정렬·투 포인터·슬라이딩 윈도우",
+      "summary": "데이터에 순서를 만든 뒤 두 위치와 연속 구간을 이동하며 탐색량을 줄입니다.",
+      "essentialQuestion": "모든 조합을 다시 확인하지 않고 필요한 값과 연속 구간을 찾으려면 어떻게 할까요?",
+      "objectives": [
+        "숫자 정렬에서 비교 함수가 필요한 이유를 설명할 수 있습니다.",
+        "투 포인터의 두 위치가 어떤 조건으로 이동하는지 추적할 수 있습니다.",
+        "슬라이딩 윈도우의 구간 합을 이전 값에서 갱신할 수 있습니다.",
+        "정렬 여부와 연속 구간 조건을 문제에서 먼저 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": ["algo.sorting", "algo.two-pointers", "algo.sliding-window"],
+      "contentFile": "content/lessons/algorithm/sorting-two-pointers-sliding-window.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-20" }
+    },
+    {
+      "id": "js-12-brute-force-backtracking",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 5,
+      "slug": "brute-force-backtracking-recursion",
+      "title": "완전 탐색·백트래킹·재귀",
+      "summary": "가능한 선택을 빠짐없이 만들고 불가능한 경로는 일찍 되돌아옵니다.",
+      "essentialQuestion": "모든 후보를 빠뜨리지 않으면서 불필요한 탐색을 줄이려면 어떻게 할까요?",
+      "objectives": [
+        "완전 탐색이 가능한 후보를 모두 확인하는 방식임을 설명할 수 있습니다.",
+        "재귀 함수의 종료 조건과 더 작은 다음 문제를 작성할 수 있습니다.",
+        "선택, 재귀 호출, 선택 취소로 백트래킹 상태를 복원할 수 있습니다.",
+        "정답을 버리지 않는 조건에서만 가지치기를 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": ["algo.brute-force", "js.recursion", "algo.backtracking"],
+      "contentFile": "content/lessons/algorithm/brute-force-backtracking-recursion.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-20" }
+    },
+    {
+      "id": "algo-06-number-theory-geometry",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 6,
+      "slug": "number-theory-and-geometry",
+      "title": "정수론과 기하학",
+      "summary": "정수의 나눗셈 관계와 좌표의 방향을 계산으로 판단합니다.",
+      "essentialQuestion": "정수와 좌표 사이의 관계를 반복 탐색 없이 어떻게 계산할까요?",
+      "objectives": [
+        "약수와 배수의 관계를 나머지로 설명할 수 있습니다.",
+        "유클리드 알고리즘으로 두 양의 정수의 최대공약수를 구할 수 있습니다.",
+        "좌표와 외적 값을 이용해 세 점의 방향을 구분할 수 있습니다.",
+        "정수 범위와 좌표계 같은 입력 조건을 먼저 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": ["algo.number-theory", "algo.geometry"],
+      "contentFile": "content/lessons/algorithm/number-theory-and-geometry.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-23" }
+    },
+    {
+      "id": "js-15-binary-search-dp",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 7,
+      "slug": "binary-search-and-dynamic-programming",
+      "title": "이분 탐색과 동적 계획법 1",
+      "summary": "단조로운 탐색 범위를 절반씩 줄이고 반복되는 부분 문제의 답을 저장합니다.",
+      "essentialQuestion": "탐색 범위와 반복 계산을 줄이려면 어떤 상태와 규칙을 저장해야 할까요?",
+      "objectives": [
+        "이분 탐색이 적용되는 정렬·단조 조건을 확인할 수 있습니다.",
+        "반열린 구간의 left, mid, right 변화를 추적할 수 있습니다.",
+        "DP의 상태, 점화식, 초기값과 계산 순서를 설명할 수 있습니다.",
+        "메모이제이션과 바텀업 방식의 공통 목적을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": ["algo.binary-search", "algo.dynamic-programming"],
+      "contentFile": "content/lessons/algorithm/binary-search-and-dynamic-programming.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-20" }
+    },
+    {
+      "id": "js-13-bfs-dfs",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 8,
+      "slug": "bfs-dfs-graph-grid",
+      "title": "BFS·DFS와 그래프·격자 탐색",
+      "summary": "연결 관계를 그래프로 표현하고 너비 우선과 깊이 우선으로 방문합니다.",
+      "essentialQuestion": "서로 연결된 정점이나 격자 칸을 빠뜨리거나 반복하지 않고 어떻게 탐색할까요?",
+      "objectives": [
+        "정점과 간선, 인접 리스트의 관계를 설명할 수 있습니다.",
+        "BFS가 큐로 층별 탐색하는 흐름을 추적할 수 있습니다.",
+        "DFS가 스택이나 재귀로 한 경로를 깊게 탐색하는 흐름을 추적할 수 있습니다.",
+        "격자를 그래프로 보고 방문 표시와 경계 검사를 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": ["algo.graph-representation", "algo.bfs", "algo.dfs", "algo.grid-traversal"],
+      "contentFile": "content/lessons/algorithm/bfs-dfs-graph-grid.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-20" }
+    },
+    {
+      "id": "algo-09-tree",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 9,
+      "slug": "tree-basics",
+      "title": "트리",
+      "summary": "계층 구조의 용어와 깊이 우선·레벨 순회 흐름을 익힙니다.",
+      "essentialQuestion": "부모와 자식으로 이어진 구조를 빠뜨리지 않고 어떤 순서로 방문할까요?",
+      "objectives": [
+        "트리의 노드·간선·루트·부모·자식·리프를 설명할 수 있습니다.",
+        "노드의 깊이와 트리의 높이를 간선 수 기준으로 구할 수 있습니다.",
+        "전위 순회와 레벨 순회의 방문 순서를 추적할 수 있습니다.",
+        "재귀 스택과 큐를 사용한 트리 순회의 차이를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": ["algo.tree", "algo.tree-traversal"],
+      "contentFile": "content/lessons/algorithm/tree-basics.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-23" }
+    },
+    {
+      "id": "js-14-heap-greedy",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 10,
+      "slug": "heap-and-greedy",
+      "title": "힙과 그리디",
+      "summary": "우선순위가 가장 높은 값을 관리하고 현재 선택을 확정할 수 있는 조건을 구분합니다.",
+      "essentialQuestion": "가장 작은 값을 반복해서 꺼내거나 현재 최선의 선택을 확정하려면 무엇을 확인해야 할까요?",
+      "objectives": [
+        "최소 힙의 부모와 자식 사이 순서 규칙을 설명할 수 있습니다.",
+        "배열에서 힙의 부모와 자식 인덱스를 계산할 수 있습니다.",
+        "그리디가 현재 선택을 되돌리지 않는 문제 해결 방식임을 설명할 수 있습니다.",
+        "그리디 선택이 항상 정답인지 근거와 반례를 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": ["algo.heap", "algo.priority-queue", "algo.greedy"],
+      "contentFile": "content/lessons/algorithm/heap-and-greedy.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-20" }
+    },
+    {
+      "id": "algo-11-dynamic-programming-advanced",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 11,
+      "slug": "dynamic-programming-advanced",
+      "title": "동적 계획법 2",
+      "summary": "여러 정보가 필요한 상태를 표로 만들고 메모리 절약과 선택 복원까지 확장합니다.",
+      "essentialQuestion": "상태가 두 가지 정보로 결정될 때 계산과 선택 과정을 어떻게 저장할까요?",
+      "objectives": [
+        "두 개의 정보가 필요한 문제를 2차원 DP 상태로 표현할 수 있습니다.",
+        "상태, 점화식, 초기값과 계산 순서를 2차원 표에서 연결해 설명할 수 있습니다.",
+        "필요한 이전 상태가 제한적일 때 2차원 표를 1차원 배열로 줄일 수 있습니다.",
+        "이전 선택을 저장해 최종 값뿐 아니라 실제 선택 과정도 복원할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": ["algo.dynamic-programming-advanced"],
+      "contentFile": "content/lessons/algorithm/dynamic-programming-advanced.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-23" }
+    },
+    {
+      "id": "algo-12-dijkstra",
+      "languageId": "javascript",
+      "courseId": "algorithm",
+      "order": 12,
+      "slug": "weighted-graphs-dijkstra",
+      "title": "가중 그래프와 다익스트라",
+      "summary": "음수가 아닌 가중 그래프에서 우선순위 큐로 최소 경로 비용을 구합니다.",
+      "essentialQuestion": "이동 비용이 서로 다를 때 시작점에서 각 정점까지의 최소 비용을 어떻게 찾을까요?",
+      "objectives": [
+        "가중 그래프의 경로 비용과 가중치가 없는 그래프의 간선 수를 구분할 수 있습니다.",
+        "간선 완화가 거리 후보를 더 작은 값으로 갱신하는 과정임을 설명할 수 있습니다.",
+        "다익스트라의 음수가 아닌 가중치 조건과 최소 우선순위 큐의 역할을 설명할 수 있습니다.",
+        "더 짧은 거리를 다시 넣을 때 생기는 오래된 큐 항목을 찾아 건너뛸 수 있습니다."
+      ],
+      "estimatedMinutes": 75,
+      "conceptIds": ["algo.weighted-graph", "algo.shortest-path", "algo.dijkstra"],
+      "contentFile": "content/lessons/algorithm/weighted-graphs-dijkstra.md",
+      "source": { "kind": "bam-authored", "verifiedAt": "2026-08-23" }
     }
   ]
 }

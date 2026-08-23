@@ -26,6 +26,18 @@
 
 객관식 문제는 원본에 완성된 정답 데이터가 없어 2차에서 별도 스키마로 작성했으며, 교안 근거·코드 실행 결과·모든 오답 설명을 독립 검증했습니다. Code Quest 5개도 3차에서 교안 개념을 바탕으로 새로 작성했습니다. 외부 문제의 문구·입출력·테스트를 복사하지 않았으며, 별도 콘텐츠 계약과 기준 풀이·대표 오답 fixture로 공개 테스트와 추가 경계를 독립 검증했습니다.
 
+## 알고리즘 과정
+
+- 새 프로젝트 작성본: `content/lessons/algorithm/` 교안 12개
+- 범위: 기본 자료구조, 구현·문자열, 해시, 정렬 패턴, 완전 탐색·백트래킹, 정수론·기하, 이분 탐색·동적 계획법, 그래프 탐색, 트리, 힙·그리디, 2차원 동적 계획법, 다익스트라
+- 코드 블록: JavaScript 실행 코드 39개, `text` 예시를 포함한 fenced 코드 블록 43개
+- 원칙: 외부 문제의 문구·예제·답안을 복제하지 않고 작은 입력과 실행 흐름을 프로젝트에서 직접 작성
+- 공식·권위 자료 확인 기록일: 이전 교안 6개 2026-08-20, 이전 교안 2개와 신규 교안 4개 2026-08-23
+
+이전 알고리즘 교안 8개의 안정적인 lesson ID는 유지하고 정수론·기하, 트리, 동적 계획법 2, 가중 그래프·다익스트라 4개 단원을 추가했습니다. 현재 평가 콘텐츠가 이 8개 ID를 직접 참조하지는 않습니다. 선수 순서는 구현을 기초부로 옮기고, 정렬을 `sort()` 기반 그리디보다 먼저, 트리를 힙보다 먼저 학습하도록 구성했습니다.
+
+JavaScript API 동작은 [ECMAScript 명세](https://tc39.es/ecma262/)와 [MDN JavaScript 참고서](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference)를 확인했습니다. 자료구조와 알고리즘의 정의·적용 조건·복잡도는 [MIT OpenCourseWare 6.006 강의 자료](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-notes/)와 각 교안에 기록한 NIST 자료를 교차 확인했습니다. 교안의 모든 JavaScript 코드 블록은 독립된 Node 실행 문맥에서 실행하며, 신규 4개 교안은 문서에 적은 출력도 함께 검증합니다.
+
 ## HTML·CSS 정식 확장
 
 - 새 프로젝트 작성본: `content/lessons/html/` 교안 5개, `content/lessons/css/` 교안 6개, 언어별 객관식 각 12문항과 Code Quest HTML 5개·CSS 4개

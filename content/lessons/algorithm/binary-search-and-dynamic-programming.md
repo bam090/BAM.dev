@@ -1,0 +1,214 @@
+# 07. 이분 탐색과 동적 계획법 1
+
+## 학습 목표
+
+- 이분 탐색이 적용되는 정렬·단조 조건을 확인할 수 있습니다.
+- 반열린 구간의 left, mid, right 변화를 추적할 수 있습니다.
+- DP의 상태, 점화식, 초기값과 계산 순서를 설명할 수 있습니다.
+- 메모이제이션과 바텀업 방식의 공통 목적을 설명할 수 있습니다.
+
+## 왜 필요한가
+
+값이 정렬되어 있는데도 처음부터 끝까지 하나씩 확인하면 이미 알고 있는 순서 정보를 사용하지 못합니다.
+이분 탐색은 가운데 값과 목표값을 비교해 답이 있을 수 없는 절반을 버립니다.
+한편 큰 문제를 풀 때 같은 작은 문제의 답이 계속 필요하면 매번 다시 계산하는 코드가 생깁니다.
+동적 계획법은 먼저 구한 작은 답을 저장하고 재사용해 큰 답을 만듭니다.
+
+## 개념 연결
+
+- 선행: `algo.sorting`, `algo.brute-force`, `js.recursion`, `algo.number-theory`에서 배운 정렬, 후보 탐색과 계산 규칙을 사용합니다.
+- 이 단원: `algo.binary-search`, `algo.dynamic-programming`으로 탐색 범위를 줄이고 작은 문제의 답을 재사용합니다.
+- 후속: `algo.graph-representation`, `algo.tree`, `algo.dynamic-programming-advanced`에서 탐색 구조와 더 큰 상태 설계로 이어집니다.
+
+## 이분 탐색
+
+**이분 탐색**은 정렬된 범위의 가운데 값을 확인하고 목표값이 있을 수 있는 절반만 남기는 탐색 방법입니다.
+이 단원의 예제는 숫자가 오름차순으로 정렬된 배열을 입력으로 받습니다.
+이 예제는 `left`는 포함하고 `right`는 포함하지 않는 **반열린 구간** `[left, right)`를 사용합니다.
+처음 `left`는 `0`이고 `right`는 배열 길이이므로 모든 인덱스가 확인 범위에 들어갑니다.
+가운데 인덱스 `middle`은 `Math.floor(left + (right - left) / 2)`로 계산합니다.
+가운데 값이 목표값보다 작으면 목표값은 오른쪽에만 있을 수 있으므로 `left`를 `middle + 1`로 옮깁니다.
+가운데 값이 목표값보다 크거나 같으면 현재 가운데도 첫 위치 후보이므로 `right`를 `middle`로 옮깁니다.
+`left`와 `right`가 같아지면 남은 위치가 목표값인지 확인해 첫 인덱스 또는 `-1`을 반환합니다.
+값을 직접 찾는 문제 외에도 조건 결과가 한 방향으로만 바뀌는 **단조 조건**의 경계를 찾을 때 같은 원리를 사용할 수 있습니다.
+확인 범위가 매번 절반가량 줄어들므로 정렬된 배열에서 탐색은 `O(log n)` 시간에 끝납니다.
+여기서 `n`은 배열의 값 개수이며, 값이 두 배로 늘어도 가운데를 확인하는 단계는 대략 한 번만 늘어납니다.
+
+## 동적 계획법
+
+**동적 계획법**은 큰 문제를 작은 문제로 나누고, 작은 문제의 답을 저장해 다시 사용하는 문제 해결 방법입니다.
+동적 계획법을 설계할 때는 먼저 다음 세 가지를 정합니다.
+
+1. **상태**는 작은 문제의 답이 무엇을 뜻하는지 정한 것입니다.
+2. **초깃값**은 더 작은 상태로 나눌 수 없는 가장 작은 답입니다.
+3. **점화식**은 이전 상태의 답으로 현재 상태의 답을 만드는 규칙입니다.
+
+계단을 한 번에 한 칸 또는 두 칸 오르는 경우의 수를 예로 들어 봅시다.
+`ways[step]`을 정확히 `step`칸에 도착하는 방법의 수라고 정합니다.
+마지막에 한 칸을 올라왔다면 이전 위치는 `step - 1`이고, 두 칸을 올라왔다면 이전 위치는 `step - 2`입니다.
+따라서 `ways[step] = ways[step - 1] + ways[step - 2]`가 됩니다.
+이전 값을 순서대로 채우는 방식을 **테이블 채우기** 또는 **상향식 동적 계획법**이라고 합니다.
+필요한 값을 재귀로 구하면서 계산한 답을 저장하는 방식은 **메모이제이션**이라고 합니다.
+이 단원에서는 실행 흐름이 눈에 보이는 배열 테이블 방식을 사용합니다.
+
+## 최소 예제 1. 중복값의 첫 위치 찾기
+
+다음 코드는 정렬된 배열에서 목표값이 처음 나타나는 인덱스를 반환합니다.
+
+```javascript
+function findFirstPosition(sortedValues, target) {
+  let left = 0;
+  let right = sortedValues.length;
+
+  while (left < right) {
+    const middle = Math.floor(left + (right - left) / 2);
+    const middleValue = sortedValues[middle];
+
+    if (middleValue >= target) {
+      right = middle;
+    } else {
+      left = middle + 1;
+    }
+  }
+
+  if (left < sortedValues.length && sortedValues[left] === target) {
+    return left;
+  }
+
+  return -1;
+}
+
+console.log(findFirstPosition([1, 2, 2, 2, 3], 2)); // 1
+console.log(findFirstPosition([1, 3, 5, 7], 4)); // -1
+console.log(findFirstPosition([], 1)); // -1
+```
+
+## 최소 예제 2. 계단을 오르는 방법의 수 구하기
+
+다음 코드는 한 번에 한 칸 또는 두 칸을 올라 정확히 목표 칸에 도착하는 방법의 수를 구합니다.
+`steps`는 `0` 이상의 정수라고 가정합니다.
+
+```javascript
+function countWays(steps) {
+  const ways = Array(steps + 1).fill(0);
+  ways[0] = 1;
+
+  if (steps >= 1) {
+    ways[1] = 1;
+  }
+
+  for (let step = 2; step <= steps; step += 1) {
+    ways[step] = ways[step - 1] + ways[step - 2];
+  }
+
+  return ways[steps];
+}
+
+console.log([0, 1, 2, 5].map(countWays)); // [1, 1, 2, 8]
+```
+
+`ways[0]`의 `1`은 아무 칸도 오르지 않고 출발 위치에 머무는 한 가지 방법을 뜻합니다.
+
+## 단계별 실행 흐름
+
+### 첫 위치 이분 탐색
+
+입력은 `[1, 2, 2, 2, 3]`이고 목표값은 `2`입니다.
+
+1. 처음 반열린 구간은 `[0, 5)`입니다.
+2. 가운데 인덱스 `2`의 값이 `2`이므로 첫 위치 후보를 남기기 위해 `right`를 `2`로 옮깁니다.
+3. 새 구간 `[0, 2)`의 가운데 인덱스 `1`도 값이 `2`이므로 `right`를 `1`로 옮깁니다.
+4. 새 구간 `[0, 1)`의 가운데 인덱스 `0`은 값이 `1`이므로 `left`를 `1`로 옮깁니다.
+5. `left`와 `right`가 모두 `1`이 되어 반복을 끝냅니다.
+6. 인덱스 `1`의 값이 목표값 `2`와 같으므로 `1`을 반환합니다.
+
+### 계단 동적 계획법
+
+목표 칸은 `5`입니다.
+
+1. `ways[0]`과 `ways[1]`을 각각 `1`로 시작합니다.
+2. `ways[2]`는 `ways[1] + ways[0]`이므로 `2`입니다.
+3. `ways[3]`은 `ways[2] + ways[1]`이므로 `3`입니다.
+4. `ways[4]`는 `ways[3] + ways[2]`이므로 `5`입니다.
+5. `ways[5]`는 `ways[4] + ways[3]`이므로 `8`입니다.
+6. 표의 마지막 값 `8`을 반환합니다.
+
+## 흔한 실수
+
+### 1. 정렬되지 않은 배열에 이분 탐색 사용하기
+
+가운데 값만 보고 한쪽 절반을 버리려면 값의 순서가 정해져 있어야 합니다.
+
+### 2. 닫힌 구간과 반열린 구간의 경계 규칙 섞기
+
+이 예제의 반열린 구간에서는 가운데 값이 목표보다 작으면 `left = middle + 1`로 바꿉니다.
+그 외에는 현재 가운데가 첫 위치일 수 있으므로 `right = middle`로 바꿉니다.
+`left = middle`을 사용하면 같은 가운데 인덱스를 반복해 범위가 줄지 않을 수 있습니다.
+
+### 3. 가운데 값과 목표값이 같자마자 반환하기
+
+중복값의 첫 위치가 필요하면 `right`를 가운데로 옮겨 더 왼쪽에 같은 값이 있는지 확인해야 합니다.
+
+### 4. 동적 계획법의 상태 뜻을 정하지 않기
+
+`ways[step]`이 무엇을 뜻하는지 먼저 정해야 초깃값과 점화식을 일관되게 만들 수 있습니다.
+
+### 5. 초깃값 없이 이전 칸을 읽기
+
+`ways[0]`과 `ways[1]`을 정하지 않으면 `ways[2]`부터 올바르게 계산할 수 없습니다.
+
+### 6. 그리디와 동적 계획법을 같은 전략으로 생각하기
+
+그리디는 현재 선택을 확정하지만 동적 계획법은 여러 작은 상태의 답을 저장해 현재 답을 만듭니다.
+
+## 확인 포인트
+
+1. 이분 탐색을 적용하기 전에 입력의 정렬 또는 단조 조건을 확인했나요?
+2. `[left, right)`에서 `right`가 제외된 경계라는 뜻을 코드와 함께 설명할 수 있나요?
+3. 동적 계획법 배열의 각 칸이 뜻하는 상태를 한 문장으로 설명할 수 있나요?
+4. 가장 작은 입력의 답을 초깃값으로 작성했나요?
+5. 현재 상태를 만드는 점화식이 문제의 선택을 빠짐없이 포함하나요?
+6. 메모이제이션과 상향식 방식이 계산한 답을 저장해 재사용한다는 공통점을 설명할 수 있나요?
+
+## 확인 문제
+
+1. 이분 탐색이 정렬된 배열에서만 절반을 안전하게 버릴 수 있는 이유는 무엇인가요?
+2. 반열린 구간 `[left, right)`에서 가운데 값이 목표값보다 크거나 같을 때 `right = middle`로 바꾸는 이유는 무엇인가요?
+3. 동적 계획법의 상태, 초깃값과 점화식은 각각 무엇인가요?
+4. 메모이제이션과 상향식 동적 계획법의 공통 목적과 계산 순서의 차이는 무엇인가요?
+
+## 공식 자료
+
+- [NIST Dictionary of Algorithms and Data Structures: binary search](https://xlinux.nist.gov/dads/HTML/binarySearch.html)
+- [NIST Dictionary of Algorithms and Data Structures: dynamic programming](https://xlinux.nist.gov/dads/HTML/dynamicprog.html)
+- [NIST Dictionary of Algorithms and Data Structures: memoization](https://xlinux.nist.gov/dads/HTML/memoize.html)
+- [MDN: 반복과 순회](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Loops_and_iteration)
+- [MDN: 함수](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions)
+- [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
+- [MDN: Math.floor()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/floor)
+
+공식 자료 확인일: 2026-08-20
+
+## 면접 답변 예시
+
+먼저 자신의 말로 답한 뒤, 면접관에게 설명하듯 아래 예시와 비교해 보세요.
+
+### 답변 1
+
+정렬된 배열에서는 가운데 값과 목표값을 비교해 목표가 있을 방향을 알 수 있습니다.
+따라서 목표가 있을 수 없는 반대쪽 절반을 버려도 답을 놓치지 않습니다.
+
+### 답변 2
+
+반열린 구간에서 가운데 값이 목표값보다 크거나 같으면 현재 가운데도 첫 위치 후보입니다.
+따라서 가운데를 제외하지 않고 `right = middle`로 옮기면 현재 후보를 남긴 채 더 왼쪽 경계를 확인할 수 있습니다.
+
+### 답변 3
+
+상태는 저장한 작은 문제의 답이 무엇을 뜻하는지 정한 것입니다.
+초깃값은 가장 작은 상태의 답이고, 점화식은 이전 상태의 답으로 현재 상태의 답을 만드는 규칙입니다.
+
+### 답변 4
+
+두 방식 모두 한 번 구한 작은 문제의 답을 저장해 같은 계산을 반복하지 않는 것이 목적입니다.
+메모이제이션은 필요한 답부터 재귀로 내려가며 저장하고, 상향식 방식은 초깃값부터 반복문으로 필요한 상태를 순서대로 채웁니다.

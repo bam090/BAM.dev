@@ -1,7 +1,19 @@
 export const DEFAULT_LANGUAGE_ID = "javascript";
+export const DEFAULT_COURSE_ID = "javascript";
 
-export function buildLessonHash(languageId, slug) {
-  return `#/learn/${encodeURIComponent(languageId)}/${encodeURIComponent(slug)}`;
+const LEGACY_ALGORITHM_SLUGS = new Set([
+  "implementation-and-string-simulation",
+  "hash-map-set",
+  "stack-and-queue",
+  "sorting-two-pointers-sliding-window",
+  "brute-force-backtracking-recursion",
+  "bfs-dfs-graph-grid",
+  "heap-and-greedy",
+  "binary-search-and-dynamic-programming",
+]);
+
+export function buildLessonHash(courseId, slug) {
+  return `#/learn/${encodeURIComponent(courseId)}/${encodeURIComponent(slug)}`;
 }
 
 export function buildReviewHash(languageId) {
@@ -39,7 +51,7 @@ export function parseLessonHash(hash) {
 
   try {
     return {
-      languageId: decodeURIComponent(match[1]),
+      courseId: decodeURIComponent(match[1]),
       slug: decodeURIComponent(match[2]),
     };
   } catch {
@@ -115,27 +127,46 @@ export function parseMyPageHash(hash) {
 }
 
 export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
-  const navigableLanguageIds = new Set(
-    (curriculum.languages ?? [])
-      .filter((language) => language.status !== "planned")
-      .map((language) => language.id),
+  const navigableCategoryIds = new Set(
+    (curriculum.categories ?? [])
+      .filter((category) => category.status !== "planned")
+      .map((category) => category.id),
+  );
+  const navigableCourseIds = new Set(
+    (curriculum.courses ?? [])
+      .filter(
+        (course) =>
+          course.status !== "planned" && navigableCategoryIds.has(course.categoryId),
+      )
+      .map((course) => course.id),
   );
   const parsed = parseLessonHash(hash);
   const routedLesson = parsed
     ? curriculum.lessons.find(
         (lesson) =>
-          navigableLanguageIds.has(lesson.languageId) &&
-          lesson.languageId === parsed.languageId &&
+          navigableCourseIds.has(lesson.courseId) &&
+          lesson.courseId === parsed.courseId &&
           lesson.slug === parsed.slug,
       )
     : null;
 
   if (routedLesson) return routedLesson;
 
+  const legacyAlgorithmLesson =
+    parsed?.courseId === DEFAULT_COURSE_ID && LEGACY_ALGORITHM_SLUGS.has(parsed.slug)
+      ? curriculum.lessons.find(
+          (lesson) =>
+            navigableCourseIds.has(lesson.courseId) &&
+            lesson.courseId === "algorithm" &&
+            lesson.slug === parsed.slug,
+        )
+      : null;
+  if (legacyAlgorithmLesson) return legacyAlgorithmLesson;
+
   const preferredLesson = preferredLessonId
     ? curriculum.lessons.find(
         (lesson) =>
-          navigableLanguageIds.has(lesson.languageId) && lesson.id === preferredLessonId,
+          navigableCourseIds.has(lesson.courseId) && lesson.id === preferredLessonId,
       )
     : null;
   if (preferredLesson) return preferredLesson;
@@ -143,10 +174,9 @@ export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
   return (
     curriculum.lessons.find(
       (lesson) =>
-        navigableLanguageIds.has(lesson.languageId) &&
-        lesson.languageId === DEFAULT_LANGUAGE_ID,
+        navigableCourseIds.has(lesson.courseId) && lesson.courseId === DEFAULT_COURSE_ID,
     ) ??
-    curriculum.lessons.find((lesson) => navigableLanguageIds.has(lesson.languageId)) ??
+    curriculum.lessons.find((lesson) => navigableCourseIds.has(lesson.courseId)) ??
     null
   );
 }

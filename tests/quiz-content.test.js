@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { getLessonsForCourse } from "../src/core/content.js";
 
 const quiz = JSON.parse(
   await readFile(new URL("../content/quizzes/javascript.json", import.meta.url), "utf8"),
@@ -210,7 +211,7 @@ test("퀴즈 스키마는 언어 중립 컬렉션을 허용한다", () => {
 });
 
 test("7개 교안에 basic과 application 문항이 하나씩 있다", () => {
-  const lessons = curriculum.lessons.filter((lesson) => lesson.languageId === quiz.languageId);
+  const lessons = getLessonsForCourse(curriculum, quiz.languageId);
 
   assert.equal(quiz.schemaVersion, 1);
   assert.equal(quiz.languageId, "javascript");
