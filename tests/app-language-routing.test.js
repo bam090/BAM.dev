@@ -61,9 +61,25 @@ function createRouteHarness(curriculumOverride = curriculum) {
     async openLessonRoute() {
       opened.push({ view: "lesson" });
     },
+    openMyPageRoute() {
+      opened.push({ view: "my-page" });
+    },
   });
   return { app, opened };
 }
+
+test("마이페이지와 잘못된 마이페이지 하위 경로를 전용 화면으로 연다", async (t) => {
+  const replacements = installWindow(t, "#/my");
+  const { app, opened } = createRouteHarness();
+
+  await app.openRoute();
+  assert.deepEqual(opened, [{ view: "my-page" }]);
+
+  window.location.hash = "#/my/private";
+  await app.openRoute();
+  assert.deepEqual(opened.at(-1), { view: "my-page" });
+  assert.equal(replacements.at(-1), "#/my");
+});
 
 test("탐색 가능한 언어의 객관식 해시를 JavaScript로 되돌리지 않고 연다", async (t) => {
   const replacements = installWindow(t, "#/review/html");

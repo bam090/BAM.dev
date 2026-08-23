@@ -4005,6 +4005,328 @@ a.language-nav-link:hover {
   color: #f2d695;
 }
 
+.my-page-nav {
+  padding: 18px 10px 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.my-page-nav-link {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-soft);
+  text-decoration: none;
+}
+
+.my-page-nav-link:hover {
+  background: rgba(255, 255, 255, 0.035);
+  color: #fff;
+}
+
+.my-page-nav-link.is-current {
+  border-color: rgba(0, 207, 170, 0.24);
+  background: rgba(0, 207, 170, 0.08);
+  color: #fff;
+}
+
+.my-page-nav-icon {
+  display: inline-grid;
+  width: 32px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(0, 207, 170, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 207, 170, 0.08);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.my-page-nav-link > span:last-child {
+  min-width: 0;
+}
+
+.my-page-nav-link strong,
+.my-page-nav-link small {
+  display: block;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.my-page-nav-link small {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+}
+
+.my-page-header .my-page-continue {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 20px;
+  text-decoration: none;
+}
+
+.my-page-local-status {
+  display: flex;
+  width: min(100%, 1320px);
+  gap: 20px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  margin: 24px auto 0;
+  border: 1px solid rgba(0, 207, 170, 0.24);
+  border-radius: var(--radius-md);
+  background: rgba(0, 207, 170, 0.06);
+}
+
+.my-page-local-status.is-warning {
+  border-color: rgba(245, 184, 61, 0.3);
+  background: rgba(245, 184, 61, 0.07);
+}
+
+.my-page-local-status h2,
+.my-page-local-status p {
+  margin: 0;
+}
+
+.my-page-local-status h2 {
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.my-page-local-status p {
+  margin-top: 4px;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.my-page-local-status > span {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: rgba(0, 207, 170, 0.1);
+  color: #bde8de;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.my-page-local-status.is-warning > span {
+  background: rgba(245, 184, 61, 0.1);
+  color: #f2d695;
+}
+
+.my-page-summary {
+  display: grid;
+  width: min(100%, 1320px);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  margin: 16px auto 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(8, 12, 20, 0.48);
+}
+
+.my-page-summary > div {
+  min-width: 0;
+  padding: 18px 14px;
+}
+
+.my-page-summary > div + div {
+  border-left: 1px solid var(--color-border);
+}
+
+.my-page-summary dt {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.my-page-summary dd {
+  overflow-wrap: anywhere;
+  margin: 5px 0 0;
+  color: var(--color-text);
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.my-page-summary dd span {
+  margin-left: 3px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.my-page-grid {
+  display: grid;
+  width: min(100%, 1320px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px auto 0;
+}
+
+.my-page-panel {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(145deg, rgba(76, 139, 245, 0.035), transparent 48%),
+    rgba(15, 22, 41, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.my-page-panel--wide {
+  grid-column: 1 / -1;
+}
+
+.my-page-panel > header .eyebrow,
+.my-page-panel > header h2 {
+  margin: 0;
+}
+
+.my-page-panel > header h2 {
+  margin-top: 5px;
+  color: var(--color-text);
+  font-size: 20px;
+}
+
+.my-page-language-list,
+.my-page-record-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 18px 0 0;
+  list-style: none;
+}
+
+.my-page-language-item {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 12, 20, 0.46);
+}
+
+.my-page-language-item > div:first-child {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.my-page-language-item strong,
+.my-page-language-item small {
+  display: block;
+}
+
+.my-page-language-item strong {
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.my-page-language-item small {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.my-page-language-item a {
+  display: inline-flex;
+  min-height: 44px;
+  padding: 13px 2px;
+  color: var(--color-primary-strong);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.my-page-language-item .progress-track {
+  margin-top: 10px;
+}
+
+.my-page-record-link {
+  display: flex;
+  min-width: 0;
+  min-height: 58px;
+  gap: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 12, 20, 0.46);
+  color: var(--color-text-soft);
+  text-decoration: none;
+}
+
+.my-page-record-link:hover {
+  border-color: rgba(76, 139, 245, 0.32);
+  background: rgba(76, 139, 245, 0.07);
+}
+
+.my-page-record-link > span {
+  min-width: 0;
+}
+
+.my-page-record-link small,
+.my-page-record-link strong,
+.my-page-record-link em {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.my-page-record-link small {
+  color: var(--color-primary-strong);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.my-page-record-link strong {
+  margin-top: 3px;
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.my-page-record-link em {
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.my-page-record-link time,
+.my-page-record-link b {
+  flex: 0 0 auto;
+  color: var(--color-text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.my-page-record-link b {
+  color: var(--color-primary-strong);
+  font-size: 16px;
+}
+
+.my-page-empty {
+  padding: 24px 18px;
+  margin: 18px 0 0;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
 @media (min-width: 1120px) {
   .coding-test-workspace {
     grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr);
@@ -4176,6 +4498,30 @@ a.language-nav-link:hover {
     width: 100%;
     padding: 34px 16px 52px;
     margin-left: 0;
+  }
+
+  .my-page-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .my-page-panel--wide {
+    grid-column: 1;
+  }
+
+  .my-page-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .my-page-summary > div + div {
+    border-left: 0;
+  }
+
+  .my-page-summary > div:not(:nth-child(3n + 1)) {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .my-page-summary > div:nth-child(n + 4) {
+    border-top: 1px solid var(--color-border);
   }
 
   .web-project-workspace {
@@ -4448,6 +4794,41 @@ a.language-nav-link:hover {
     padding: 26px 12px 44px;
   }
 
+  .my-page-local-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .my-page-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .my-page-summary > div:not(:nth-child(3n + 1)) {
+    border-left: 0;
+  }
+
+  .my-page-summary > div:nth-child(even) {
+    border-left: 1px solid var(--color-border);
+  }
+
+  .my-page-summary > div:nth-child(n + 3) {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .my-page-panel {
+    padding: 18px;
+    border-radius: var(--radius-md);
+  }
+
+  .my-page-record-link {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .my-page-record-link time {
+    text-align: left;
+  }
+
   .web-project-list-header h1,
   .web-project-header h1 {
     font-size: 1.9rem;
@@ -4563,6 +4944,20 @@ a.language-nav-link:hover {
   .web-project-page {
     padding-right: 8px;
     padding-left: 8px;
+  }
+
+  .my-page-local-status,
+  .my-page-panel {
+    padding: 15px;
+  }
+
+  .my-page-language-item > div:first-child {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .my-page-language-item a {
+    grid-column: 1 / -1;
+    padding: 8px 0 0;
   }
 
   .web-project-list {

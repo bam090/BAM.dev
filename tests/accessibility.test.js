@@ -8,6 +8,7 @@ import {
   renderCodeQuestView,
 } from "../src/ui/code-quest-view.js";
 import { renderCodingTestNavigationLink } from "../src/ui/coding-test-view.js";
+import { renderMyPageView } from "../src/ui/my-page-view.js";
 
 function relativeLuminance(hex) {
   const channels = hex
@@ -349,10 +350,48 @@ test("Code Quest 초안은 get/save/clear API와 비영속 상태를 연결한�
   assert.match(appSource, /state\.source = editor\.value/);
 });
 
+test("마이페이지는 단일 본문·제목·언어별 진도와 44px 링크 계약을 유지한다", async () => {
+  const html = renderMyPageView({
+    curriculum: {
+      languages: [
+        {
+          id: "javascript",
+          name: "JavaScript",
+          shortName: "JS",
+          accent: "javascript",
+          status: "available",
+        },
+      ],
+      lessons: [
+        {
+          id: "js-01-runtime",
+          languageId: "javascript",
+          slug: "javascript-and-runtime",
+        },
+      ],
+    },
+  });
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const navigationRule = css.match(/\.my-page-nav-link\s*\{([^}]*)\}/)?.[1] ?? "";
+  const languageLinkRule = css.match(/\.my-page-language-item a\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.equal((html.match(/<main /g) ?? []).length, 1);
+  assert.match(
+    html,
+    /<main[^>]*id="lesson-content"[^>]*tabindex="-1"[^>]*aria-labelledby="my-page-title"/,
+  );
+  assert.equal((html.match(/<h1 /g) ?? []).length, 1);
+  assert.match(html, /role="progressbar" aria-label="JavaScript 교안 진도"/);
+  assert.match(navigationRule, /min-height:\s*44px/);
+  assert.match(languageLinkRule, /min-height:\s*44px/);
+  assert.match(css, /@media \(max-width: 360px\)[\s\S]*?\.my-page-language-item > div:first-child/);
+});
+
 test("Web Project 작업 공간은 키보드·고대비·320px 반응형 스타일 계약을 유지한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
   const baseStart = css.indexOf(".web-project-nav {");
   const desktopMediaStart = css.indexOf("@media (min-width: 1120px)", baseStart);
+  const myPageStart = css.indexOf(".my-page-nav {", baseStart);
   const tabletStart = css.indexOf("@media (max-width: 820px)", desktopMediaStart);
   const mobileStart = css.indexOf("@media (max-width: 600px)", tabletStart);
   const narrowStart = css.indexOf("@media (max-width: 360px)", mobileStart);
@@ -373,7 +412,12 @@ test("Web Project 작업 공간은 키보드·고대비·320px 반응형 스타�
   assert.ok(reducedMotionStart > narrowStart);
   assert.ok(forcedColorsStart > reducedMotionStart);
 
-  const base = css.slice(baseStart, desktopMediaStart);
+  const base = css.slice(
+    baseStart,
+    myPageStart > baseStart && myPageStart < desktopMediaStart
+      ? myPageStart
+      : desktopMediaStart,
+  );
   const tablet = css.slice(tabletStart, mobileStart);
   const mobile = css.slice(mobileStart, narrowStart);
   const narrow = css.slice(narrowStart, reducedMotionStart);
