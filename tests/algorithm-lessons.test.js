@@ -178,6 +178,33 @@ test("신규 4개 알고리즘 교안 예제는 문서에 설명된 출력을 �
   }
 });
 
+test("구현·시뮬레이션 예제는 명령 공백과 잘못된 입력 경계를 검증한다", async () => {
+  const markdown = await readFile(
+    new URL("../content/lessons/algorithm/implementation-and-string-simulation.md", import.meta.url),
+    "utf8",
+  );
+  const source = javascriptBlocksFrom(markdown).find((block) =>
+    block.includes("function simulateRobot"),
+  );
+  const { context } = execute(source);
+
+  assert.deepEqual(
+    JSON.parse(JSON.stringify(context.simulateRobot("  R\t2, L   1  ", 0, 8))),
+    { position: 1, visited: [0, 2, 1] },
+  );
+
+  for (const [command, message] of [
+    ["R", /방향과 거리 두 값/],
+    ["R 1 extra", /방향과 거리 두 값/],
+    ["X 1", /방향은 R 또는 L/],
+    ["R nope", /0 이상의 유한한 숫자/],
+    ["R Infinity", /0 이상의 유한한 숫자/],
+    ["R -1", /0 이상의 유한한 숫자/],
+  ]) {
+    assert.throws(() => context.simulateRobot(command, 0, 8), message, command);
+  }
+});
+
 test("정확성 감사에서 확인된 복잡도와 다익스트라 입력 경계를 고정한다", async () => {
   const [numberTheory, tree, dijkstra] = await Promise.all([
     readFile(new URL("../content/lessons/algorithm/number-theory-and-geometry.md", import.meta.url), "utf8"),

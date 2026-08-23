@@ -2441,12 +2441,13 @@ export class BamLearningApp {
         .filter((course) => course.categoryId === "language")
         .map((course) => course.id),
     );
+    const languageLessons = this.curriculum.lessons.filter((lesson) =>
+      languageCourseIds.has(lesson.courseId),
+    );
     const mainContent = renderMyPageView({
       curriculum: {
         ...this.curriculum,
-        lessons: this.curriculum.lessons.filter((lesson) =>
-          languageCourseIds.has(lesson.courseId),
-        ),
+        lessons: languageLessons,
       },
       progress,
       codeQuestCollections: this.codeQuestCollections,
@@ -2455,7 +2456,7 @@ export class BamLearningApp {
       webProjectState,
       isPersistent,
     });
-    const lastLesson = this.curriculum.lessons.find(
+    const lastLesson = languageLessons.find(
       (lesson) => lesson.id === progress.lastLessonId,
     );
     const course =

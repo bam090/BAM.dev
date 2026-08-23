@@ -140,6 +140,9 @@ export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
       )
       .map((course) => course.id),
   );
+  const navigableLessons = curriculum.lessons
+    .filter((lesson) => navigableCourseIds.has(lesson.courseId))
+    .sort((left, right) => left.order - right.order);
   const parsed = parseLessonHash(hash);
   const routedLesson = parsed
     ? curriculum.lessons.find(
@@ -172,11 +175,8 @@ export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
   if (preferredLesson) return preferredLesson;
 
   return (
-    curriculum.lessons.find(
-      (lesson) =>
-        navigableCourseIds.has(lesson.courseId) && lesson.courseId === DEFAULT_COURSE_ID,
-    ) ??
-    curriculum.lessons.find((lesson) => navigableCourseIds.has(lesson.courseId)) ??
+    navigableLessons.find((lesson) => lesson.courseId === DEFAULT_COURSE_ID) ??
+    navigableLessons[0] ??
     null
   );
 }

@@ -41,11 +41,14 @@ const totalCodingTestCount = [...codingTestCollections.values()].reduce(
   0,
 );
 
-test("앱은 두 로컬 저장소의 스냅샷으로 마이페이지 셸을 렌더링한다", () => {
+test("마이페이지 본문과 셸은 알고리즘 최근 기록을 언어 과정 진도에 섞지 않는다", () => {
   const root = { innerHTML: "" };
+  const algorithmLesson = curriculum.lessons.find(
+    (lesson) => lesson.courseId === "algorithm",
+  );
   const progress = {
     completedLessonIds: ["js-01-runtime"],
-    lastLessonId: "js-01-runtime",
+    lastLessonId: algorithmLesson.id,
     quizAttempts: [],
     incorrectQuestionIds: [],
     questAttempts: [],
@@ -85,6 +88,14 @@ test("앱은 두 로컬 저장소의 스냅샷으로 마이페이지 셸을 렌�
     /class="my-page-nav-link is-current" href="#\/my" aria-current="page"/,
   );
   assert.match(root.innerHTML, /JavaScript 교안 진도/);
+  assert.match(
+    root.innerHTML,
+    /class="course-heading"[\s\S]*?<strong>JavaScript<\/strong>/,
+  );
+  const lessonNavigation =
+    root.innerHTML.match(/<nav class="lesson-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
+  assert.equal((lessonNavigation.match(/class="lesson-link/g) ?? []).length, 7);
+  assert.doesNotMatch(lessonNavigation, /#\/learn\/algorithm\//);
   assert.match(root.innerHTML, /이 브라우저에 저장 중/);
 });
 

@@ -121,6 +121,15 @@ test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한�
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "not-found").order, 1);
 });
 
+test("기본 교안은 저장 배열 순서와 무관하게 가장 낮은 order를 선택한다", () => {
+  const reversed = {
+    ...curriculum,
+    lessons: [...curriculum.lessons].reverse(),
+  };
+
+  assert.equal(resolveLessonRoute(reversed, "#/missing", "not-found").id, "js-01-runtime");
+});
+
 test("planned 과정의 직접 경로와 최근 교안은 탐색 가능한 기본 교안으로 복귀한다", () => {
   const planned = structuredClone(curriculum);
   planned.courses.find((course) => course.id === "html").status = "planned";
