@@ -35,31 +35,36 @@ test("주요 버튼의 기본·hover 색 대비가 일반 텍스트 AA 기준을
 test("긴 교안 제목과 인라인 코드가 320px 문서 폭을 늘리지 않도록 줄바꿈한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
   const lessonTitleRule = css.match(/\.lesson-hero h1\s*\{([^}]*)\}/);
-  const inlineCodeRule = css.match(/\.lesson-body :not\(pre\) > code\s*\{([^}]*)\}/);
+  const inlineCodeRule = css.match(
+    /\.lesson-body :not\(pre\) > code,\s*\.lesson-objectives :not\(pre\) > code\s*\{([^}]*)\}/,
+  );
 
   assert.ok(lessonTitleRule);
   assert.ok(inlineCodeRule);
   assert.match(lessonTitleRule[1], /overflow-wrap:\s*anywhere/);
   assert.match(inlineCodeRule[1], /overflow-wrap:\s*anywhere/);
   assert.match(inlineCodeRule[1], /border:\s*1px solid transparent/);
-  assert.match(inlineCodeRule[1], /background:\s*#292929/);
+  assert.match(inlineCodeRule[1], /background:\s*var\(--color-surface-raised\)/);
 });
 
 test("인라인 코드는 참고 UI의 byte 톤을 쓰고 오류 제목은 물결 밑줄로 구분한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const tokens = await readFile(new URL("../styles/tokens.css", import.meta.url), "utf8");
   const sharedInlineRule = css.match(/#lesson-content :not\(pre\) > code\s*\{([^}]*)\}/)?.[1] ?? "";
   const quizInlineRule = css.match(/\.quiz-card :not\(pre\) > code\s*\{([^}]*)\}/)?.[1] ?? "";
   const questInlineRule = css.match(/\.quest-prose code\s*\{([^}]*)\}/)?.[1] ?? "";
+  const raisedSurface = tokens.match(/--color-surface-raised:\s*(#[\da-f]{6})\s*;/i)?.[1];
   const diagnosticRule = css.match(
     /\.quiz-answer-summary\.is-incorrect h3,[\s\S]*?\.web-project-result-item\.is-engine_error strong\s*\{([^}]*)\}/,
   )?.[1] ?? "";
 
   for (const rule of [quizInlineRule, questInlineRule]) {
     assert.match(rule, /border:\s*1px solid transparent/);
-    assert.match(rule, /background:\s*#292929/);
+    assert.match(rule, /background:\s*var\(--color-surface-raised\)/);
   }
   assert.match(sharedInlineRule, /color:\s*#e26b60/);
-  assert.ok(contrastRatio("#e26b60", "#292929") >= 4.5);
+  assert.ok(raisedSurface);
+  assert.ok(contrastRatio("#e26b60", raisedSurface) >= 4.5);
   assert.match(diagnosticRule, /text-decoration-color:\s*var\(--color-danger\)/);
   assert.match(diagnosticRule, /text-decoration-line:\s*underline/);
   assert.match(diagnosticRule, /text-decoration-style:\s*wavy/);
