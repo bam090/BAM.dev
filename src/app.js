@@ -947,10 +947,27 @@ export class BamLearningApp {
         this.renderLesson();
         const updatedButton = document.querySelector("[data-toggle-complete]");
         updatedButton?.focus();
-        this.announce(wasCompleted ? "학습 완료 표시를 해제했습니다." : "학습을 완료로 표시했습니다.");
+        this.announce(
+          wasCompleted ? "학습 완료 표시를 해제했습니다." : "학습을 완료로 표시했습니다.",
+        );
       } catch {
         this.announce("진도를 저장하지 못했습니다. 브라우저 저장 공간 설정을 확인해 주세요.");
       }
+      return;
+    }
+
+    const modelAnswerButton = event.target.closest("[data-toggle-model-answer]");
+    if (modelAnswerButton) {
+      const modelAnswer = document.querySelector("#lesson-model-answer");
+      if (!modelAnswer) return;
+
+      const isExpanded = modelAnswerButton.getAttribute("aria-expanded") === "true";
+      modelAnswer.hidden = isExpanded;
+      modelAnswerButton.setAttribute("aria-expanded", String(!isExpanded));
+      modelAnswerButton.textContent = isExpanded ? "면접 답변 보기" : "면접 답변 숨기기";
+
+      if (isExpanded) modelAnswerButton.focus();
+      else modelAnswer.focus();
       return;
     }
 
@@ -2616,6 +2633,21 @@ export class BamLearningApp {
       languageCodingTestCollection,
     );
     const supportsLanguageFeatures = course.categoryId === "language";
+    const normalizedMarkdown = String(this.currentMarkdown).replaceAll("\r\n", "\n");
+    const objectivesMatch = normalizedMarkdown.match(
+      /(?:^|\n)(## 학습 목표\n[\s\S]*?)(?=\n##\s|$)/,
+    );
+    const objectivesMarkdown = objectivesMatch?.[1] ?? "";
+    let lessonBodyMarkdown = objectivesMatch
+      ? normalizedMarkdown.replace(objectivesMatch[0], "\n")
+      : normalizedMarkdown;
+    const modelAnswerMatch = lessonBodyMarkdown.match(
+      /(?:^|\n)(## 면접 답변 예시\n[\s\S]*?)(?=\n##\s|$)/,
+    );
+    const modelAnswerMarkdown = modelAnswerMatch?.[1] ?? "";
+    if (modelAnswerMatch) {
+      lessonBodyMarkdown = lessonBodyMarkdown.replace(modelAnswerMatch[0], "\n");
+    }
 
     const mainContent = `
       <main class="main-area" id="lesson-content" tabindex="-1">
@@ -2630,6 +2662,7 @@ export class BamLearningApp {
               </div>
               <h1>${escapeHtml(lesson.title)}</h1>
               <p class="lesson-summary">${escapeHtml(lesson.summary)}</p>
+              ${objectivesMarkdown ? `<section class="lesson-objectives" aria-labelledby="학습-목표">${renderMarkdown(objectivesMarkdown)}</section>` : ""}
               <div class="essential-question">
                 <span aria-hidden="true">?</span>
                 <div><small>오늘의 핵심 질문</small><strong>${escapeHtml(lesson.essentialQuestion)}</strong></div>
@@ -2637,7 +2670,8 @@ export class BamLearningApp {
             </header>
 
             <article class="lesson-body">
-              ${renderMarkdown(this.currentMarkdown, { skipFirstHeading: true })}
+              ${renderMarkdown(lessonBodyMarkdown, { skipFirstHeading: true })}
+              ${modelAnswerMarkdown ? `<div class="lesson-model-answer-disclosure"><p id="lesson-model-answer-help">답을 보기 전에 먼저 확인 문제를 자신의 말로 설명해 보세요.</p><button class="button button--secondary lesson-model-answer-toggle" type="button" data-toggle-model-answer aria-controls="lesson-model-answer" aria-describedby="lesson-model-answer-help" aria-expanded="false">면접 답변 보기</button></div><section class="lesson-model-answer" id="lesson-model-answer" role="region" tabindex="-1" aria-labelledby="면접-답변-예시" hidden>${renderMarkdown(modelAnswerMarkdown)}</section>` : ""}
             </article>
 
             <section class="completion-card${isCompleted ? " is-complete" : ""}" aria-labelledby="completion-title">
