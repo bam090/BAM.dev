@@ -8,6 +8,7 @@ import {
   renderCodeQuestView,
 } from "../src/ui/code-quest-view.js";
 import { renderCodingTestNavigationLink } from "../src/ui/coding-test-view.js";
+import { renderMarkdown } from "../src/ui/markdown.js";
 import { renderMyPageView } from "../src/ui/my-page-view.js";
 
 function relativeLuminance(hex) {
@@ -45,6 +46,38 @@ test("긴 교안 제목과 인라인 코드가 320px 문서 폭을 늘리지 않
   assert.match(inlineCodeRule[1], /overflow-wrap:\s*anywhere/);
   assert.match(inlineCodeRule[1], /border:\s*1px solid transparent/);
   assert.match(inlineCodeRule[1], /background:\s*var\(--color-surface-raised\)/);
+});
+
+test("교안 표는 명확한 셀 경계와 포커스 가능한 내부 가로 스크롤을 유지한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const tokens = await readFile(new URL("../styles/tokens.css", import.meta.url), "utf8");
+  const renderedTable = renderMarkdown("| A | B | C | D |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |");
+  const wrapperRule = css.match(/\.table-scroll\s*\{([^}]*)\}/)?.[1] ?? "";
+  const tableRule = css.match(/\.lesson-body table\s*\{([^}]*)\}/)?.[1] ?? "";
+  const cellRule = css.match(/\.lesson-body th,\s*\.lesson-body td\s*\{([^}]*)\}/)?.[1] ?? "";
+  const headerRule = css.match(/\.lesson-body th\s*\{([^}]*)\}/)?.[1] ?? "";
+  const headerBackground = tokens.match(/--color-secondary:\s*(#[\da-f]{6})\s*;/i)?.[1];
+  const headerText = tokens.match(/--color-text:\s*(#[\da-f]{6})\s*;/i)?.[1];
+
+  assert.match(renderedTable, /<div class="table-scroll" tabindex="0"><table>/);
+  assert.equal(renderedTable.match(/<th scope="col">/g)?.length, 4);
+  assert.equal(renderedTable.match(/<td>/g)?.length, 4);
+  assert.match(wrapperRule, /max-width:\s*100%/);
+  assert.match(wrapperRule, /overflow-x:\s*auto/);
+  assert.match(wrapperRule, /border:\s*1px solid var\(--color-border-strong\)/);
+  assert.match(css, /\.table-scroll:focus-visible\s*\{[^}]*border-color:\s*var\(--color-primary-strong\)/s);
+  assert.match(tableRule, /min-width:\s*520px/);
+  assert.match(tableRule, /border-collapse:\s*separate/);
+  assert.match(tableRule, /border-spacing:\s*0/);
+  assert.match(cellRule, /border-right:\s*1px solid var\(--color-border\)/);
+  assert.match(cellRule, /border-bottom:\s*1px solid var\(--color-border\)/);
+  assert.match(headerRule, /background:\s*var\(--color-secondary\)/);
+  assert.match(headerRule, /font-weight:\s*800/);
+  assert.match(css, /\.lesson-body tr > :last-child\s*\{[^}]*border-right:\s*0/s);
+  assert.match(css, /\.lesson-body tbody tr:last-child td\s*\{[^}]*border-bottom:\s*0/s);
+  assert.ok(headerBackground);
+  assert.ok(headerText);
+  assert.ok(contrastRatio(headerText, headerBackground) >= 4.5);
 });
 
 test("인라인 코드는 참고 UI의 byte 톤을 쓰고 오류 제목은 물결 밑줄로 구분한다", async () => {
