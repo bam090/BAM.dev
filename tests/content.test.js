@@ -54,7 +54,7 @@ test("교안 공식 자료 섹션은 직접 외부 링크를 2~3개만 제공한
       const sectionStart = headingMatch.index + headingMatch[0].length;
       const sectionEnd = h2Headings[index + 1]?.index ?? markdown.length;
       const section = markdown.slice(sectionStart, sectionEnd);
-      const linkCount = [...section.matchAll(/^- \[[^\]\r\n]+\]\(https?:\/\/\S+\)$/gm)].length;
+      const linkCount = [...section.matchAll(/^- \[[^\]\r\n]+\]\(https:\/\/\S+\)$/gm)].length;
 
       assert.ok(
         linkCount >= 2 && linkCount <= 3,
