@@ -48,6 +48,19 @@ test("긴 교안 제목과 인라인 코드가 320px 문서 폭을 늘리지 않
   assert.match(inlineCodeRule[1], /background:\s*var\(--color-surface-raised\)/);
 });
 
+test("교안의 주요 주제 H2만 위쪽 구분선으로 구분한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const h2Rule = css.match(/\.lesson-body h2\s*\{([^}]*)\}/)?.[1] ?? "";
+  const firstH2Rule = css.match(/\.lesson-body h2:first-child\s*\{([^}]*)\}/)?.[1] ?? "";
+  const h3Rule = css.match(/\.lesson-body h3\s*\{([^}]*)\}/)?.[1] ?? "";
+  const h4Rule = css.match(/\.lesson-body h4\s*\{([^}]*)\}/)?.[1] ?? "";
+
+  assert.match(h2Rule, /border-top:\s*1px solid var\(--color-border\)/);
+  assert.match(firstH2Rule, /border-top:\s*0/);
+  assert.doesNotMatch(h3Rule, /border-top/);
+  assert.doesNotMatch(h4Rule, /border-top/);
+});
+
 test("교안 표는 명확한 셀 경계와 포커스 가능한 내부 가로 스크롤을 유지한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
   const tokens = await readFile(new URL("../styles/tokens.css", import.meta.url), "utf8");
