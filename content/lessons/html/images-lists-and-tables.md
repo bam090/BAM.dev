@@ -171,10 +171,8 @@
 
 ## 공식 자료
 
-- [WHATWG HTML Standard: 이미지와 대체 텍스트](https://html.spec.whatwg.org/multipage/images.html)
 - [W3C WAI: 대체 텍스트 결정 트리](https://www.w3.org/WAI/tutorials/images/decision-tree/)
 - [WHATWG HTML Standard: `ol`, `ul`, `li`](https://html.spec.whatwg.org/multipage/grouping-content.html)
 - [WHATWG HTML Standard: 표 형식 데이터](https://html.spec.whatwg.org/multipage/tables.html)
-- [W3C WAI: 두 개의 머리글을 가진 단순한 표](https://www.w3.org/WAI/tutorials/tables/two-headers/)
 
 공식 자료 확인일: 2026-08-18

@@ -150,7 +150,5 @@ console.log(heading.textContent);
 - [MDN: JavaScript가 뭔가요?](https://developer.mozilla.org/ko/docs/Learn_web_development/Core/Scripting/What_is_JavaScript)
 - [Ecma International: ECMA-262 ECMAScript 2026 언어 명세](https://ecma-international.org/publications-and-standards/standards/ecma-262/)
 - [WHATWG HTML Standard: script 요소와 defer](https://html.spec.whatwg.org/multipage/scripting.html#the-script-element)
-- [WHATWG DOM Standard](https://dom.spec.whatwg.org/)
-- [WHATWG Console Standard](https://console.spec.whatwg.org/)
 
 공식 자료 확인일: 2026-08-18

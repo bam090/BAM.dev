@@ -143,6 +143,4 @@ static int countCompleted(Map<String, Boolean> progress) {
 
 - [Java Language Specification SE 25 §4.5: 매개변수화 타입](https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html#jls-4.5)
 - [Java SE 25 API: `List<E>`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html)
-- [Java SE 25 API: `ArrayList<E>`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/ArrayList.html)
 - [Java SE 25 API: `Map<K,V>`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html)
-- [Java SE 25 API: `HashMap<K,V>`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html)

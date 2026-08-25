@@ -252,7 +252,6 @@ BFS는 큐에 넣을 때 방문 또는 거리를 기록해야 같은 정점의 �
 - [MIT OpenCourseWare: Breadth-First Search](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec9/)
 - [MIT OpenCourseWare: Depth-First Search](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec10/)
 - [MDN: Array.from()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from)
-- [MDN: Array.prototype.fill()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill)
 
 공식 자료 확인일: 2026-08-20
 

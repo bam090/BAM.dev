@@ -230,5 +230,3 @@ html {
 - [W3C Selectors Level 4 — Selector syntax and structure](https://www.w3.org/TR/selectors-4/#structure)
 - [W3C CSS Cascading and Inheritance Level 5 — Inheritance](https://www.w3.org/TR/css-cascade-5/#inheriting)
 - [W3C CSS Values and Units Level 4](https://www.w3.org/TR/css-values-4/)
-- [MDN — Basic CSS selectors](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Basic_selectors)
-- [MDN — CSS values and units](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Values_and_units)

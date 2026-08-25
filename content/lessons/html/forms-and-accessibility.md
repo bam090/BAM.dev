@@ -248,10 +248,7 @@ placeholder는 입력을 시작하면 사라질 수 있고 예시나 짧은 힌�
 ## 공식 자료
 
 - [WHATWG HTML Standard: 폼](https://html.spec.whatwg.org/multipage/forms.html)
-- [WHATWG HTML Standard: 폼 컨트롤 기반과 제출 데이터](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html)
-- [WHATWG HTML Standard: 입력 요소](https://html.spec.whatwg.org/multipage/input.html)
 - [W3C WAI: 폼 컨트롤 레이블 연결](https://www.w3.org/WAI/tutorials/forms/labels/)
-- [W3C WAI: 폼 그룹화](https://www.w3.org/WAI/tutorials/forms/grouping/)
 - [W3C WAI: 키보드와 폼을 포함한 기초 접근성 점검](https://www.w3.org/WAI/test-evaluate/preliminary/)
 
 공식 자료 확인일: 2026-08-18

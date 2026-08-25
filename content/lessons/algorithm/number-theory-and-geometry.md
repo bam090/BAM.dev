@@ -184,7 +184,6 @@ console.log(direction(a, b, c)); // 반시계
 
 ## 공식·권위 자료
 
-- [NIST Dictionary of Algorithms and Data Structures: greatest common divisor](https://www.nist.gov/dads/HTML/greatestCommonDivisor.html)
 - [NIST Dictionary of Algorithms and Data Structures: Euclid's algorithm](https://www.nist.gov/dads/HTML/euclidalgo.html)
 - [MIT OpenCourseWare 6.046J: Computational geometry](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2012/90bf712a64648a7d40387df4c22efa2a_MIT6_046JS12_lec23.pdf)
 - [ECMAScript 명세: Numeric Types와 나머지 연산](https://tc39.es/ecma262/multipage/ecmascript-data-types-and-values.html#sec-number::remainder)

@@ -172,6 +172,5 @@ class StudyPlan {
 ## 공식 근거 자료
 
 - [Java Language Specification SE 25 §8: 클래스](https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html)
-- [Java Language Specification SE 25 §8.2: 클래스 구성원](https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.2)
 - [Java Language Specification SE 25 §8.8: 생성자 선언](https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.8)
 - [Java Language Specification SE 25 §15.9: 클래스 인스턴스 생성](https://docs.oracle.com/javase/specs/jls/se25/html/jls-15.html#jls-15.9)

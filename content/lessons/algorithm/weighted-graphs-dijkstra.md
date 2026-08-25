@@ -264,12 +264,9 @@ BFS는 지나간 간선 수를 기준으로 가까운 정점을 처리합니다.
 
 ## 공식 자료
 
-- [NIST Dictionary of Algorithms and Data Structures: Dijkstra's algorithm](https://xlinux.nist.gov/dads/HTML/dijkstraalgo.html)
-- [NIST Dictionary of Algorithms and Data Structures: shortest path](https://xlinux.nist.gov/dads/HTML/shortestpath.html)
 - [MIT OpenCourseWare 6.006: Weighted Shortest Paths](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec11/)
 - [MIT OpenCourseWare 6.006: Dijkstra's Algorithm](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec13/)
 - [MDN: Number.isFinite()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite)
-- [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
 
 공식 자료 확인일: 2026-08-23
 

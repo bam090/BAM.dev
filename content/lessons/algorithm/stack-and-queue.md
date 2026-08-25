@@ -245,13 +245,8 @@ head += 1;
 
 ## 공식 자료
 
-- [ECMAScript 명세: Indexed Collections](https://tc39.es/ecma262/multipage/indexed-collections.html)
 - [MDN: Indexed collections](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Indexed_collections)
 - [MDN: Working with objects](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_with_objects)
-- [MDN: if...else](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/if...else)
-- [MDN: Array.prototype.push()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/push)
-- [MDN: Array.prototype.pop()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/pop)
-- [MDN: Array.prototype.shift()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/shift)
 - [Princeton Algorithms: Bags, Queues, and Stacks](https://algs4.cs.princeton.edu/13stacks/)
 
 공식 자료 확인일: 2026-08-23

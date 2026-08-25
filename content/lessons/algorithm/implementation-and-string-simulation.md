@@ -237,12 +237,9 @@ console.log(countForwardMoves("FFLFR")); // 3
 
 ## 공식 자료
 
-- [ECMAScript 명세: Text Processing](https://tc39.es/ecma262/multipage/text-processing.html)
-- [MDN: String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)
 - [MDN: String.prototype.split()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/split)
 - [MDN: Number()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number)
 - [MIT OpenCourseWare: Simulation Algorithms](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/79ba958de1d1c186610e6869e5b46788_MIT6_006F11_rec08.pdf)
-- [Princeton Algorithms: Strings](https://algs4.cs.princeton.edu/50strings/)
 
 공식 자료 확인일: 2026-08-20
 

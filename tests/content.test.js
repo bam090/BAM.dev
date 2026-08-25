@@ -35,6 +35,35 @@ test("JavaScript 교안은 1부터 7까지 순서대로 제공된다", () => {
   assert.ok(lessons.every((lesson) => lesson.objectives.length === 4));
 });
 
+test("교안 공식 자료 섹션은 직접 외부 링크를 2~3개만 제공한다", async () => {
+  const officialHeadings = new Set([
+    "공식 자료",
+    "공식 근거 자료",
+    "공식 출처",
+    "공식·권위 자료",
+  ]);
+
+  for (const lesson of curriculum.lessons) {
+    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+    const h2Headings = [...markdown.matchAll(/^## (.+)$/gm)];
+
+    for (const [index, headingMatch] of h2Headings.entries()) {
+      const heading = headingMatch[1];
+      if (!officialHeadings.has(heading)) continue;
+
+      const sectionStart = headingMatch.index + headingMatch[0].length;
+      const sectionEnd = h2Headings[index + 1]?.index ?? markdown.length;
+      const section = markdown.slice(sectionStart, sectionEnd);
+      const linkCount = [...section.matchAll(/^- \[[^\]\r\n]+\]\(https?:\/\/\S+\)$/gm)].length;
+
+      assert.ok(
+        linkCount >= 2 && linkCount <= 3,
+        `${lesson.id} / ${heading}: 공식 외부 링크 실제 ${linkCount}개`,
+      );
+    }
+  }
+});
+
 test("중복 교안 ID와 끊어진 순서를 거부한다", () => {
   const invalid = structuredClone(curriculum);
   invalid.lessons[1].id = invalid.lessons[0].id;

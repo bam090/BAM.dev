@@ -249,10 +249,6 @@ Animation은 `@keyframes`로 여러 시점의 값을 정의하고 지속 시간,
 
 ## 공식 출처
 
-- [W3C Media Queries Level 5](https://www.w3.org/TR/mediaqueries-5/)
 - [W3C Selectors Level 4 — Pseudo-classes](https://www.w3.org/TR/selectors-4/#pseudo-classes)
-- [W3C CSS Transitions Level 1](https://www.w3.org/TR/css-transitions-1/)
-- [W3C CSS Transforms Module Level 1](https://www.w3.org/TR/css-transforms-1/)
-- [W3C CSS Animations Level 1](https://www.w3.org/TR/css-animations-1/)
 - [MDN — Responsive web design](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Responsive_Design)
 - [MDN — `prefers-reduced-motion`](https://developer.mozilla.org/en-US/docs/Web/CSS/@media/prefers-reduced-motion)

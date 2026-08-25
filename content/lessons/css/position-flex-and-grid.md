@@ -275,7 +275,5 @@ Flexbox의 `order`나 Grid 배치로 보이는 순서를 바꿔도 DOM 순서와
 ## 공식 출처
 
 - [W3C CSS Positioned Layout Module Level 3](https://www.w3.org/TR/css-position-3/)
-- [W3C CSS Flexible Box Layout Module Level 1](https://www.w3.org/TR/css-flexbox-1/)
-- [W3C CSS Grid Layout Module Level 2](https://www.w3.org/TR/css-grid-2/)
 - [W3C CSS Display Module Level 3 — Reordering and accessibility](https://www.w3.org/TR/css-display-3/#order-accessibility)
 - [MDN — Introduction to CSS layout](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Introduction)
