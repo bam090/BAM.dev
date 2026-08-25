@@ -68,10 +68,13 @@ test("교안 표는 명확한 셀 경계와 포커스 가능한 내부 가로 �
   assert.match(css, /\.table-scroll:focus-visible\s*\{[^}]*border-color:\s*var\(--color-primary-strong\)/s);
   assert.match(tableRule, /min-width:\s*520px/);
   assert.match(tableRule, /border-collapse:\s*separate/);
+  assert.match(tableRule, /border-spacing:\s*0/);
   assert.match(cellRule, /border-right:\s*1px solid var\(--color-border\)/);
   assert.match(cellRule, /border-bottom:\s*1px solid var\(--color-border\)/);
   assert.match(headerRule, /background:\s*var\(--color-secondary\)/);
   assert.match(headerRule, /font-weight:\s*800/);
+  assert.match(css, /\.lesson-body tr > :last-child\s*\{[^}]*border-right:\s*0/s);
+  assert.match(css, /\.lesson-body tbody tr:last-child td\s*\{[^}]*border-bottom:\s*0/s);
   assert.ok(headerBackground);
   assert.ok(headerText);
   assert.ok(contrastRatio(headerText, headerBackground) >= 4.5);
