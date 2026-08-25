@@ -85,6 +85,8 @@ console.log(3 !== "3"); // true
 
 ### 조건을 합치거나 반대로 바꾸기
 
+값 자체를 `&&`로 연결하면 왼쪽이 거짓 같은 값일 때 왼쪽 값을, 참 같은 값일 때 오른쪽 값을 고릅니다.
+
 `||`는 “또는”이라는 뜻입니다.
 양쪽이 조건일 때 하나라도 참이면 결과가 참입니다.
 값 자체를 연결하면 왼쪽이 참 같은 값일 때 왼쪽 값을, 거짓 같은 값일 때 오른쪽 값을 고릅니다.
@@ -96,12 +98,15 @@ console.log(3 !== "3"); // true
 const isWeekend = false;
 const isHoliday = true;
 
+console.log(0 && 10);                // 0
+console.log("김밥" && 10);           // 10
 console.log(isWeekend || isHoliday); // true
 console.log(0 || 10);                // 10
 console.log(!isHoliday);             // false
 console.log(!"");                    // true
 ```
 
+따라서 `0 && 10`은 `0`, `"김밥" && 10`은 `10`이 됩니다.
 `0 || 10`은 거짓 같은 값인 `0` 대신 오른쪽 값 `10`을 고릅니다.
 
 ### 값의 타입 확인하기
