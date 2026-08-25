@@ -82,10 +82,9 @@ test("모든 교안은 원문 학습 목표를 hero에 한 번만 렌더링하�
     if (markdown.includes("## 면접 답변 예시")) {
       assert.match(
         body,
-        /<section class="lesson-model-answer"[^>]*role="region"[^>]*tabindex="-1"[^>]*aria-labelledby="면접-답변-예시"[^>]* hidden>/,
+        /<section class="lesson-model-answer"[^>]*role="region"[^>]*tabindex="-1"[^>]*aria-labelledby="면접-답변-예시"[^>]* hidden>\s*<h2 id="면접-답변-예시">면접 답변 예시<\/h2>/,
         lesson.id,
       );
-      assert.match(body, /<h2 id="면접-답변-예시">면접 답변 예시<\/h2>/, lesson.id);
       assert.match(
         body,
         /data-toggle-model-answer[^>]*aria-controls="lesson-model-answer"[^>]*aria-describedby="lesson-model-answer-help"[^>]*aria-expanded="false"[^>]*>면접 답변 보기<\/button>/,
