@@ -681,7 +681,11 @@ a.language-nav-link:hover {
   letter-spacing: -0.025em;
 }
 
-.lesson-body h2:first-child {
+.lesson-body > h2:not(:first-child) {
+  border-top: 1px solid var(--color-border);
+}
+
+.lesson-body > h2:first-child {
   padding-top: 0;
   margin-top: 0;
 }
