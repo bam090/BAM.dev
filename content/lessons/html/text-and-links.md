@@ -163,8 +163,6 @@ fragment 링크가 동작하려면 목적지 `id`가 실제로 존재해야 하�
 
 - [WHATWG HTML Standard: `a` 요소와 텍스트 수준 의미](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-a-element)
 - [WHATWG HTML Standard: 링크와 URL](https://html.spec.whatwg.org/multipage/links.html)
-- [WHATWG HTML Standard: `strong` 요소](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-strong-element)
-- [WHATWG HTML Standard: `em` 요소](https://html.spec.whatwg.org/multipage/text-level-semantics.html#the-em-element)
 - [W3C WAI: 링크 목적 이해하기](https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html)
 
 공식 자료 확인일: 2026-08-18

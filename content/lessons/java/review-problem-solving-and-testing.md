@@ -165,7 +165,6 @@ for (int left = 0; left < values.length; left++) {
 
 ## 공식 근거 자료
 
-- [Java Language Specification SE 25 §14.14: for 문](https://docs.oracle.com/javase/specs/jls/se25/html/jls-14.html#jls-14.14)
 - [Java SE 25 API: `AssertionError`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/AssertionError.html)
 - [Java SE 25 API: `ArrayList` 성능 계약](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/ArrayList.html)
 - [Java SE 25 API: `HashMap` 성능 계약](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html)

@@ -262,8 +262,6 @@ article
 
 - [WHATWG HTML Standard: HTML 문법과 빈 요소](https://html.spec.whatwg.org/multipage/syntax.html)
 - [WHATWG HTML Standard: DOM의 요소와 콘텐츠 모델](https://html.spec.whatwg.org/multipage/dom.html)
-- [WHATWG HTML Standard: HTML 요소와 문서 구조](https://html.spec.whatwg.org/multipage/semantics.html#the-html-element)
-- [WHATWG HTML Standard: HTML 요소의 의미](https://html.spec.whatwg.org/multipage/dom.html#semantics-2)
 - [WHATWG HTML Standard: Section, Nav, Header 등](https://html.spec.whatwg.org/multipage/sections.html)
 
 공식 자료 확인일: 2026-08-18

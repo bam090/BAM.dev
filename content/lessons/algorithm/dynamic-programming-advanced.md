@@ -241,11 +241,8 @@ console.log(findCheapestCost(costs)); // 7
 ## 공식 자료
 
 - [NIST Dictionary of Algorithms and Data Structures: dynamic programming](https://xlinux.nist.gov/dads/HTML/dynamicprog.html)
-- [MIT OpenCourseWare 6.006: Dynamic Programming Recitation 15](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/6022dc36557c5e5df2ad0a77e9463855_MIT6_006S20_r15.pdf)
 - [MIT OpenCourseWare 6.006: Dynamic Programming, Part 2](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec16/)
 - [MDN: Array.from()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from)
-- [MDN: Array.prototype.fill()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill)
-- [MDN: Infinity](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Infinity)
 
 공식 자료 확인일: 2026-08-23
 

@@ -241,7 +241,4 @@ CSS가 예상과 다를 때 속성을 더 쓰기 전에 다음 순서로 확인�
 
 - [W3C CSS Cascading and Inheritance Level 5](https://www.w3.org/TR/css-cascade-5/)
 - [W3C CSS Display Module Level 3](https://www.w3.org/TR/css-display-3/)
-- [W3C CSS Flexible Box Layout Module Level 1](https://www.w3.org/TR/css-flexbox-1/)
-- [W3C CSS Grid Layout Module Level 2](https://www.w3.org/TR/css-grid-2/)
 - [W3C Media Queries Level 5](https://www.w3.org/TR/mediaqueries-5/)
-- [W3C CSS Object Model — `getComputedStyle()`](https://www.w3.org/TR/cssom-1/#dom-window-getcomputedstyle)

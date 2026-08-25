@@ -182,10 +182,6 @@ console.log([0, 1, 2, 5].map(countWays)); // [1, 1, 2, 8]
 - [NIST Dictionary of Algorithms and Data Structures: binary search](https://xlinux.nist.gov/dads/HTML/binarySearch.html)
 - [NIST Dictionary of Algorithms and Data Structures: dynamic programming](https://xlinux.nist.gov/dads/HTML/dynamicprog.html)
 - [NIST Dictionary of Algorithms and Data Structures: memoization](https://xlinux.nist.gov/dads/HTML/memoize.html)
-- [MDN: 반복과 순회](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Loops_and_iteration)
-- [MDN: 함수](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Functions)
-- [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
-- [MDN: Math.floor()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/floor)
 
 공식 자료 확인일: 2026-08-20
 

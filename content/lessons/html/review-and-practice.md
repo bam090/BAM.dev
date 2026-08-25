@@ -253,9 +253,7 @@ Elements 패널에서 보는 것은 원본 파일 문자열이 아니라 브라�
 ## 공식 자료
 
 - [WHATWG HTML Standard: HTML 파싱](https://html.spec.whatwg.org/multipage/parsing.html)
-- [WHATWG HTML Standard: 요소 사용 색인](https://html.spec.whatwg.org/multipage/indices.html#elements-3)
 - [Nu HTML Checker: 검사기의 목적과 한계](https://html5.validator.nu/about.html)
 - [W3C WAI: 기초 접근성 점검](https://www.w3.org/WAI/test-evaluate/preliminary/)
-- [W3C WAI: 접근성 평가 도구만으로 접근성을 결정할 수 없는 이유](https://www.w3.org/WAI/test-evaluate/tools/selecting/)
 
 공식 자료 확인일: 2026-08-18

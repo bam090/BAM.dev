@@ -231,5 +231,3 @@
 - [W3C CSS Display Module Level 3](https://www.w3.org/TR/css-display-3/)
 - [W3C CSS Box Model Module Level 3](https://www.w3.org/TR/css-box-3/)
 - [W3C CSS Overflow Module Level 3](https://www.w3.org/TR/css-overflow-3/)
-- [MDN — The box model](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Box_model)
-- [MDN — Overflowing content](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Styling_basics/Overflow)

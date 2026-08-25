@@ -213,7 +213,6 @@ ECMAScript 명세는 평균 접근 시간이 선형보다 빠르도록 요구하
 ## 공식 자료
 
 - [ECMAScript 명세: Keyed Collections](https://tc39.es/ecma262/multipage/keyed-collections.html)
-- [MDN: Keyed collections](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Keyed_collections)
 - [MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)
 - [MDN: Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set)
 

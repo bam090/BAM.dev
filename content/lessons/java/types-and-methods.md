@@ -158,5 +158,4 @@ static int makeLabel(int score) {
 
 - [Java Language Specification SE 25 §4: 타입·값·변수](https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html)
 - [Java Language Specification SE 25 §8.4: 메서드 선언](https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.4)
-- [Java Language Specification SE 25 §8.4.5: 메서드 결과](https://docs.oracle.com/javase/specs/jls/se25/html/jls-8.html#jls-8.4.5)
 - [Java SE 25 `javac` 명령 문서](https://docs.oracle.com/en/java/javase/25/docs/specs/man/javac.html)

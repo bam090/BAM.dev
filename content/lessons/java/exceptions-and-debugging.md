@@ -143,6 +143,4 @@ static int parsePositiveLevel(String text) {
 
 - [Java Language Specification SE 25 §11: 예외](https://docs.oracle.com/javase/specs/jls/se25/html/jls-11.html)
 - [Java Language Specification SE 25 §14.20: try 문](https://docs.oracle.com/javase/specs/jls/se25/html/jls-14.html#jls-14.20)
-- [Java SE 25 API: `RuntimeException`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/RuntimeException.html)
 - [Java SE 25 API: `Files.readString`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/nio/file/Files.html#readString(java.nio.file.Path))
-- [Java SE 25 API: `Integer.parseInt`](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html#parseInt(java.lang.String))

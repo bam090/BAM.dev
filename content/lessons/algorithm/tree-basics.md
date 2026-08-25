@@ -205,8 +205,6 @@ JavaScript 실행 환경의 호출 스택 한도를 넘을 만큼 깊은 트리�
 - [NIST Dictionary of Algorithms and Data Structures: tree](https://www.nist.gov/dads/HTML/tree.html)
 - [NIST Dictionary of Algorithms and Data Structures: preorder traversal](https://www.nist.gov/dads/HTML/preorderTraversal.html)
 - [NIST Dictionary of Algorithms and Data Structures: level-order traversal](https://www.nist.gov/dads/HTML/levelOrderTraversal.html)
-- [MIT OpenCourseWare 6.006: Binary Trees](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf)
-- [ECMAScript 명세: Array Objects](https://tc39.es/ecma262/multipage/indexed-collections.html#sec-array-objects)
 
 자료 확인일: 2026-08-23
 

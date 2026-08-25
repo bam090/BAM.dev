@@ -221,12 +221,8 @@ console.log(meetings[0].name); // "E"
 ## 공식 자료
 
 - [NIST Dictionary of Algorithms and Data Structures: heap](https://xlinux.nist.gov/dads/HTML/heap.html)
-- [NIST Dictionary of Algorithms and Data Structures: priority queue](https://xlinux.nist.gov/dads/HTML/priorityque.html)
 - [NIST Dictionary of Algorithms and Data Structures: greedy algorithm](https://xlinux.nist.gov/dads/HTML/greedyalgo.html)
-- [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
 - [MDN: Array.prototype.sort()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)
-- [MDN: Math.floor()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/floor)
-- [ECMAScript Language Specification: Array.prototype.sort](https://tc39.es/ecma262/multipage/indexed-collections.html#sec-array.prototype.sort)
 
 공식 자료 확인일: 2026-08-20
 
