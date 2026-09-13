@@ -21,7 +21,8 @@ HTML과 CSS 파일 읽기
 → 배경·글자·테두리와 효과 그리기
 ```
 
-실제 브라우저 엔진은 성능을 위해 단계를 생략하거나 묶을 수 있습니다. 학습할 때는 문제를 위에서 아래로 좁히기 위한 관찰 지도라고 이해하면 됩니다.
+실제 브라우저 엔진은 성능을 위해 단계를 생략하거나 묶을 수 있습니다.
+학습할 때는 문제를 위에서 아래로 좁히기 위한 관찰 지도라고 이해하면 됩니다.
 
 | 보이는 문제 | 먼저 확인할 개념 |
 | --- | --- |
@@ -50,7 +51,8 @@ CSS가 예상과 다를 때 속성을 더 쓰기 전에 다음 순서로 확인�
 7. Flexbox·Grid overlay로 축, track과 gap을 확인합니다.
 8. 화면 너비, 글자 확대, 키보드와 사용자 설정을 바꿔 다시 확인합니다.
 
-한 번에 여러 속성을 고치면 무엇이 원인이었는지 알기 어렵습니다. 가설 하나를 세우고 값 하나를 바꾼 뒤 결과를 기록하세요.
+한 번에 여러 속성을 고치면 무엇이 원인이었는지 알기 어렵습니다.
+가설 하나를 세우고 값 하나를 바꾼 뒤 결과를 기록하세요.
 
 ## 실습 1. 알림 카드 단계별 구현
 
@@ -241,4 +243,45 @@ CSS가 예상과 다를 때 속성을 더 쓰기 전에 다음 순서로 확인�
 
 - [W3C CSS Cascading and Inheritance Level 5](https://www.w3.org/TR/css-cascade-5/)
 - [W3C CSS Display Module Level 3](https://www.w3.org/TR/css-display-3/)
+- [W3C CSS Flexible Box Layout Module Level 1](https://www.w3.org/TR/css-flexbox-1/)
+- [W3C CSS Grid Layout Module Level 2](https://www.w3.org/TR/css-grid-2/)
+- [W3C CSS Positioned Layout Module Level 3 — Containing Blocks of Positioned Boxes](https://www.w3.org/TR/css-position-3/#def-cb)
 - [W3C Media Queries Level 5](https://www.w3.org/TR/mediaqueries-5/)
+- [W3C CSS Object Model — `getComputedStyle()`](https://www.w3.org/TR/cssom-1/#dom-window-getcomputedstyle)
+
+## 면접 답변 예시
+
+아래 답변은 확인 문제에 면접관에게 설명하듯 답한 예시입니다.
+
+### 답변 1
+
+CSS가 전혀 적용되지 않으면 먼저 `<link>` 경로와 Network 요청, 실제 요소와 선택자가 일치하는지 확인합니다.
+선언이 취소선으로 보이면 같은 속성에서 이긴 선언과 캐스케이드 기준을 확인합니다.
+
+### 답변 2
+
+카드가 지정한 width보다 커졌다면 `width`가 content box와 border box 중 어느 범위를 가리키는지 먼저 확인합니다.
+그다음 content 너비에 좌우 padding과 border를 함께 계산합니다.
+
+### 답변 3
+
+한 축을 중심으로 정렬하면 Flexbox를, 행과 열 두 축의 track 관계를 설계하면 Grid를 먼저 검토합니다.
+
+### 답변 4
+
+먼저 배지의 containing block, 즉 위치 계산 기준을 만드는 가장 가까운 조상을 확인합니다.
+이 교안 예제에서는 `position: static`이 아닌 조상이 그 기준이므로 의도한 카드에 `position: relative`가 있는지 보겠습니다.
+
+### 답변 5
+
+분기점은 특정 기기 이름의 숫자보다 문장, 카드와 조작 요소가 실제로 불편해지는 위치를 기준으로 정합니다.
+
+### 답변 6
+
+터치 환경에는 지속적인 hover가 없을 수 있어 정보나 조작을 놓칠 수 있습니다.
+Focus 스타일이 없으면 키보드 사용자도 현재 위치를 알기 어렵습니다.
+
+### 답변 7
+
+긴 콘텐츠와 200% 확대를 확인하면 실제 사용 조건에서 내용이 잘리거나 가로로 넘치는 문제를 찾을 수 있습니다.
+키보드로는 초점이 보이고 DOM 순서대로 조작할 수 있는지 확인합니다.

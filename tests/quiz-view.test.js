@@ -4,6 +4,8 @@ import {
   renderQuizLoadingView,
   renderQuizQuestionView,
   renderQuizResultView,
+  renderQuizScopeControls,
+  renderQuizEmptyView,
   renderReviewNavigationLink,
 } from "../src/ui/quiz-view.js";
 
@@ -177,7 +179,7 @@ test("문제·선택지·해설의 백틱 코드는 안전한 인라인 코드�
   assert.doesNotMatch(html, /`(?:total|console\.log)/);
 });
 
-test("채점 후 선택지를 잠그고 정답 설명과 네 선택지 feedback을 모두 표시한다", () => {
+test("채점 후 선택지를 잠그고 정답·선택한 오답의 근거를 먼저 표시한다", () => {
   const html = renderQuestion({
     selectedOptionId: "b",
     gradedAnswer,
@@ -186,10 +188,19 @@ test("채점 후 선택지를 잠그고 정답 설명과 네 선택지 feedback�
   assert.equal((html.match(/data-quiz-option[^>]* disabled/g) ?? []).length, 4);
   assert.match(html, /오답입니다/);
   assert.match(html, /<strong>정답 설명<\/strong> 맞습니다/);
-  assert.equal((html.match(/class="quiz-option-feedback"/g) ?? []).length, 4);
+  assert.equal((html.match(/class="quiz-option-feedback"/g) ?? []).length, 2);
+  assert.match(html, /data-quiz-feedback-toggle aria-expanded="false"/);
+  assert.doesNotMatch(html, /비교식은 boolean을 반환합니다/);
   assert.match(html, /오답 · 내 선택/);
   assert.match(html, /data-quiz-next aria-disabled="false"/);
   assert.match(html, /aria-valuenow="7"/);
+});
+
+test("다른 보기 해설은 사용자가 펼친 경우 모두 보이며 펼침 상태를 전달한다", () => {
+  const html = renderQuestion({ selectedOptionId: "b", gradedAnswer, otherFeedbackExpanded: true });
+  assert.equal((html.match(/class="quiz-option-feedback"/g) ?? []).length, 4);
+  assert.match(html, /data-quiz-feedback-toggle aria-expanded="true"/);
+  assert.match(html, /비교식은 boolean을 반환합니다/);
 });
 
 test("채점 결과는 이름이 있는 단일 focus region으로 제공한다", () => {
@@ -258,4 +269,72 @@ test("최근 결과와 현재 컬렉션의 저장된 오답 수를 헤더에 표
   });
   assert.match(html, /최근 결과 <strong>9\/14 \(64%\)<\/strong>/);
   assert.match(html, /저장된 오답 <strong>5문항<\/strong>/);
+});
+
+test("단원 선택기는 과정명·문항 수·저장 기록 동작을 구분하고 표시 텍스트를 escape한다", () => {
+  const html = renderQuizScopeControls({
+    lessons: [{ id: 'lesson"bad', title: "<함수>", courseName: "<원문>", questionCount: 2 }],
+    selectedLessonId: 'lesson"bad',
+    recentAttempt: { score: 1, total: 2 },
+    incorrectQuestionCount: 1,
+  });
+  assert.match(html, /<label for="quiz-lesson-scope">/);
+  assert.match(html, /<option value="lesson&quot;bad" selected>&lt;원문&gt; · &lt;함수&gt; \(2문항\)/);
+  assert.match(html, /data-quiz-retry="saved-incorrect">저장된 오답 다시 풀기 \(1\)/);
+  assert.match(html, /data-quiz-history>최근 완료 결과 보기/);
+  assert.match(html, /선택과 채점 상태는 이 브라우저에 저장됩니다/);
+  assert.match(html, /완료 기록은 유지됩니다/);
+  const emptyHistory = renderQuizScopeControls();
+  assert.match(emptyHistory, /data-quiz-retry="saved-incorrect" disabled/);
+  assert.match(emptyHistory, /data-quiz-history disabled/);
+});
+
+test("문제 없음 화면은 선택기와 읽기 링크를 유지하고 제출·점수를 표시하지 않는다", () => {
+  const html = renderQuizEmptyView({
+    title: "<단원>",
+    scopeControls: renderQuizScopeControls(),
+    lessonHref: "#/learn/javascript/functions",
+  });
+  assert.match(html, /연결된 문제가 없습니다/);
+  assert.match(html, /&lt;단원&gt;/);
+  assert.match(html, /data-quiz-lesson/);
+  assert.match(html, /href="#\/learn\/javascript\/functions"/);
+  assert.doesNotMatch(html, /data-quiz-check|class="quiz-score"/);
+});
+
+test("채점 전후 관련 개념 버튼을 제공하고 내부 ID나 새 탭 이동을 노출하지 않는다", () => {
+  const options = {
+    question: { ...question, conceptId: 'js.functions<img src="x">' },
+    learningObjective: "`return`과 <script>를 구분한다.",
+    lessonHref: "#/learn/javascript-notes/functions",
+    lessonTitle: "<함수>",
+    relatedConceptTitle: "<함수의 반환>",
+  };
+  const before = renderQuestion(options);
+  assert.match(before, /<strong>학습 목표<\/strong> <code>return<\/code>과 &lt;script&gt;/);
+  assert.doesNotMatch(before, /근거 교안|정답 설명/);
+  const after = renderQuestion({ ...options, gradedAnswer, selectedOptionId: "b" });
+  for (const html of [before, after]) {
+    assert.match(html, /data-related-concept aria-haspopup="dialog"/);
+    assert.match(html, /관련 개념: &lt;함수의 반환&gt;/);
+    assert.doesNotMatch(html, /target="_blank"|js\.functions/);
+  }
+  assert.doesNotMatch(after, /<script>|<img /);
+});
+
+test("저장 결과에는 문항별 정오·근거와 저장 당시 날짜 및 정답률 한계를 표시한다", () => {
+  const html = renderQuizResultView({
+    title: "함수 복습",
+    summary: { correct: 0, total: 1, percent: 0, incorrectQuestionIds: [question.id] },
+    completedAt: "2026-09-09T12:00:00.000Z",
+    questionResults: [{
+      prompt: "<img src=x>", isCorrect: false, lessonHref: "#/learn/javascript/functions", lessonTitle: "함수", conceptId: "js.functions",
+    }],
+  });
+  assert.match(html, /2026-09-09 저장 당시 결과/);
+  assert.match(html, /<li><strong>오답<\/strong> &lt;img src=x&gt;/);
+  assert.match(html, /관련 학습문서: 함수/);
+  assert.doesNotMatch(html, /관련 개념: js.functions/);
+  assert.match(html, /독립적인 구현 능력이나 완전한 숙련을 뜻하지 않습니다/);
+  assert.doesNotMatch(html, /<img /);
 });

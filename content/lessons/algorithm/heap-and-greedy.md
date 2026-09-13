@@ -1,4 +1,4 @@
-# 10. 힙과 그리디
+# 03. 힙과 그리디
 
 ## 학습 목표
 
@@ -16,9 +16,9 @@
 
 ## 개념 연결
 
-- 선행: `algo.sorting`, `algo.tree`, `algo.tree-traversal`에서 배운 순서 규칙과 부모·자식 구조를 사용합니다.
+- 선행: `algo.list`, `algo.dictionary`, `algo.hashing`에서 배운 값 저장과 키 기반 조회를 사용합니다.
 - 이 단원: `algo.heap`, `algo.priority-queue`, `algo.greedy`를 사용해 우선순위 처리와 선택 전략을 익힙니다.
-- 후속: `algo.dynamic-programming-advanced`, `algo.weighted-graph`, `algo.dijkstra`에서 상태 설계와 최소 비용 탐색으로 이어집니다.
+- 후속: `algo.sorting`, `algo.two-pointers`, `algo.brute-force`에서 순서와 후보를 다루는 방법으로 이어집니다.
 
 ## 힙과 우선순위 큐
 
@@ -221,8 +221,12 @@ console.log(meetings[0].name); // "E"
 ## 공식 자료
 
 - [NIST Dictionary of Algorithms and Data Structures: heap](https://xlinux.nist.gov/dads/HTML/heap.html)
+- [NIST Dictionary of Algorithms and Data Structures: priority queue](https://xlinux.nist.gov/dads/HTML/priorityque.html)
 - [NIST Dictionary of Algorithms and Data Structures: greedy algorithm](https://xlinux.nist.gov/dads/HTML/greedyalgo.html)
+- [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
 - [MDN: Array.prototype.sort()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort)
+- [MDN: Math.floor()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Math/floor)
+- [ECMAScript Language Specification: Array.prototype.sort](https://tc39.es/ecma262/multipage/indexed-collections.html#sec-array.prototype.sort)
 
 공식 자료 확인일: 2026-08-20
 

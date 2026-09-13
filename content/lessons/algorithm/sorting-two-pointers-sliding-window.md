@@ -15,7 +15,7 @@
 
 ## 개념 연결
 
-- 선행: `algo.list`, `algo.condition`, `algo.hashing`
+- 선행: `algo.list`, `algo.condition`, `algo.heap`
 - 이 단원: `algo.sorting`, `algo.two-pointers`, `algo.sliding-window`
 - 후속: `algo.brute-force`, `algo.number-theory`, `algo.binary-search`
 

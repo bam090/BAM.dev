@@ -20,7 +20,7 @@
 
 - 선행: `algo.graph-representation`, `algo.bfs`, `algo.dfs`, `algo.stack`, `algo.queue`에서 배운 연결 관계와 탐색 순서를 사용합니다.
 - 이 단원: `algo.tree`, `algo.tree-traversal`로 계층 구조와 노드 방문 순서를 익힙니다.
-- 후속: `algo.heap`, `algo.priority-queue`, `algo.dynamic-programming-advanced`에서 트리의 순서 규칙과 하위 구조의 답을 재사용하는 방법으로 이어집니다.
+- 후속: `algo.simulation`, `algo.dynamic-programming-advanced`에서 계층 상태를 순서대로 갱신하고 하위 구조의 답을 재사용하는 방법으로 이어집니다.
 
 ## 트리란?
 
@@ -126,10 +126,7 @@ console.log(levelOrder(tree)); // [ 'A', 'B', 'C', 'D', 'E' ]
 ```
 
 두 함수 모두 모든 노드를 한 번씩 방문하므로 노드가 `n`개일 때 방문 작업은 `O(n)`입니다.
-트리 높이가 `h`일 때 전위 순회의 재귀 호출 추가 공간은 `O(h)`입니다.
-JavaScript 실행 환경의 호출 스택 한도를 넘을 만큼 깊은 트리라면 재귀 대신 명시적 스택과 반복문을 사용해야 합니다.
-레벨 순회 예제는 처리한 노드를 `queue` 배열에서 제거하지 않으므로 큐 배열의 추가 공간은 `O(n)`입니다.
-처리한 앞부분을 회수하는 별도 큐 구현에서는 실제 대기 중인 노드 수, 즉 트리의 최대 너비가 공간 사용량을 결정합니다.
+전위 순회의 재귀 호출 공간은 트리 높이의 영향을 받고, 레벨 순회의 큐 공간은 한 깊이에 모인 노드 수의 영향을 받습니다.
 
 ## 단계별 실행 흐름
 
@@ -205,6 +202,8 @@ JavaScript 실행 환경의 호출 스택 한도를 넘을 만큼 깊은 트리�
 - [NIST Dictionary of Algorithms and Data Structures: tree](https://www.nist.gov/dads/HTML/tree.html)
 - [NIST Dictionary of Algorithms and Data Structures: preorder traversal](https://www.nist.gov/dads/HTML/preorderTraversal.html)
 - [NIST Dictionary of Algorithms and Data Structures: level-order traversal](https://www.nist.gov/dads/HTML/levelOrderTraversal.html)
+- [MIT OpenCourseWare 6.006: Binary Trees](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/e215840fd7b0e8cb07916a65c17252b2_MIT6_006S20_r06.pdf)
+- [ECMAScript 명세: Array Objects](https://tc39.es/ecma262/multipage/indexed-collections.html#sec-array-objects)
 
 자료 확인일: 2026-08-23
 

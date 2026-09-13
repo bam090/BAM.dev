@@ -43,6 +43,28 @@ test("유효한 객관식 컬렉션을 승인한다", () => {
   assert.equal(assertValidQuizCollection(validCollection, curriculum), validCollection);
 });
 
+test("반입 교안 문항에는 학습 목표가 필수이고 기존 문항은 이전 형식으로 유효하다", () => {
+  const importedCurriculum = structuredClone(curriculum);
+  importedCurriculum.lessons[0].source = { originalPath: "profile/학습/함수.md" };
+  assert.ok(validateQuizCollection(validCollection, importedCurriculum).some((error) => error.includes("learningObjective")));
+
+  const withObjective = structuredClone(validCollection);
+  withObjective.questions[0].learningObjective = "언어 문법과 실행 환경 API를 구분한다.";
+  assert.deepEqual(validateQuizCollection(withObjective, importedCurriculum), []);
+
+  for (const invalidObjective of [" ", 5, null]) {
+    withObjective.questions[0].learningObjective = invalidObjective;
+    assert.ok(validateQuizCollection(withObjective, curriculum).some((error) => error.includes("learningObjective")));
+  }
+  assert.deepEqual(validateQuizCollection(validCollection, curriculum), []);
+});
+
+test("미응답과 존재하지 않는 선택지는 채점하지 않는다", () => {
+  for (const selection of [undefined, null, "", "z"]) {
+    assert.throws(() => gradeQuestion(validCollection.questions[0], selection));
+  }
+});
+
 test("교안에 없는 개념, 중복 선택지, 복수 정답을 거부한다", () => {
   const invalid = structuredClone(validCollection);
   invalid.questions[0].conceptId = "js.unknown";

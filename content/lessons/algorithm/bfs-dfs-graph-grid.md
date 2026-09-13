@@ -17,7 +17,7 @@ BFS와 DFS를 익히면 연결된 곳을 빠짐없이 찾고 목적에 맞는 �
 
 - 선행: `algo.stack`, `algo.queue`, `js.set-collection`
 - 이 단원: `algo.graph-representation`, `algo.bfs`, `algo.dfs`, `algo.grid-traversal`
-- 후속: `algo.tree`, `algo.tree-traversal`, `algo.heap`, `algo.dijkstra`
+- 후속: `algo.tree`, `algo.tree-traversal`, `algo.simulation`, `algo.dijkstra`
 
 ## 그래프와 인접 리스트
 
@@ -252,6 +252,7 @@ BFS는 큐에 넣을 때 방문 또는 거리를 기록해야 같은 정점의 �
 - [MIT OpenCourseWare: Breadth-First Search](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec9/)
 - [MIT OpenCourseWare: Depth-First Search](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec10/)
 - [MDN: Array.from()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from)
+- [MDN: Array.prototype.fill()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/fill)
 
 공식 자료 확인일: 2026-08-20
 

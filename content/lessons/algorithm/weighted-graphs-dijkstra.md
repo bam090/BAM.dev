@@ -82,8 +82,7 @@ if (queuedDistance !== distance[current]) continue;
 ## 최소 예제
 
 JavaScript에는 기본 내장 우선순위 큐가 없으므로 숫자 거리로 비교하는 최소 힙을 함께 사용합니다.
-그래프에는 정점이 하나 이상 있어야 하며 정점은 `0`부터 `graph.length - 1`까지의 정수로 표현합니다.
-간선 가중치는 `0` 이상의 유한한 `Number`이고, 누적 경로 비용도 필요한 정밀도와 유한 범위 안에 머문다고 가정합니다.
+입력 그래프의 간선은 유한한 숫자이며 가중치는 `0` 이상이어야 합니다.
 
 ```javascript
 function pushMinHeap(heap, item) {
@@ -137,20 +136,8 @@ function popMinHeap(heap) {
 }
 
 function dijkstra(graph, start) {
-  if (!Array.isArray(graph) || graph.length === 0) {
-    throw new RangeError("그래프에는 정점이 하나 이상 필요합니다.");
-  }
-
-  if (!Number.isInteger(start) || start < 0 || start >= graph.length) {
-    throw new RangeError("시작 정점이 그래프 범위를 벗어났습니다.");
-  }
-
   for (const edges of graph) {
-    for (const [next, weight] of edges) {
-      if (!Number.isInteger(next) || next < 0 || next >= graph.length) {
-        throw new RangeError("도착 정점이 그래프 범위를 벗어났습니다.");
-      }
-
+    for (const [, weight] of edges) {
       if (!Number.isFinite(weight) || weight < 0) {
         throw new RangeError("가중치는 0 이상의 유한한 숫자여야 합니다.");
       }
@@ -169,10 +156,6 @@ function dijkstra(graph, start) {
 
     for (const [next, weight] of graph[current]) {
       const candidate = queuedDistance + weight;
-
-      if (!Number.isFinite(candidate)) {
-        throw new RangeError("누적 경로 비용이 Number의 유한 범위를 벗어났습니다.");
-      }
 
       if (candidate >= distance[next]) continue;
 
@@ -199,10 +182,8 @@ console.log(dijkstra(graph, 0)); // [0, 4, 2, 5]
 
 이 구현은 더 짧은 거리를 발견할 때마다 새 큐 항목을 넣습니다.
 각 간선은 현재 최단 거리인 정점에서 한 번 확인되고, 성공한 완화는 간선 수보다 많을 수 없습니다.
-큐에 중복 항목을 허용하는 이 예제의 시간 복잡도는 `O((V + E) log(V + E + 1))`, 추가 공간은 `O(V + E)`입니다.
+큐에 중복 항목을 허용하는 이 예제의 시간 복잡도는 `O((V + E) log E)`, 추가 공간은 `O(V + E)`입니다.
 `V`는 정점 수이고 `E`는 간선 수입니다.
-`+ 1`은 간선이 없는 `E = 0`인 그래프에서도 로그 항을 정의하기 위한 표기입니다.
-간선이 없어도 시작 정점의 거리는 `0`이고, 도달할 수 없는 나머지 정점의 거리는 `Infinity`로 남습니다.
 
 ## 단계별 실행 흐름
 
@@ -264,9 +245,12 @@ BFS는 지나간 간선 수를 기준으로 가까운 정점을 처리합니다.
 
 ## 공식 자료
 
+- [NIST Dictionary of Algorithms and Data Structures: Dijkstra's algorithm](https://xlinux.nist.gov/dads/HTML/dijkstraalgo.html)
+- [NIST Dictionary of Algorithms and Data Structures: shortest path](https://xlinux.nist.gov/dads/HTML/shortestpath.html)
 - [MIT OpenCourseWare 6.006: Weighted Shortest Paths](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec11/)
 - [MIT OpenCourseWare 6.006: Dijkstra's Algorithm](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec13/)
 - [MDN: Number.isFinite()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/isFinite)
+- [MDN: Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)
 
 공식 자료 확인일: 2026-08-23
 

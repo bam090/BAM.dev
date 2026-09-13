@@ -1,11 +1,13 @@
 # ADR 0001: 1차는 런타임 의존성 없이 구현한다
 
-- 상태: 채택
+- 상태: `[대체됨]` 목표 프런트엔드에는 [`DEC-FRONTEND-01`](../roadmap.md#2026-09-04-확정-제품-결정) 적용
 - 날짜: 2026-08-16
+
+> `[현재 사실]` 이 ADR은 외부 런타임 의존성이 없는 현재 HTML·CSS·Vanilla JavaScript 구현의 역사적 기준선으로 계속 설명력을 가집니다. 다만 목표 프런트엔드에서 React·TypeScript 의존성을 금지하는 현재 gate는 아닙니다. 정확한 버전·빌드 도구와 전환 경계는 [`DEC-FRONTEND-MIGRATION-01`](../roadmap.md#bam-결정-대기-목록)과 후속 ADR을 기다립니다. 설치형 shell도 별도 [`local-application.md`](../designs/local-application.md)의 prototype·결정 절차를 따릅니다.
 
 ## 결정
 
-HTML, CSS, ES modules와 Node.js 내장 기능만 사용합니다. 개발 서버, 정적 빌드, 테스트, 콘텐츠 검증도 저장소의 작은 스크립트로 제공합니다.
+1차 구현은 HTML, CSS, ES modules와 Node.js 내장 기능만 사용합니다. 개발 서버, 정적 빌드, 테스트, 콘텐츠 검증도 저장소의 작은 스크립트로 제공합니다.
 
 ## 이유
 

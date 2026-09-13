@@ -79,7 +79,6 @@ export function validateCurriculum(curriculum) {
   }
 
   const courseIds = new Set();
-  const coursesById = new Map();
   for (const [index, course] of courses.entries()) {
     const label = `courses[${index}]`;
     if (!course?.id || !/^[a-z][a-z0-9-]*$/.test(course.id)) {
@@ -90,7 +89,6 @@ export function validateCurriculum(curriculum) {
       errors.push(`과정 ID가 중복됩니다: ${course.id}`);
     }
     courseIds.add(course.id);
-    coursesById.set(course.id, course);
     if (!categoryIds.has(course.categoryId)) {
       errors.push(`${label}.categoryId가 존재하지 않는 카테고리를 가리킵니다.`);
     }
@@ -132,7 +130,7 @@ export function validateCurriculum(curriculum) {
     if (!languageIds.has(lesson?.languageId)) {
       errors.push(`${label}.languageId가 존재하지 않는 언어를 가리킵니다.`);
     }
-    const course = coursesById.get(lesson?.courseId);
+    const course = courses.find((item) => item.id === lesson?.courseId);
     if (!courseIds.has(lesson?.courseId)) {
       errors.push(`${label}.courseId가 존재하지 않는 과정을 가리킵니다.`);
     } else if (course.languageId !== lesson.languageId) {
@@ -141,8 +139,47 @@ export function validateCurriculum(curriculum) {
     if (!Number.isInteger(lesson?.order) || lesson.order < 1) {
       errors.push(`${label}.order는 1 이상의 정수여야 합니다.`);
     }
-    if (!Array.isArray(lesson?.objectives) || lesson.objectives.length === 0) {
+    if (lesson?.archivedFromCatalog !== undefined && typeof lesson.archivedFromCatalog !== "boolean") {
+      errors.push(`${label}.archivedFromCatalog는 boolean이어야 합니다.`);
+    }
+    if (lesson?.answerHeading !== undefined &&
+        (typeof lesson.answerHeading !== "string" || !lesson.answerHeading.trim())) {
+      errors.push(`${label}.answerHeading은 비어 있지 않은 절 제목이어야 합니다.`);
+    }
+    if (
+      !Array.isArray(lesson?.objectives) ||
+      lesson.objectives.length === 0 ||
+      lesson.objectives.some((objective) => typeof objective !== "string" || !objective.trim())
+    ) {
       errors.push(`${label}.objectives에는 한 개 이상의 목표가 필요합니다.`);
+    }
+    const source = lesson?.source;
+    const importFields = ["originalPath", "sha256", "importedAt", "importMode"];
+    if (source && importFields.some((field) => Object.hasOwn(source, field))) {
+      if (importFields.some((field) => typeof source[field] !== "string" || !source[field].trim())) {
+        errors.push(`${label}.source에는 originalPath, sha256, importedAt, importMode가 모두 필요합니다.`);
+      }
+      if (
+        !/^(?:profile\/|wiki\/학습자료\/밤데브 학습문서\/).+\.md$/.test(source.originalPath ?? "") ||
+        /[\\\u0000-\u001f]/.test(source.originalPath ?? "") ||
+        String(source.originalPath).split("/").some((part) => !part || part === "." || part === "..")
+      ) {
+        errors.push(`${label}.source.originalPath는 profile 또는 wiki/학습자료/밤데브 학습문서 아래의 안전한 상대 Markdown 경로여야 합니다.`);
+      }
+      if (!/^[a-f0-9]{64}$/.test(source.sha256 ?? "")) {
+        errors.push(`${label}.source.sha256은 소문자 SHA-256 해시여야 합니다.`);
+      }
+      const importDate = new Date(`${source.importedAt}T00:00:00Z`);
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(source.importedAt ?? "") ||
+        !Number.isFinite(importDate.getTime()) ||
+        importDate.toISOString().slice(0, 10) !== source.importedAt
+      ) {
+        errors.push(`${label}.source.importedAt는 유효한 YYYY-MM-DD 날짜여야 합니다.`);
+      }
+      if (!["copy", "excerpt", "derived"].includes(source.importMode)) {
+        errors.push(`${label}.source.importMode는 copy, excerpt 또는 derived여야 합니다.`);
+      }
     }
     if (!Array.isArray(lesson?.conceptIds) || lesson.conceptIds.length === 0) {
       errors.push(`${label}.conceptIds에는 한 개 이상의 개념 ID가 필요합니다.`);

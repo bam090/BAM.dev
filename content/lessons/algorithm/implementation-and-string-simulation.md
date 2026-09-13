@@ -1,4 +1,4 @@
-# 02. 구현과 문자열 시뮬레이션
+# 10. 구현과 문자열 시뮬레이션
 
 ## 학습 목표
 
@@ -15,9 +15,9 @@
 
 ## 개념 연결
 
-- 선행: `algo.list`, `algo.condition`, `js.operators`
+- 선행: `algo.list`, `algo.condition`, `algo.grid-traversal`
 - 이 단원: `algo.simulation`, `algo.string-processing`
-- 후속: `algo.hashing`, `js.map-collection`, `js.set-collection`
+- 후속: `algo.dynamic-programming-advanced`, `algo.weighted-graph`, `algo.dijkstra`
 
 ## 구현과 시뮬레이션이란?
 
@@ -54,36 +54,21 @@ console.log(commands); // ["R 2", "L 1", "R 3"]
 `trim()`은 각 명령 앞뒤의 공백을 제거합니다.
 `filter()`는 비어 있는 조각을 제외합니다.
 
-명령 안의 방향과 거리는 앞뒤 공백을 제거한 뒤 `\s+` 정규식으로 나눕니다.
-`\s+`는 연속된 공백과 탭을 하나의 구분자로 다룹니다.
-문자열로 읽은 거리는 `Number()`로 바꾼 뒤 유한한 `0` 이상의 숫자인지 확인합니다.
+명령 안의 방향과 거리는 다시 공백으로 나눌 수 있습니다.
+문자열로 읽은 거리는 `Number()`로 숫자로 바꾼 뒤 계산합니다.
 
 ```javascript
-const command = "  R\t  4  ";
-const tokens = command.trim().split(/\s+/);
-
-if (tokens.length !== 2) {
-  throw new Error("명령은 방향과 거리 두 값이어야 합니다.");
-}
-
-const [direction, distanceText] = tokens;
+const command = "R 4";
+const [direction, distanceText] = command.split(" ");
 const distance = Number(distanceText);
-
-if (direction !== "R" && direction !== "L") {
-  throw new Error("방향은 R 또는 L이어야 합니다.");
-}
-
-if (!Number.isFinite(distance) || distance < 0) {
-  throw new Error("거리는 0 이상의 유한한 숫자여야 합니다.");
-}
 
 console.log(direction); // "R"
 console.log(distance); // 4
 console.log(typeof distance); // "number"
 ```
 
-토큰 수를 먼저 확인하면 `"R"`처럼 거리가 없거나 `"R 2 extra"`처럼 값이 많은 명령을 계산 전에 거부할 수 있습니다.
-방향과 거리를 각각 확인하면 잘못된 입력이 `NaN` 계산이나 반대 방향 이동으로 조용히 이어지는 일을 막을 수 있습니다.
+문제에서 입력 형식을 보장한다면 그 형식에 맞춰 파싱합니다.
+직접 입력을 받는 프로그램이라면 빈 문자열과 숫자로 바꿀 수 없는 값도 별도로 확인해야 합니다.
 
 ## 상태를 갱신하는 규칙 만들기
 
@@ -92,25 +77,12 @@ console.log(typeof distance); // "number"
 
 ```javascript
 function move(position, command) {
-  const tokens = command.trim().split(/\s+/);
-
-  if (tokens.length !== 2) {
-    throw new Error("명령은 방향과 거리 두 값이어야 합니다.");
-  }
-
-  const [direction, distanceText] = tokens;
+  const [direction, distanceText] = command.split(" ");
   const distance = Number(distanceText);
 
-  if (direction !== "R" && direction !== "L") {
-    throw new Error("방향은 R 또는 L이어야 합니다.");
-  }
-
-  if (!Number.isFinite(distance) || distance < 0) {
-    throw new Error("거리는 0 이상의 유한한 숫자여야 합니다.");
-  }
-
   if (direction === "R") return position + distance;
-  return position - distance;
+  if (direction === "L") return position - distance;
+  return position;
 }
 
 console.log(move(2, "R 3")); // 5
@@ -118,7 +90,7 @@ console.log(move(2, "L 1")); // 1
 ```
 
 `move()`는 한 명령의 계산만 담당하므로 전체 반복문과 분리해서 확인할 수 있습니다.
-형식, 방향이나 거리가 입력 계약과 다르면 상태를 바꾸지 않고 오류를 발생시킵니다.
+알 수 없는 방향일 때 현재 위치를 그대로 반환하는 규칙은 이 예제에서 정한 입력 계약입니다.
 
 ## 실행 흐름
 
@@ -136,23 +108,8 @@ function simulateRobot(commandText, minPosition, maxPosition) {
   const visited = [position];
 
   for (const command of commands) {
-    const tokens = command.trim().split(/\s+/);
-
-    if (tokens.length !== 2) {
-      throw new Error("명령은 방향과 거리 두 값이어야 합니다.");
-    }
-
-    const [direction, distanceText] = tokens;
+    const [direction, distanceText] = command.split(" ");
     const distance = Number(distanceText);
-
-    if (direction !== "R" && direction !== "L") {
-      throw new Error("방향은 R 또는 L이어야 합니다.");
-    }
-
-    if (!Number.isFinite(distance) || distance < 0) {
-      throw new Error("거리는 0 이상의 유한한 숫자여야 합니다.");
-    }
-
     const nextPosition = direction === "R"
       ? position + distance
       : position - distance;
@@ -237,9 +194,12 @@ console.log(countForwardMoves("FFLFR")); // 3
 
 ## 공식 자료
 
+- [ECMAScript 명세: Text Processing](https://tc39.es/ecma262/multipage/text-processing.html)
+- [MDN: String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)
 - [MDN: String.prototype.split()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/split)
 - [MDN: Number()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number)
 - [MIT OpenCourseWare: Simulation Algorithms](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-fall-2011/79ba958de1d1c186610e6869e5b46788_MIT6_006F11_rec08.pdf)
+- [Princeton Algorithms: Strings](https://algs4.cs.princeton.edu/50strings/)
 
 공식 자료 확인일: 2026-08-20
 
@@ -255,8 +215,7 @@ console.log(countForwardMoves("FFLFR")); // 3
 ### 답변 2
 
 먼저 쉼표를 기준으로 `split()`하고 각 조각에 `trim()`을 적용합니다.
-그다음 명령을 `trim().split(/\s+/)`로 나누어 방향과 거리 문자열을 얻고 거리는 `Number()`로 변환합니다.
-토큰이 두 개인지, 방향이 `R` 또는 `L`인지, 거리가 `0` 이상의 유한한 숫자인지 확인한 뒤 계산합니다.
+그다음 명령을 공백으로 나누어 방향과 거리 문자열을 얻고 거리는 `Number()`로 변환합니다.
 
 ### 답변 3
 

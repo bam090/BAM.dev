@@ -1,4 +1,4 @@
-# 03. 해시와 Map·Set
+# 02. 해시와 Map·Set
 
 ## 학습 목표
 
@@ -17,7 +17,7 @@ JavaScript의 `Map`과 `Set`을 사용하면 키와 값의 관계 또는 값의 
 
 - 선행: `algo.list`, `algo.condition`, `algo.dictionary`
 - 이 단원: `algo.hashing`, `js.map-collection`, `js.set-collection`
-- 후속: `algo.sorting`, `algo.two-pointers`, `algo.sliding-window`
+- 후속: `algo.heap`, `algo.priority-queue`, `algo.greedy`
 
 ## 해시 사고란?
 
@@ -213,6 +213,7 @@ ECMAScript 명세는 평균 접근 시간이 선형보다 빠르도록 요구하
 ## 공식 자료
 
 - [ECMAScript 명세: Keyed Collections](https://tc39.es/ecma262/multipage/keyed-collections.html)
+- [MDN: Keyed collections](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Keyed_collections)
 - [MDN: Map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)
 - [MDN: Set](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set)
 

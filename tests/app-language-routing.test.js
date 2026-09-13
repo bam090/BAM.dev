@@ -49,11 +49,8 @@ function createRouteHarness(curriculumOverride = curriculum) {
     openCodingTestListRoute() {
       opened.push({ view: "coding-test-list" });
     },
-    async openCodingTestRoute(languageId, slug) {
-      opened.push({ view: "coding-test", languageId, slug });
-    },
-    async openReviewRoute(languageId) {
-      opened.push({ view: "review", languageId });
+    async openReviewRoute(languageId, lessonId) {
+      opened.push({ view: "review", languageId, ...(lessonId ? { lessonId } : {}) });
     },
     async openCodeQuestRoute(languageId, slug) {
       opened.push({ view: "quest", languageId, slug });
@@ -61,25 +58,9 @@ function createRouteHarness(curriculumOverride = curriculum) {
     async openLessonRoute() {
       opened.push({ view: "lesson" });
     },
-    openMyPageRoute() {
-      opened.push({ view: "my-page" });
-    },
   });
   return { app, opened };
 }
-
-test("마이페이지와 잘못된 마이페이지 하위 경로를 전용 화면으로 연다", async (t) => {
-  const replacements = installWindow(t, "#/my");
-  const { app, opened } = createRouteHarness();
-
-  await app.openRoute();
-  assert.deepEqual(opened, [{ view: "my-page" }]);
-
-  window.location.hash = "#/my/private";
-  await app.openRoute();
-  assert.deepEqual(opened.at(-1), { view: "my-page" });
-  assert.equal(replacements.at(-1), "#/my");
-});
 
 test("탐색 가능한 언어의 객관식 해시를 JavaScript로 되돌리지 않고 연다", async (t) => {
   const replacements = installWindow(t, "#/review/html");
@@ -88,6 +69,14 @@ test("탐색 가능한 언어의 객관식 해시를 JavaScript로 되돌리지 
   await app.openRoute();
 
   assert.deepEqual(opened, [{ view: "review", languageId: "html" }]);
+  assert.deepEqual(replacements, []);
+});
+
+test("교안별 객관식 해시의 세 번째 경로를 단원 선택으로 전달한다", async (t) => {
+  const replacements = installWindow(t, "#/review/javascript/js-notes-functions");
+  const { app, opened } = createRouteHarness();
+  await app.openRoute();
+  assert.deepEqual(opened, [{ view: "review", languageId: "javascript", lessonId: "js-notes-functions" }]);
   assert.deepEqual(replacements, []);
 });
 
@@ -103,16 +92,14 @@ test("HTML·CSS 정식 언어의 Code Quest 해시를 해당 언어로 연다", 
   assert.deepEqual(replacements, []);
 });
 
-test("Java 정식 과정의 Code Quest 해시를 해당 언어로 연다", async (t) => {
-  const replacements = installWindow(t, "#/quest/java/java-level-label");
+test("샘플 언어의 Code Quest 해시는 기본 JavaScript 교안으로 복귀한다", async (t) => {
+  const replacements = installWindow(t, "#/quest/java/types-and-methods");
   const { app, opened } = createRouteHarness();
 
   await app.openRoute();
 
-  assert.deepEqual(opened, [
-    { view: "quest", languageId: "java", slug: "java-level-label" },
-  ]);
-  assert.deepEqual(replacements, []);
+  assert.deepEqual(opened, [{ view: "lesson" }]);
+  assert.deepEqual(replacements, ["#/learn/javascript/javascript-and-runtime"]);
 });
 
 test("사용 가능한 Code Quest 컬렉션을 병렬 로드하고 언어별 실패를 격리한다", async () => {
@@ -126,33 +113,10 @@ test("사용 가능한 Code Quest 컬렉션을 병렬 로드하고 언어별 실
     },
   );
 
-  assert.deepEqual(new Set(calls), new Set(["javascript", "html", "css", "java"]));
-  assert.deepEqual([...collections.keys()].sort(), ["html", "java", "javascript"]);
+  assert.deepEqual(new Set(calls), new Set(["javascript", "html", "css"]));
+  assert.deepEqual([...collections.keys()].sort(), ["html", "javascript"]);
   assert.equal(collections.get("html").languageId, "html");
-  assert.equal(collections.get("java").languageId, "java");
   assert.equal(collections.has("css"), false);
-});
-
-test("Java 정식 과정의 코딩테스트 문제 해시를 Java 실행 화면으로 연다", async (t) => {
-  const replacements = installWindow(t, "#/coding-tests/java/sum-values");
-  const { app, opened } = createRouteHarness();
-
-  await app.openRoute();
-
-  assert.deepEqual(opened, [
-    { view: "coding-test", languageId: "java", slug: "sum-values" },
-  ]);
-  assert.deepEqual(replacements, []);
-});
-
-test("코딩테스트가 없는 정식 언어의 문제 해시는 목록으로 안전하게 복귀한다", async (t) => {
-  const replacements = installWindow(t, "#/coding-tests/html/document-structure");
-  const { app, opened } = createRouteHarness();
-
-  await app.openRoute();
-
-  assert.deepEqual(opened, [{ view: "coding-test-list" }]);
-  assert.deepEqual(replacements, ["#/coding-tests"]);
 });
 
 test("등록되지 않은 객관식 언어는 기본 JavaScript 교안으로 안전하게 복귀한다", async (t) => {

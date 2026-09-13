@@ -67,8 +67,6 @@ console.log(gcd(84, 30)); // 6
 
 이 함수는 두 입력이 양의 정수라는 조건에서 사용합니다.
 나머지가 매번 이전의 나누는 수보다 작아지므로 반복은 결국 끝납니다.
-두 입력 중 작은 값을 `m`이라고 할 때 유클리드 알고리즘의 반복 횟수는 `O(log m)`입니다.
-예제는 각 `Number` 나머지 연산을 한 번의 연산으로 세는 일반적인 분석을 사용합니다.
 
 ## 기하학: 좌표를 계산 가능한 값으로 바꾸기
 
@@ -108,7 +106,6 @@ console.log(direction(a, b, c)); // 반시계
 
 이 예제는 작은 정수 좌표와 위쪽으로 커지는 `y`축을 사용합니다.
 화면 좌표처럼 아래쪽으로 갈수록 `y`가 커지면 시계와 반시계의 부호 해석이 반대로 보일 수 있습니다.
-세 점의 좌표로 정해진 수의 산술 연산과 비교만 하므로 방향 판별은 `O(1)` 시간과 `O(1)` 추가 공간을 사용합니다.
 
 ## 단계별 실행 흐름
 
@@ -184,6 +181,7 @@ console.log(direction(a, b, c)); // 반시계
 
 ## 공식·권위 자료
 
+- [NIST Dictionary of Algorithms and Data Structures: greatest common divisor](https://www.nist.gov/dads/HTML/greatestCommonDivisor.html)
 - [NIST Dictionary of Algorithms and Data Structures: Euclid's algorithm](https://www.nist.gov/dads/HTML/euclidalgo.html)
 - [MIT OpenCourseWare 6.046J: Computational geometry](https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2012/90bf712a64648a7d40387df4c22efa2a_MIT6_046JS12_lec23.pdf)
 - [ECMAScript 명세: Numeric Types와 나머지 연산](https://tc39.es/ecma262/multipage/ecmascript-data-types-and-values.html#sec-number::remainder)

@@ -1,0 +1,186 @@
+# BAM.dev 시각 시스템 설계
+
+이 문서는 BAM.dev 전역 팔레트, semantic token, theme, 학습 상태 표현과 대비 검증의 정본이다. 화면별 정보 구조는 각 제품 설계가 담당하고, 현재 CSS 구현은 `styles/tokens.css`와 `styles/app.css`가 사실 원본이다. 현재 결정은 [`DEC-APPROVED-PREVIEW-01`](../roadmap.md#2026-09-13-확정-제품-결정)이며, 과거 팔레트 참고 출처는 [`reference-audit.md`](../reference-audit.md#프로젝트-색상-참고)에 남긴다.
+
+## 결정 적용과 현재 차이
+
+- `[현재 사실]` 채택 시안의 아이보리/보라 light·차콜/라벤더 dark, OS 초기값과 로컬 저장되는 밝게·어둡게 선택을 실제 제품에 반영했다. 공통 탐색·홈·목록·읽기·풀이와 대표 실습 화면의 독립 UI 검증 및 통합 gate를 통과했으며 실제 증거와 미실행 범위는 [시안 채택 작업 카드](../work-items/2026-09-13-approved-preview-adoption.md)에 둔다. 이전 Ocean 적용은 [과거 작업 이력](../work-items/2026-09-13-ocean-palette.md)이다.
+- `[확정 결정]` bam이 검토·수정한 시안을 제품에 채택했다. 밝은 화면은 아이보리·흰색과 절제된 보라색, 어두운 화면은 차콜·라벤더를 사용한다. 홈·두 독립 목록·문서 읽기·객관식 풀이를 시안의 정보 계층과 여백에 맞춘다.
+- `[대체됨]` `DEC-VISUAL-01`·`DEC-OCEAN-PALETTE-01`의 Ocean 브랜드 및 새 theme 미도입 경계와 `DEC-VISUAL-THEME-01`의 단일 theme 후보는 최신 `DEC-APPROVED-PREVIEW-01`로 대체한다. 아래 Ocean 표와 계약은 과거 구현·검증의 해석을 위해 보존하며 현재 적용 gate가 아니다.
+
+컴포넌트는 HEX를 복제하지 않고 기존 semantic token을 재사용한다. 시안의 초록색 비교 옵션·밀도 tweak·표본 데이터·임시 기록은 제품 기능으로 옮기지 않는다. 콘텐츠 원문과 학습자가 작성한 결과물은 색상 적용 대상이 아니다.
+
+## 채택 시안의 색상과 theme 계약
+
+`[확정 결정]` 아래 값은 채택 시안의 실제 CSS에서 확인한 색상 기준이다. `styles/tokens.css`에서 기존 semantic 이름에 연결한다. 같은 HEX가 반복되는 역할은 정의를 공유하며 의미 없는 새 token 계층이나 의존성을 만들지 않는다. 경계·focus·hover·warning·syntax·언어 배지처럼 아래만으로 충족되지 않는 역할은 실제 대비를 확인해 보조 토큰으로 보정한다.
+
+| 역할 / 기존 semantic 연결 | 밝게 | 어둡게 |
+| --- | --- | --- |
+| canvas / `--color-bg` | `#f7f6f2` | `#17181b` |
+| 카드·공통 shell / `--color-surface` | `#ffffff` | `#202226` |
+| 보조 면·코드 / `--color-surface-raised`, `--color-code` | `#f0efeb` | `#292b30` |
+| 제목·본문 / `--color-text` | `#25262b` | `#f0eee9` |
+| 보조 글자 / `--color-text-muted` | `#62636b` | `#b4b5bd` |
+| 장식 구분선 / 약한 경계 역할 | `#dcdcd8` | `#42454e` |
+| 링크·현재 위치 / `--color-primary` | `#6941b8` | `#c3a9fb` |
+| 선택·요약 면 / `--color-secondary` | `#eee8f8` | `#352b46` |
+| 주요 버튼 면 / `--color-primary` | `#6941b8` | `#c3a9fb` |
+| 주요 버튼 글자 / `--color-on-primary` | `#ffffff` | `#221a30` |
+| 성공 글자 / `--color-success-text` | `#216345` | `#a5ddbc` |
+| 성공 면 / `--color-success-bg` | `#eaf4ed` | `#22382c` |
+| 오류 글자 / `--color-danger-text` | `#a14237` | `#ffb3a8` |
+| 오류 면 / `--color-danger-bg` | `#faf0ec` | `#422b29` |
+
+시안의 약한 구분선은 정보 덩어리를 나누는 장식용이다. 입력·선택·조작부 식별이나 focus를 이 색 하나에 의존하지 않고 별도의 `--color-border-strong`·`--color-focus` 등으로 실제 3:1 이상을 검증한다. 위 값 자체를 적었다고 실제 합성·상태 대비가 통과한 것으로 기록하지 않는다.
+
+- 공통 탐색은 단일 `BAM.dev` 홈 링크와 `홈`·`학습문서`·`객관식 문제`, `밝게`·`어둡게` 선택이다. 기존 실습으로 가는 유효 경로를 제거하지 않고 해당 화면의 탐색·제품 분리는 유지한다.
+- 명시적 선택이 없으면 운영체제 `prefers-color-scheme`을 따른다. 사용자가 선택하면 즉시 전역에 적용하고 로컬 환경설정으로 저장한다. 유효한 `light`·`dark`만 복구하고 손상·읽기 실패는 OS 기본값으로 처리한다. 쓰기 실패에도 현재 화면 선택은 유지하되 저장됐다고 거짓 안내하지 않는다. 학습 진도 저장 키·세션과 환경설정을 분리하고 기존 기록을 초기화하지 않는다.
+- theme 전환은 탐색·입력·풀이를 다시 시작하거나 화면을 재로딩하지 않는다. 현재 선택은 `aria-pressed` 등과 텍스트로 구분하고 네이티브 버튼·키보드 초점을 유지한다. 명시적 선택 후 OS 변경이 선택을 덮어쓰지 않는다.
+- 기존 로컬 폰트를 우선 재사용하고 시안의 차분한 굵기·제목 계층·본문 행간과 문단 여백을 적용한다. 외부 폰트·이미지·추적 요청을 추가하지 않는다. 한글 본문은 읽기 폭을 제한하고 `h2` 개념 경계에는 문단보다 넓은 여백을 둔다.
+- 데스크톱의 홈 제목은 쉼표·강제 줄바꿈 없이 한 줄로 표시한다. 좁은 화면에서는 자연스럽게 줄바꿈하며 축소·가로 넘침으로 한 줄을 강제하지 않는다. 카드·주제·탐색·목차·긴 한국어 질문은 320px부터 재배치하고 코드·표의 스크롤은 내부로 한정한다.
+- Code Quest·코딩테스트·인앱 Web Project는 공통 token·shell 변경의 가독성 회귀 범위다. 이들의 route·제품 기능·평가기·데이터·진도를 변경하거나 목업으로 대체하지 않는다.
+
+구현은 기존 HTML·CSS·Vanilla JavaScript 경계에서 수행한다. React·TypeScript 이관, 새 패키지·설치 shell·Java runner·배포 승인과 별개다. 적용 순서는 기존 semantic theme → 공통 shell → 홈·목록 → 읽기·목차 → 객관식·모달 상태의 가독성 → 독립 실제 화면 검증이다. 결함은 원인 역할로 반환하고 작업 전 복제본과 실제 diff를 비교해 해당 UI 변경만 고친다. 콘텐츠·기존 사용자 기록을 되돌리거나 삭제하는 rollback은 사용하지 않는다.
+
+## 확정 팔레트
+
+`[대체됨]` 이 절 제목은 기존 링크를 보존한다. 아래는 `DEC-VISUAL-01` 당시 Ocean 팔레트의 이름·순서·HEX 정본이며 최신 제품 색상은 위 [채택 시안 계약](#채택-시안의-색상과-theme-계약)이다.
+
+| 권장 primitive ID | 이름 | HEX |
+| --- | --- | --- |
+| `ocean-900` | Deep Twilight | `#03045e` |
+| `ocean-800` | French Blue | `#023e8a` |
+| `ocean-700` | Bright Teal Blue | `#0077b6` |
+| `ocean-600` | Blue Green | `#0096c7` |
+| `ocean-500` | Turquoise Surf | `#00b4d8` |
+| `ocean-400` | Sky Aqua | `#48cae4` |
+| `ocean-300` | Frosted Blue 300 | `#90e0ef` |
+| `ocean-200` | Frosted Blue 200 | `#ade8f4` |
+| `ocean-100` | Light Cyan | `#caf0f8` |
+
+두 Frosted Blue는 이름만으로 구분하지 않고 ID와 HEX를 함께 사용한다. HEX는 palette primitive 정의 한 곳에만 두고 화면 CSS, JavaScript와 콘텐츠 파일에 복사하지 않는다.
+
+## 적용 범위와 경계
+
+현재 채택 색상과 semantic 역할은 다음 BAM.dev 제품 표면의 브랜드 축이다.
+
+- 앱 shell, 내비게이션, 교안과 Code Quest의 정보 계층
+- 버튼·링크·선택·현재 위치·진도·focus의 semantic token
+- 설치 앱의 시작 화면, 빈 상태와 오류 안내를 포함한 앱 chrome
+
+다음에는 팔레트를 그대로 강제하지 않는다.
+
+- 학습자가 작성한 HTML·CSS의 미리보기와 외부 웹과제 결과물
+- 코드 syntax에서 서로 다른 token 종류를 구분하는 색
+- 성공·경고·오류처럼 파랑 한 축만으로 의미를 구분하기 어려운 상태
+- 운영체제 forced-colors와 사용자 고대비 설정이 대체한 색
+
+학습자 결과물과 BAM.dev chrome은 시각적으로 경계를 두고, 결과물 iframe이나 별도 창에 BAM.dev 배경·글자 token을 주입하지 않는다.
+
+## 현재 어두운 UI에 적용하는 계약
+
+`[대체됨]` 아래는 과거 [Ocean 팔레트 작업](../work-items/2026-09-13-ocean-palette.md)의 계약이다. 당시 일반 제품 UI 변경으로 기존 레이아웃·콘텐츠·라우팅·진도·동작을 유지하며 두 CSS에서 색상을 연결했고 새 theme을 도입하지 않았다. 아래 계약·순서는 해당 작업 이력에만 적용한다.
+
+- 기존 `--color-bg` 등 semantic 이름을 재사용하고 화면 배경은 Deep Twilight, 카드·패널은 French Blue 계열, 본문은 Light Cyan 계열로 연결한다. 주요 행동은 Turquoise Surf와 어두운 글자, 링크·focus는 밝은 cyan 계열을 사용한다. 정확한 역할별 조합은 실제 인접 배경의 대비 계산과 독립 검증으로 확정한다.
+- 홈·서비스 탐색·문서·자기 확인·객관식·개념 오버레이와 기존 실습 chrome 전체에서 같은 semantic 역할을 사용한다. 기존 회색·파랑·민트 배경·글자·경계의 하드코딩을 남긴 채 팔레트 전체 적용으로 처리하지 않는다. `app.css`의 해당 값은 토큰 참조로 바꾼다.
+- 성공·오류·경고·syntax·언어 배지는 브랜드색과 별도 의미의 보조 토큰으로 관리한다. 파랑 농도로 무차별 치환하지 않고 새 배경에서 기존 구분·대비를 보존하거나 가독성만 보정한다. 그림자·투명도와 시스템 색상은 역할에 맞게 유지하되 상태의 유일한 단서로 삼지 않는다.
+- 일반 본문 4.5:1, 의미 있는 UI 경계·focus 3:1 이상을 실제 조합에서 확인한다. gradient·투명도·disabled는 합성된 가장 낮은 대비를 확인하고 선택·정오·준비 중 등의 텍스트·모양 단서를 유지한다. 키보드와 `forced-colors`에서도 현재 위치·초점·조작부가 사라지지 않아야 한다.
+- 학습자의 HTML/CSS 결과물에는 토큰을 주입하지 않는다. 제품 chrome만 바꾸며 원문·학습 코드·콘텐츠 ID·진도·저장 키·의존성·밤위키·Git·설치·배포는 변경하지 않는다. CSS 학습문서 분할은 별도 작업이다.
+
+마이그레이션은 palette primitive → 기존 semantic 연결 → 해당 raw 값 정리 → 대표 화면·상태·320px·390px·키보드·forced-colors 확인 순서다. 필요한 focused 검사 뒤 안전한 복제본 전체 gate를 수행하고 원본 `dist`는 보존한다. 설치형 앱 전체·장기 theme 정책 완료와 이번 정적 제품 화면 적용을 구분한다.
+
+## Semantic token 후보
+
+`[대체됨]` 아래는 Ocean 기반 장기 후보의 이력이다. 별도 채택을 기다리지 않으며 최신 색상·기본값·밝게/어둡게 선택은 [채택 시안 계약](#채택-시안의-색상과-theme-계약)을 따른다.
+
+| semantic 역할 | 후보 primitive | 사용 계약 |
+| --- | --- | --- |
+| `bg-canvas` | `ocean-100` | 교안·탐색의 가장 넓은 밝은 배경 |
+| `bg-surface` | `ocean-200` | 카드·패널 배경. canvas와 색 차이만으로 경계를 표현하지 않음 |
+| `bg-subtle` | `ocean-300` | 보조 영역·비활성 면. 비활성 텍스트 대비는 별도 확인 |
+| `bg-inverse` | `ocean-900` | 코드 작업 영역·강한 머리말 같은 역상 면 |
+| `text-primary` | `ocean-900` | 밝은 면의 본문과 제목 |
+| `text-inverse` | `ocean-100` | `ocean-900`·`ocean-800`의 본문 |
+| `action-primary` | `ocean-700` | 흰색 텍스트를 사용하는 채운 주요 버튼 후보 |
+| `action-emphasis` | `ocean-500` | `ocean-900` 텍스트를 사용하는 선택·진도 강조 면 후보 |
+| `focus-on-light` | `ocean-900` | 밝은 면의 focus outline |
+| `focus-on-dark` | `ocean-100` | 어두운 면의 focus outline |
+| `border-meaningful` | `ocean-700` 또는 `ocean-900` | 입력·선택·카드 경계처럼 식별에 필요한 선 |
+
+배경이 가변이면 `focus-on-light`와 `focus-on-dark`를 겹친 이중 outline으로 주변 어느 면에서도 식별되게 한다. 상태 token은 `status-success`, `status-warning`, `status-danger`, `status-info`처럼 의미 이름을 사용하고, 정확한 보조 색은 선택·검증 전까지 현재 token을 제거하지 않는다.
+
+## 대비와 색상 사용 계약
+
+WCAG 2.2 AA 기준으로 일반 텍스트는 4.5:1, 큰 텍스트와 의미 있는 UI 경계·상태 그래픽은 3:1 이상을 통과해야 한다. focus는 [Focus Visible 2.4.7](https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html)과 [Non-text Contrast 1.4.11](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html)을 충족하고 색 이외의 outline 형태를 가진다. BAM.dev의 강화 gate는 AAA인 [Focus Appearance 2.4.13](https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html)을 목표로 삼아 3:1 변화와 2 CSS px 두께 perimeter에 상당하는 최소 면적을 함께 검증한다. 모든 대비는 반올림 전 값으로 판정한다. 텍스트 기준은 [Contrast Minimum 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html)을 따른다.
+
+### 검증된 대표 조합
+
+`[현재 사실]` 아래 계산은 과거 Ocean 조합의 기록이며 새 theme의 실제 대비 증거로 재사용하지 않는다.
+
+| 전경 | 배경 | 대비 | 허용 범위 |
+| --- | --- | ---: | --- |
+| `ocean-100` | `ocean-900` | 14.65:1 | 일반 텍스트·아이콘·focus |
+| `ocean-100` | `ocean-800` | 8.42:1 | 일반 텍스트·아이콘 |
+| 흰색 | `ocean-700` | 4.87:1 | 일반 텍스트를 포함한 주요 버튼 |
+| `ocean-900` | `ocean-600` | 5.23:1 | 일반 텍스트 |
+| `ocean-900` | `ocean-500` | 7.20:1 | 일반 텍스트 |
+| `ocean-900` | `ocean-400` | 9.17:1 | 일반 텍스트·focus |
+
+흰색과 검정은 브랜드 primitive가 아니라 접근 가능한 중립 전경 후보다. 사용 여부와 중립색 집합은 semantic token 검토에서 확정한다.
+
+### 금지·제한 조합
+
+다음 Ocean 관련 수치 제한은 과거 팔레트에만 적용한다. gradient·disabled의 일반 검증 원칙은 새 theme에도 유지한다.
+
+- 팔레트의 인접 단계 대비는 모두 3:1 미만이므로 카드 경계, focus, 선택, 현재 위치 또는 상태의 유일한 단서로 사용하지 않는다.
+- 흰색 일반 텍스트는 `ocean-900`, `ocean-800`, `ocean-700` 배경에서만 현재 계산상 통과한다. `ocean-600`은 3.39:1이므로 일반 텍스트에 사용하지 않는다.
+- `ocean-900` 텍스트를 `ocean-700`에 올린 조합은 3.65:1, `ocean-700`을 `ocean-100`에 올린 조합은 4.02:1이므로 작은 본문에 사용하지 않는다.
+- gradient 위 텍스트·아이콘은 가장 대비가 낮은 stop에서 검증한다.
+- disabled 상태도 읽어야 하는 설명을 저대비로 숨기지 않는다.
+
+## 학습 위치와 상태 표현
+
+Code Quest의 `현재`, `시작 전`, `진행 중`, `이전 완료`, `완료`는 색만으로 구분하지 않는다.
+
+| 상태 | 함께 제공할 비색상 단서 |
+| --- | --- |
+| 시작 전 | `시작 전` 라벨, 시작하기 동작, 저장된 초안·현재 완료 증거가 없다는 상태 |
+| 현재 위치 | `현재` 텍스트, `aria-current`, outline 또는 위치 표시 막대 |
+| 진행 중 | `진행 중` 라벨, 이어서 풀기 동작, 초안 존재 설명 |
+| 이전 완료 | 별도 라벨과 revision 설명, 다시 풀기 동작 |
+| 완료 | 완료 아이콘·텍스트와 현재 revision 근거 |
+| 오류 | 오류 제목·아이콘·필드 연결·복구 동작 |
+
+진도 막대는 동일한 범위와 분모의 텍스트를 함께 제공한다. 성공·오류·경고를 모두 파랑 농도로 표현하지 않으며, 장식적인 색 변화가 정보 구조보다 강해지지 않게 한다.
+
+## 단계적 migration
+
+이 색상 migration은 [`DEC-FRONTEND-01`](../roadmap.md#2026-09-04-확정-제품-결정)의 프런트엔드 이관과 독립적으로 검증한다. 현재 Vanilla JavaScript 화면과 이후 React·TypeScript 화면은 같은 semantic token 계약을 사용하며, 프레임워크 전환을 기다리거나 프레임워크별 HEX를 복제하지 않는다.
+
+1. `styles/tokens.css`와 `styles/app.css`의 실제 token·raw 색상 사용처를 역할별로 목록화한다.
+2. 확정 primitive를 한 파일에 추가하고 현재 컴포넌트 색을 semantic token 뒤로 이동한다. 이 단계에서는 외형을 동시에 바꾸지 않아도 된다.
+3. 앱 shell·본문·버튼·링크·focus를 한 화면씩 후보 mapping으로 전환하고 실제 브라우저에서 대비와 상태를 검증한다.
+4. Code Quest와 코딩테스트의 각 화면에 현재 위치·진도·탐색 상태를 비색상 단서와 함께 적용한다.
+5. 성공·경고·오류·syntax 보조 색을 두 theme에서 확인하고 필요한 token을 보정한다. 기본 theme 결정은 이미 채택 시안 계약으로 닫혔다.
+6. 화면별 회귀와 사용자 확인 뒤에만 대응 raw 색상과 legacy token을 제거한다.
+
+기존 token을 일괄 치환하지 않는다. 이름이 비슷해도 실제 역할과 대비가 다른 색은 별도 migration 대상으로 남긴다.
+
+## 완료 조건
+
+- 채택 시안의 밝은·어두운 색상 정의가 한 곳에 있고 컴포넌트는 semantic token을 사용한다. 초록 비교 옵션·목업 전용 상태·외부 자산을 제품에 반입하지 않는다.
+- OS 초기값·명시적 theme 선택·재실행 복구·잘못된 값·저장 실패를 확인하고 기존 풀이·초점·진도와 저장 키를 보존한다.
+- 주요 화면의 본문·큰 텍스트·아이콘·입력 경계·focus가 실제 인접 배경에서 목표 대비를 통과한다.
+- 현재 위치, 진도, 완료, 경고와 오류를 색 없이도 이해하고 키보드로 확인할 수 있다.
+- 320px부터 데스크톱까지 정보 계층과 focus가 잘리지 않는다.
+- 학습자 미리보기·외부 과제 결과와 BAM.dev chrome의 색상 경계가 보존된다.
+- 기존 화면과 Code Quest의 변경 전후 캡처, 자동 또는 계산 대비 결과, 키보드·forced-colors 수동 확인 범위가 증거로 남는다.
+- `test_engineer`와 `project_integrator`가 일반 제품 변경 파이프라인을 독립적으로 통과하고 bam이 최종 외형을 승인한다.
+
+## 확인이 필요한 선택
+
+- 기본 화면과 dark/light 선택·중립색 사용은 채택 시안으로 확정되어 다시 묻지 않는다.
+- 성공·오류의 시안 값 외 warning·syntax·언어 배지의 세부 값은 구현·독립 대비 검증으로 보정한다. 사용자 재승인 선행 조건으로 삼지 않는다.
+- 자동 대비 검사 도구와 시각 회귀 캡처를 CI gate에 포함할 시점
+
+결정 상태는 [`roadmap.md`](../roadmap.md#bam-결정-대기-목록)에서 관리한다.

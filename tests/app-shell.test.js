@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { renderAppShell } from "../src/ui/app-shell.js";
+import { renderAppShell, renderLearningShell } from "../src/ui/app-shell.js";
 
 function renderShell(overrides = {}) {
   return renderAppShell({
@@ -49,6 +49,23 @@ function renderShell(overrides = {}) {
   });
 }
 
+test("브랜드는 별도 B 배지 없이 BAM.dev 한 이름을 홈 링크로 제공한다", () => {
+  const learning = renderLearningShell({ current: "learn" });
+  const homeLink = learning.match(/<a\b[^>]*href="#\/"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? "";
+  assert.match(homeLink, /aria-label="BAM.dev 홈"/);
+  assert.match(homeLink, /BAM\.dev/);
+  assert.equal((learning.match(/aria-label="BAM.dev 홈"/g) ?? []).length, 1);
+  assert.match(learning, /href="#\/"[^>]*>홈<\/a>/);
+  assert.match(learning, /href="#\/learn"[^>]*>학습문서<\/a>/);
+  assert.match(learning, /href="#\/review"[^>]*>객관식 문제<\/a>/);
+  assert.match(learning, /<footer\b[^>]*>[\s\S]*?BAM\.dev · 개발자로 성장하는 나의 공간[\s\S]*?<\/footer>/);
+  assert.match(learning, /data-theme-choice="light"/);
+  assert.match(learning, /data-theme-choice="dark"/);
+  assert.doesNotMatch(learning, /디자인 시안|표본 1개|이 화면에서만 유지/);
+  assert.doesNotMatch(learning, /brand-mark|>B<\/span>/);
+  assert.doesNotMatch(renderShell(), /brand-mark|>B<\/span>/);
+});
+
 test("공통 앱 셸은 모바일 메뉴·코스 진도·본문·announcer 계약을 유지한다", () => {
   const html = renderShell();
 
@@ -65,21 +82,8 @@ test("공통 앱 셸은 모바일 메뉴·코스 진도·본문·announcer 계�
   assert.match(html, /<p class="nav-label">목차<\/p>/);
   assert.match(html, /aria-valuenow="40"/);
   assert.match(html, /class="sidebar-backdrop is-visible" data-close-menu/);
-  assert.match(html, /class="my-page-nav"/);
-  assert.match(html, /href="#\/my"/);
   assert.match(html, /<main id="lesson-content" tabindex="-1">본문<\/main>/);
   assert.match(html, /class="announcer sr-only" aria-live="polite" aria-atomic="true"/);
-});
-
-test("마이페이지 내비게이션은 모든 셸에 한 번 있고 현재 화면을 알린다", () => {
-  const html = renderShell({ myPageCurrent: true });
-
-  assert.equal((html.match(/class="my-page-nav"/g) ?? []).length, 1);
-  assert.match(
-    html,
-    /class="my-page-nav-link is-current" href="#\/my" aria-current="page"/,
-  );
-  assert.match(html, /학습 기록과 재도전/);
 });
 
 test("기능 내비게이션 DTO는 순서와 빈 슬롯을 보존하며 Web Project를 확장할 수 있다", () => {

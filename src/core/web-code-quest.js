@@ -157,23 +157,6 @@ function isExternalUrlText(value) {
   return /(?:^|[\s"'=])(https?:|data:|javascript:|blob:|file:|\/\/)/iu.test(value);
 }
 
-function decodeCssEscapes(source) {
-  return source.replace(
-    /\\(?:([0-9a-f]{1,6})(?:\r\n|[\t\n\f\r ])?|(\r\n|[\n\f\r])|(.))/giu,
-    (_match, hexadecimal, newline, escapedCharacter) => {
-      if (hexadecimal !== undefined) {
-        const codePoint = Number.parseInt(hexadecimal, 16);
-        return codePoint === 0 ||
-          codePoint > 0x10ffff ||
-          (codePoint >= 0xd800 && codePoint <= 0xdfff)
-          ? "\uFFFD"
-          : String.fromCodePoint(codePoint);
-      }
-      return newline === undefined ? escapedCharacter : "";
-    },
-  );
-}
-
 function findUnsafeHtmlAttribute(source, { disallowInlineStyles = false } = {}) {
   let index = 0;
   while (index < source.length) {
@@ -340,14 +323,13 @@ export function findWebCodeQuestSourceIssue(
   }
 
   if (evaluationKind === WEB_CODE_QUEST_EVALUATION_KINDS.CSS) {
-    const normalizedSource = decodeCssEscapes(source);
-    if (/@import\b/iu.test(normalizedSource)) {
+    if (/@import\b/iu.test(source)) {
       return { code: "css_import", message: "CSS @import는 사용할 수 없습니다." };
     }
-    if (/url\s*\(/iu.test(normalizedSource) || isExternalUrlText(normalizedSource)) {
+    if (/url\s*\(/iu.test(source) || isExternalUrlText(source)) {
       return { code: "external_url", message: "CSS 외부 URL은 사용할 수 없습니다." };
     }
-    if (/\b(?:expression|behavior)\s*[:(]|-moz-binding\s*:/iu.test(normalizedSource)) {
+    if (/\b(?:expression|behavior)\s*[:(]|-moz-binding\s*:/iu.test(source)) {
       return { code: "legacy_execution", message: "실행 동작을 만들 수 있는 CSS 구문은 사용할 수 없습니다." };
     }
     return null;

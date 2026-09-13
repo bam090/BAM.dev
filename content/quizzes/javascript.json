@@ -4,6 +4,201 @@
   "title": "JavaScript 객관식 복습",
   "questions": [
     {
+      "id": "quiz-javascript-notes-return-value",
+      "lessonId": "js-notes-functions",
+      "conceptId": "js.function-return",
+      "learningObjective": "콘솔에 표시한 값과 함수 호출자가 받은 반환값을 구분한다.",
+      "difficulty": "basic",
+      "prompt": "console.log를 사용할 수 있는 환경에서 다음 코드를 실행했습니다. 콘솔에 표시되는 두 값의 순서는 무엇인가요?",
+      "code": "function showDouble(value) {\n  console.log(value * 2);\n}\n\nconst result = showDouble(3);\nconsole.log(result);",
+      "options": [
+        { "id": "a", "text": "6, 6", "isCorrect": false, "feedback": "함수 안에서 6을 콘솔에 표시해도 호출자에게 6을 반환한 것은 아닙니다. 이 함수에는 return이 없습니다." },
+        { "id": "b", "text": "6, undefined", "isCorrect": true, "feedback": "먼저 함수 안에서 6을 표시합니다. 반환문 없이 함수가 끝나므로 result는 undefined입니다. 교안의 ‘return과 출력은 다르다’를 다시 확인하세요." },
+        { "id": "c", "text": "undefined, 6", "isCorrect": false, "feedback": "showDouble(3)이 먼저 실행되어 6을 표시한 뒤 result에 반환값이 대입됩니다. 바깥 출력이 먼저 실행되지 않습니다." },
+        { "id": "d", "text": "아무 값도 표시되지 않고 TypeError가 발생한다.", "isCorrect": false, "feedback": "반환문 없는 함수도 정상 호출할 수 있습니다. console.log가 제공된다는 조건이 있으므로 6과 undefined가 순서대로 표시됩니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-early-return",
+      "lessonId": "js-notes-functions",
+      "conceptId": "js.function-return",
+      "learningObjective": "조기 반환으로 실행되지 않는 콜백과 부수 효과를 찾아낸다.",
+      "difficulty": "application",
+      "prompt": "음수 입력은 거부하고, 허용된 입력만 format으로 보내려 합니다. 코드를 실행한 뒤 message와 calls의 값은 각각 무엇인가요?",
+      "code": "let calls = 0;\n\nfunction describe(minutes, format) {\n  if (minutes < 0) {\n    return \"입력 확인\";\n  }\n  return format(minutes);\n}\n\nfunction format(minutes) {\n  calls = calls + 1;\n  return minutes + \"분\";\n}\n\nconst message = describe(-2, format);",
+      "options": [
+        { "id": "a", "text": "message는 \"입력 확인\", calls는 1", "isCorrect": false, "feedback": "조건 안의 return에서 describe 실행이 끝납니다. 뒤의 format 호출은 일어나지 않아 calls도 증가하지 않습니다." },
+        { "id": "b", "text": "message는 \"-2분\", calls는 1", "isCorrect": false, "feedback": "-2는 0보다 작아 입력 거부 분기로 들어갑니다. 뒤의 format까지 실행해 결과를 덮어쓰지 않습니다." },
+        { "id": "c", "text": "message는 \"입력 확인\", calls는 0", "isCorrect": true, "feedback": "조기 반환이 format 호출 전에 describe를 끝냅니다. 따라서 입력 확인을 돌려주고, 호출되지 않은 format의 calls 변경도 없습니다. 교안의 ‘반환값은 호출한 곳으로 돌아간다’를 참고하세요." },
+        { "id": "d", "text": "message는 undefined, calls는 0", "isCorrect": false, "feedback": "이 경로에는 return과 문자열 값이 명시돼 있습니다. 콜백을 호출하지 않는다고 반환값까지 없어지는 것은 아닙니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-sync-callback",
+      "lessonId": "js-notes-functions",
+      "conceptId": "js.callbacks",
+      "learningObjective": "함수 값 전달과 실제 호출을 구분하고 동기 콜백의 반환 연결을 추적한다.",
+      "difficulty": "basic",
+      "prompt": "아래 코드에는 타이머나 Promise가 없습니다. result에 대입되는 값과 이유를 올바르게 설명한 것은 무엇인가요?",
+      "code": "function applyTwice(value, change) {\n  const once = change(value);\n  return change(once);\n}\n\nfunction double(value) {\n  return value * 2;\n}\n\nconst result = applyTwice(3, double);",
+      "options": [
+        { "id": "a", "text": "12 — 현재 호출 안에서 3 → 6 → 12로 두 번 계산한다.", "isCorrect": true, "feedback": "double 함수 값이 전달되고 applyTwice가 그 함수를 즉시 두 번 호출합니다. 콜백이 항상 비동기는 아닙니다. 교안의 ‘함수도 값이다’를 참고하세요." },
+        { "id": "b", "text": "6 — 같은 함수는 한 번만 실행할 수 있다.", "isCorrect": false, "feedback": "같은 함수를 여러 번 호출할 수 있습니다. 두 번째 change(once)는 첫 반환값 6을 받아 다시 두 배로 만듭니다." },
+        { "id": "c", "text": "undefined — 콜백은 항상 나중에 실행되므로 result가 먼저 정해진다.", "isCorrect": false, "feedback": "이 코드는 전달받은 함수를 현재 실행 흐름에서 바로 호출합니다. 콜백이라는 이름만으로 비동기 예약이 생기지 않습니다." },
+        { "id": "d", "text": "TypeError — 함수는 인수로 전달할 수 없다.", "isCorrect": false, "feedback": "JavaScript 함수는 값이므로 인수로 전달할 수 있습니다. double 뒤에 괄호를 쓰지 않은 것은 지금 호출하지 않고 함수 자체를 전달하려는 것입니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-arrow-block-return",
+      "lessonId": "js-notes-functions",
+      "conceptId": "js.function-return",
+      "learningObjective": "화살표 함수의 표현식 본문과 블록 본문에서 반환 규칙이 달라지는 이유를 찾는다.",
+      "difficulty": "application",
+      "prompt": "계산 결과를 변수에 담도록 코드를 바꾼 뒤 after(4)가 undefined가 되었습니다. 원인과 가장 직접적인 수정은 무엇인가요?",
+      "code": "const before = value => value * 2;\n\nconst after = value => {\n  const result = value * 2;\n};",
+      "options": [
+        { "id": "a", "text": "const는 계산 결과를 막으므로 result를 let으로 바꾼다.", "isCorrect": false, "feedback": "const로 계산 결과를 기억할 수 있습니다. let으로 바꿔도 함수 밖으로 반환하는 문장이 없다는 문제는 남습니다." },
+        { "id": "b", "text": "화살표 함수는 변수 선언을 포함할 수 없으므로 일반 함수로 바꾼다.", "isCorrect": false, "feedback": "블록 본문의 화살표 함수에는 변수 선언을 쓸 수 있습니다. 일반 함수로 바꾸더라도 반환문을 쓰지 않으면 결과는 undefined입니다." },
+        { "id": "c", "text": "result라는 이름이 예약어이므로 answer로 바꾼다.", "isCorrect": false, "feedback": "result는 이 코드에서 사용할 수 있는 변수 이름입니다. 이름을 바꾸어도 반환문이 생기지는 않습니다." },
+        { "id": "d", "text": "블록 본문은 계산식을 자동 반환하지 않으므로 return result;를 추가한다.", "isCorrect": true, "feedback": "before는 표현식 값을 바로 반환하지만 after는 블록 본문입니다. result 계산 뒤 return result;를 쓰면 after(4)는 8을 반환합니다. 교안의 ‘화살표 함수’를 참고하세요." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-function-boundary",
+      "lessonId": "js-notes-functions",
+      "conceptId": "js.function-side-effects",
+      "learningObjective": "입력·반환값·외부 상태 변경을 기준으로 요구사항에 맞는 함수 경계를 선택한다.",
+      "difficulty": "application",
+      "prompt": "여러 화면에서 결제 금액을 계산해 각각 표시하려 합니다. calc(100)은 숫자 90을 반환해야 하고, 바깥 변수 total을 바꾸거나 콘솔에 출력하지 않아야 합니다. 아래 네 함수 중 이 계약을 만족하는 것은 무엇인가요?",
+      "code": "let total = 0;\n\nfunction calcA(price) {\n  total = total + price * 0.9;\n  return price * 0.9;\n}\n\nfunction calcB(price) {\n  console.log(price * 0.9);\n}\n\nfunction calcC(price) {\n  return price * 0.9;\n}\n\nfunction calcD(price) {\n  const result = price * 0.9;\n}",
+      "options": [
+        { "id": "a", "text": "calcA", "isCorrect": false, "feedback": "90을 반환하지만 함수 밖의 total도 바꿉니다. 반환값이 맞는 것만으로 외부 상태 보존 계약까지 만족하지는 않습니다." },
+        { "id": "b", "text": "calcB", "isCorrect": false, "feedback": "콘솔 출력은 요구사항에서 제외됐고, 함수에는 반환문도 없습니다. 화면마다 계산 결과를 쓰려면 값을 호출자에게 돌려줘야 합니다." },
+        { "id": "c", "text": "calcC", "isCorrect": true, "feedback": "입력 price로 금액을 계산해 반환하고 total이나 콘솔을 바꾸지 않습니다. 표시할 화면은 호출자가 정할 수 있습니다. 교안의 ‘계산만 하는 함수와 바깥을 바꾸는 함수’를 참고하세요." },
+        { "id": "d", "text": "calcD", "isCorrect": false, "feedback": "함수 안에서 90을 계산하지만 반환하지 않습니다. 지역 변수에 담았다는 사실만으로 호출자가 그 값을 받지는 않습니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-const-property",
+      "lessonId": "js-notes-values",
+      "conceptId": "js.variables",
+      "learningObjective": "const 이름의 재대입과 그 이름이 가리키는 객체의 속성 변경을 구분한다.",
+      "difficulty": "basic",
+      "prompt": "다음 코드를 실행했을 때 lamp.on의 값과 이유를 올바르게 설명한 것은 무엇인가요?",
+      "code": "const lamp = { on: false };\nlamp.on = true;",
+      "options": [
+        { "id": "a", "text": "false — const로 만든 객체의 속성은 바뀌지 않는다.", "isCorrect": false, "feedback": "const는 lamp라는 이름의 재대입을 막습니다. 객체 내부 속성까지 자동으로 불변으로 만들지는 않습니다." },
+        { "id": "b", "text": "true — 같은 객체의 on 속성을 바꾼 것이며 lamp에 다른 객체를 대입하지 않았다.", "isCorrect": true, "feedback": "lamp는 계속 같은 객체를 가리키고 그 객체의 on만 true가 됩니다. 교안의 ‘값을 기억하는 이름: 변수’를 참고하세요." },
+        { "id": "c", "text": "TypeError — const 이름을 선언한 뒤 사용하는 모든 대입은 금지된다.", "isCorrect": false, "feedback": "금지되는 것은 lamp = 다른값 같은 이름의 재대입입니다. 이 코드의 lamp.on = true는 변경 가능한 속성에 대한 대입입니다." },
+        { "id": "d", "text": "undefined — 속성에 값을 대입하면 그 속성이 삭제된다.", "isCorrect": false, "feedback": "속성 대입은 값을 바꾸는 동작이지 속성을 삭제하는 동작이 아닙니다. on 속성은 true를 가진 채 남습니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-string-addition",
+      "lessonId": "js-notes-values",
+      "conceptId": "js.operators",
+      "learningObjective": "더하기 연산의 피연산자 타입을 보고 숫자 덧셈과 문자열 연결을 구분한다.",
+      "difficulty": "basic",
+      "prompt": "한 번 처리할 때마다 count를 숫자로 1씩 늘리려 했습니다. 아래 실행 뒤 count의 실제 값과 타입은 무엇인가요?",
+      "code": "let count = \"2\";\ncount = count + 1;",
+      "options": [
+        { "id": "a", "text": "숫자 3", "isCorrect": false, "feedback": "처음 count는 따옴표로 감싼 문자열입니다. 이 + 연산은 숫자 덧셈이 아니라 글자를 이어 붙입니다." },
+        { "id": "b", "text": "문자열 \"3\"", "isCorrect": false, "feedback": "먼저 2와 1을 수치로 더한 뒤 문자열로 바꾸지 않습니다. 문자열 \"2\" 뒤에 \"1\"을 붙입니다." },
+        { "id": "c", "text": "숫자 21", "isCorrect": false, "feedback": "이 연산은 이어 붙인 문자열을 만듭니다. 숫자처럼 보이는 글자와 Number 타입 값은 다릅니다." },
+        { "id": "d", "text": "문자열 \"21\"", "isCorrect": true, "feedback": "문자열 \"2\"와 1을 +로 연결하면 \"21\"입니다. 이 예에서 숫자 증가를 원하면 초기값을 숫자 2로 두어야 합니다. 교안의 ‘값을 계산하고 비교하는 연산자’를 참고하세요." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-switch-break",
+      "lessonId": "js-notes-values",
+      "conceptId": "js.control-flow",
+      "learningObjective": "switch의 일치 분기 진입과 break에 의한 종료를 따로 추적한다.",
+      "difficulty": "application",
+      "prompt": "console.log가 제공되는 환경입니다. action이 save일 때 아래 코드는 무엇을 순서대로 표시하나요?",
+      "code": "const action = \"save\";\n\nswitch (action) {\n  case \"save\":\n    console.log(\"저장\");\n  case \"next\":\n    console.log(\"다음 처리\");\n    break;\n  default:\n    console.log(\"알 수 없음\");\n}",
+      "options": [
+        { "id": "a", "text": "저장, 다음 처리", "isCorrect": true, "feedback": "save case에 들어간 뒤 break가 없어 next case의 본문까지 실행합니다. 그 뒤 break에서 switch를 나갑니다. 교안의 ‘조건에 따라 길을 고르기’를 참고하세요." },
+        { "id": "b", "text": "저장만 표시한다.", "isCorrect": false, "feedback": "case 하나의 본문이 끝났다고 자동으로 멈추지 않습니다. 저장 뒤에 break가 없어 다음 본문도 실행됩니다." },
+        { "id": "c", "text": "다음 처리만 표시한다.", "isCorrect": false, "feedback": "action은 save와 일치하므로 먼저 저장을 표시합니다. 다음 처리부터 바로 시작하지 않습니다." },
+        { "id": "d", "text": "저장, 다음 처리, 알 수 없음", "isCorrect": false, "feedback": "다음 처리 뒤에는 break가 있습니다. 여기서 switch를 나가므로 default 본문은 실행하지 않습니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-loop-boundary",
+      "lessonId": "js-notes-values",
+      "conceptId": "js.control-flow",
+      "learningObjective": "반복의 시작값·종료 조건·갱신을 연결해 한 번 더 실행되는 경계 오류를 고른다.",
+      "difficulty": "application",
+      "prompt": "아래 본문은 한 번 실행할 때 작업 하나를 처리했다고 셉니다. 시작값과 본문을 유지하면서 정확히 3번 처리하려면 어떤 설명과 조건 수정이 맞나요?",
+      "code": "let processed = 0;\n\nwhile (processed <= 3) {\n  processed = processed + 1;\n}",
+      "options": [
+        { "id": "a", "text": "현재도 3번 실행하므로 수정하지 않는다.", "isCorrect": false, "feedback": "조건 검사 시 processed가 0, 1, 2, 3인 네 경우에 본문을 실행합니다. 마지막에는 4가 됩니다." },
+        { "id": "b", "text": "현재 4번 실행하므로 조건을 processed === 3으로 바꾼다.", "isCorrect": false, "feedback": "시작값이 0이라 === 3 조건은 처음부터 거짓입니다. 본문이 한 번도 실행되지 않습니다." },
+        { "id": "c", "text": "현재 4번 실행하므로 조건을 processed < 3으로 바꾼다.", "isCorrect": true, "feedback": "< 3이면 조건 검사 값 0, 1, 2에서만 실행해 3번 처리합니다. 3이 되면 멈춥니다. 교안의 ‘같은 일을 되풀이하기’를 참고하세요." },
+        { "id": "d", "text": "현재 끝나지 않으므로 조건을 processed > 3으로 바꾼다.", "isCorrect": false, "feedback": "현재 코드는 매번 값을 늘려 4가 되면 종료합니다. > 3으로 바꾸면 시작값 0에서 본문을 실행하지 않습니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-filter-map",
+      "lessonId": "js-notes-collections",
+      "conceptId": "js.array-methods",
+      "learningObjective": "조건에 필요한 정보를 유지하면서 원하는 결과 모양으로 배열 처리 순서를 선택한다.",
+      "difficulty": "application",
+      "prompt": "아직 끝내지 않은 항목의 title만 원래 순서의 문자열 배열로 얻으려 합니다. 아래 자료에서 [\"함수\", \"배열\"]을 만들고 원본을 바꾸지 않는 코드는 무엇인가요?",
+      "code": "const notes = [\n  { title: \"값\", done: true },\n  { title: \"함수\", done: false },\n  { title: \"배열\", done: false },\n];",
+      "options": [
+        { "id": "a", "text": "notes.map(note => note.title).filter(title => title.done === false)", "isCorrect": false, "feedback": "먼저 title 문자열만 남기면 done 정보를 사용할 수 없습니다. 이 문자열들의 done은 undefined라 === false 조건에 맞는 항목이 없습니다." },
+        { "id": "b", "text": "notes.filter(note => !note.done).map(note => note.title)", "isCorrect": true, "feedback": "done이 false인 객체를 먼저 고른 뒤 title로 바꾸면 필요한 문자열 배열이 됩니다. 두 콜백은 원본을 바꾸지 않습니다. 교안의 ‘작은 흐름 하나로 연결하기’를 참고하세요." },
+        { "id": "c", "text": "notes.map(note => note.done)", "isCorrect": false, "feedback": "이 코드는 완료 여부의 불리언 배열 [true, false, false]를 만듭니다. 미완료 제목 목록이 아닙니다." },
+        { "id": "d", "text": "notes.find(note => !note.done)", "isCorrect": false, "feedback": "find는 처음 맞는 객체 하나를 반환합니다. 미완료 항목 전체의 문자열 배열을 반환하지 않습니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-find-missing",
+      "lessonId": "js-notes-collections",
+      "conceptId": "js.array-methods",
+      "learningObjective": "find의 일치 항목이 없는 결과를 확인하고 속성 접근 전 검사를 선택한다.",
+      "difficulty": "application",
+      "prompt": "찾은 항목이 있을 때만 found.title을 사용하려 합니다. 아래 검색 결과와 필요한 검사에 대한 설명 중 맞는 것은 무엇인가요?",
+      "code": "const notes = [{ title: \"HTML\" }];\nconst found = notes.find(note => note.title === \"CSS\");",
+      "options": [
+        { "id": "a", "text": "found는 undefined다. found !== undefined인지 확인한 경우에만 found.title을 읽는다.", "isCorrect": true, "feedback": "CSS에 맞는 항목이 없어 find는 undefined를 반환합니다. 이 객체 배열에서는 먼저 없음 여부를 확인해야 합니다. 교안의 ‘처음 맞는 요소 하나를 찾는 find’를 참고하세요." },
+        { "id": "b", "text": "found는 빈 배열이다. found.length가 0인지 확인한다.", "isCorrect": false, "feedback": "일치 항목이 없을 때 빈 배열을 반환하는 것은 filter입니다. 여기서는 undefined이므로 곧바로 length를 읽을 수 없습니다." },
+        { "id": "c", "text": "found는 null이다. found !== null이면 곧바로 found.title을 읽어도 된다.", "isCorrect": false, "feedback": "find의 미일치 결과는 null이 아닌 undefined입니다. undefined !== null은 참이어서 이 검사만으로는 잘못된 속성 접근을 막지 못합니다." },
+        { "id": "d", "text": "found는 첫 번째 객체다. 검색 실패 시 자동으로 첫 항목을 대신 반환한다.", "isCorrect": false, "feedback": "조건에 맞지 않는 첫 항목을 대신 반환하지 않습니다. 모든 항목이 조건에 맞지 않으면 undefined입니다." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-filter-shared-object",
+      "lessonId": "js-notes-collections",
+      "conceptId": "js.object-sharing",
+      "learningObjective": "새 바깥 배열과 공유하는 안쪽 객체를 구별해 속성 변경이 보이는 범위를 예측한다.",
+      "difficulty": "application",
+      "prompt": "filter로 새 배열을 만들었습니다. 아래 실행 뒤 items[0].count의 값과 selected === items의 결과는 각각 무엇인가요?",
+      "code": "const items = [{ name: \"펜\", count: 2 }];\nconst selected = items.filter(item => item.count > 0);\nselected[0].count = 0;",
+      "options": [
+        { "id": "a", "text": "2, false", "isCorrect": false, "feedback": "새 바깥 배열이 만들어졌지만 선택한 객체를 깊게 복사하지는 않습니다. selected[0]과 items[0]은 같은 객체입니다." },
+        { "id": "b", "text": "0, true", "isCorrect": false, "feedback": "객체의 count가 함께 바뀌는 것은 맞지만 filter 결과의 바깥 배열은 새 배열입니다. selected와 items 자체는 같지 않습니다." },
+        { "id": "c", "text": "2, true", "isCorrect": false, "feedback": "filter는 새 배열을 만들며 안쪽 객체는 공유합니다. 배열이 같다는 판단과 원본 객체 값이 그대로라는 판단이 모두 반대입니다." },
+        { "id": "d", "text": "0, false", "isCorrect": true, "feedback": "바깥 배열은 서로 다르지만 그 안의 첫 객체는 같습니다. 한쪽에서 count를 0으로 바꾸면 다른 쪽에서도 0으로 보입니다. 교안의 ‘원본을 바꾸는 동작과 새 값을 만드는 동작’을 참고하세요." }
+      ]
+    },
+    {
+      "id": "quiz-javascript-notes-for-in-keys",
+      "lessonId": "js-notes-collections",
+      "conceptId": "js.iteration",
+      "learningObjective": "배열의 속성 키를 순회하는 for...in과 요소 값을 순회하는 for...of를 구분한다.",
+      "difficulty": "basic",
+      "prompt": "추가 속성이나 변경된 프로토타입이 없는 보통 배열입니다. 아래 실행 뒤 message는 어떤 문자열인가요?",
+      "code": "const tags = [\"HTML\", \"CSS\"];\nlet message = \"\";\n\nfor (const tag in tags) {\n  message = message + tag;\n}",
+      "options": [
+        { "id": "a", "text": "\"HTMLCSS\"", "isCorrect": false, "feedback": "for...in은 배열 요소 값이 아닌 문자열 속성 키를 줍니다. 이 값들을 직접 받으려면 for...of를 사용합니다." },
+        { "id": "b", "text": "\"12\"", "isCorrect": false, "feedback": "배열의 첫 인덱스는 1이 아니라 0입니다. 이 배열의 요소 키는 \"0\", \"1\"입니다." },
+        { "id": "c", "text": "\"01\"", "isCorrect": true, "feedback": "for...in이 준 키 \"0\", \"1\"이 차례로 이어집니다. 배열 요소 값이 필요하면 for...of를 선택합니다. 교안의 ‘배열을 차례대로 읽기’를 참고하세요." },
+        { "id": "d", "text": "\"\"", "isCorrect": false, "feedback": "이 배열에는 열거할 요소 키가 두 개 있습니다. for...in이 배열에서 동작하지 않는 것은 아닙니다." }
+      ]
+    },
+    {
       "id": "quiz-javascript-01-ecmascript-runtime",
       "lessonId": "js-01-runtime",
       "conceptId": "js.ecmascript",

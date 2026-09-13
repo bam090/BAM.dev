@@ -2,6 +2,7 @@ import {
   getCourse,
   getLanguage,
   getLessonsForCourse,
+  getLessonsForLanguage,
   loadCurriculum,
   loadLessonMarkdown,
 } from "./core/content.js";
@@ -11,14 +12,13 @@ import {
   buildCodingTestHash,
   buildCodingTestListHash,
   buildLessonHash,
-  buildMyPageHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
   buildWebProjectListHash,
   getAdjacentLessons,
   parseCodingTestHash,
-  parseMyPageHash,
+  parseLessonHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -44,10 +44,12 @@ import {
   loadWebProjectCollection,
 } from "./core/web-project.js";
 import { gradeQuestion, loadQuizCollection, summarizeQuiz } from "./core/quiz.js";
+import { buildKeywordReviewHash, buildReviewLessonHash, getReviewDocumentLesson, getReviewRouteOptions, validateReviewConcepts } from "./core/review-navigation.js";
+import { getReviewContentSignature, LocalStorageReviewSessionRepository, restoreReviewSession, REVIEW_SESSION_STORAGE_KEY } from "./repositories/review-session-repository.js";
+import { renderLearningHome, renderLearningCatalog } from "./ui/learning-catalog-view.js";
 import { DraftSaveCoordinator } from "./core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "./core/execution-coordinator.js";
 import { BrowserCodeQuestRunner } from "./grading/browser-code-quest-runner.js";
-import { BrowserJavaCodeQuestRunner } from "./grading/java-code-quest-runner.js";
 import { BrowserWebCodeQuestRunner } from "./grading/browser-web-code-quest-runner.js";
 import { CodeQuestRunnerRouter } from "./grading/code-quest-runner-router.js";
 import { CodingTestRunnerAdapter } from "./grading/coding-test-runner-adapter.js";
@@ -55,7 +57,6 @@ import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js
 import { scoreWebProject } from "./grading/web-project-scoring.js";
 import {
   createBrowserStorage,
-  getCurrentCompletedQuestIds,
   LocalStorageProgressRepository,
   PROGRESS_STORAGE_KEY,
 } from "./repositories/progress-repository.js";
@@ -66,14 +67,20 @@ import {
   WebProjectDraftConflictError,
 } from "./repositories/web-project-repository.js";
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
-import { renderAppShell } from "./ui/app-shell.js";
-import { renderMyPageView } from "./ui/my-page-view.js";
-import { renderLanguageNavigation } from "./ui/language-navigation.js";
-import { escapeHtml, renderHighlightedCode, renderMarkdown } from "./ui/markdown.js";
+import { renderAppShell, renderLearningShell } from "./ui/app-shell.js";
+import { createThemeController } from "./ui/theme.js";
 import {
+  renderCourseNavigation,
+  renderLanguageNavigation,
+} from "./ui/language-navigation.js";
+import { escapeHtml, headingId, renderHighlightedCode, renderInlineCodeText, renderMarkdown, splitLessonOverview, splitMarkdownSection } from "./ui/markdown.js";
+import {
+  getQuizSaveStatusMessage,
+  renderQuizEmptyView,
   renderQuizLoadingView,
   renderQuizQuestionView,
   renderQuizResultView,
+  renderQuizScopeControls,
 } from "./ui/quiz-view.js";
 import {
   getCodeQuestDraftStatusMessage,
@@ -97,21 +104,6 @@ import { createWebProjectPreviewDocument } from "./ui/web-project-preview.js";
 const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
 const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
 const WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS = 250;
-export const CODING_TEST_LANGUAGE_IDS = Object.freeze(["javascript", "java"]);
-const CODING_TEST_LANGUAGE_ID_SET = new Set(CODING_TEST_LANGUAGE_IDS);
-
-function getLanguageCourse(curriculum, languageId) {
-  return (
-    (curriculum?.courses ?? []).find(
-      (course) =>
-        course.categoryId === "language" && course.languageId === languageId,
-    ) ?? null
-  );
-}
-
-export function supportsCodingTests(languageId) {
-  return CODING_TEST_LANGUAGE_ID_SET.has(languageId);
-}
 
 function createDefaultCodingTestFilters() {
   return {
@@ -132,31 +124,6 @@ export async function loadCodingTestCollectionSafely(
   } catch {
     return null;
   }
-}
-
-export async function loadAvailableCodingTestCollectionsSafely(
-  curriculum,
-  loader = loadCodingTestCollection,
-) {
-  const collections = new Map();
-  const languages = Array.isArray(curriculum?.languages)
-    ? curriculum.languages.filter(
-        (language) =>
-          language.status === "available" && supportsCodingTests(language.id),
-      )
-    : [];
-
-  await Promise.all(
-    languages.map(async (language) => {
-      try {
-        const collection = await loader(language.id, curriculum);
-        collections.set(language.id, collection);
-      } catch {
-        // 한 언어의 코딩테스트 콘텐츠 오류가 다른 학습 기능을 막지 않게 격리한다.
-      }
-    }),
-  );
-  return collections;
 }
 
 export async function loadAvailableCodeQuestCollectionsSafely(
@@ -240,28 +207,34 @@ export class BamLearningApp {
     this.currentMarkdown = "";
     this.currentView = "lesson";
     this.quizCollection = null;
+    this.quizLessonId = null;
     this.quizSession = null;
     this.quizRecentAttempt = null;
     this.quizIncorrectQuestionCount = 0;
+    this.reviewConcepts = [];
+    this.reviewConceptsLoaded = false;
+    this.quizCollections = new Map();
+    this.catalogFilters = { learn: { topicId: null, query: "" }, review: { topicId: null, query: "" } };
+    this.reviewSessionRepository = new LocalStorageReviewSessionRepository(createBrowserStorage(window));
+    this.savedReviewSession = this.reviewSessionRepository.read();
+    this.reviewSaveStatus = "saved";
+    this.quizConceptId = null;
+    this.lessonReviewReturn = null;
     this.codeQuestCollections = new Map();
     this.codeQuestCollection = null;
     this.codeQuestState = null;
     this.javascriptCodeQuestRunner = new BrowserCodeQuestRunner();
-    this.javaCodeQuestRunner = new BrowserJavaCodeQuestRunner();
     this.webCodeQuestRunner = new BrowserWebCodeQuestRunner();
     this.codeQuestRunner = new CodeQuestRunnerRouter({
       javascriptRunner: this.javascriptCodeQuestRunner,
       webRunner: this.webCodeQuestRunner,
-      javaRunner: this.javaCodeQuestRunner,
     });
-    this.codingTestCollections = new Map();
     this.codingTestCollection = null;
     this.codingTestFilters = createDefaultCodingTestFilters();
     this.codingTestState = null;
-    this.codingTestRunner = new CodingTestRunnerAdapter({
-      javascriptRunner: this.javascriptCodeQuestRunner,
-      javaRunner: this.javaCodeQuestRunner,
-    });
+    this.codingTestRunner = new CodingTestRunnerAdapter(
+      this.javascriptCodeQuestRunner,
+    );
     this.webProjectCollection = null;
     this.webProjectState = null;
     this.webProjectRunner = new BrowserWebProjectRunner();
@@ -287,6 +260,7 @@ export class BamLearningApp {
   }
 
   async start() {
+    this.themeController = createThemeController({ root: this.root });
     this.bindGlobalEvents();
     try {
       this.curriculum = await loadCurriculum();
@@ -295,13 +269,9 @@ export class BamLearningApp {
       );
       this.codeQuestCollection =
         this.codeQuestCollections.get(DEFAULT_LANGUAGE_ID) ?? null;
-      this.codingTestCollections = await loadAvailableCodingTestCollectionsSafely(
+      this.codingTestCollection = await loadCodingTestCollectionSafely(
         this.curriculum,
       );
-      this.codingTestCollection =
-        this.codingTestCollections.get(DEFAULT_LANGUAGE_ID) ??
-        this.codingTestCollections.values().next().value ??
-        null;
       this.webProjectCollection = await loadWebProjectCollectionSafely(
         this.curriculum,
       );
@@ -321,23 +291,34 @@ export class BamLearningApp {
 
     window.addEventListener("hashchange", () => this.openRoute());
     window.addEventListener("pagehide", () => {
+      this.saveReviewSession({ captureViewport: true });
       this.cancelPendingCodingTestSearchRender();
       this.flushPendingQuestDraftSave();
       this.flushPendingCodingTestDraftSave();
       this.flushPendingWebProjectDraftSave();
     });
     window.addEventListener("storage", (event) => {
+      if (event.key === REVIEW_SESSION_STORAGE_KEY) {
+        if (this.currentView === "review") {
+          this.reviewStorageConflict = true;
+          this.reviewSaveStatus = "failed";
+          this.reviewRestoreNotice = "다른 탭에서 풀이가 바뀌었습니다. 새로고침하여 저장된 풀이를 이어 주세요.";
+          this.renderQuiz();
+        } else {
+          this.savedReviewSession = this.reviewSessionRepository.read();
+          if (this.currentView.endsWith("-catalog")) this.renderLearningCatalog();
+        }
+        return;
+      }
       if (event.key === WEB_PROJECT_STORAGE_KEY) {
-        if (this.currentView === "my-page") this.renderMyPage();
-        else if (this.currentView === "web-project-list") this.renderWebProjectList();
+        if (this.currentView === "web-project-list") this.renderWebProjectList();
         else if (this.currentView === "web-project" && this.webProjectState) {
           this.handleExternalWebProjectStorageChange();
         }
         return;
       }
       if (event.key !== PROGRESS_STORAGE_KEY) return;
-      if (this.currentView === "my-page") this.renderMyPage();
-      else if (this.currentLesson) this.renderLesson();
+      if (this.currentLesson) this.renderLesson();
       else if (this.currentView === "review" && this.quizCollection) {
         this.refreshQuizHistory();
         this.renderQuiz();
@@ -369,6 +350,17 @@ export class BamLearningApp {
 
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
+    this.root.addEventListener("submit", (event) => {
+      if (event.target.matches("[data-catalog-form]")) {
+        event.preventDefault();
+        this.updateCatalogFilters();
+        return;
+      }
+      if (event.target.matches("[data-quiz-form]")) {
+        event.preventDefault();
+        this.gradeCurrentQuizQuestion();
+      }
+    });
     this.root.addEventListener("input", (event) => this.handleInput(event));
     this.root.addEventListener("scroll", (event) => this.handleScroll(event), true);
   }
@@ -380,14 +372,16 @@ export class BamLearningApp {
       return;
     }
 
-    const myPageRoute = parseMyPageHash(window.location.hash);
-    if (myPageRoute) {
-      this.openMyPageRoute();
+    const routePath = String(window.location.hash).split("?")[0];
+    if (["", "#", "#/"].includes(routePath)) {
+      this.enterView("home");
+      this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), mainContent: renderLearningHome({ saved: this.savedReviewSession }) });
+      document.title = "BAM.dev · 개발 학습";
+      this.finishServiceNavigation();
       return;
     }
-    if (/^#\/my(?:\/|$)/u.test(String(window.location.hash))) {
-      window.history.replaceState(null, "", buildMyPageHash());
-      this.openMyPageRoute();
+    if (["#/learn", "#/learn/", "#/review", "#/review/"].includes(routePath)) {
+      await this.openLearningCatalog(routePath.startsWith("#/review") ? "review" : "learn");
       return;
     }
 
@@ -412,11 +406,6 @@ export class BamLearningApp {
       return;
     }
     if (codingTestRoute?.kind === "problem") {
-      if (!supportsCodingTests(codingTestRoute.languageId)) {
-        window.history.replaceState(null, "", buildCodingTestListHash());
-        this.openCodingTestListRoute();
-        return;
-      }
       await this.openCodingTestRoute(
         codingTestRoute.languageId,
         codingTestRoute.slug,
@@ -435,10 +424,10 @@ export class BamLearningApp {
         this.curriculum,
         questRoute.languageId,
       );
-      const questCourse = getLanguageCourse(this.curriculum, questRoute.languageId);
-      const questLessons = questCourse
-        ? getLessonsForCourse(this.curriculum, questCourse.id)
-        : [];
+      const questLessons = getLessonsForLanguage(
+        this.curriculum,
+        questRoute.languageId,
+      );
       if (
         questLanguage?.status === "available" &&
         questLessons.length > 0
@@ -469,17 +458,16 @@ export class BamLearningApp {
     const reviewRoute = parseReviewHash(window.location.hash);
     if (reviewRoute) {
       const reviewLanguage = getLanguage(this.curriculum, reviewRoute.languageId);
-      const reviewCourse = getLanguageCourse(this.curriculum, reviewRoute.languageId);
-      const reviewLessons = reviewCourse
-        ? getLessonsForCourse(this.curriculum, reviewCourse.id)
-        : [];
+      const reviewLessons = getLessonsForLanguage(
+        this.curriculum,
+        reviewRoute.languageId,
+      );
       if (
         reviewLanguage &&
         reviewLanguage.status !== "planned" &&
-        reviewCourse?.status !== "planned" &&
         reviewLessons.length > 0
       ) {
-        await this.openReviewRoute(reviewRoute.languageId);
+        await this.openReviewRoute(reviewRoute.languageId, reviewRoute.lessonId);
         return;
       }
 
@@ -505,24 +493,11 @@ export class BamLearningApp {
     await this.openLessonRoute({ useLastLesson });
   }
 
-  openMyPageRoute() {
-    this.enterView("my-page");
-    const canonicalHash = buildMyPageHash();
-    if (window.location.hash !== canonicalHash) {
-      window.history.replaceState(null, "", canonicalHash);
-    }
-    this.renderMyPage();
-    document.title = "마이페이지 · BAM.dev";
-    window.scrollTo({ top: 0, behavior: "instant" });
-    if (this.hasRenderedView) {
-      window.requestAnimationFrame(() => {
-        focusMainContent(document.querySelector("#lesson-content"));
-      });
-    }
-    this.hasRenderedView = true;
-  }
-
   leaveCurrentView(reason = "navigation") {
+    const returnToken = this.quizSession?.returnContext?.token;
+    const visitingReviewDocument = returnToken && getReviewRouteOptions(globalThis.window?.location?.hash).returnToken === returnToken;
+    this.saveReviewSession({ captureViewport: !visitingReviewDocument });
+    this.closeConceptOverlay?.({ restoreFocus: false });
     this.cancelPendingCodingTestSearchRender();
     this.cancelPendingWebProjectPreviewSync();
     this.flushPendingQuestDraftSave();
@@ -540,6 +515,9 @@ export class BamLearningApp {
     this.currentLesson = null;
     this.currentMarkdown = "";
     this.quizCollection = null;
+    this.quizLessonId = null;
+    this.quizConceptId = null;
+    this.lessonReviewReturn = null;
     this.quizSession = null;
     this.quizRecentAttempt = null;
     this.quizIncorrectQuestionCount = 0;
@@ -552,6 +530,7 @@ export class BamLearningApp {
   }
 
   async openLessonRoute({ useLastLesson = false } = {}) {
+    const routeOptions = getReviewRouteOptions(window.location.hash);
     const sequence = this.enterView("lesson");
     const progress = this.progressRepository.getProgress();
     const lesson = resolveLessonRoute(
@@ -567,7 +546,36 @@ export class BamLearningApp {
     }
 
     const canonicalHash = buildLessonHash(lesson.courseId, lesson.slug);
-    if (window.location.hash !== canonicalHash) {
+    const requestedLesson = parseLessonHash(window.location.hash);
+    const isExactLesson = requestedLesson?.courseId === lesson.courseId && requestedLesson.slug === lesson.slug;
+    if (lesson.answerHeading || routeOptions.returnToken) {
+      await this.loadReviewConcepts();
+      if (sequence !== this.renderSequence) return;
+    }
+    if (routeOptions.returnToken && isExactLesson) {
+      const saved = this.savedReviewSession ?? this.reviewSessionRepository?.read();
+      const context = saved?.returnContext;
+      if (context?.token === routeOptions.returnToken && context.lessonId === lesson.id && saved?.id === context.sessionId) {
+        try {
+          const collection = await loadQuizCollection(saved.scope.languageId, this.curriculum);
+          if (sequence !== this.renderSequence) return;
+          const questions = collection.questions.filter((question) =>
+            (!saved.scope.lessonId || question.lessonId === saved.scope.lessonId) &&
+            (!saved.scope.conceptId || question.conceptId === saved.scope.conceptId));
+          const restored = restoreReviewSession(saved, questions, saved.scope);
+          if (restored.status === "restored" && restored.session.questions.some((question) => {
+            if (question.id !== context.questionId) return false;
+            const concept = this.reviewConcepts?.find((item) => item.id === question.conceptId && item.lessonId === question.lessonId);
+            return question.lessonId === lesson.id || getReviewDocumentLesson(this.curriculum, concept)?.id === lesson.id;
+          })) {
+            this.lessonReviewReturn = { saved, context };
+          }
+        } catch {
+          // The document remains readable even when its saved review is unavailable.
+        }
+      }
+    }
+    if (!isExactLesson && window.location.hash !== canonicalHash) {
       window.history.replaceState(null, "", canonicalHash);
     }
 
@@ -575,6 +583,18 @@ export class BamLearningApp {
     try {
       const markdown = await loadLessonMarkdown(lesson);
       if (sequence !== this.renderSequence) return;
+      this.lessonQuizLoadFailed = false;
+      if (lesson.answerHeading) {
+        this.quizCollections ??= new Map();
+        if (!this.quizCollections.has(lesson.languageId)) {
+          try {
+            this.quizCollections.set(lesson.languageId, await loadQuizCollection(lesson.languageId, this.curriculum));
+          } catch {
+            this.lessonQuizLoadFailed = true;
+          }
+          if (sequence !== this.renderSequence) return;
+        }
+      }
       this.currentLesson = lesson;
       this.currentMarkdown = markdown;
       try {
@@ -590,12 +610,23 @@ export class BamLearningApp {
         this.announce(`${lesson.title} 단원으로 이동했습니다.`);
       }
       this.hasRenderedView = true;
+      if (routeOptions.heading) {
+        const section = document.getElementById?.(headingId(routeOptions.heading));
+        if (section) {
+          const answerDetails = section.closest?.("details");
+          if (answerDetails) answerDetails.open = true;
+          section.setAttribute("tabindex", "-1");
+          section.scrollIntoView({ behavior: "instant", block: "start" });
+          section.focus({ preventScroll: true });
+        } else this.announce("해당 절을 찾지 못해 문서 처음을 표시합니다.");
+      }
     } catch (error) {
       if (sequence === this.renderSequence) this.renderFatalError(error);
     }
   }
 
-  async openReviewRoute(languageId) {
+  async openReviewRoute(languageId, lessonId = null) {
+    const { conceptId } = getReviewRouteOptions(window.location.hash);
     const language = getLanguage(this.curriculum, languageId);
     if (!language) {
       await this.openLessonRoute();
@@ -603,8 +634,17 @@ export class BamLearningApp {
     }
 
     const sequence = this.enterView("review");
+    if (
+      lessonId &&
+      !this.curriculum.lessons.some((lesson) => lesson.id === lessonId && lesson.languageId === languageId)
+    ) {
+      this.renderFatalError(new Error("선택한 학습 문서를 찾을 수 없습니다. 문서 목록에서 다시 선택해 주세요."));
+      return;
+    }
+    this.quizLessonId = lessonId;
+    this.quizConceptId = conceptId;
 
-    const canonicalHash = buildReviewHash(languageId);
+    const canonicalHash = buildKeywordReviewHash(languageId, lessonId, conceptId);
     if (window.location.hash !== canonicalHash) {
       window.history.replaceState(null, "", canonicalHash);
     }
@@ -615,31 +655,218 @@ export class BamLearningApp {
       if (sequence !== this.renderSequence) return;
 
       this.quizCollection = collection;
+      if (conceptId && !collection.questions.some((question) => question.conceptId === conceptId && (!lessonId || question.lessonId === lessonId))) {
+        throw new Error("선택한 키워드의 문제를 찾을 수 없습니다. 객관식 문제 목록에서 다시 선택해 주세요.");
+      }
+      await this.loadReviewConcepts();
+      if (sequence !== this.renderSequence) return;
       this.refreshQuizHistory();
-      this.startQuizSession(collection.questions, "all");
+      const restored = this.reviewSessionRepository?.readStatus === "invalid" && !this.savedReviewSession
+        ? { status: "invalid" }
+        : restoreReviewSession(this.savedReviewSession, this.getScopedQuizQuestions(), this.getReviewScope());
+      if (restored.status === "restored") this.quizSession = restored.session;
+      else this.startQuizSession(this.getScopedQuizQuestions(), "all");
+      this.reviewRestoreNotice = ["content-changed", "invalid"].includes(restored.status)
+        ? "문제 내용이 바뀌었거나 저장된 풀이를 읽을 수 없어 이어서 풀 수 없습니다. 기존 완료 기록은 유지됩니다." : "";
+      this.reviewNeedsRestart = ["content-changed", "invalid"].includes(restored.status);
       this.renderQuiz();
       document.title = `${collection.title} · BAM.dev`;
       window.scrollTo({ top: 0, behavior: "instant" });
       if (this.hasRenderedView) {
         this.focusQuizQuestion();
-        this.announce("복습 첫 문제로 이동했습니다.");
+        this.announce(restored.status === "restored" ? "저장된 풀이를 이어갑니다." : "복습 첫 문제로 이동했습니다.");
       }
       this.hasRenderedView = true;
+      if (restored.status === "restored") this.restoreReviewViewport();
     } catch (error) {
       if (sequence === this.renderSequence) this.renderFatalError(error);
     }
   }
 
+  async loadReviewConcepts() {
+    if (this.reviewConceptsLoaded) return;
+    try {
+      const response = await fetch("./content/review-concepts.json");
+      this.reviewConceptsLoadFailed = !response.ok;
+      this.reviewConcepts = response.ok ? validateReviewConcepts(await response.json(), this.curriculum) : [];
+    } catch {
+      this.reviewConcepts = [];
+      this.reviewConceptsLoadFailed = true;
+    }
+    this.reviewConceptsLoaded = true;
+  }
+
+  finishServiceNavigation() {
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (this.hasRenderedView) document.querySelector("#lesson-content")?.focus({ preventScroll: true });
+    this.hasRenderedView = true;
+  }
+
+  async openLearningCatalog(kind) {
+    const sequence = this.enterView(`${kind}-catalog`);
+    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: kind, mainContent: '<main class="main-area service-main" id="lesson-content" tabindex="-1"><p role="status">학습자료를 준비하고 있어요…</p></main>' });
+    await this.loadReviewConcepts();
+    const failures = [];
+    if (kind === "review") {
+      await Promise.all(this.curriculum.languages.filter((language) => language.status !== "planned").map(async (language) => {
+        if (this.quizCollections.has(language.id)) return;
+        try {
+          this.quizCollections.set(language.id, await loadQuizCollection(language.id, this.curriculum));
+        } catch { failures.push(language.name); }
+      }));
+    }
+    if (sequence !== this.renderSequence) return;
+    this.catalogFailedLanguages = failures;
+    this.renderLearningCatalog();
+    document.title = `${kind === "review" ? "객관식 문제" : "학습문서"} · BAM.dev`;
+    this.finishServiceNavigation();
+  }
+
+  renderLearningCatalog() {
+    const kind = this.currentView === "review-catalog" ? "review" : "learn";
+    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: kind, mainContent: renderLearningCatalog({
+      curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts,
+      kind, filters: this.catalogFilters[kind], saved: this.savedReviewSession,
+      failedLanguages: this.catalogFailedLanguages,
+    }) });
+  }
+
+  updateCatalogFilters() {
+    const kind = this.currentView === "review-catalog" ? "review" : "learn";
+    this.catalogFilters[kind] = {
+      topicId: this.catalogFilters[kind].topicId ?? null,
+      query: this.root.querySelector("[data-catalog-search]")?.value ?? "",
+    };
+    this.renderLearningCatalog();
+    this.root.querySelector("[data-catalog-search]")?.focus({ preventScroll: true });
+  }
+
+  getReviewScope() {
+    return { languageId: this.quizCollection?.languageId, lessonId: this.quizLessonId ?? null, conceptId: this.quizConceptId ?? null };
+  }
+
+  saveReviewSession({ captureViewport = false } = {}) {
+    const session = this.quizSession;
+    if (!this.reviewSessionRepository || this.currentView !== "review" || !session?.questions.length || this.reviewNeedsRestart) return;
+    if (captureViewport) {
+      const card = this.root.querySelector?.(".quiz-card, .quiz-result-card");
+      const active = document.activeElement;
+      session.viewport = {
+        anchor: session.questions[session.currentIndex]?.id,
+        offset: card?.getBoundingClientRect?.().top ?? 0,
+        scrollY: window.scrollY ?? 0,
+        focusId: active?.id || null,
+      };
+    }
+    const saved = {
+      id: session.id, scope: this.getReviewScope(), title: this.quizCollection.title,
+      contentSignature: getReviewContentSignature(this.getScopedQuizQuestions()),
+      questionIds: session.questions.map((question) => question.id), mode: session.mode,
+      currentIndex: session.currentIndex, selectedOptionIds: [...session.selectedOptionIds],
+      gradedQuestionIds: [...session.gradedAnswers.keys()], screen: session.screen,
+      recordAttempted: session.recordAttempted, persistenceStatus: session.persistenceStatus,
+      expandedQuestionIds: [...(session.expandedQuestionIds ?? [])],
+      returnContext: session.returnContext ?? null, viewport: session.viewport ?? null,
+      completedAt: session.completedAt ?? null,
+      recordedAnswers: session.completedAt ? [...session.gradedAnswers.values()].map(({ questionId, isCorrect }) => ({ questionId, isCorrect })) : null,
+    };
+    try {
+      this.reviewSaveStatus = this.reviewSessionRepository.save(saved);
+      this.savedReviewSession = saved;
+    } catch (error) {
+      this.reviewSaveStatus = "failed";
+      if (error.message.includes("다른 탭")) this.reviewStorageConflict = true;
+      this.reviewRestoreNotice = error.message;
+    }
+    const status = this.root.querySelector?.("[data-review-save-status]");
+    const message = getQuizSaveStatusMessage(this.reviewSaveStatus);
+    if (status && status.textContent !== message) status.textContent = message;
+    const notice = this.root.querySelector?.("[data-review-save-notice]");
+    const noticeMessage = this.root.querySelector?.("[data-review-save-message]");
+    if (notice) notice.hidden = !this.reviewRestoreNotice;
+    if (noticeMessage) noticeMessage.textContent = this.reviewRestoreNotice ?? "";
+  }
+
+  restoreReviewViewport() {
+    const viewport = this.quizSession?.viewport;
+    if (!viewport) return;
+    window.requestAnimationFrame(() => {
+      const card = this.root.querySelector?.(".quiz-card, .quiz-result-card");
+      const top = Number.isFinite(viewport.offset) && card
+        ? (window.scrollY ?? 0) + card.getBoundingClientRect().top - viewport.offset
+        : viewport.scrollY;
+      window.scrollTo({ top: Number.isFinite(top) ? Math.max(0, top) : 0, behavior: "instant" });
+      const focusTarget = viewport.focusId ? document.getElementById(viewport.focusId) : null;
+      (focusTarget ?? this.root.querySelector("[data-related-concept]") ??
+        this.root.querySelector("#quiz-question-title, #quiz-result-title"))?.focus({ preventScroll: true });
+    });
+  }
+
+  openConceptOverlay(button) {
+    const question = this.getCurrentQuizQuestion();
+    const owner = this.curriculum.lessons.find((item) => item.id === question?.lessonId);
+    if (!owner || !question) return;
+    const concept = this.reviewConcepts?.find((item) => item.id === question.conceptId && item.lessonId === owner.id);
+    const lesson = getReviewDocumentLesson(this.curriculum, concept) ?? owner;
+    this.saveReviewSession({ captureViewport: true });
+    if (this.quizSession.viewport) this.quizSession.viewport.focusId = button.id || "quiz-related-concept";
+    this.closeConceptOverlay({ restoreFocus: false });
+    const dialog = document.createElement("dialog");
+    dialog.className = "concept-dialog";
+    dialog.setAttribute("aria-labelledby", "concept-dialog-title");
+    dialog.innerHTML = `<div class="concept-dialog-heading"><div><p class="eyebrow">${concept ? "관련 개념" : "관련 학습문서 요약"}</p><h2 id="concept-dialog-title">${renderInlineCodeText(concept?.title ?? lesson.title)}</h2></div><button class="icon-button" type="button" data-concept-close aria-label="개념 설명 닫기">×</button></div><div class="lesson-body">${concept ? renderMarkdown(concept.excerpt) : `<p>${escapeHtml(lesson.summary)}</p>`}</div><a class="button button--primary" href="${buildLessonHash(lesson.courseId, lesson.slug)}" data-concept-document>학습문서에서 자세히 보기</a>`;
+    this.root.append(dialog);
+    this.conceptDialog = dialog;
+    this.conceptTrigger = button;
+    dialog.addEventListener("close", () => {
+      document.body.classList.remove("concept-open");
+      if (this.conceptDialog === dialog) this.conceptDialog = null;
+      dialog.remove();
+      if (button.isConnected) button.focus({ preventScroll: true });
+    });
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key !== "Tab") return;
+      const elements = [...dialog.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+        .filter((element) => element.getClientRects().length > 0);
+      const target = getFocusLoopTarget(elements, document.activeElement, event.shiftKey);
+      if (!target) return;
+      event.preventDefault();
+      target.focus();
+    });
+    dialog.addEventListener("click", (event) => {
+      const bounds = dialog.getBoundingClientRect();
+      const onBackdrop = event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom);
+      if (event.target.closest("[data-concept-close]") || onBackdrop) {
+        this.closeConceptOverlay();
+        return;
+      }
+      if (event.target.closest("[data-concept-document]")) {
+        event.preventDefault();
+        const token = createClientEntropy();
+        this.quizSession.returnContext = { token, sessionId: this.quizSession.id, lessonId: lesson.id, questionId: question.id };
+        this.saveReviewSession();
+        this.closeConceptOverlay({ restoreFocus: false });
+        window.location.hash = buildReviewLessonHash(lesson, token, concept?.heading);
+      }
+    });
+    document.body.classList.add("concept-open");
+    dialog.showModal();
+    dialog.querySelector("[data-concept-close]").focus();
+  }
+
+  closeConceptOverlay({ restoreFocus = true } = {}) {
+    const dialog = this.conceptDialog;
+    if (!dialog) return;
+    this.conceptDialog = null;
+    document.body.classList.remove("concept-open");
+    dialog.remove();
+    if (restoreFocus && this.conceptTrigger?.isConnected) this.conceptTrigger.focus({ preventScroll: true });
+  }
+
   async openCodeQuestRoute(languageId, slug) {
     const language = getLanguage(this.curriculum, languageId);
-    const course = getLanguageCourse(this.curriculum, languageId);
-    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
-    if (
-      !language ||
-      language.status !== "available" ||
-      course?.status !== "available" ||
-      lessons.length === 0
-    ) {
+    const lessons = getLessonsForLanguage(this.curriculum, languageId);
+    if (!language || language.status !== "available" || lessons.length === 0) {
       await this.openLessonRoute();
       return;
     }
@@ -704,27 +931,7 @@ export class BamLearningApp {
   }
 
   openCodingTestListRoute() {
-    const originLanguageId =
-      this.currentView === "lesson"
-        ? this.currentLesson?.languageId
-        : this.currentView === "review"
-          ? this.quizCollection?.languageId
-          : this.currentView === "quest"
-            ? this.codeQuestCollection?.languageId
-            : this.currentView === "coding-test"
-              ? this.codingTestCollection?.languageId
-              : null;
-    const originCollection = originLanguageId
-      ? this.getCodingTestCollectionForLanguage(originLanguageId)
-      : null;
-    if (originCollection) this.codingTestCollection = originCollection;
     this.enterView("coding-test-list");
-    if (!this.codingTestCollection && this.codingTestCollections?.size > 0) {
-      this.codingTestCollection =
-        this.codingTestCollections.get(DEFAULT_LANGUAGE_ID) ??
-        this.codingTestCollections.values().next().value ??
-        null;
-    }
     if (!this.codingTestCollection) {
       this.renderFatalError(new Error("등록된 코딩테스트가 없습니다."));
       return;
@@ -736,7 +943,7 @@ export class BamLearningApp {
     }
 
     this.renderCodingTestList();
-    document.title = `코딩테스트 문제 목록 · BAM.dev`;
+    document.title = `${this.codingTestCollection.title} · BAM.dev`;
     window.scrollTo({ top: 0, behavior: "instant" });
     if (this.hasRenderedView) {
       window.requestAnimationFrame(() => {
@@ -750,8 +957,8 @@ export class BamLearningApp {
     const language = getLanguage(this.curriculum, languageId);
     if (
       !language ||
-      language.status !== "available" ||
-      !supportsCodingTests(languageId)
+      language.status === "planned" ||
+      languageId !== DEFAULT_LANGUAGE_ID
     ) {
       window.history.replaceState(null, "", buildCodingTestListHash());
       this.openCodingTestListRoute();
@@ -762,21 +969,18 @@ export class BamLearningApp {
     this.root.innerHTML = renderCodingTestLoadingView({ title: language.name });
 
     try {
-      let collection = this.codingTestCollections?.get(languageId) ?? null;
-      if (!collection) {
-        collection = await loadCodingTestCollection(
+      if (
+        !this.codingTestCollection ||
+        this.codingTestCollection.languageId !== languageId
+      ) {
+        this.codingTestCollection = await loadCodingTestCollection(
           languageId,
           this.curriculum,
         );
-        if (!(this.codingTestCollections instanceof Map)) {
-          this.codingTestCollections = new Map();
-        }
-        this.codingTestCollections.set(languageId, collection);
       }
       if (sequence !== this.renderSequence) return;
-      this.codingTestCollection = collection;
 
-      const problem = findCodingTestProblemBySlug(collection, slug);
+      const problem = findCodingTestProblemBySlug(this.codingTestCollection, slug);
       if (!problem) {
         window.history.replaceState(null, "", buildCodingTestListHash());
         this.openCodingTestListRoute();
@@ -913,6 +1117,53 @@ export class BamLearningApp {
   }
 
   handleClick(event) {
+    const themeChoice = event.target.closest("[data-theme-choice]");
+    if (themeChoice) {
+      this.themeController?.setTheme(themeChoice.dataset.themeChoice);
+      return;
+    }
+    const sectionLink = event.target.closest("[data-lesson-section]");
+    if (sectionLink) {
+      const section = document.getElementById(sectionLink.dataset.lessonSection);
+      if (section && this.root.contains(section)) {
+        const answer = section.closest("details");
+        if (answer) answer.open = true;
+        section.setAttribute("tabindex", "-1");
+        section.focus({ preventScroll: true });
+        section.scrollIntoView({ block: "start", behavior: "instant" });
+      }
+      return;
+    }
+    const catalogTopic = event.target.closest("[data-catalog-topic]");
+    if (catalogTopic && !catalogTopic.disabled) {
+      const kind = this.currentView === "review-catalog" ? "review" : "learn";
+      this.catalogFilters[kind] = {
+        topicId: catalogTopic.dataset.catalogTopic,
+        query: this.root.querySelector("[data-catalog-search]")?.value ?? "",
+      };
+      this.renderLearningCatalog();
+      this.root.querySelector('[data-catalog-topic][aria-pressed="true"]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (event.target.closest("[data-catalog-reset]")) {
+      const kind = this.currentView === "review-catalog" ? "review" : "learn";
+      this.catalogFilters[kind] = { topicId: null, query: "" };
+      this.renderLearningCatalog();
+      this.root.querySelector("[data-catalog-search]")?.focus();
+      return;
+    }
+    if (event.target.closest("[data-review-start-new]")) {
+      this.reviewNeedsRestart = false;
+      this.reviewRestoreNotice = "";
+      this.renderQuiz();
+      this.focusQuizQuestion();
+      return;
+    }
+    if (event.target.closest("[data-review-return]") && this.lessonReviewReturn) {
+      const scope = this.lessonReviewReturn.saved.scope;
+      window.location.hash = buildKeywordReviewHash(scope.languageId, scope.lessonId, scope.conceptId);
+      return;
+    }
     if (this.handleWebProjectClick(event)) return;
     if (this.handleCodingTestClick(event)) return;
     if (this.handleCodeQuestClick(event)) return;
@@ -942,32 +1193,20 @@ export class BamLearningApp {
     if (completeButton && this.currentLesson) {
       const progress = this.progressRepository.getProgress();
       const wasCompleted = progress.completedLessonIds.includes(this.currentLesson.id);
+      const answerOpen = Boolean(this.root?.querySelector?.("#lesson-answer")?.open);
       try {
         this.progressRepository.setLessonCompleted(this.currentLesson.id, !wasCompleted);
-        this.renderLesson();
+        this.renderLesson({ answerOpen });
         const updatedButton = document.querySelector("[data-toggle-complete]");
         updatedButton?.focus();
         this.announce(
-          wasCompleted ? "학습 완료 표시를 해제했습니다." : "학습을 완료로 표시했습니다.",
+          wasCompleted
+            ? "학습 완료 표시를 해제했습니다."
+            : "학습을 완료로 표시했습니다.",
         );
       } catch {
         this.announce("진도를 저장하지 못했습니다. 브라우저 저장 공간 설정을 확인해 주세요.");
       }
-      return;
-    }
-
-    const modelAnswerButton = event.target.closest("[data-toggle-model-answer]");
-    if (modelAnswerButton) {
-      const modelAnswer = document.querySelector("#lesson-model-answer");
-      if (!modelAnswer) return;
-
-      const isExpanded = modelAnswerButton.getAttribute("aria-expanded") === "true";
-      modelAnswer.hidden = isExpanded;
-      modelAnswerButton.setAttribute("aria-expanded", String(!isExpanded));
-      modelAnswerButton.textContent = isExpanded ? "면접 답변 보기" : "면접 답변 숨기기";
-
-      if (isExpanded) modelAnswerButton.focus();
-      else modelAnswer.focus();
       return;
     }
 
@@ -1003,6 +1242,17 @@ export class BamLearningApp {
   }
 
   handleChange(event) {
+    const quizLesson = event.target.closest("[data-quiz-lesson]");
+    if (quizLesson && this.currentView === "review" && this.quizCollection) {
+      const lessonId = quizLesson.value || null;
+      if (
+        !lessonId ||
+        this.curriculum.lessons.some((lesson) => lesson.id === lessonId && lesson.languageId === this.quizCollection.languageId)
+      ) {
+        window.location.hash = buildReviewHash(this.quizCollection.languageId, lessonId);
+      }
+      return;
+    }
     const webProjectManual = event.target.closest("[data-web-project-manual]");
     if (
       webProjectManual &&
@@ -1083,16 +1333,23 @@ export class BamLearningApp {
     if (!isValidOption) return;
 
     this.quizSession.selectedOptionIds.set(question.id, option.value);
-    this.renderQuiz();
-    window.requestAnimationFrame(() => {
-      const selectedInput = [...document.querySelectorAll("[data-quiz-option]")].find(
-        (input) => input.value === option.value,
-      );
-      selectedInput?.focus({ preventScroll: true });
-    });
+    this.saveReviewSession();
+    // Keep the native radio in place while its click/change activation finishes.
+    for (const input of this.root.querySelectorAll("[data-quiz-option]")) {
+      input.closest(".quiz-option")?.classList.toggle("is-selected", input.value === option.value);
+    }
+    const checkButton = this.root.querySelector("[data-quiz-check]");
+    if (checkButton) checkButton.disabled = false;
   }
 
   handleInput(event) {
+    const catalogSearch = event.target.closest("[data-catalog-search]");
+    if (catalogSearch && !event.isComposing) {
+      const cursor = catalogSearch.selectionStart;
+      this.updateCatalogFilters();
+      this.root.querySelector("[data-catalog-search]")?.setSelectionRange(cursor, cursor);
+      return;
+    }
     const webProjectEditor = event.target.closest("[data-web-project-source]");
     const webProjectState = this.webProjectState;
     if (
@@ -1283,12 +1540,46 @@ export class BamLearningApp {
   }
 
   handleQuizClick(event) {
-    if (this.currentView !== "review" || this.quizSession?.screen !== "question") {
-      const retryButton = event.target.closest("[data-quiz-retry]");
-      if (!retryButton || this.currentView !== "review") return false;
+    if (this.currentView !== "review") return false;
+    const documentLink = event.target.closest("[data-review-document]");
+    if (documentLink && this.quizSession) {
+      const route = parseLessonHash(documentLink.getAttribute("href"));
+      const lesson = this.curriculum.lessons.find((item) => item.courseId === route?.courseId && item.slug === route?.slug);
+      const question = this.quizSession.questions.find((item) => item.lessonId === lesson?.id);
+      if (lesson && question) {
+        event.preventDefault();
+        const token = createClientEntropy();
+        this.quizSession.returnContext = { token, sessionId: this.quizSession.id, lessonId: lesson.id, questionId: question.id };
+        this.saveReviewSession({ captureViewport: true });
+        window.location.hash = buildReviewLessonHash(lesson, token);
+      }
+      return true;
+    }
+    const conceptButton = event.target.closest("[data-related-concept]");
+    if (conceptButton) {
+      this.openConceptOverlay(conceptButton);
+      return true;
+    }
+    if (event.target.closest("[data-quiz-feedback-toggle]")) {
+      const question = this.getCurrentQuizQuestion();
+      if (!question) return true;
+      const expanded = this.quizSession.expandedQuestionIds;
+      if (expanded.has(question.id)) expanded.delete(question.id);
+      else expanded.add(question.id);
+      this.renderQuiz();
+      this.root.querySelector("[data-quiz-feedback-toggle]")?.focus({ preventScroll: true });
+      return true;
+    }
+    const retryButton = event.target.closest("[data-quiz-retry]");
+    if (retryButton) {
       this.retryQuiz(retryButton.dataset.quizRetry);
       return true;
     }
+    if (event.target.closest("[data-quiz-history]")) {
+      this.showRecentQuizResult();
+      return true;
+    }
+    if (this.quizSession?.screen !== "question") return false;
 
     if (event.target.closest("[data-quiz-check]")) {
       this.gradeCurrentQuizQuestion();
@@ -1331,6 +1622,7 @@ export class BamLearningApp {
 
   showPreviousQuizQuestion() {
     if (!this.quizSession || this.quizSession.currentIndex === 0) return;
+    this.quizSession.returnContext = null;
     this.quizSession.currentIndex -= 1;
     this.renderQuiz();
     this.focusQuizQuestion();
@@ -1345,6 +1637,7 @@ export class BamLearningApp {
     }
 
     if (this.quizSession.currentIndex < this.quizSession.questions.length - 1) {
+      this.quizSession.returnContext = null;
       this.quizSession.currentIndex += 1;
       this.renderQuiz();
       this.focusQuizQuestion();
@@ -1358,6 +1651,10 @@ export class BamLearningApp {
   finishQuizSession() {
     const session = this.quizSession;
     if (!session || session.screen !== "question" || session.recordAttempted) return;
+    if (this.reviewStorageConflict) {
+      this.announce("다른 탭에서 풀이가 바뀌었습니다. 저장된 풀이를 다시 불러온 뒤 결과를 확인해 주세요.");
+      return;
+    }
 
     const answers = session.questions
       .map((question) => session.gradedAnswers.get(question.id))
@@ -1371,6 +1668,14 @@ export class BamLearningApp {
     session.summary = summarizeQuiz(session.questions, answers);
     session.screen = "result";
     session.persistenceStatus = "saved";
+    this.saveReviewSession();
+    if (this.reviewStorageConflict) {
+      session.recordAttempted = false;
+      session.screen = "question";
+      session.summary = null;
+      this.renderQuiz();
+      return;
+    }
 
     try {
       const progress = this.progressRepository.recordQuizAttempt({
@@ -1397,17 +1702,20 @@ export class BamLearningApp {
   }
 
   retryQuiz(mode) {
-    if (!this.quizCollection || this.quizSession?.screen !== "result") return;
+    if (!this.quizCollection || !["all", "incorrect", "saved-incorrect"].includes(mode)) return;
+    if (mode !== "saved-incorrect" && this.quizSession?.screen !== "result") return;
+    const incorrectIds = mode === "saved-incorrect"
+      ? this.progressRepository.getProgress().incorrectQuestionIds
+      : this.quizSession.summary?.incorrectQuestionIds ?? [];
+    const questions = this.getScopedQuizQuestions().filter((question) =>
+      mode === "all" || incorrectIds.includes(question.id),
+    );
+    if (questions.length === 0) {
+      this.announce("선택한 범위에 남은 오답이 없습니다.");
+      return;
+    }
 
-    const questions =
-      mode === "incorrect"
-        ? this.quizCollection.questions.filter((question) =>
-            this.quizSession.summary.incorrectQuestionIds.includes(question.id),
-          )
-        : this.quizCollection.questions;
-    if (questions.length === 0) return;
-
-    this.startQuizSession(questions, mode === "incorrect" ? "incorrect" : "all");
+    this.startQuizSession(questions, mode === "all" ? "all" : "incorrect");
     this.renderQuiz();
     this.focusQuizQuestion();
     this.announce("새 복습 세션을 시작했습니다.");
@@ -1415,15 +1723,17 @@ export class BamLearningApp {
 
   startQuizSession(questions, mode) {
     this.quizSession = {
+      id: createClientEntropy(),
       mode,
       questions: [...questions],
       currentIndex: 0,
       selectedOptionIds: new Map(),
       gradedAnswers: new Map(),
-      screen: "question",
+      screen: questions.length ? "question" : "empty",
       summary: null,
       recordAttempted: false,
       persistenceStatus: "saved",
+      expandedQuestionIds: new Set(),
     };
   }
 
@@ -1432,15 +1742,51 @@ export class BamLearningApp {
     return this.quizSession.questions[this.quizSession.currentIndex] ?? null;
   }
 
+  getScopedQuizQuestions() {
+    return (this.quizCollection?.questions ?? []).filter((question) =>
+      (!this.quizLessonId || question.lessonId === this.quizLessonId) &&
+      (!this.quizConceptId || question.conceptId === this.quizConceptId),
+    );
+  }
+
+  showRecentQuizResult() {
+    this.refreshQuizHistory();
+    const attempt = this.quizRecentAttempt;
+    if (!attempt) return;
+    const answerIds = new Set(attempt.answers.map((answer) => answer.questionId));
+    const questions = this.getScopedQuizQuestions().filter((question) => answerIds.has(question.id));
+    this.startQuizSession(questions, "all");
+    this.quizSession.screen = "result";
+    this.quizSession.summary = summarizeQuiz(questions, attempt.answers);
+    this.quizSession.gradedAnswers = new Map(attempt.answers.map((answer) => [answer.questionId, answer]));
+    this.quizSession.selectedOptionIds = new Map(attempt.answers.map((answer) => [answer.questionId, answer.selectedOptionId]));
+    this.quizSession.completedAt = attempt.completedAt;
+    this.quizSession.recordAttempted = true;
+    this.quizSession.persistenceStatus = this.progressRepository.getPersistenceStatus().isPersistent ? "saved" : "memory";
+    this.renderQuiz();
+    this.focusQuizResult();
+  }
+
   refreshQuizHistory(progress = this.progressRepository.getProgress()) {
     if (!this.quizCollection) return;
     const currentQuestionIds = new Set(
-      this.quizCollection.questions.map((question) => question.id),
+      this.getScopedQuizQuestions().map((question) => question.id),
     );
     const languageAttempts = progress.quizAttempts.filter(
       (attempt) => attempt.languageId === this.quizCollection.languageId,
     );
-    this.quizRecentAttempt = languageAttempts.at(-1) ?? null;
+    this.quizRecentAttempt = null;
+    for (const attempt of [...languageAttempts].reverse()) {
+      const answers = attempt.answers.filter((answer) => currentQuestionIds.has(answer.questionId));
+      if (!answers.length) continue;
+      this.quizRecentAttempt = {
+        ...attempt,
+        answers,
+        score: answers.filter((answer) => answer.isCorrect).length,
+        total: answers.length,
+      };
+      break;
+    }
     this.quizIncorrectQuestionCount = progress.incorrectQuestionIds.filter((questionId) =>
       currentQuestionIds.has(questionId),
     ).length;
@@ -2431,165 +2777,6 @@ export class BamLearningApp {
     }
   }
 
-  renderMyPage() {
-    if (!this.curriculum) return;
-
-    let progress = {};
-    let webProjectState = {};
-    let isPersistent = true;
-    try {
-      progress = this.progressRepository.getProgress();
-      isPersistent =
-        this.progressRepository.getPersistenceStatus().isPersistent === true;
-    } catch {
-      isPersistent = false;
-    }
-    try {
-      webProjectState = this.webProjectRepository.getState();
-      isPersistent =
-        isPersistent &&
-        this.webProjectRepository.getPersistenceStatus().isPersistent === true;
-    } catch {
-      isPersistent = false;
-    }
-
-    const navigableLanguageCategoryIds = new Set(
-      (this.curriculum.categories ?? [])
-        .filter(
-          (category) =>
-            category.id === "language" && category.status !== "planned",
-        )
-        .map((category) => category.id),
-    );
-    const languageCourseIds = new Set(
-      (this.curriculum.courses ?? [])
-        .filter(
-          (course) =>
-            course.status !== "planned" &&
-            navigableLanguageCategoryIds.has(course.categoryId),
-        )
-        .map((course) => course.id),
-    );
-    const languageLessons = this.curriculum.lessons.filter((lesson) =>
-      languageCourseIds.has(lesson.courseId),
-    );
-    const mainContent = renderMyPageView({
-      curriculum: {
-        ...this.curriculum,
-        lessons: languageLessons,
-      },
-      progress,
-      codeQuestCollections: this.codeQuestCollections,
-      codingTestCollections: this.codingTestCollections,
-      webProjectCollection: this.webProjectCollection,
-      webProjectState,
-      isPersistent,
-    });
-    const lastLesson = languageLessons.find(
-      (lesson) => lesson.id === progress.lastLessonId,
-    );
-    const course =
-      getCourse(this.curriculum, lastLesson?.courseId) ??
-      getCourse(
-        this.curriculum,
-        languageCourseIds.has(DEFAULT_COURSE_ID)
-          ? DEFAULT_COURSE_ID
-          : languageLessons[0]?.courseId,
-      );
-    const language = getLanguage(this.curriculum, course?.languageId);
-    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
-    if (!course || !language || lessons.length === 0) {
-      this.root.innerHTML = mainContent;
-      return;
-    }
-
-    const completedLessonIds = new Set(progress.completedLessonIds ?? []);
-    const completedLessonCount = lessons.filter((lesson) =>
-      completedLessonIds.has(lesson.id),
-    ).length;
-    const questCollection = this.codeQuestCollections.get(language.id) ?? null;
-    const quests = getCodeQuestsInOrder(questCollection);
-    const completedQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      quests,
-    ).size;
-    const codingTestCollection = this.getCodingTestCollectionForLanguage(
-      language.id,
-    );
-    const codingTestProblems = getCodingTestProblemsInOrder(
-      codingTestCollection,
-    );
-    const solvedProblemIds = this.getSolvedCodingTestProblemIds(
-      progress,
-      codingTestCollection,
-    );
-    const firstLessonHref = buildLessonHash(
-      lessons[0].courseId,
-      lessons[0].slug,
-    );
-    const supportsLanguageFeatures = course.categoryId === "language";
-
-    this.root.innerHTML = renderAppShell({
-      homeHref: firstLessonHref,
-      menuOpen: this.menuOpen,
-      language: course,
-      lessonProgress: {
-        completedCount: completedLessonCount,
-        totalCount: lessons.length,
-        percent: Math.round((completedLessonCount / lessons.length) * 100),
-      },
-      languageNavigation: renderLanguageNavigation({
-        curriculum: this.curriculum,
-        currentLanguageId: language.id,
-        currentCourseId: course.id,
-      }),
-      lessonNavigationItems: lessons
-        .map((lesson) =>
-          this.renderLessonLink(lesson, null, completedLessonIds),
-        )
-        .join(""),
-      featureNavigation: supportsLanguageFeatures ? [
-        {
-          kind: "review",
-          options: {
-            href: buildReviewHash(language.id),
-            isCurrent: false,
-          },
-        },
-        {
-          kind: "code-quest",
-          options: quests[0]
-            ? {
-                href: buildQuestHash(language.id, quests[0].slug),
-                isCurrent: false,
-                completedCount: completedQuestCount,
-                totalCount: quests.length,
-              }
-            : null,
-        },
-        {
-          kind: "coding-test",
-          options:
-            codingTestProblems.length > 0
-              ? {
-                  href: buildCodingTestListHash(),
-                  isCurrent: false,
-                  solvedCount: solvedProblemIds.size,
-                  totalCount: codingTestProblems.length,
-                }
-              : null,
-        },
-        {
-          kind: "web-project",
-          options: this.getWebProjectNavigationOptions(false),
-        },
-      ] : [],
-      myPageCurrent: true,
-      mainContent,
-    });
-    this.syncMenuState();
-  }
-
   renderLoadingLesson(lesson) {
     this.root.innerHTML = `
       <main class="loading-page" id="lesson-content" tabindex="-1">
@@ -2601,207 +2788,169 @@ export class BamLearningApp {
     `;
   }
 
-  renderLesson() {
+  renderLesson({ answerOpen = false } = {}) {
     const lesson = this.currentLesson;
     if (!lesson || !this.curriculum) return;
 
     const course = getCourse(this.curriculum, lesson.courseId);
     const language = getLanguage(this.curriculum, lesson.languageId);
-    const lessons = getLessonsForCourse(this.curriculum, lesson.courseId);
-    if (!course || !language || lessons.length === 0) return;
+    if (!course || !language) return;
+    const lessons = getLessonsForCourse(this.curriculum, lesson.courseId)
+      .filter((item) => Boolean(item.archivedFromCatalog) === Boolean(lesson.archivedFromCatalog));
+    const readingPosition = lessons.findIndex((item) => item.id === lesson.id) + 1;
     const progress = this.progressRepository.getProgress();
-    const completedIds = new Set(progress.completedLessonIds);
-    const isCompleted = completedIds.has(lesson.id);
-    const completedCount = lessons.filter((item) => completedIds.has(item.id)).length;
-    const progressPercent = lessons.length === 0 ? 0 : Math.round((completedCount / lessons.length) * 100);
+    const isCompleted = progress.completedLessonIds.includes(lesson.id);
     const adjacent = getAdjacentLessons(lessons, lesson.id);
-    const languageQuestCollection =
-      this.codeQuestCollections.get(language.id) ?? null;
-    const codeQuests = getCodeQuestsInOrder(languageQuestCollection);
-    const firstCodeQuest = codeQuests[0] ?? null;
-    const completedCodeQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      codeQuests,
-    ).size;
-    const languageCodingTestCollection =
-      this.getCodingTestCollectionForLanguage(language.id);
-    const codingTestProblems = getCodingTestProblemsInOrder(
-      languageCodingTestCollection,
-    );
-    const solvedCodingTestProblemIds = this.getSolvedCodingTestProblemIds(
-      progress,
-      languageCodingTestCollection,
-    );
-    const supportsLanguageFeatures = course.categoryId === "language";
-    const normalizedMarkdown = String(this.currentMarkdown).replaceAll("\r\n", "\n");
-    const objectivesMatch = normalizedMarkdown.match(
-      /(?:^|\n)(## 학습 목표\n[\s\S]*?)(?=\n##\s|$)/,
-    );
-    const objectivesMarkdown = objectivesMatch?.[1] ?? "";
-    let lessonBodyMarkdown = objectivesMatch
-      ? normalizedMarkdown.replace(objectivesMatch[0], "\n")
-      : normalizedMarkdown;
-    const modelAnswerMatch = lessonBodyMarkdown.match(
-      /(?:^|\n)(## 면접 답변 예시\n[\s\S]*?)(?=\n##\s|$)/,
-    );
-    const modelAnswerMarkdown = modelAnswerMatch?.[1] ?? "";
-    if (modelAnswerMatch) {
-      lessonBodyMarkdown = lessonBodyMarkdown.replace(modelAnswerMatch[0], "\n");
-    }
+    const usesCoreSummary = Boolean(lesson.source?.originalPath);
+    const answer = splitMarkdownSection(this.currentMarkdown, lesson.answerHeading ?? (usesCoreSummary ? "핵심 정리" : "면접 답변 예시"));
+    const overview = splitLessonOverview(answer.body);
+    const metadataObjectives = lesson.source?.originalPath || !overview.objectives
+      ? [...new Set(lesson.objectives)].filter((objective) => !overview.objectives.includes(objective.trim()))
+      : [];
+
+    const summaryHtml = overview.summary
+      ? renderMarkdown(overview.summary, { preserveParagraphLineBreaks: true })
+      : lesson.summary ? `<p>${escapeHtml(lesson.summary)}</p>` : "";
+    const bodyHtml = renderMarkdown(overview.body, { skipFirstHeading: true, preserveParagraphLineBreaks: true });
+    const answerHtml = renderMarkdown(answer.section, { preserveParagraphLineBreaks: true });
+    const relatedQuestions = this.quizCollections?.get(lesson.languageId)?.questions ?? [];
+    const reviewLinks = (this.reviewConcepts ?? []).filter((concept) =>
+      getReviewDocumentLesson(this.curriculum, concept)?.id === lesson.id &&
+      relatedQuestions.some((question) => question.lessonId === concept.lessonId && question.conceptId === concept.id));
+    const reviewLinkHtml = lesson.answerHeading
+      ? reviewLinks.length
+        ? reviewLinks.map((concept) => `<p class="lesson-review-link"><a class="button button--primary" href="${buildKeywordReviewHash(lesson.languageId, concept.lessonId, concept.id)}">${escapeHtml(concept.title)} 객관식으로 복습하기</a></p>`).join("")
+        : `<p class="lesson-review-link" role="status">${this.lessonQuizLoadFailed || this.reviewConceptsLoadFailed ? "관련 문제를 불러오지 못했습니다. 새로고침하여 다시 확인해 주세요." : "이 문서의 관련 객관식 문제는 아직 준비 중입니다."}</p>`
+      : `<p class="lesson-review-link"><a class="button button--primary" href="${buildReviewHash(lesson.languageId, lesson.id)}">읽은 내용 객관식으로 복습하기</a></p>`;
+    // Read only headings emitted by our Markdown renderer; fenced code is escaped.
+    const documentHeadings = [...`${bodyHtml}${answerHtml}`.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/gu)];
+    const tableOfContents = `<nav class="lesson-toc" aria-label="이 문서의 목차"><p>이 문서에서</p>
+      ${summaryHtml ? '<button type="button" data-lesson-section="한줄-요약">한줄 요약</button>' : ""}
+      ${documentHeadings.map((heading) => `<button type="button" data-lesson-section="${heading[1]}">${heading[2].replace(/<[^>]*>/gu, "")}</button>`).join("")}
+      <button type="button" data-lesson-section="completion-title">핵심 질문</button>
+    </nav>`;
 
     const mainContent = `
       <main class="main-area" id="lesson-content" tabindex="-1">
           <div class="lesson-container">
+            <nav class="lesson-context" aria-label="문서 탐색"><a href="#/learn">← 학습문서 목록</a>${this.lessonReviewReturn ? '<button class="button button--secondary" type="button" data-review-return>문제로 돌아가기</button>' : ""}</nav>
+            ${getReviewRouteOptions(globalThis.window?.location?.hash).returnToken && !this.lessonReviewReturn ? '<p class="catalog-notice" role="status">이 문제의 풀이를 복원할 수 없습니다. <a href="#/review">객관식 문제 목록</a>에서 다시 선택해 주세요.</p>' : ""}
+            <div class="lesson-layout">
+              ${tableOfContents}
+              <div class="lesson-reading-content">
             <header class="lesson-hero">
               <div class="eyebrow">
                 <span>${escapeHtml(course.name)}</span>
                 <span aria-hidden="true">·</span>
-                <span>${lesson.order}/${lessons.length}단원</span>
+                <span>${readingPosition}/${lessons.length}단원</span>
                 <span aria-hidden="true">·</span>
                 <span>약 ${lesson.estimatedMinutes}분</span>
               </div>
               <h1>${escapeHtml(lesson.title)}</h1>
-              <p class="lesson-summary">${escapeHtml(lesson.summary)}</p>
-              ${objectivesMarkdown ? `<section class="lesson-objectives" aria-labelledby="학습-목표">${renderMarkdown(objectivesMarkdown)}</section>` : ""}
-              <div class="essential-question">
-                <span aria-hidden="true">?</span>
-                <div><small>오늘의 핵심 질문</small><strong>${escapeHtml(lesson.essentialQuestion)}</strong></div>
-              </div>
+              ${overview.objectives || metadataObjectives.length ? `<div class="lesson-summary lesson-learning-outcomes" id="학습-목표" aria-label="학습 후 할 수 있는 것">${renderMarkdown(overview.objectives, { preserveParagraphLineBreaks: true })}${metadataObjectives.length ? `<ul>${metadataObjectives.map((objective) => `<li>${escapeHtml(objective)}</li>`).join("")}</ul>` : ""}</div>` : ""}
+              ${summaryHtml ? `<div class="essential-question"><div><h2 id="한줄-요약">한줄 요약</h2><div class="lesson-overview-summary">${summaryHtml}</div></div></div>` : ""}
             </header>
 
             <article class="lesson-body">
-              ${renderMarkdown(lessonBodyMarkdown, { skipFirstHeading: true })}
-              ${modelAnswerMarkdown ? `<div class="lesson-model-answer-disclosure"><p id="lesson-model-answer-help">답을 보기 전에 먼저 확인 문제를 자신의 말로 설명해 보세요.</p><button class="button button--secondary lesson-model-answer-toggle" type="button" data-toggle-model-answer aria-controls="lesson-model-answer" aria-describedby="lesson-model-answer-help" aria-expanded="false">면접 답변 보기</button></div><section class="lesson-model-answer" id="lesson-model-answer" role="region" tabindex="-1" aria-labelledby="면접-답변-예시" hidden>${renderMarkdown(modelAnswerMarkdown)}</section>` : ""}
+              ${bodyHtml}
             </article>
 
             <section class="completion-card${isCompleted ? " is-complete" : ""}" aria-labelledby="completion-title">
-              <div>
-                <span class="completion-icon" aria-hidden="true">${isCompleted ? "✓" : lesson.order}</span>
+              <div class="completion-question">
+                <span class="completion-icon" aria-hidden="true">${isCompleted ? "✓" : readingPosition}</span>
                 <div>
-                  <h2 id="completion-title">${isCompleted ? "이 단원을 완료했습니다" : "핵심 질문에 답할 수 있나요?"}</h2>
-                  <p>${isCompleted ? "진도에 저장되었습니다. 언제든 다시 읽고 완료 표시를 바꿀 수 있습니다." : "자신의 말로 설명할 수 있다면 완료로 표시하고 다음 단원으로 이동하세요."}</p>
+                  <p class="eyebrow">스스로 답해 보기</p>
+                  <h2 id="completion-title">${escapeHtml(lesson.essentialQuestion)}</h2>
                 </div>
               </div>
-              <button class="button ${isCompleted ? "button--secondary" : "button--primary"}" type="button" data-toggle-complete aria-pressed="${isCompleted}">
-                ${isCompleted ? "완료 표시 해제" : "학습 완료로 표시"}
-              </button>
+              <p class="lesson-self-check-prompt">먼저 자신의 말로 답해 보세요.</p>
+              ${answer.section ? `<p class="lesson-answer-guidance">${lesson.answerHeading ? "아래를 누르면 이 핵심 질문의 답을 펼쳐 자신의 설명과 비교할 수 있습니다." : usesCoreSummary ? "아래를 누르면 핵심 정리를 펼쳐 자신의 답과 비교할 수 있습니다." : "아래를 누르면 확인 문제의 답변 예시를 펼쳐 자신의 설명과 비교할 수 있습니다."}</p>
+              <details class="lesson-answer" id="lesson-answer"${answerOpen ? " open" : ""}>
+                <summary>${lesson.answerHeading || usesCoreSummary ? "핵심 질문 답 확인하기" : "답변 예시 확인하기"}</summary>
+                <div class="lesson-body">${answerHtml}</div>
+              </details>` : ""}
+              <div class="completion-actions">
+                <p class="completion-status">${isCompleted ? "진도에 저장되었습니다. 언제든 다시 읽고 완료 표시를 바꿀 수 있습니다." : "자신의 말로 설명할 수 있다면 완료로 표시하고 다음 단원으로 이동하세요."}</p>
+                <button class="button ${isCompleted ? "button--secondary" : "button--primary"}" type="button" data-toggle-complete aria-pressed="${isCompleted}">
+                  ${isCompleted ? "완료 표시 해제" : "학습 완료로 표시"}
+                </button>
+              </div>
             </section>
+
+            ${reviewLinkHtml}
 
             <nav class="lesson-pagination" aria-label="이전 및 다음 교안">
               ${this.renderPaginationLink(adjacent.previous, "previous")}
               ${this.renderPaginationLink(adjacent.next, "next")}
             </nav>
 
-            <footer class="page-footer">
-              <span>BAM.dev</span>
-              <p>문법 암기보다 값의 흐름을 설명하는 연습부터.</p>
-            </footer>
+              </div>
+            </div>
           </div>
       </main>
     `;
-    this.root.innerHTML = renderAppShell({
-      homeHref: buildLessonHash(lessons[0].courseId, lessons[0].slug),
-      menuOpen: this.menuOpen,
-      language: course,
-      lessonProgress: {
-        completedCount,
-        totalCount: lessons.length,
-        percent: progressPercent,
-      },
-      languageNavigation: renderLanguageNavigation({
-        curriculum: this.curriculum,
-        currentLanguageId: language.id,
-        currentCourseId: course.id,
-      }),
-      lessonNavigationItems: lessons
-        .map((item) => this.renderLessonLink(item, lesson.id, completedIds))
-        .join(""),
-      featureNavigation: supportsLanguageFeatures ? [
-        {
-          kind: "review",
-          options: {
-            href: buildReviewHash(language.id),
-            isCurrent: false,
-          },
-        },
-        {
-          kind: "code-quest",
-          options: firstCodeQuest
-            ? {
-                href: buildQuestHash(language.id, firstCodeQuest.slug),
-                isCurrent: false,
-                completedCount: completedCodeQuestCount,
-                totalCount: codeQuests.length,
-              }
-            : null,
-        },
-        {
-          kind: "coding-test",
-          options:
-            codingTestProblems.length > 0
-              ? {
-                  href: buildCodingTestListHash(),
-                  isCurrent: false,
-                  solvedCount: solvedCodingTestProblemIds.size,
-                  totalCount: codingTestProblems.length,
-                }
-              : null,
-        },
-        {
-          kind: "web-project",
-          options: this.getWebProjectNavigationOptions(false),
-        },
-      ] : [],
-      mainContent,
-    });
-    this.syncMenuState();
+    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: "learn", mainContent });
+
   }
 
   renderQuiz() {
     if (!this.curriculum || !this.quizCollection || !this.quizSession) return;
+    if (this.reviewNeedsRestart) {
+      this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: "review", mainContent: `<main class="main-area service-main" id="lesson-content" tabindex="-1"><h1>풀이를 확인해 주세요.</h1><p role="status">${escapeHtml(this.reviewRestoreNotice)}</p><button class="button button--primary" type="button" data-review-start-new>현재 문제로 새로 시작</button> <a href="#/review">문제 목록으로 이동</a></main>` });
+      return;
+    }
+    this.saveReviewSession();
 
     const language = getLanguage(this.curriculum, this.quizCollection.languageId);
-    const course = getLanguageCourse(this.curriculum, this.quizCollection.languageId);
-    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
-    if (!language || !course || lessons.length === 0) return;
-
-    const progress = this.progressRepository.getProgress();
-    const completedIds = new Set(progress.completedLessonIds);
-    const completedCount = lessons.filter((lesson) => completedIds.has(lesson.id)).length;
-    const progressPercent = Math.round((completedCount / lessons.length) * 100);
+    const lessons = getLessonsForLanguage(this.curriculum, this.quizCollection.languageId);
+    if (!language || lessons.length === 0) return;
+    const selectedLesson = lessons.find((lesson) => lesson.id === this.quizLessonId) ?? null;
     const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
-    const languageQuestCollection =
-      this.codeQuestCollections.get(language.id) ?? null;
-    const codeQuests = getCodeQuestsInOrder(languageQuestCollection);
-    const firstCodeQuest = codeQuests[0] ?? null;
-    const completedCodeQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      codeQuests,
-    ).size;
-    const languageCodingTestCollection =
-      this.getCodingTestCollectionForLanguage(language.id);
-    const codingTestProblems = getCodingTestProblemsInOrder(
-      languageCodingTestCollection,
-    );
-    const solvedCodingTestProblemIds = this.getSolvedCodingTestProblemIds(
-      progress,
-      languageCodingTestCollection,
-    );
     const session = this.quizSession;
     const question = this.getCurrentQuizQuestion();
+    const questionLesson = lessons.find((lesson) => lesson.id === question?.lessonId) ?? null;
+    const selectedConcept = this.reviewConcepts?.find((item) => item.id === this.quizConceptId && (!selectedLesson || item.lessonId === selectedLesson.id));
+    const reviewTitle = selectedConcept?.title ?? (selectedLesson ? `${selectedLesson.title} · 객관식 복습` : this.quizCollection.title);
+    const lessonHref = selectedLesson ? buildLessonHash(selectedLesson.courseId, selectedLesson.slug) : firstLessonHref;
+    const scopeControls = renderQuizScopeControls({
+      lessons: lessons.filter((lesson) => this.quizCollection.questions.some((question) => question.lessonId === lesson.id)).map((lesson) => ({
+        ...lesson,
+        courseName: getCourse(this.curriculum, lesson.courseId)?.name ?? lesson.courseId,
+        questionCount: this.quizCollection.questions.filter((item) => item.lessonId === lesson.id).length,
+      })),
+      selectedLessonId: this.quizLessonId,
+      recentAttempt: this.quizRecentAttempt,
+      incorrectQuestionCount: this.quizIncorrectQuestionCount,
+      saveStatus: this.reviewSaveStatus,
+      notice: this.reviewRestoreNotice,
+    });
     const mainContent =
       session.screen === "result"
         ? renderQuizResultView({
-            title: this.quizCollection.title,
+            title: reviewTitle,
             summary: session.summary,
             persistenceStatus: session.persistenceStatus,
             sessionMode: session.mode,
-            lessonHref: firstLessonHref,
+            lessonHref,
+            scopeControls,
+            completedAt: session.completedAt,
+            questionResults: session.questions.map((item) => {
+              const lesson = lessons.find((candidate) => candidate.id === item.lessonId);
+              return {
+                prompt: item.prompt,
+                isCorrect: session.gradedAnswers.get(item.id)?.isCorrect === true,
+                conceptId: item.conceptId,
+                lessonTitle: lesson?.title,
+                lessonHref: lesson ? buildLessonHash(lesson.courseId, lesson.slug) : null,
+              };
+            }),
           })
+        : session.screen === "empty"
+          ? renderQuizEmptyView({ title: reviewTitle, scopeControls, lessonHref })
         : renderQuizQuestionView({
             languageId: this.quizCollection.languageId,
             languageName: language.name,
-            title: this.quizCollection.title,
+            title: reviewTitle,
             question,
             currentIndex: session.currentIndex,
             total: session.questions.length,
@@ -2811,64 +2960,16 @@ export class BamLearningApp {
             recentAttempt: this.quizRecentAttempt,
             incorrectQuestionCount: this.quizIncorrectQuestionCount,
             sessionMode: session.mode,
+            scopeControls,
+            lessonTitle: questionLesson?.title,
+            lessonHref: questionLesson ? buildLessonHash(questionLesson.courseId, questionLesson.slug) : null,
+            learningObjective: question?.learningObjective ?? questionLesson?.objectives?.[0] ?? "",
+            relatedConceptTitle: this.reviewConcepts?.find((item) => item.id === question?.conceptId && item.lessonId === question?.lessonId)?.title,
+            otherFeedbackExpanded: session.expandedQuestionIds?.has(question?.id) ?? false,
           });
 
-    this.root.innerHTML = renderAppShell({
-      homeHref: firstLessonHref,
-      menuOpen: this.menuOpen,
-      language: course,
-      lessonProgress: {
-        completedCount,
-        totalCount: lessons.length,
-        percent: progressPercent,
-      },
-      languageNavigation: renderLanguageNavigation({
-        curriculum: this.curriculum,
-        currentLanguageId: language.id,
-        currentCourseId: course.id,
-      }),
-      lessonNavigationItems: lessons
-        .map((lesson) => this.renderLessonLink(lesson, null, completedIds))
-        .join(""),
-      featureNavigation: [
-        {
-          kind: "review",
-          options: {
-            href: buildReviewHash(language.id),
-            isCurrent: true,
-          },
-        },
-        {
-          kind: "code-quest",
-          options: firstCodeQuest
-            ? {
-                href: buildQuestHash(language.id, firstCodeQuest.slug),
-                isCurrent: false,
-                completedCount: completedCodeQuestCount,
-                totalCount: codeQuests.length,
-              }
-            : null,
-        },
-        {
-          kind: "coding-test",
-          options:
-            codingTestProblems.length > 0
-              ? {
-                  href: buildCodingTestListHash(),
-                  isCurrent: false,
-                  solvedCount: solvedCodingTestProblemIds.size,
-                  totalCount: codingTestProblems.length,
-                }
-              : null,
-        },
-        {
-          kind: "web-project",
-          options: this.getWebProjectNavigationOptions(false),
-        },
-      ],
-      mainContent,
-    });
-    this.syncMenuState();
+    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: "review", mainContent });
+
   }
 
   renderCodeQuest() {
@@ -2877,9 +2978,8 @@ export class BamLearningApp {
     if (!this.curriculum || !collection || !state) return;
 
     const language = getLanguage(this.curriculum, collection.languageId);
-    const course = getLanguageCourse(this.curriculum, collection.languageId);
-    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
-    if (!language || !course || lessons.length === 0) return;
+    const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
+    if (!language || lessons.length === 0) return;
 
     const progress = this.progressRepository.getProgress();
     const completedLessonIds = new Set(progress.completedLessonIds);
@@ -2892,21 +2992,18 @@ export class BamLearningApp {
     const quests = getCodeQuestsInOrder(collection);
     const currentIndex = quests.findIndex((quest) => quest.id === state.quest.id);
     const adjacent = getAdjacentCodeQuests(collection, state.quest.id);
-    const completedQuestIds = getCurrentCompletedQuestIds(progress, quests);
-    const completedQuestCount = completedQuestIds.size;
-    const languageCodingTestCollection =
-      this.getCodingTestCollectionForLanguage(language.id);
-    const codingTestProblems = getCodingTestProblemsInOrder(
-      languageCodingTestCollection,
-    );
+    const completedQuestIds = new Set(progress.completedQuestIds);
+    const completedQuestCount = quests.filter((quest) =>
+      completedQuestIds.has(quest.id),
+    ).length;
+    const codingTestProblems =
+      language.id === this.codingTestCollection?.languageId
+        ? getCodingTestProblemsInOrder(this.codingTestCollection)
+        : [];
     const solvedCodingTestProblemIds =
       codingTestProblems.length > 0
-        ? this.getSolvedCodingTestProblemIds(
-            progress,
-            languageCodingTestCollection,
-          )
+        ? this.getSolvedCodingTestProblemIds(progress)
         : new Set();
-    const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
     const currentQuestHref = buildQuestHash(language.id, state.quest.slug);
     const mainContent = renderCodeQuestView({
       languageId: collection.languageId,
@@ -2940,9 +3037,10 @@ export class BamLearningApp {
     });
 
     this.root.innerHTML = renderAppShell({
-      homeHref: firstLessonHref,
+      theme: this.themeController?.getState(),
+      homeHref: "#/",
       menuOpen: this.menuOpen,
-      language: course,
+      language,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -2951,7 +3049,6 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
-        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) => this.renderLessonLink(lesson, null, completedLessonIds))
@@ -3033,12 +3130,13 @@ export class BamLearningApp {
     const referencedLesson = this.curriculum?.lessons.find((lesson) =>
       referencedLessonIds.has(lesson.id),
     );
-    const course =
-      getLanguageCourse(this.curriculum, referencedLesson?.languageId) ??
-      getCourse(this.curriculum, DEFAULT_COURSE_ID);
-    const language = getLanguage(this.curriculum, course?.languageId);
-    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
-    return { language, course, lessons };
+    const language =
+      getLanguage(this.curriculum, referencedLesson?.languageId) ??
+      getLanguage(this.curriculum, DEFAULT_LANGUAGE_ID);
+    const lessons = language
+      ? getLessonsForLanguage(this.curriculum, language.id)
+      : [];
+    return { language, lessons };
   }
 
   renderWebProjectList() {
@@ -3096,8 +3194,8 @@ export class BamLearningApp {
   }
 
   renderWebProjectShell(mainContent, project) {
-    const { language, course, lessons } = this.getWebProjectShellContext(project);
-    if (!language || !course || lessons.length === 0) {
+    const { language, lessons } = this.getWebProjectShellContext(project);
+    if (!language || lessons.length === 0) {
       this.root.innerHTML = mainContent;
       return;
     }
@@ -3111,30 +3209,22 @@ export class BamLearningApp {
     );
     const questCollection = this.codeQuestCollections.get(language.id) ?? null;
     const quests = getCodeQuestsInOrder(questCollection);
-    const completedQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      quests,
-    ).size;
-    const languageCodingTestCollection =
-      this.getCodingTestCollectionForLanguage(language.id);
-    const codingTestProblems = getCodingTestProblemsInOrder(
-      languageCodingTestCollection,
-    );
+    const completedQuestCount = quests.filter((quest) =>
+      progress.completedQuestIds.includes(quest.id),
+    ).length;
+    const codingTestProblems =
+      language.id === this.codingTestCollection?.languageId
+        ? getCodingTestProblemsInOrder(this.codingTestCollection)
+        : [];
     const solvedCodingTestProblemIds =
       codingTestProblems.length > 0
-        ? this.getSolvedCodingTestProblemIds(
-            progress,
-            languageCodingTestCollection,
-          )
+        ? this.getSolvedCodingTestProblemIds(progress)
         : new Set();
-    const firstLessonHref = buildLessonHash(
-      lessons[0].courseId,
-      lessons[0].slug,
-    );
     this.root.innerHTML = renderAppShell({
-      homeHref: firstLessonHref,
+      theme: this.themeController?.getState(),
+      homeHref: "#/",
       menuOpen: this.menuOpen,
-      language: course,
+      language,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -3143,7 +3233,6 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
-        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) =>
@@ -3191,57 +3280,15 @@ export class BamLearningApp {
     this.syncMenuState();
   }
 
-  getCodingTestCollectionForLanguage(languageId) {
-    const loaded =
-      this.codingTestCollections instanceof Map
-        ? this.codingTestCollections.get(languageId)
-        : null;
-    if (loaded) return loaded;
-    return this.codingTestCollection?.languageId === languageId
-      ? this.codingTestCollection
-      : null;
-  }
-
-  getCodingTestCollectionsInCurriculumOrder() {
-    const collections = [];
-    const seen = new Set();
-    for (const language of this.curriculum?.languages ?? []) {
-      const collection = this.getCodingTestCollectionForLanguage(language.id);
-      if (!collection || seen.has(collection.languageId)) continue;
-      collections.push(collection);
-      seen.add(collection.languageId);
-    }
-    if (
-      this.codingTestCollection &&
-      !seen.has(this.codingTestCollection.languageId)
-    ) {
-      collections.push(this.codingTestCollection);
-    }
-    return collections;
-  }
-
-  getSolvedCodingTestProblemIds(
-    progress = this.progressRepository.getProgress(),
-    source = this.codingTestCollection,
-  ) {
+  getSolvedCodingTestProblemIds(progress = this.progressRepository.getProgress()) {
     const completions = Array.isArray(progress.completedCodingTestProblems)
       ? progress.completedCodingTestProblems
       : [];
-    const collections =
-      source instanceof Map
-        ? [...source.values()]
-        : Array.isArray(source)
-          ? source
-          : source
-            ? [source]
-            : [];
     const revisionByProblemId = new Map(
-      collections.flatMap((collection) =>
-        getCodingTestProblemsInOrder(collection).map((problem) => [
-          problem.id,
-          problem.revision,
-        ]),
-      ),
+      getCodingTestProblemsInOrder(this.codingTestCollection).map((problem) => [
+        problem.id,
+        problem.revision,
+      ]),
     );
     return new Set(
       completions
@@ -3256,81 +3303,44 @@ export class BamLearningApp {
 
   renderCodingTestList({ focusSelector = null, cursorPosition = null } = {}) {
     this.cancelPendingCodingTestSearchRender();
-    const collections = this.getCodingTestCollectionsInCurriculumOrder();
-    if (!this.curriculum || collections.length === 0) return;
-    if (
-      this.codingTestFilters.language !== "all" &&
-      this.getCodingTestCollectionForLanguage(this.codingTestFilters.language)
-    ) {
-      this.codingTestCollection = this.getCodingTestCollectionForLanguage(
-        this.codingTestFilters.language,
-      );
-    }
-    const entries = collections.flatMap((collection) => {
-      const language = getLanguage(this.curriculum, collection.languageId);
-      return getCodingTestProblemsInOrder(collection).map((problem) => ({
-        problem,
-        collection,
-        language,
-      }));
-    });
-    const allProblems = entries.map((entry) => entry.problem);
+    const collection = this.codingTestCollection;
+    if (!this.curriculum || !collection) return;
+    const language = getLanguage(this.curriculum, collection.languageId);
+    if (!language) return;
+
+    const allProblems = getCodingTestProblemsInOrder(collection);
     const progress = this.progressRepository.getProgress();
-    const solvedProblemIds = this.getSolvedCodingTestProblemIds(
-      progress,
-      collections,
-    );
-    const visibleProblems = collections.flatMap((collection) => {
-      if (
-        this.codingTestFilters.language !== "all" &&
-        this.codingTestFilters.language !== collection.languageId
-      ) {
-        return [];
-      }
-      return filterCodingTestProblems(collection, {
+    const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
+    const languageMatches =
+      this.codingTestFilters.language === "all" ||
+      this.codingTestFilters.language === collection.languageId;
+    const visibleProblems = languageMatches
+      ? filterCodingTestProblems(collection, {
           query: this.codingTestFilters.query,
           difficulty: this.codingTestFilters.difficulty,
           type: this.codingTestFilters.type,
           status: this.codingTestFilters.status,
           completedProblemIds: solvedProblemIds,
-        });
-    });
+        })
+      : [];
     const hrefByProblemId = Object.fromEntries(
-      entries.map(({ problem, collection }) => [
+      allProblems.map((problem) => [
         problem.id,
         buildCodingTestHash(collection.languageId, problem.slug),
       ]),
     );
-    const languageNameByProblemId = Object.fromEntries(
-      entries.map(({ problem, language, collection }) => [
-        problem.id,
-        language?.name ?? collection.languageId,
-      ]),
-    );
-    const languageOptions = collections.map((collection) => {
-      const language = getLanguage(this.curriculum, collection.languageId);
-      return {
-        value: collection.languageId,
-        label: language?.name ?? collection.languageId,
-      };
-    });
     const mainContent = renderCodingTestListView({
-      title: "코딩테스트 문제 목록",
+      title: collection.title,
       problems: visibleProblems,
       totalCount: allProblems.length,
       filters: this.codingTestFilters,
-      languageName: "학습 언어",
-      languageNameByProblemId,
-      languageOptions,
+      languageName: language.name,
+      languageOptions: [{ value: language.id, label: language.name }],
       typeOptions: [...new Set(allProblems.map((problem) => problem.type))],
       solvedProblemIds,
       hrefByProblemId,
     });
-    const activeSolvedProblemIds = this.getSolvedCodingTestProblemIds(
-      progress,
-      this.codingTestCollection,
-    );
-    this.renderCodingTestShell(mainContent, progress, activeSolvedProblemIds);
+    this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
 
     if (focusSelector) {
       window.requestAnimationFrame(() => {
@@ -3355,7 +3365,6 @@ export class BamLearningApp {
     const progress = this.progressRepository.getProgress();
     const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
     const mainContent = renderCodingTestView({
-      languageId: collection.languageId,
       languageName: language.name,
       collectionTitle: collection.title,
       listHref: buildCodingTestListHash(),
@@ -3381,9 +3390,8 @@ export class BamLearningApp {
     const collection = this.codingTestCollection;
     if (!this.curriculum || !collection) return;
     const language = getLanguage(this.curriculum, collection.languageId);
-    const course = getLanguageCourse(this.curriculum, collection.languageId);
-    const lessons = course ? getLessonsForCourse(this.curriculum, course.id) : [];
-    if (!language || !course || lessons.length === 0) return;
+    const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
+    if (!language || lessons.length === 0) return;
 
     const progress = progressSnapshot ?? this.progressRepository.getProgress();
     const solvedProblemIds =
@@ -3398,17 +3406,16 @@ export class BamLearningApp {
     const languageQuestCollection =
       this.codeQuestCollections.get(language.id) ?? null;
     const quests = getCodeQuestsInOrder(languageQuestCollection);
-    const completedQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      quests,
-    ).size;
+    const completedQuestCount = quests.filter((quest) =>
+      progress.completedQuestIds.includes(quest.id),
+    ).length;
     const problems = getCodingTestProblemsInOrder(collection);
-    const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
 
     this.root.innerHTML = renderAppShell({
-      homeHref: firstLessonHref,
+      theme: this.themeController?.getState(),
+      homeHref: "#/",
       menuOpen: this.menuOpen,
-      language: course,
+      language,
       lessonProgress: {
         completedCount: completedLessonCount,
         totalCount: lessons.length,
@@ -3417,7 +3424,6 @@ export class BamLearningApp {
       languageNavigation: renderLanguageNavigation({
         curriculum: this.curriculum,
         currentLanguageId: language.id,
-        currentCourseId: course.id,
       }),
       lessonNavigationItems: lessons
         .map((lesson) => this.renderLessonLink(lesson, null, completedLessonIds))
@@ -3563,6 +3569,7 @@ export class BamLearningApp {
     this.menuOpen = false;
     this.syncMenuState();
     const message = error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
+    const fallbackLesson = this.curriculum?.lessons?.[0];
     this.root.innerHTML = `
       <main class="error-page" id="lesson-content" tabindex="-1" aria-labelledby="error-title">
         <div class="state-message" role="alert">
@@ -3572,6 +3579,7 @@ export class BamLearningApp {
           <p>${escapeHtml(message)}</p>
         </div>
         <button class="button button--primary" type="button" data-retry>다시 시도</button>
+        ${fallbackLesson ? `<a class="button button--secondary" href="${buildLessonHash(fallbackLesson.courseId, fallbackLesson.slug)}">학습 문서 목록으로 돌아가기</a>` : ""}
       </main>
     `;
     window.requestAnimationFrame(() => {

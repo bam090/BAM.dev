@@ -85,7 +85,10 @@ test("slug 조회와 order 기반 이전·다음 탐색이 입력 배열을 바�
 
   assert.equal(selected.id, "quest-javascript-number-path");
   assert.deepEqual(reversed.map((quest) => quest.id), originalIds);
-  assert.deepEqual(ordered.map((quest) => quest.order), [1, 2, 3, 4, 5]);
+  assert.deepEqual(
+    ordered.map((quest) => quest.order),
+    collection.quests.map((_, index) => index + 1),
+  );
   assert.equal(adjacent.previous.order, 1);
   assert.equal(adjacent.next.order, 3);
   assert.deepEqual(getAdjacentCodeQuests(reversed, "quest-missing"), {

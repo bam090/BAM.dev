@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { getLessonsForCourse } from "../src/core/content.js";
 
 const quiz = JSON.parse(
   await readFile(new URL("../content/quizzes/javascript.json", import.meta.url), "utf8"),
@@ -210,14 +210,17 @@ test("퀴즈 스키마는 언어 중립 컬렉션을 허용한다", () => {
   }
 });
 
-test("7개 교안에 basic과 application 문항이 하나씩 있다", () => {
-  const lessons = getLessonsForCourse(curriculum, quiz.languageId);
+test("JavaScript 기초 7개 교안에 basic과 application 문항이 하나씩 있다", () => {
+  const lessons = curriculum.lessons.filter(
+    (lesson) => lesson.courseId === "javascript" && lesson.languageId === quiz.languageId,
+  );
 
   assert.equal(quiz.schemaVersion, 1);
   assert.equal(quiz.languageId, "javascript");
   assert.ok(quiz.title.trim().length > 0);
   assert.equal(lessons.length, 7);
-  assert.equal(quiz.questions.length, 14);
+  const foundationLessonIds = new Set(lessons.map((lesson) => lesson.id));
+  assert.equal(quiz.questions.filter((question) => foundationLessonIds.has(question.lessonId)).length, 14);
 
   for (const lesson of lessons) {
     const questions = quiz.questions.filter((question) => question.lessonId === lesson.id);
@@ -261,6 +264,21 @@ test("문항 ID와 lessonId·conceptId 참조가 유효하다", () => {
     if (question.code !== undefined) {
       assert.ok(question.code.trim().length > 0, `${question.id}: 코드가 비어 있습니다.`);
     }
+  }
+});
+
+test("수록된 JavaScript 원문 단원은 복습 목표·문항·추적 가능한 원문 복사본을 가진다", async () => {
+  const lessons = curriculum.lessons.filter((lesson) => lesson.courseId === "javascript-notes");
+  assert.ok(lessons.some((lesson) => lesson.id === "js-notes-functions"), "첫 전체 복습 단원인 함수가 있어야 합니다.");
+  for (const lesson of lessons) {
+    const questions = quiz.questions.filter((question) => question.lessonId === lesson.id);
+    assert.ok(questions.length > 0, `${lesson.id}: 연결된 문제가 필요합니다.`);
+    assert.ok(questions.every((question) => typeof question.learningObjective === "string" && question.learningObjective.trim()), `${lesson.id}: 문항별 학습 목표가 필요합니다.`);
+    assert.match(lesson.source.originalPath, /^profile\/.+\.md$/);
+    assert.match(lesson.source.sha256, /^[a-f0-9]{64}$/);
+    assert.equal(lesson.source.importMode, "copy");
+    const bytes = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), lesson.source.sha256, `${lesson.id}: 원문 복사 해시가 다릅니다.`);
   }
 });
 
@@ -318,6 +336,8 @@ test("새 문항끼리 또는 기존 확인 문제와 문구가 중복되지 않
   for (const lesson of curriculum.lessons.filter((item) => item.languageId === quiz.languageId)) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const confirmationSections = markdown.split(/\n## (?:최종 )?확인 문제\n/);
+    // 반입본은 원문 구조를 유지한다. 확인 문제 절이 있으면 기존과 동일하게 중복을 검사한다.
+    if (lesson.source?.originalPath && confirmationSections.length === 1) continue;
     assert.ok(
       confirmationSections.length > 1,
       `${lesson.id}: 확인 문제 섹션을 찾을 수 없습니다.`,

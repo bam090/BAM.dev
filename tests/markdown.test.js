@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
-import { escapeHtml, renderMarkdown } from "../src/ui/markdown.js";
+import { escapeHtml, renderInlineCodeText, renderMarkdown, splitLessonOverview, splitMarkdownSection } from "../src/ui/markdown.js";
 
 function originalCodeFrom(result) {
   const encodedSource = result.match(/data-code-source="([^"]*)"/)?.[1];
@@ -51,6 +51,25 @@ test("원시 HTML을 실행 가능한 마크업으로 통과시키지 않는다"
   assert.equal(escapeHtml('a & <b> "c"'), "a &amp; &lt;b&gt; &quot;c&quot;");
 });
 
+test("함수 원문의 백틱 문자 설명과 이어지는 템플릿 변수는 각각 별도 코드로 읽힌다", () => {
+  const source = "백틱 `` ` ``으로 감싼 문자열 안의 `${name}`은 `name` 값을 그 자리에 넣는다.";
+  const expected = "백틱 <code>`</code>으로 감싼 문자열 안의 <code>${name}</code>은 <code>name</code> 값을 그 자리에 넣는다.";
+  assert.equal(renderMarkdown(source), `<p>${expected}</p>`);
+  assert.equal(renderInlineCodeText(source), expected);
+});
+
+test("같은 길이 백틱으로 감싼 내부 태그는 escape하고 미종료 코드는 원문으로 보존한다", () => {
+  for (const [source, expected] of [
+    ["`` `<tag>` ``", "<code>`&lt;tag&gt;`</code>"],
+    ["앞 ``닫히지 않음` <img>", "앞 ``닫히지 않음` &lt;img&gt;"],
+    ["`   `", "<code>   </code>"],
+    ["`  x  `", "<code> x </code>"],
+  ]) {
+    assert.equal(renderMarkdown(source), `<p>${expected}</p>`);
+    assert.equal(renderInlineCodeText(source), expected);
+  }
+});
+
 test("제목, 목록, 표, 코드 블록을 제한된 HTML로 변환한다", () => {
   const markdown = [
     "# 제목",
@@ -77,6 +96,79 @@ test("제목, 목록, 표, 코드 블록을 제한된 HTML로 변환한다", () 
   assert.ok(result.includes("code-token--keyword"));
   assert.ok(result.includes("&lt;"));
   assert.equal(originalCodeFrom(result), "const value = 1 < 2;");
+});
+
+test("일반 문단에서 문장별 소스 줄바꿈을 화면 줄바꿈으로 보존한다", () => {
+  const markdown =
+    "처음부터 이 모든 기능을 만들 필요는 없습니다.\nJavaScript의 기본 문법과 브라우저 도구를 조합하면 됩니다.";
+  const result = renderMarkdown(
+    markdown,
+    { preserveParagraphLineBreaks: true },
+  );
+
+  assert.equal(
+    result,
+    "<p>처음부터 이 모든 기능을 만들 필요는 없습니다.<br>JavaScript의 기본 문법과 브라우저 도구를 조합하면 됩니다.</p>",
+  );
+  assert.equal(
+    renderMarkdown(markdown),
+    "<p>처음부터 이 모든 기능을 만들 필요는 없습니다. JavaScript의 기본 문법과 브라우저 도구를 조합하면 됩니다.</p>",
+  );
+});
+
+test("선두 목표·요약만 분리하고 문장별 줄바꿈과 나머지 개념 제목을 보존한다", () => {
+  const markdown = "# 교안\n\n## 학습 목표\n\n첫째 문장.\n둘째 문장.\n\n## 한줄 요약\n\n`값`의 흐름을 읽는다.\n\n## 변수\n\n값을 기억한다.\n\n## 한줄 요약\n\n후반 요약은 본문이다.";
+  const { body, objectives, summary } = splitLessonOverview(markdown);
+  assert.equal(objectives.trim(), "첫째 문장.\n둘째 문장.");
+  assert.equal(summary.trim(), "`값`의 흐름을 읽는다.");
+  assert.ok(!body.includes("첫째 문장.") && !body.includes("`값`의 흐름을 읽는다."));
+  assert.match(body, /## 변수\n\n값을 기억한다\./);
+  assert.match(body, /## 한줄 요약\n\n후반 요약은 본문이다\./);
+  assert.match(renderMarkdown(body, { skipFirstHeading: true }), /<h2 id="변수">변수<\/h2>/);
+});
+
+test("선두 소개나 코드 안의 같은 제목을 목표·요약 섹션으로 오인하지 않는다", () => {
+  const unrecognized = [
+    "# 교안\n\n소개를 먼저 읽는다.\n\n## 학습 목표\n\n뒤의 목표.",
+    "# 교안\n\n```text\n## 학습 목표\n코드 안의 제목\n```\n\n## 한줄 요약\n후반 요약.",
+    "# 교안\n\n## 다른 개념\n\n설명.\n\n## 학습 목표\n\n뒤의 목표.",
+  ];
+  for (const markdown of unrecognized) {
+    const result = splitLessonOverview(markdown);
+    assert.equal(result.objectives, "");
+    assert.equal(result.summary, "");
+    assert.equal(result.body, markdown);
+  }
+  const fencedGoal = "# 교안\n\n## 학습 목표\n\n```text\n## 한줄 요약\n코드 안의 내용\n```\n\n목표의 끝.\n\n## 한줄 요약\n\n실제 요약.\n\n## 본문\n\n설명.";
+  const result = splitLessonOverview(fencedGoal);
+  assert.match(result.objectives, /```text\n## 한줄 요약\n코드 안의 내용\n```/);
+  assert.match(result.objectives, /목표의 끝\./);
+  assert.equal(result.summary.trim(), "실제 요약.");
+  assert.match(result.body, /## 본문\n\n설명\./);
+});
+
+test("답변 절을 옮길 때 코드 안 제목을 건너뛰고 원문·하위 제목·다음 절을 보존한다", () => {
+  for (const title of ["핵심 정리", "면접 답변 예시"]) {
+    const before = `# 교안\n\n\`\`\`text\n## ${title}\n코드 안의 제목\n\`\`\`\n\n`;
+    const section = `## ${title}\n\n첫 문장.\n둘째 문장.\n\n### 답변 1\n\n\`\`\`text\n## 공식 자료\n코드 안의 절 경계\n\`\`\`\n\n답변의 끝.`;
+    const after = "\n\n## 공식 자료\n\n남길 내용.\n";
+    const result = splitMarkdownSection(before + section + after, title);
+    assert.equal(result.section, section);
+    assert.match(result.body, /코드 안의 제목/);
+    assert.match(result.body, /## 공식 자료\n\n남길 내용\./);
+    assert.doesNotMatch(result.body, /첫 문장|답변의 끝/);
+    assert.equal((result.body.match(new RegExp(`## ${title}`, "g")) ?? []).length, 1);
+  }
+});
+
+test("정확한 답변 절이 없거나 비어 있으면 본문을 그대로 유지하고 빈 답변을 만들지 않는다", () => {
+  for (const markdown of [
+    "# 교안\r\n\r\n## 핵심 정리 보충\r\n\r\n본문.",
+    "# 교안\n\n```text\n## 핵심 정리\n코드 안의 내용\n```",
+    "# 교안\n\n## 핵심 정리\n\n## 공식 자료\n\n남길 내용.",
+  ]) {
+    assert.deepEqual(splitMarkdownSection(markdown, "핵심 정리"), { body: markdown, section: "" });
+  }
 });
 
 test("HTML 코드 블록은 태그·속성·문자열을 안전하게 강조한다", () => {
@@ -249,7 +341,9 @@ test("코드 스포트라이트는 키보드 포커스·가로 스크롤·reduce
   assert.match(css, /\.code-card pre\s*\{[^}]*overflow:\s*auto/s);
   assert.match(css, /\.syntax-code:focus-visible\s*\{/);
   assert.match(css, /@media \(hover: hover\) and \(pointer: fine\)[\s\S]*?\.syntax-code \.code-line:hover/);
-  assert.match(css, /\.syntax-code code:hover \.code-line:not\(:hover\)\s*\{[^}]*opacity:\s*0\.75/s);
+  const dimmedRule = css.match(/\.syntax-code code:hover \.code-line:not\(:hover\)\s*\{([^}]*)\}/)?.[1] ?? "";
+  const opacity = Number(dimmedRule.match(/opacity:\s*([\d.]+)\s*;/)?.[1]);
+  assert.ok(opacity >= 0.85 && opacity <= 1, "강조하지 않은 코드도 검증된 읽힘 하한을 유지해야 합니다.");
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.code-line\s*\{[^}]*transition:\s*none/s);
 });
 

@@ -45,6 +45,59 @@ function renderRecentProgress(recentAttempt, incorrectQuestionCount) {
   `;
 }
 
+export function getQuizSaveStatusMessage(status) {
+  if (status === "memory") return "현재 탭에만 저장됩니다. 새로고침하면 사라질 수 있어요.";
+  if (status === "failed") return "풀이를 저장하지 못했습니다. 현재 화면에서 계속할 수 있어요.";
+  return "풀이 자동 저장";
+}
+
+export function renderQuizScopeControls({
+  lessons = [],
+  selectedLessonId = null,
+  recentAttempt = null,
+  incorrectQuestionCount = 0,
+  saveStatus = "saved",
+  notice = "",
+} = {}) {
+  return `
+    <nav class="review-breadcrumb" aria-label="문제 탐색"><a href="#/review">← 객관식 문제 목록</a><span data-review-save-status role="status">${getQuizSaveStatusMessage(saveStatus)}</span></nav>
+    <p class="catalog-notice" data-review-save-notice role="status"${notice ? "" : " hidden"}><span data-review-save-message>${escapeHtml(notice)}</span> <button class="text-button" type="button" data-retry>저장된 풀이 불러오기</button></p>
+    <details class="review-scope">
+      <summary>문제 범위·지난 결과</summary>
+      <label for="quiz-lesson-scope">복습할 학습 문서</label>
+      <select id="quiz-lesson-scope" data-quiz-lesson>
+        <option value=""${selectedLessonId ? "" : " selected"}>이 언어의 전체 문서</option>
+        ${lessons.map((lesson) => `<option value="${escapeHtml(lesson.id)}"${lesson.id === selectedLessonId ? " selected" : ""}>${escapeHtml(lesson.courseName)} · ${escapeHtml(lesson.title)} (${lesson.questionCount}문항)</option>`).join("")}
+      </select>
+      <div class="quiz-result-actions">
+        <button class="button button--secondary" type="button" data-quiz-retry="saved-incorrect"${incorrectQuestionCount > 0 ? "" : " disabled"}>저장된 오답 다시 풀기 (${incorrectQuestionCount})</button>
+        <button class="button button--secondary" type="button" data-quiz-history${recentAttempt ? "" : " disabled"}>최근 완료 결과 보기</button>
+      </div>
+      <p>선택과 채점 상태는 이 브라우저에 저장됩니다. 새 범위를 시작하면 마지막 진행 중 풀이가 바뀌며, 완료 기록은 유지됩니다.</p>
+    </details>
+  `;
+}
+
+export function renderQuizEmptyView({ title, scopeControls = "", lessonHref = "#" } = {}) {
+  return `
+    <main class="main-area" id="lesson-content" tabindex="-1">
+      <div class="review-container">
+        ${scopeControls}
+        <section class="quiz-card" role="status">
+          <h1 id="quiz-question-title" tabindex="-1">연결된 문제가 없습니다.</h1>
+          <p>${escapeHtml(title)}에는 아직 준비된 객관식 문제가 없습니다. 문서를 읽거나 다른 범위를 선택해 주세요.</p>
+          <a class="button button--secondary" href="${escapeHtml(lessonHref)}">학습 문서 읽기</a>
+        </section>
+      </div>
+    </main>
+  `;
+}
+
+function renderLessonReference({ lessonHref, lessonTitle, conceptId }) {
+  if (!lessonHref) return "";
+  return `<p class="quiz-lesson-reference"><a href="${escapeHtml(lessonHref)}" data-review-document>관련 학습문서: ${escapeHtml(lessonTitle)}</a></p>`;
+}
+
 export function renderReviewNavigationLink({ href, isCurrent = false } = {}) {
   return `
     <nav class="review-nav" aria-label="개념 복습">
@@ -122,13 +175,14 @@ function renderQuestionCode(code, languageId, languageName) {
   `;
 }
 
-function renderOption(option, index, selectedOptionId, gradedAnswer) {
+function renderOption(option, index, selectedOptionId, gradedAnswer, otherFeedbackExpanded) {
   const isSelected = option.id === selectedOptionId;
   const feedback = gradedAnswer?.feedback?.find((item) => item.optionId === option.id) ?? null;
   const isCorrect = feedback?.isCorrect === true;
   const isSelectedIncorrect = Boolean(gradedAnswer && isSelected && !isCorrect);
   const feedbackId = `quiz-option-feedback-${index}`;
   const inputId = `quiz-option-${index}`;
+  const showFeedback = feedback && (isCorrect || isSelected || otherFeedbackExpanded);
   const optionClasses = [
     "quiz-option",
     isSelected ? "is-selected" : "",
@@ -148,13 +202,13 @@ function renderOption(option, index, selectedOptionId, gradedAnswer) {
 
   return `
     <div class="${optionClasses}">
-      <input id="${inputId}" type="radio" name="quiz-answer" value="${escapeHtml(option.id)}" data-quiz-option${isSelected ? " checked" : ""}${gradedAnswer ? " disabled" : ""}${feedback ? ` aria-describedby="${feedbackId}"` : ""}>
+      <input id="${inputId}" type="radio" name="quiz-answer" value="${escapeHtml(option.id)}" data-quiz-option${isSelected ? " checked" : ""}${gradedAnswer ? " disabled" : ""}${showFeedback ? ` aria-describedby="${feedbackId}"` : ""}>
       <label for="${inputId}">
         <span class="quiz-option-marker" aria-hidden="true">${OPTION_MARKERS[index] ?? index + 1}</span>
         <span class="quiz-option-content">
           <span class="quiz-option-text">${renderInlineCodeText(option.text)}</span>
           ${
-            feedback
+            showFeedback
               ? `<span class="quiz-option-feedback" id="${feedbackId}"><strong>${resultLabel}</strong>${renderInlineCodeText(feedback.message)}</span>`
               : ""
           }
@@ -195,6 +249,12 @@ export function renderQuizQuestionView({
   recentAttempt = null,
   incorrectQuestionCount = 0,
   sessionMode = "all",
+  scopeControls = "",
+  lessonHref = null,
+  lessonTitle = "학습 문서",
+  learningObjective = "",
+  relatedConceptTitle = null,
+  otherFeedbackExpanded = false,
 } = {}) {
   const safeTotal = Math.max(0, safeInteger(total));
   const safeIndex = Math.min(Math.max(0, safeInteger(currentIndex)), Math.max(0, safeTotal - 1));
@@ -206,6 +266,7 @@ export function renderQuizQuestionView({
   return `
     <main class="main-area" id="lesson-content" tabindex="-1">
       <div class="review-container">
+        ${scopeControls}
         ${renderQuestionHeader({
           languageName,
           title,
@@ -220,6 +281,7 @@ export function renderQuizQuestionView({
         <section class="quiz-card" aria-labelledby="quiz-question-title">
           <p class="quiz-question-meta">${difficulty} 문제 · ${safeIndex + 1}/${safeTotal}</p>
           <h2 id="quiz-question-title" tabindex="-1">${renderInlineCodeText(question?.prompt ?? "문제를 불러오지 못했습니다.")}</h2>
+          ${learningObjective ? `<p class="quiz-learning-objective"><strong>학습 목표</strong> ${renderInlineCodeText(learningObjective)}</p>` : ""}
           ${renderQuestionCode(question?.code, languageId, languageName)}
 
           <form class="quiz-form" data-quiz-form>
@@ -227,12 +289,14 @@ export function renderQuizQuestionView({
               <legend>답을 하나 선택하세요.</legend>
               ${(question?.options ?? [])
                 .map((option, index) =>
-                  renderOption(option, index, selectedOptionId, gradedAnswer),
+                  renderOption(option, index, selectedOptionId, gradedAnswer, otherFeedbackExpanded),
                 )
                 .join("")}
             </fieldset>
 
             ${renderGradedSummary(question, gradedAnswer)}
+            ${gradedAnswer ? `<button class="text-button" id="quiz-feedback-toggle" type="button" data-quiz-feedback-toggle aria-expanded="${otherFeedbackExpanded}">${otherFeedbackExpanded ? "다른 보기 해설 접기" : "다른 보기 해설 펼치기"}</button>` : ""}
+            ${lessonHref ? `<p class="quiz-lesson-reference"><button class="button button--secondary" id="quiz-related-concept" type="button" data-related-concept aria-haspopup="dialog">관련 개념${relatedConceptTitle ? `: ${renderInlineCodeText(relatedConceptTitle)}` : " 확인"}</button></p>` : ""}
 
             <div class="quiz-actions">
               <button class="button button--secondary" type="button" data-quiz-previous${safeIndex === 0 ? " disabled" : ""}>이전 문제</button>
@@ -253,6 +317,9 @@ export function renderQuizResultView({
   persistenceStatus = "saved",
   sessionMode = "all",
   lessonHref = "#",
+  scopeControls = "",
+  questionResults = [],
+  completedAt = null,
 } = {}) {
   const correct = Math.max(0, safeInteger(summary?.correct));
   const total = Math.max(0, safeInteger(summary?.total));
@@ -271,10 +338,11 @@ export function renderQuizResultView({
   return `
     <main class="main-area" id="lesson-content" tabindex="-1">
       <div class="review-container review-result-container">
+        ${scopeControls}
         <header class="review-result-header">
           <p class="eyebrow">${sessionMode === "incorrect" ? "오답 다시 풀기 완료" : escapeHtml(title)}</p>
           <h1 id="quiz-result-title" tabindex="-1">복습 결과</h1>
-          <p>모든 문제를 채점했습니다. 결과를 확인하고 다음 연습을 선택하세요.</p>
+          <p>${completedAt ? `${escapeHtml(completedAt.slice(0, 10))} 저장 당시 결과입니다. 현재 범위에 남아 있는 문항만 표시합니다.` : "모든 문제를 채점했습니다. 결과를 확인하고 다음 연습을 선택하세요."}</p>
         </header>
 
         <section class="quiz-result-card" aria-labelledby="quiz-result-title">
@@ -287,10 +355,12 @@ export function renderQuizResultView({
             <div><dt>오답</dt><dd>${incorrectCount}문항</dd></div>
             <div><dt>정답률</dt><dd>${percent}%</dd></div>
           </dl>
+          <p>이 정답률은 객관식 복습 기록이며, 독립적인 구현 능력이나 완전한 숙련을 뜻하지 않습니다.</p>
+          ${questionResults.length ? `<ol class="quiz-result-items">${questionResults.map((result) => `<li><strong>${result.isCorrect ? "정답" : "오답"}</strong> ${renderInlineCodeText(result.prompt)}${renderLessonReference(result)}</li>`).join("")}</ol>` : ""}
           <p class="quiz-persistence-status${persistenceStatus === "saved" ? "" : " is-warning"}" role="status">${persistenceMessage}</p>
           <div class="quiz-result-actions">
             <button class="button button--primary" type="button" data-quiz-retry="${hasIncorrect ? "incorrect" : "all"}">${hasIncorrect ? "오답 다시 풀기" : "전체 다시 풀기"}</button>
-            <a class="button button--secondary" href="${escapeHtml(lessonHref)}">교안으로 돌아가기</a>
+            <a class="button button--secondary" href="#/review">다른 문제 찾기</a>
           </div>
         </section>
       </div>
