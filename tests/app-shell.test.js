@@ -49,21 +49,38 @@ function renderShell(overrides = {}) {
   });
 }
 
-test("브랜드는 별도 B 배지 없이 BAM.dev 한 이름을 홈 링크로 제공한다", () => {
+test("브랜드는 모바일 상단과 서비스 사이드바에서 같은 BAM.dev 홈 링크를 제공한다", () => {
   const learning = renderLearningShell({ current: "learn" });
-  const homeLink = learning.match(/<a\b[^>]*href="#\/"[^>]*>[\s\S]*?<\/a>/)?.[0] ?? "";
-  assert.match(homeLink, /aria-label="BAM.dev 홈"/);
-  assert.match(homeLink, /BAM\.dev/);
-  assert.equal((learning.match(/aria-label="BAM.dev 홈"/g) ?? []).length, 1);
-  assert.match(learning, /href="#\/"[^>]*>홈<\/a>/);
-  assert.match(learning, /href="#\/learn"[^>]*>학습문서<\/a>/);
-  assert.match(learning, /href="#\/review"[^>]*>객관식 문제<\/a>/);
+  for (const region of ["header", "aside"]) {
+    const markup = learning.match(new RegExp(`<${region}\\b[^>]*>[\\s\\S]*?</${region}>`))?.[0] ?? "";
+    assert.match(markup, /<a\b[^>]*href="#\/"[^>]*aria-label="BAM.dev 홈"[^>]*><strong>BAM\.dev<\/strong><\/a>/);
+  }
+  assert.match(learning, /href="#\/"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?홈<\/a>/);
+  assert.match(learning, /href="#\/learn"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?학습문서<\/a>/);
+  assert.match(learning, /href="#\/review"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?객관식 문제<\/a>/);
   assert.match(learning, /<footer\b[^>]*>[\s\S]*?BAM\.dev · 개발자로 성장하는 나의 공간[\s\S]*?<\/footer>/);
   assert.match(learning, /data-theme-choice="light"/);
   assert.match(learning, /data-theme-choice="dark"/);
   assert.doesNotMatch(learning, /디자인 시안|표본 1개|이 화면에서만 유지/);
   assert.doesNotMatch(learning, /brand-mark|>B<\/span>/);
   assert.doesNotMatch(renderShell(), /brand-mark|>B<\/span>/);
+});
+
+test("서비스 사이드바는 기존 세 경로의 현재 위치와 이름 있는 메뉴 조작부를 제공한다", () => {
+  for (const [current, href] of [["home", "#/"], ["learn", "#/learn"], ["review", "#/review"]]) {
+    for (const menuOpen of [false, true]) {
+      const html = renderLearningShell({ current, menuOpen });
+      const navigation = html.match(/<nav\b[^>]*aria-label="서비스 선택"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? "";
+      assert.equal((navigation.match(/<a\b/g) ?? []).length, 3);
+      assert.equal((navigation.match(/aria-current="page"/g) ?? []).length, 1);
+      assert.ok(navigation.includes(`href="${href}" data-service-link="${current}" aria-current="page"`));
+      const sidebarId = html.match(/<aside\b[^>]*\bid="([^"]+)"/)?.[1];
+      assert.ok(sidebarId);
+      assert.ok(html.includes(`aria-controls="${sidebarId}" aria-expanded="${menuOpen}"`));
+      assert.match(html, /<button\b[^>]*data-toggle-menu[^>]*>[\s\S]*?서비스 메뉴 열기[\s\S]*?<\/button>/);
+      assert.match(html, /<button\b[^>]*data-close-menu[^>]*>[\s\S]*?서비스 메뉴 닫기[\s\S]*?<\/button>/);
+    }
+  }
 });
 
 test("공통 앱 셸은 모바일 메뉴·코스 진도·본문·announcer 계약을 유지한다", () => {

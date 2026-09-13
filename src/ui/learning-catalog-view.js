@@ -2,7 +2,7 @@ import { buildLessonHash } from "../core/navigation.js";
 import { buildKeywordReviewHash, getReviewDocumentLesson } from "../core/review-navigation.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
 
-const CATALOG_TOPICS = [
+export const CATALOG_TOPICS = [
   { id: "html", title: "HTML" },
   { id: "css", title: "CSS" },
   { id: "javascript", title: "JavaScript" },
@@ -15,7 +15,7 @@ const CATALOG_TOPICS = [
   { id: "react", title: "React", planned: true },
 ];
 
-function getCourseTopic(course) {
+export function getCourseTopic(course) {
   return course.categoryId === "language" ? course.languageId : course.categoryId;
 }
 

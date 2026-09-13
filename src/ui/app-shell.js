@@ -4,6 +4,7 @@ import { renderCodeQuestNavigationLink } from "./code-quest-view.js";
 import { renderCodingTestNavigationLink } from "./coding-test-view.js";
 import { renderWebProjectNavigationLink } from "./web-project-view.js";
 import { renderThemeControls } from "./theme.js";
+import { renderServiceIcon, renderSidebarSearch, renderSidebarContext, renderSidebarRecent } from "./service-sidebar-view.js";
 
 const FEATURE_NAVIGATION_RENDERERS = Object.freeze({
   review: renderReviewNavigationLink,
@@ -12,17 +13,32 @@ const FEATURE_NAVIGATION_RENDERERS = Object.freeze({
   "web-project": renderWebProjectNavigationLink,
 });
 
-export function renderLearningShell({ current = "home", mainContent = "", theme } = {}) {
+export function renderLearningShell({ current = "home", menuOpen = false, mainContent = "", theme, sidebar = {} } = {}) {
   return `<div class="learning-shell">
-    <header class="service-header">
+    <header class="mobile-header">
       <a class="mobile-brand" href="#/" aria-label="BAM.dev 홈"><strong>BAM.dev</strong></a>
-      <nav aria-label="서비스 선택">
-        <a href="#/"${current === "home" ? ' aria-current="page"' : ""}>홈</a>
-        <a href="#/learn"${current === "learn" ? ' aria-current="page"' : ""}>학습문서</a>
-        <a href="#/review"${current === "review" ? ' aria-current="page"' : ""}>객관식 문제</a>
-      </nav>
-      ${renderThemeControls(theme)}
+      <button class="icon-button" type="button" data-toggle-menu aria-controls="course-sidebar" aria-expanded="${Boolean(menuOpen)}">
+        <span aria-hidden="true">☰</span><span class="sr-only">서비스 메뉴 열기</span>
+      </button>
     </header>
+    <aside class="sidebar service-sidebar${menuOpen ? " is-open" : ""}" id="course-sidebar" aria-label="서비스 메뉴">
+      <div class="sidebar-brand">
+        <a href="#/" aria-label="BAM.dev 홈"><strong>BAM.dev</strong></a>
+        <button class="icon-button sidebar-close" type="button" data-close-menu>
+          <span aria-hidden="true">×</span><span class="sr-only">서비스 메뉴 닫기</span>
+        </button>
+      </div>
+      ${renderSidebarSearch(sidebar.query, sidebar.searchResults)}
+      <nav class="service-navigation" aria-label="서비스 선택">
+        <a href="#/" data-service-link="home"${current === "home" ? ' aria-current="page"' : ""}>${renderServiceIcon("home")}홈</a>
+        <a href="${escapeHtml(sidebar.routes?.learn ?? "#/learn")}" data-service-link="learn"${current === "learn" ? ' aria-current="page"' : ""}>${renderServiceIcon("learn")}학습문서</a>
+        <a href="${escapeHtml(sidebar.routes?.review ?? "#/review")}" data-service-link="review"${current === "review" ? ' aria-current="page"' : ""}>${renderServiceIcon("review")}객관식 문제</a>
+      </nav>
+      <div class="sidebar-context desktop-navigation" data-sidebar-context>${renderSidebarContext({ ...sidebar, current })}</div>
+      <div class="sidebar-recent desktop-navigation" data-sidebar-recent>${renderSidebarRecent(sidebar.recent)}</div>
+      <div class="service-sidebar-settings">${renderThemeControls(theme)}</div>
+    </aside>
+    <div class="sidebar-backdrop${menuOpen ? " is-visible" : ""}" data-close-menu aria-hidden="true"></div>
     ${mainContent}
     <footer class="service-footer">BAM.dev · 개발자로 성장하는 나의 공간</footer>
     <div class="announcer sr-only" aria-live="polite" aria-atomic="true"></div>

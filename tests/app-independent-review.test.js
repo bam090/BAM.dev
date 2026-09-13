@@ -66,6 +66,157 @@ function choose(app, optionId) {
   app.handleChange({ target: { closest(selector) { return selector === "[data-quiz-option]" ? { value: optionId } : null; } } });
 }
 
+function menuEnvironment(app) {
+  const nodes = new Map();
+  function element(selector) {
+    const attributes = new Map();
+    const node = {
+      attributes, children: [], visible: true,
+      classList: { toggle(name, value) { attributes.set(`class:${name}`, value); } },
+      toggleAttribute(name, value) { value ? attributes.set(name, "") : attributes.delete(name); },
+      setAttribute(name, value) { attributes.set(name, value); }, removeAttribute(name) { attributes.delete(name); },
+      contains(target) { return node === target || node.children.includes(target); },
+      matches(candidate) { return candidate === selector; },
+      focus() { if (!attributes.has("inert")) document.activeElement = node; },
+      getClientRects() { return node.visible ? [{}] : []; },
+      addEventListener() {},
+    };
+    nodes.set(selector, node);
+    return node;
+  }
+  const sidebar = element(".sidebar");
+  nodes.set("#course-sidebar", sidebar);
+  const brand = element("a[href]");
+  const close = element(".sidebar-close");
+  const theme = element("[data-theme-choice]");
+  const toggle = element("[data-toggle-menu]");
+  const main = element(".main-area");
+  nodes.set("#lesson-content", main);
+  const header = element(".mobile-header");
+  header.children = [toggle];
+  sidebar.children = [brand, close, theme];
+  sidebar.querySelector = (selector) => nodes.get(selector) ?? null;
+  sidebar.querySelectorAll = () => sidebar.children;
+  const background = [main, header, element(".service-footer"), element(".skip-link")];
+  const backdrop = element(".sidebar-backdrop");
+  document.body = element("body");
+  document.querySelector = (selector) => nodes.get(selector) ?? null;
+  const handlers = new Map();
+  document.addEventListener = (name, callback) => handlers.set(name, callback);
+  window.addEventListener = () => {};
+  app.root.addEventListener = () => {};
+  app.mobileMedia = { matches: true, addEventListener(_name, callback) { handlers.set("resize", callback); } };
+  app.menuOpen = false;
+  app.syncMenuState = BamLearningApp.prototype.syncMenuState;
+  app.bindGlobalEvents();
+  return { sidebar, brand, close, theme, toggle, main, background, backdrop, handlers };
+}
+
+test("모바일 서비스 메뉴는 배경과 footer를 잠그고 Tab·닫기·화면 폭 변화 뒤 유효 초점을 유지한다", (t) => {
+  browser(t, "#/learn");
+  const { app } = harness();
+  const menu = menuEnvironment(app);
+  app.syncMenuState();
+  assert.ok(menu.sidebar.attributes.has("inert"), "처음 닫힌 drawer는 탐색할 수 없다.");
+  for (const dismiss of ["Escape", "close", "backdrop", "current-link"]) {
+    app.handleClick(click("[data-toggle-menu]"));
+    assert.equal(document.activeElement, menu.close);
+    assert.equal(menu.toggle.attributes.get("aria-expanded"), "true");
+    assert.equal(menu.sidebar.attributes.has("inert"), false);
+    assert.ok(menu.background.every((node) => node.attributes.has("inert")));
+    assert.equal(document.body.attributes.get("class:menu-open"), true);
+    for (const [active, shiftKey, expected] of [[menu.theme, false, menu.brand], [menu.brand, true, menu.theme]]) {
+      active.focus();
+      let prevented = false;
+      menu.handlers.get("keydown")({ key: "Tab", shiftKey, preventDefault() { prevented = true; } });
+      assert.equal(prevented, true);
+      assert.equal(document.activeElement, expected);
+    }
+    if (dismiss === "Escape") menu.handlers.get("keydown")({ key: "Escape" });
+    else if (dismiss === "current-link") {
+      app.handleClick(click("a[href]", { closest: () => menu.sidebar, getAttribute: () => window.location.hash }));
+    } else app.handleClick(click("[data-close-menu]", dismiss === "close" ? menu.close : menu.backdrop));
+    assert.equal(app.menuOpen, false);
+    assert.equal(menu.toggle.attributes.get("aria-expanded"), "false");
+    assert.ok(menu.sidebar.attributes.has("inert"));
+    assert.ok(menu.background.every((node) => !node.attributes.has("inert")));
+    assert.equal(document.body.attributes.get("class:menu-open"), false);
+    assert.equal(document.activeElement, dismiss === "current-link" ? menu.main : menu.toggle);
+  }
+  app.handleClick(click("[data-toggle-menu]"));
+  app.mobileMedia.matches = false;
+  menu.handlers.get("resize")();
+  app.menuOpen = true; // 데스크톱에서 뒤늦게 전달된 열림 값으로 배경을 잠그지 않는다.
+  app.syncMenuState();
+  assert.equal(app.menuOpen, false);
+  assert.equal(document.activeElement, menu.brand);
+  assert.equal(menu.sidebar.attributes.has("inert"), false);
+  assert.ok(menu.background.every((node) => !node.attributes.has("inert")));
+  assert.equal(document.body.attributes.get("class:menu-open"), false);
+  app.mobileMedia.matches = true;
+  menu.handlers.get("resize")();
+  assert.equal(document.activeElement, menu.toggle);
+  assert.ok(menu.sidebar.attributes.has("inert"));
+});
+
+test("메뉴와 밝기 조작은 선택·채점·해설·저장 기록과 목록 검색 DOM을 교체하지 않는다", async (t) => {
+  browser(t);
+  const { app, storage } = harness();
+  await app.openReviewRoute("javascript", lesson.id);
+  choose(app, "b");
+  app.gradeCurrentQuizQuestion();
+  app.handleQuizClick(click("[data-quiz-feedback-toggle]"));
+  const menu = menuEnvironment(app);
+  const themes = [];
+  app.themeController = { setTheme(value) { themes.push(value); } };
+  const session = structuredClone(app.quizSession);
+  const stored = storage.keys().map((key) => [key, storage.getItem(key)]);
+  for (const view of ["review", "learn-catalog"]) {
+    if (view === "learn-catalog") {
+      app.currentView = view;
+      app.catalogFilters.learn = { topicId: "javascript", query: "콜백" };
+      app.themeController.getState = () => ({ theme: "dark" });
+      app.renderLearningCatalog();
+    }
+    const markup = app.root.innerHTML;
+    Object.defineProperty(app.root, "innerHTML", { configurable: true, get: () => markup, set() { assert.fail("메뉴/theme 조작은 본문 DOM을 교체하면 안 된다."); } });
+    app.handleClick(click("[data-toggle-menu]"));
+    for (const themeChoice of ["dark", "light"]) app.handleClick(click("[data-theme-choice]", { dataset: { themeChoice } }));
+    assert.equal(document.activeElement, menu.close);
+    app.handleClick(click("[data-close-menu]"));
+    assert.equal(document.activeElement, menu.toggle);
+    assert.deepEqual(app.quizSession, session);
+    assert.deepEqual(storage.keys().map((key) => [key, storage.getItem(key)]), stored);
+    if (view === "learn-catalog") assert.deepEqual(app.catalogFilters.learn, { topicId: "javascript", query: "콜백" });
+    Object.defineProperty(app.root, "innerHTML", { configurable: true, writable: true, value: markup });
+  }
+  assert.deepEqual(themes, ["dark", "light", "dark", "light"]);
+});
+
+test("목록 비동기 완료는 열린 메뉴와 새 drawer 내부의 초점을 유지한다", async (t) => {
+  browser(t, "#/learn");
+  const { app } = harness();
+  const menu = menuEnvironment(app);
+  let finishLoading;
+  app.loadReviewConcepts = () => new Promise((resolve) => { finishLoading = resolve; });
+  app.hasRenderedView = true;
+  const opening = app.openLearningCatalog("learn");
+  assert.match(app.root.innerHTML, /학습자료를 준비하고 있어요/);
+  assert.ok(menu.sidebar.attributes.has("inert"));
+  app.handleClick(click("[data-toggle-menu]"));
+  menu.theme.focus();
+  // 실제 innerHTML 교체 뒤에는 이전 drawer의 노드가 새 drawer에 속하지 않는다.
+  document.activeElement = { matches: () => false };
+  finishLoading();
+  await opening;
+  assert.equal(app.menuOpen, true);
+  assert.match(app.root.innerHTML, /aria-expanded="true"/);
+  assert.equal(menu.sidebar.attributes.has("inert"), false);
+  assert.ok(menu.background.every((node) => node.attributes.has("inert")));
+  assert.equal(document.activeElement, menu.close);
+  assert.match(app.root.innerHTML, /키워드 검색/);
+});
+
 test("빈 주소와 홈에서 두 서비스에 독립 진입하고 문서를 먼저 열지 않는다", async (t) => {
   browser(t, "");
   const { app, errors } = harness();
@@ -84,6 +235,139 @@ test("빈 주소와 홈에서 두 서비스에 독립 진입하고 문서를 먼
   await app.openRoute();
   assert.equal(app.currentView, "learn-catalog");
   assert.doesNotMatch(app.root.innerHTML, /class="catalog-card"/);
+  assert.deepEqual(errors, []);
+});
+
+test("탐색 사이드바 검색과 Escape는 풀이 DOM·선택·해설·저장을 유지한다", async (t) => {
+  browser(t);
+  const { app, storage, errors } = harness();
+  await app.openReviewRoute("javascript", lesson.id);
+  choose(app, "b");
+  app.gradeCurrentQuizQuestion();
+  app.handleQuizClick(click("[data-quiz-feedback-toggle]"));
+  await app.loadSidebarCatalog();
+  const session = structuredClone(app.quizSession);
+  const stored = storage.keys().map((key) => [key, storage.getItem(key)]);
+  const handlers = new Map();
+  window.addEventListener = () => {};
+  document.addEventListener = (name, handler) => handlers.set(name, handler);
+  app.root.addEventListener = () => {};
+  app.mobileMedia = { matches: false, addEventListener() {} };
+  app.bindGlobalEvents();
+  const results = { innerHTML: "", hidden: true };
+  const input = { value: "", setAttribute() {}, focus() { document.activeElement = input; } };
+  app.root.querySelector = (selector) => ({ "#sidebar-search-results": results, "[data-sidebar-search]": input })[selector] ?? null;
+  const markup = app.root.innerHTML;
+  Object.defineProperty(app.root, "innerHTML", { get: () => markup, set() { assert.fail("검색 입력은 풀이가 있는 본문을 교체하지 않는다."); } });
+  input.value = "HTML";
+  app.handleInput({ target: { closest: (selector) => selector === "[data-sidebar-search]" ? input : null } });
+  assert.equal(results.hidden, false);
+  assert.match(results.innerHTML, /href="#\/learn\/html\/wiki-markup"/);
+  assert.match(results.innerHTML, /href="#\/review\/html\/html-01-document-structure\?concept=html.semantics"/);
+  assert.doesNotMatch(results.innerHTML, /href="#\/learn\/html\/document-structure-and-semantics"/, "보관 문서는 검색 결과에 섞이지 않는다.");
+  input.value = "찾을수없는개념xyz";
+  app.handleInput({ target: { closest: (selector) => selector === "[data-sidebar-search]" ? input : null } });
+  assert.match(results.innerHTML, /검색 결과가 없어요/);
+  let prevented = false;
+  handlers.get("keydown")({ key: "Escape", preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(input.value, "");
+  assert.equal(results.hidden, true);
+  assert.equal(document.activeElement, input);
+  assert.deepEqual(app.quizSession, session);
+  assert.deepEqual(storage.keys().map((key) => [key, storage.getItem(key)]), stored);
+  assert.deepEqual(errors, []);
+});
+
+test("탐색 사이드바는 실제 주제의 가까운 문서와 성공한 최근 방문 두 개만 보여 준다", async (t) => {
+  browser(t, "#/learn/html/wiki-document-skeleton");
+  const { app, errors } = harness();
+  await app.openRoute();
+  const nearby = app.root.innerHTML.match(/<nav aria-label="HTML 문서 바로가기">[\s\S]*?<\/nav>/)?.[0] ?? "";
+  assert.deepEqual([...nearby.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), [
+    "#/learn/html/wiki-markup", "#/learn/html/wiki-document-skeleton", "#/learn/html/wiki-semantic-structure",
+    "#/learn/html/wiki-links-buttons", "#/learn/html/wiki-image-alternatives",
+  ]);
+  assert.match(nearby, /href="#\/learn\/html\/wiki-document-skeleton" aria-current="page"/);
+  for (const slug of ["wiki-markup", "wiki-semantic-structure", "wiki-document-skeleton"]) {
+    window.location.hash = `#/learn/html/${slug}`;
+    await app.openRoute();
+  }
+  const recent = app.root.innerHTML.match(/<nav aria-label="최근 본 문서">[\s\S]*?<\/nav>/)?.[0] ?? "";
+  assert.deepEqual([...recent.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), [
+    "#/learn/html/wiki-document-skeleton", "#/learn/html/wiki-semantic-structure",
+  ]);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (path) => String(path).endsWith("/wiki-markup.md")
+    ? Promise.resolve({ ok: false, status: 503 }) : originalFetch(path);
+  window.location.hash = "#/learn/html/wiki-markup";
+  await app.openRoute();
+  globalThis.fetch = originalFetch;
+  assert.deepEqual(app.getServiceSidebar("learn").recent.map((item) => item.href), [
+    "#/learn/html/wiki-document-skeleton", "#/learn/html/wiki-semantic-structure",
+  ], "불러오기 실패를 최근 방문으로 기록하지 않는다.");
+  assert.deepEqual(errors, ["교안 본문을 불러오지 못했습니다. (503)"]);
+  app.handleClick(click("[data-sidebar-catalog]", { dataset: { sidebarCatalog: "learn" } }));
+  await app.openRoute();
+  assert.equal(window.location.hash, "#/learn");
+  assert.match(app.root.innerHTML, /HTML · 15개 문서/);
+  app.handleChange({ target: { closest: (selector) => selector === "[data-sidebar-topic]" ? { value: "css" } : null } });
+  const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
+  assert.deepEqual(app.catalogFilters.learn, { topicId: "css", query: "" });
+  assert.deepEqual(app.catalogFilters.review, { topicId: null, query: "" });
+  assert.match(main, /class="catalog-card" href="#\/learn\/css\//);
+  assert.doesNotMatch(main, /class="catalog-card" href="#\/learn\/html\//);
+  assert.deepEqual(app.progressRepository.getProgress().completedLessonIds, []);
+  assert.deepEqual(app.progressRepository.getProgress().quizAttempts, []);
+});
+
+test("탐색 사이드바 서비스 왕복은 유효 문제 토큰·주제·문서 답과 읽던 위치를 복원한다", async (t) => {
+  const hash = "#/review/html/html-01-document-structure?concept=html.semantics";
+  const { scrolls } = browser(t, hash);
+  const { app, errors } = harness();
+  app.mobileMedia = { matches: false };
+  await app.openRoute();
+  choose(app, "b");
+  app.gradeCurrentQuizQuestion();
+  app.handleQuizClick(click("[data-quiz-feedback-toggle]"));
+  const question = app.getCurrentQuizQuestion();
+  const sessionId = app.quizSession.id;
+  const documentLesson = curriculum.lessons.find((item) => item.id === "html-notes-semantic-structure");
+  app.quizSession.returnContext = { token: "sidebar-return", sessionId, questionId: question.id, lessonId: documentLesson.id };
+  app.saveReviewSession({ captureViewport: true });
+  const documentHash = buildReviewLessonHash(documentLesson, "sidebar-return", "요구사항에서 구조를 찾는 순서");
+  window.location.hash = documentHash;
+  await app.openRoute();
+  assert.match(app.root.innerHTML, /data-review-return/);
+  const answer = { open: true };
+  app.root.querySelector = (selector) => selector === "#lesson-answer" ? answer : null;
+  window.scrollY = 980;
+  async function followService(kind) {
+    const match = app.root.innerHTML.match(new RegExp(`href="([^"]+)" data-service-link="${kind}"`));
+    assert.ok(match, `${kind} 서비스 링크가 있어야 한다.`);
+    const href = match[1].replaceAll("&amp;", "&");
+    app.handleClick(click("[data-service-link]", { dataset: { serviceLink: kind }, getAttribute: () => href }));
+    window.location.hash = href;
+    await app.openRoute();
+  }
+  await followService("review");
+  assert.equal(window.location.hash, hash);
+  assert.equal(app.quizSession.id, sessionId);
+  assert.equal(app.quizSession.selectedOptionIds.get(question.id), "b");
+  assert.equal(app.quizSession.gradedAnswers.has(question.id), true);
+  assert.equal(app.quizSession.expandedQuestionIds.has(question.id), true);
+  answer.open = false; // 새 문서 DOM은 닫힌 상태로 렌더링된다.
+  await followService("learn");
+  assert.equal(window.location.hash, documentHash, "서비스 복귀는 review·section query를 잘라내지 않는다.");
+  assert.equal(app.currentLesson.id, documentLesson.id);
+  assert.deepEqual(app.catalogFilters, { learn: { topicId: "html", query: "" }, review: { topicId: "html", query: "" } });
+  assert.equal(answer.open, true);
+  assert.equal(scrolls.at(-1).top, 980, "section이 있는 문서도 서비스 복귀 때는 읽던 위치를 복원한다.");
+  assert.match(app.root.innerHTML, /data-review-return/);
+  const recent = app.root.innerHTML.match(/<nav aria-label="최근 본 문서">[\s\S]*?<\/nav>/)?.[0] ?? "";
+  assert.match(recent, /href="#\/learn\/html\/wiki-semantic-structure"/);
+  assert.doesNotMatch(recent, /\?review=/, "일반 최근 문서 링크는 문제 경유 토큰을 전달하지 않는다.");
+  assert.deepEqual(app.progressRepository.getProgress().quizAttempts, []);
   assert.deepEqual(errors, []);
 });
 
@@ -419,7 +703,8 @@ test("새 HTML 문서는 정확한 기존 키워드만 연결하고 문제 없�
   window.location.hash = "#/learn/html/wiki-media-alternatives";
   await app.openRoute();
   assert.match(app.root.innerHTML, /관련 객관식 문제는 아직 준비 중/);
-  assert.doesNotMatch(app.root.innerHTML, /href="#\/review\/html/);
+  const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
+  assert.doesNotMatch(main, /href="#\/review\/html/);
   assert.doesNotMatch(app.root.innerHTML, /data-review-return/);
   assert.match(app.root.innerHTML, /data-toggle-complete/);
   assert.deepEqual(errors, []);

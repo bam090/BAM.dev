@@ -153,7 +153,7 @@ test("반입 원문은 학습 완료와 무관하게 읽고 단원 복습 링크
   assert.doesNotMatch(html, /profile\/|&lt;함수&gt;\.md|SHA-256/);
   assert.doesNotMatch(html, new RegExp("a".repeat(64)));
   assert.match(html, /id="학습-목표"/);
-  assert.doesNotMatch(html, /<h2\b[^>]*>학습 목표<\/h2>/);
+  assert.match(html, /<h2 id="학습-목표">학습 목표<\/h2>/);
   assert.match(html, /답변 표시를 확인합니다\./);
   assert.doesNotMatch(html, /<script>|aria-controls="lesson-answer"|id="lesson-answer"/);
   assert.match(html, /<h2 id="completion-title">언제 답변을 보여 줄까요\?<\/h2>/);
@@ -188,7 +188,7 @@ test("실제 반입 교안 3개의 상단 목표·요약과 하단 핵심 정리
     assert.equal((html.match(/id="한줄-요약"/g) ?? []).length, 1);
     assert.doesNotMatch(body, /id="학습-목표"|id="한줄-요약"/);
     assert.doesNotMatch(hero, /오늘의 핵심 질문|원문 출처/);
-    assert.doesNotMatch(hero, /<h2\b[^>]*>학습 목표<\/h2>/);
+    assert.match(hero, /<h2 id="학습-목표">학습 목표<\/h2>/);
     const core = markdown.match(/(?:^|\n)## 핵심 정리\n[\s\S]*?(?=\n## |$)/)?.[0];
     const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
     assert.ok(core, `${slug}: 비교 자료는 기존 핵심 정리에서 가져온다.`);
@@ -204,14 +204,20 @@ test("실제 반입 교안 3개의 상단 목표·요약과 하단 핵심 정리
   }
 });
 
-test("선두 목표·요약이 없으면 기존 필드로 능력과 핵심 개념을 나누고 답변은 독립 펼침으로 제공한다", () => {
+test("선두 목표·요약이 없으면 기존 두 필드를 학습 목표 상자 하나에 모으고 답변은 독립 펼침으로 제공한다", () => {
   const html = renderLessonPage(false);
   const hero = html.match(/<header class="lesson-hero">([\s\S]*?)<\/header>/)?.[1] ?? "";
-  assert.match(hero, /답변 표시를 확인합니다\./);
-  assert.match(hero, /한줄 요약/);
-  assert.match(hero, /이 문서는 질문과 답변의 표시 흐름을 다룹니다\./);
+  const goalBox = hero.match(/<div class="essential-question">([\s\S]*)<\/div>\s*$/)?.[1] ?? "";
+  assert.equal((hero.match(/class="essential-question"/g) ?? []).length, 1);
+  assert.match(goalBox, /<h2 id="학습-목표">학습 목표<\/h2>/);
+  assert.match(goalBox, /답변 표시를 확인합니다\./);
+  assert.match(goalBox, /이 문서는 질문과 답변의 표시 흐름을 다룹니다\./);
+  for (const id of ["학습-목표", "한줄-요약"]) {
+    assert.equal(html.split(`id="${id}"`).length - 1, 1);
+    assert.ok(goalBox.includes(`id="${id}"`));
+  }
   assert.ok(hero.indexOf("답변 표시를 확인합니다.") < hero.indexOf("이 문서는 질문과 답변의 표시 흐름을 다룹니다."));
-  assert.doesNotMatch(hero, /오늘의 핵심 질문|언제 답변을 보여 줄까요|<h2\b[^>]*>학습 목표<\/h2>/);
+  assert.doesNotMatch(hero, /오늘의 핵심 질문|언제 답변을 보여 줄까요/);
   assert.match(html, /<h2 id="completion-title">언제 답변을 보여 줄까요\?<\/h2>/);
   assert.match(html, /<details\b[^>]*id="lesson-answer"/);
   assert.doesNotMatch(html, /aria-controls="lesson-answer"/);
@@ -275,6 +281,29 @@ test("없는 목표·요약을 목업 표본이나 핵심 질문으로 지어내
   assert.match(html, /<h2 id="completion-title">언제 답변을 보여 줄까요\?<\/h2>/);
 });
 
+test("먼저 확인할 개념만 목표 뒤로 옮기고 링크·목차·본문과 다른 설명 절을 보존한다", () => {
+  const prerequisite = "## 먼저 확인할 개념\n\n[HTML의 역할과 요소 읽기](#/learn/html/wiki-markup)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.";
+  const content = "## 본론\n\n본문 설명은 순서와 문장을 그대로 유지합니다.";
+  const html = renderLessonPage(false, "language", { markdown: `# 표시 확인\n\n${prerequisite}\n\n${content}` });
+  const hero = html.match(/<header class="lesson-hero">([\s\S]*?)<\/header>/)?.[1] ?? "";
+  const body = html.match(/<article class="lesson-body">([\s\S]*?)<\/article>/)?.[1] ?? "";
+  const toc = html.match(/<nav\b[^>]*aria-label="이 문서의 목차"[^>]*>([\s\S]*?)<\/nav>/)?.[1] ?? "";
+  assert.ok(hero.includes(renderMarkdown(prerequisite, { preserveParagraphLineBreaks: true })));
+  assert.match(hero, /id="학습-목표"[\s\S]*답변 표시를 확인합니다\.[\s\S]*이 문서는 질문과 답변의 표시 흐름을 다룹니다\.[\s\S]*id="먼저-확인할-개념"/);
+  assert.match(hero, /href="#\/learn\/html\/wiki-markup">HTML의 역할과 요소 읽기<\/a>/);
+  assert.equal((html.match(/id="먼저-확인할-개념"/g) ?? []).length, 1);
+  assert.match(toc, /data-lesson-section="먼저-확인할-개념">먼저 확인할 개념<\/button>/);
+  assert.match(body, /^\s*<h2 id="본론">본론<\/h2>/);
+  assert.ok(body.includes(renderMarkdown(content, { preserveParagraphLineBreaks: true })));
+  assert.doesNotMatch(body, /먼저 확인할 개념|wiki-markup/);
+
+  const explanation = "## 먼저 알아둘 세 가지\n\n브라우저와 웹페이지를 구분하는 본문 설명입니다.";
+  const unchanged = renderLessonPage(false, "language", { markdown: `# 표시 확인\n\n${explanation}\n\n${content}` });
+  const unchangedBody = unchanged.match(/<article class="lesson-body">([\s\S]*?)<\/article>/)?.[1] ?? "";
+  assert.ok(unchangedBody.includes(renderMarkdown(explanation, { preserveParagraphLineBreaks: true })));
+  assert.match(unchangedBody, /^\s*<h2 id="먼저-알아둘-세-가지">/);
+});
+
 test("문서 목차는 실제 h2와 보존된 앵커만 연결하고 코드 안 제목이나 HTML을 실행하지 않는다", () => {
   const markdown = [
     "# 표시 확인", "", "## 학습 목표", "", "목표 원문입니다.", "", "## 한줄 요약", "", "요약 원문입니다.", "",
@@ -290,7 +319,7 @@ test("문서 목차는 실제 h2와 보존된 앵커만 연결하고 코드 안 
   assert.equal(new Set(targets).size, targets.length);
   for (const id of targets) assert.ok(headingIds.includes(id), `${id}: 실제 문서 h2로 이동한다.`);
   for (const id of headingIds) assert.ok(targets.includes(id), `${id}: 실제 h2를 목차에서 찾을 수 있다.`);
-  assert.match(toc, /data-lesson-section="한줄-요약"/);
+  assert.match(toc, /data-lesson-section="학습-목표">학습 목표<\/button>/);
   assert.match(toc, /data-lesson-section="면접-답변-예시"/);
   assert.match(toc, /data-lesson-section="completion-title"/);
   assert.match(toc, /&lt;img/);
@@ -373,7 +402,9 @@ test("상단으로 옮긴 원문 목표·요약과 메타 목표의 HTML을 실�
   assert.match(hero, /&lt;img src=x onerror=alert\(1\)&gt;/);
   assert.match(hero, /&lt;svg onload=alert\(1\)&gt;/);
   assert.match(html, /<h2 id="completion-title">&lt;img src=x onerror=alert\(1\)&gt;도 질문인가요\?<\/h2>/);
-  assert.doesNotMatch(html, /<script>|<img\b|<svg\b/);
+  const main = html.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0];
+  assert.ok(main, "목표·요약·핵심 질문이 있는 문서 본문을 검사한다.");
+  assert.doesNotMatch(main, /<script>|<img\b|<svg\b/);
 });
 
 test("알고리즘 과정 교안에서는 평가 기능 링크를 표시하지 않는다", () => {

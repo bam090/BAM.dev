@@ -46,7 +46,8 @@ import {
 import { gradeQuestion, loadQuizCollection, summarizeQuiz } from "./core/quiz.js";
 import { buildKeywordReviewHash, buildReviewLessonHash, getReviewDocumentLesson, getReviewRouteOptions, validateReviewConcepts } from "./core/review-navigation.js";
 import { getReviewContentSignature, LocalStorageReviewSessionRepository, restoreReviewSession, REVIEW_SESSION_STORAGE_KEY } from "./repositories/review-session-repository.js";
-import { renderLearningHome, renderLearningCatalog } from "./ui/learning-catalog-view.js";
+import { getCourseTopic, getLearningCatalogItems, renderLearningHome, renderLearningCatalog } from "./ui/learning-catalog-view.js";
+import { renderSidebarContext, renderSidebarSearchResults } from "./ui/service-sidebar-view.js";
 import { DraftSaveCoordinator } from "./core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "./core/execution-coordinator.js";
 import { BrowserCodeQuestRunner } from "./grading/browser-code-quest-runner.js";
@@ -276,6 +277,7 @@ export class BamLearningApp {
         this.curriculum,
       );
       await this.openRoute({ useLastLesson: true });
+      if (!this.mobileMedia.matches) void this.loadSidebarCatalog();
     } catch (error) {
       this.renderFatalError(error);
     }
@@ -332,10 +334,18 @@ export class BamLearningApp {
     });
     this.mobileMedia.addEventListener("change", () => {
       if (!this.mobileMedia.matches) this.menuOpen = false;
+      else this.clearSidebarSearch();
       this.syncMenuState();
+      if (!this.mobileMedia.matches) void this.loadSidebarCatalog();
     });
 
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.getServiceNavigation().query) {
+        event.preventDefault();
+        this.clearSidebarSearch();
+        this.root.querySelector("[data-sidebar-search]")?.focus();
+        return;
+      }
       if (event.key === "Escape" && this.menuOpen) {
         this.menuOpen = false;
         this.syncMenuState();
@@ -351,6 +361,11 @@ export class BamLearningApp {
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     this.root.addEventListener("submit", (event) => {
+      if (event.target.matches("[data-sidebar-search-form]")) {
+        event.preventDefault();
+        this.root.querySelector("[data-sidebar-result]")?.click();
+        return;
+      }
       if (event.target.matches("[data-catalog-form]")) {
         event.preventDefault();
         this.updateCatalogFilters();
@@ -375,7 +390,8 @@ export class BamLearningApp {
     const routePath = String(window.location.hash).split("?")[0];
     if (["", "#", "#/"].includes(routePath)) {
       this.enterView("home");
-      this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), mainContent: renderLearningHome({ saved: this.savedReviewSession }) });
+      this.root.innerHTML = this.renderServiceShell({ mainContent: renderLearningHome({ saved: this.savedReviewSession }) });
+      this.syncMenuState();
       document.title = "BAM.dev · 개발 학습";
       this.finishServiceNavigation();
       return;
@@ -494,6 +510,13 @@ export class BamLearningApp {
   }
 
   leaveCurrentView(reason = "navigation") {
+    if (this.currentView === "lesson" && this.currentLesson) {
+      this.getServiceNavigation().readingPosition = {
+        href: this.getServiceNavigation().routes.learn,
+        scrollY: window.scrollY ?? 0,
+        answerOpen: Boolean(this.root.querySelector?.("#lesson-answer")?.open),
+      };
+    }
     const returnToken = this.quizSession?.returnContext?.token;
     const visitingReviewDocument = returnToken && getReviewRouteOptions(globalThis.window?.location?.hash).returnToken === returnToken;
     this.saveReviewSession({ captureViewport: !visitingReviewDocument });
@@ -597,6 +620,9 @@ export class BamLearningApp {
       }
       this.currentLesson = lesson;
       this.currentMarkdown = markdown;
+      this.rememberServiceLocation("learn", getCourseTopic(getCourse(this.curriculum, lesson.courseId)));
+      const navigation = this.getServiceNavigation();
+      navigation.recentLessonIds = [lesson.id, ...navigation.recentLessonIds.filter((id) => id !== lesson.id)].slice(0, 2);
       try {
         this.progressRepository.setLastLesson(lesson.id);
       } catch {
@@ -619,6 +645,13 @@ export class BamLearningApp {
           section.scrollIntoView({ behavior: "instant", block: "start" });
           section.focus({ preventScroll: true });
         } else this.announce("해당 절을 찾지 못해 문서 처음을 표시합니다.");
+      }
+      const readingPosition = this.getServiceNavigation().restoreReadingPosition;
+      this.getServiceNavigation().restoreReadingPosition = null;
+      if (readingPosition?.href === window.location.hash && (!routeOptions.returnToken || this.lessonReviewReturn)) {
+        const answer = this.root.querySelector?.("#lesson-answer");
+        if (answer) answer.open = readingPosition.answerOpen;
+        window.scrollTo({ top: readingPosition.scrollY, behavior: "instant" });
       }
     } catch (error) {
       if (sequence === this.renderSequence) this.renderFatalError(error);
@@ -655,6 +688,8 @@ export class BamLearningApp {
       if (sequence !== this.renderSequence) return;
 
       this.quizCollection = collection;
+      this.quizCollections ??= new Map();
+      this.quizCollections.set(languageId, collection);
       if (conceptId && !collection.questions.some((question) => question.conceptId === conceptId && (!lessonId || question.lessonId === lessonId))) {
         throw new Error("선택한 키워드의 문제를 찾을 수 없습니다. 객관식 문제 목록에서 다시 선택해 주세요.");
       }
@@ -669,6 +704,9 @@ export class BamLearningApp {
       this.reviewRestoreNotice = ["content-changed", "invalid"].includes(restored.status)
         ? "문제 내용이 바뀌었거나 저장된 풀이를 읽을 수 없어 이어서 풀 수 없습니다. 기존 완료 기록은 유지됩니다." : "";
       this.reviewNeedsRestart = ["content-changed", "invalid"].includes(restored.status);
+      const reviewLesson = this.curriculum.lessons.find((lesson) => lesson.id === lessonId);
+      const reviewCourse = this.curriculum.courses?.find((course) => course.id === reviewLesson?.courseId);
+      this.rememberServiceLocation("review", reviewCourse ? getCourseTopic(reviewCourse) : languageId);
       this.renderQuiz();
       document.title = `${collection.title} · BAM.dev`;
       window.scrollTo({ top: 0, behavior: "instant" });
@@ -696,6 +734,108 @@ export class BamLearningApp {
     this.reviewConceptsLoaded = true;
   }
 
+  getServiceNavigation() {
+    this.catalogFilters ??= { learn: { topicId: null, query: "" }, review: { topicId: null, query: "" } };
+    this.serviceNavigation ??= { routes: { learn: "#/learn", review: "#/review" }, recentLessonIds: [], query: "" };
+    return this.serviceNavigation;
+  }
+
+  rememberServiceLocation(kind, topicId) {
+    this.getServiceNavigation().routes[kind] = window.location.hash;
+    if (topicId && this.catalogFilters[kind].topicId !== topicId) this.catalogFilters[kind] = { topicId, query: "" };
+  }
+
+  getSidebarSearchResults() {
+    const query = this.getServiceNavigation().query;
+    const content = { curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts ?? [], query };
+    return {
+      learn: query.trim() && this.curriculum ? getLearningCatalogItems({ ...content, kind: "learn" }) : [],
+      review: query.trim() && this.curriculum ? getLearningCatalogItems({ ...content, kind: "review" }) : [],
+      loading: this.sidebarCatalogLoading,
+      failures: this.sidebarCatalogFailures ?? [],
+    };
+  }
+
+  getServiceSidebar(current) {
+    const navigation = this.getServiceNavigation();
+    const activeHref = current === "learn" && this.currentLesson
+      ? buildLessonHash(this.currentLesson.courseId, this.currentLesson.slug)
+      : current === "review" && this.quizCollection
+        ? buildKeywordReviewHash(this.quizCollection.languageId, this.quizLessonId, this.quizConceptId)
+        : "";
+    return {
+      current, activeHref, routes: navigation.routes, query: navigation.query,
+      topicId: this.catalogFilters?.[current]?.topicId ?? null,
+      items: current !== "home" && this.curriculum ? getLearningCatalogItems({ curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts ?? [], kind: current }) : [],
+      recent: navigation.recentLessonIds.flatMap((id) => {
+        const lesson = this.curriculum?.lessons.find((item) => item.id === id);
+        return lesson ? [{ title: lesson.title, href: buildLessonHash(lesson.courseId, lesson.slug) }] : [];
+      }),
+      loading: this.sidebarCatalogLoading,
+      searchResults: this.getSidebarSearchResults(),
+    };
+  }
+
+  renderServiceShell({ current = "home", mainContent = "" } = {}) {
+    return renderLearningShell({ current, mainContent, theme: this.themeController?.getState(), menuOpen: this.menuOpen, sidebar: this.getServiceSidebar(current) });
+  }
+
+  async loadSidebarCatalog() {
+    if (!this.curriculum) return;
+    if (this.sidebarCatalogPromise) return this.sidebarCatalogPromise;
+    this.sidebarCatalogLoading = true;
+    this.sidebarCatalogPromise = (async () => {
+      await this.loadReviewConcepts();
+      this.quizCollections ??= new Map();
+      const failures = [];
+      await Promise.all(this.curriculum.languages.filter((language) => language.status !== "planned").map(async (language) => {
+        if (this.quizCollections.has(language.id)) return;
+        try {
+          this.quizCollections.set(language.id, await loadQuizCollection(language.id, this.curriculum));
+        } catch { failures.push(language.name); }
+      }));
+      this.sidebarCatalogFailures = failures;
+      this.sidebarCatalogLoading = false;
+      const context = this.root.querySelector?.("[data-sidebar-context]");
+      if (context) {
+        const focusedTopic = document.activeElement?.matches?.("[data-sidebar-topic]");
+        const current = this.currentView === "home" ? "home" : this.currentView.startsWith("review") ? "review" : "learn";
+        context.innerHTML = renderSidebarContext(this.getServiceSidebar(current));
+        if (focusedTopic) this.root.querySelector("[data-sidebar-topic]")?.focus({ preventScroll: true });
+      }
+      this.updateSidebarSearch();
+    })();
+    return this.sidebarCatalogPromise;
+  }
+
+  updateSidebarSearch() {
+    const query = this.getServiceNavigation().query;
+    const results = this.root.querySelector?.("#sidebar-search-results");
+    if (!results) return;
+    results.hidden = !query.trim();
+    results.innerHTML = query.trim() ? renderSidebarSearchResults(this.getSidebarSearchResults()) : "";
+    this.root.querySelector("[data-sidebar-search]")?.setAttribute("aria-expanded", String(!results.hidden));
+  }
+
+  clearSidebarSearch() {
+    this.getServiceNavigation().query = "";
+    const input = this.root.querySelector?.("[data-sidebar-search]");
+    if (input) input.value = "";
+    this.updateSidebarSearch();
+  }
+
+  openSidebarCatalog(kind, topicId) {
+    if (!["learn", "review"].includes(kind)) return;
+    const items = getLearningCatalogItems({ curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts ?? [], kind });
+    if (topicId !== null && topicId !== "all" && !items.some((item) => item.topicId === topicId)) return;
+    this.catalogFilters[kind] = { topicId, query: "" };
+    this.clearSidebarSearch();
+    if (this.currentView === `${kind}-catalog`) {
+      this.renderLearningCatalog();
+      this.root.querySelector("[data-sidebar-topic]")?.focus({ preventScroll: true });
+    } else window.location.hash = `#/${kind}`;
+  }
+
   finishServiceNavigation() {
     window.scrollTo({ top: 0, behavior: "instant" });
     if (this.hasRenderedView) document.querySelector("#lesson-content")?.focus({ preventScroll: true });
@@ -704,7 +844,9 @@ export class BamLearningApp {
 
   async openLearningCatalog(kind) {
     const sequence = this.enterView(`${kind}-catalog`);
-    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: kind, mainContent: '<main class="main-area service-main" id="lesson-content" tabindex="-1"><p role="status">학습자료를 준비하고 있어요…</p></main>' });
+    this.rememberServiceLocation(kind);
+    this.root.innerHTML = this.renderServiceShell({ current: kind, mainContent: '<main class="main-area service-main" id="lesson-content" tabindex="-1"><p role="status">학습자료를 준비하고 있어요…</p></main>' });
+    this.syncMenuState();
     await this.loadReviewConcepts();
     const failures = [];
     if (kind === "review") {
@@ -724,11 +866,12 @@ export class BamLearningApp {
 
   renderLearningCatalog() {
     const kind = this.currentView === "review-catalog" ? "review" : "learn";
-    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: kind, mainContent: renderLearningCatalog({
+    this.root.innerHTML = this.renderServiceShell({ current: kind, mainContent: renderLearningCatalog({
       curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts,
       kind, filters: this.catalogFilters[kind], saved: this.savedReviewSession,
       failedLanguages: this.catalogFailedLanguages,
     }) });
+    this.syncMenuState();
   }
 
   updateCatalogFilters() {
@@ -1117,6 +1260,37 @@ export class BamLearningApp {
   }
 
   handleClick(event) {
+    const serviceLink = event.target.closest("[data-service-link]");
+    if (serviceLink && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      const navigation = this.getServiceNavigation();
+      navigation.restoreReadingPosition = serviceLink.dataset.serviceLink === "learn" && this.currentView !== "lesson" ? navigation.readingPosition : null;
+      if (serviceLink.getAttribute("href") === window.location.hash && !this.mobileMedia.matches) {
+        event.preventDefault();
+        this.root.querySelector("#lesson-content")?.focus({ preventScroll: true });
+      }
+    }
+    const sidebarResult = event.target.closest("[data-sidebar-result]");
+    if (sidebarResult && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      event.preventDefault();
+      const href = sidebarResult.getAttribute("href");
+      this.clearSidebarSearch();
+      if (href === window.location.hash) this.root.querySelector("#lesson-content")?.focus({ preventScroll: true });
+      else window.location.hash = href;
+      return;
+    }
+    if (this.getServiceNavigation().query && !event.target.closest("[data-sidebar-search-form]")) this.clearSidebarSearch();
+    const sidebarCatalog = event.target.closest("[data-sidebar-catalog]");
+    if (sidebarCatalog) {
+      const kind = sidebarCatalog.dataset.sidebarCatalog;
+      this.openSidebarCatalog(kind, this.catalogFilters[kind]?.topicId ?? "all");
+      return;
+    }
+    if (event.target.closest("[data-sidebar-retry]")) {
+      this.sidebarCatalogPromise = null;
+      void this.loadSidebarCatalog();
+      this.updateSidebarSearch();
+      return;
+    }
     const themeChoice = event.target.closest("[data-theme-choice]");
     if (themeChoice) {
       this.themeController?.setTheme(themeChoice.dataset.themeChoice);
@@ -1178,7 +1352,6 @@ export class BamLearningApp {
     if (menuButton) {
       this.menuOpen = !this.menuOpen;
       this.syncMenuState();
-      if (this.menuOpen) document.querySelector(".sidebar-close")?.focus();
       return;
     }
 
@@ -1242,6 +1415,12 @@ export class BamLearningApp {
   }
 
   handleChange(event) {
+    const sidebarTopic = event.target.closest("[data-sidebar-topic]");
+    if (sidebarTopic) {
+      const kind = this.currentView.startsWith("review") ? "review" : "learn";
+      this.openSidebarCatalog(kind, sidebarTopic.value || null);
+      return;
+    }
     const quizLesson = event.target.closest("[data-quiz-lesson]");
     if (quizLesson && this.currentView === "review" && this.quizCollection) {
       const lessonId = quizLesson.value || null;
@@ -1343,6 +1522,15 @@ export class BamLearningApp {
   }
 
   handleInput(event) {
+    const sidebarSearch = event.target.closest("[data-sidebar-search]");
+    if (sidebarSearch) {
+      this.getServiceNavigation().query = sidebarSearch.value;
+      if (!event.isComposing) {
+        void this.loadSidebarCatalog();
+        this.updateSidebarSearch();
+      }
+      return;
+    }
     const catalogSearch = event.target.closest("[data-catalog-search]");
     if (catalogSearch && !event.isComposing) {
       const cursor = catalogSearch.selectionStart;
@@ -2804,6 +2992,7 @@ export class BamLearningApp {
     const usesCoreSummary = Boolean(lesson.source?.originalPath);
     const answer = splitMarkdownSection(this.currentMarkdown, lesson.answerHeading ?? (usesCoreSummary ? "핵심 정리" : "면접 답변 예시"));
     const overview = splitLessonOverview(answer.body);
+    const prerequisite = splitMarkdownSection(overview.body, "먼저 확인할 개념");
     const metadataObjectives = lesson.source?.originalPath || !overview.objectives
       ? [...new Set(lesson.objectives)].filter((objective) => !overview.objectives.includes(objective.trim()))
       : [];
@@ -2811,7 +3000,10 @@ export class BamLearningApp {
     const summaryHtml = overview.summary
       ? renderMarkdown(overview.summary, { preserveParagraphLineBreaks: true })
       : lesson.summary ? `<p>${escapeHtml(lesson.summary)}</p>` : "";
-    const bodyHtml = renderMarkdown(overview.body, { skipFirstHeading: true, preserveParagraphLineBreaks: true });
+    const summaryIsObjective = [overview.objectives, ...metadataObjectives]
+      .some((objective) => objective.trim() === (overview.summary || lesson.summary || "").trim());
+    const prerequisiteHtml = renderMarkdown(prerequisite.section, { preserveParagraphLineBreaks: true });
+    const bodyHtml = renderMarkdown(prerequisite.body, { skipFirstHeading: true, preserveParagraphLineBreaks: true });
     const answerHtml = renderMarkdown(answer.section, { preserveParagraphLineBreaks: true });
     const relatedQuestions = this.quizCollections?.get(lesson.languageId)?.questions ?? [];
     const reviewLinks = (this.reviewConcepts ?? []).filter((concept) =>
@@ -2823,9 +3015,9 @@ export class BamLearningApp {
         : `<p class="lesson-review-link" role="status">${this.lessonQuizLoadFailed || this.reviewConceptsLoadFailed ? "관련 문제를 불러오지 못했습니다. 새로고침하여 다시 확인해 주세요." : "이 문서의 관련 객관식 문제는 아직 준비 중입니다."}</p>`
       : `<p class="lesson-review-link"><a class="button button--primary" href="${buildReviewHash(lesson.languageId, lesson.id)}">읽은 내용 객관식으로 복습하기</a></p>`;
     // Read only headings emitted by our Markdown renderer; fenced code is escaped.
-    const documentHeadings = [...`${bodyHtml}${answerHtml}`.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/gu)];
+    const documentHeadings = [...`${prerequisiteHtml}${bodyHtml}${answerHtml}`.matchAll(/<h2 id="([^"]+)">([\s\S]*?)<\/h2>/gu)];
     const tableOfContents = `<nav class="lesson-toc" aria-label="이 문서의 목차"><p>이 문서에서</p>
-      ${summaryHtml ? '<button type="button" data-lesson-section="한줄-요약">한줄 요약</button>' : ""}
+      ${overview.objectives || metadataObjectives.length || summaryHtml ? '<button type="button" data-lesson-section="학습-목표">학습 목표</button>' : ""}
       ${documentHeadings.map((heading) => `<button type="button" data-lesson-section="${heading[1]}">${heading[2].replace(/<[^>]*>/gu, "")}</button>`).join("")}
       <button type="button" data-lesson-section="completion-title">핵심 질문</button>
     </nav>`;
@@ -2847,8 +3039,11 @@ export class BamLearningApp {
                 <span>약 ${lesson.estimatedMinutes}분</span>
               </div>
               <h1>${escapeHtml(lesson.title)}</h1>
-              ${overview.objectives || metadataObjectives.length ? `<div class="lesson-summary lesson-learning-outcomes" id="학습-목표" aria-label="학습 후 할 수 있는 것">${renderMarkdown(overview.objectives, { preserveParagraphLineBreaks: true })}${metadataObjectives.length ? `<ul>${metadataObjectives.map((objective) => `<li>${escapeHtml(objective)}</li>`).join("")}</ul>` : ""}</div>` : ""}
-              ${summaryHtml ? `<div class="essential-question"><div><h2 id="한줄-요약">한줄 요약</h2><div class="lesson-overview-summary">${summaryHtml}</div></div></div>` : ""}
+              ${overview.objectives || metadataObjectives.length || summaryHtml ? `<div class="essential-question"><div><h2 id="학습-목표">학습 목표</h2>
+                ${overview.objectives || metadataObjectives.length ? `<div class="lesson-summary lesson-learning-outcomes" aria-label="학습 후 할 수 있는 것">${renderMarkdown(overview.objectives, { preserveParagraphLineBreaks: true })}${metadataObjectives.length ? `<ul>${metadataObjectives.map((objective) => `<li>${escapeHtml(objective)}</li>`).join("")}</ul>` : ""}</div>` : ""}
+                ${summaryHtml ? `<div class="lesson-overview-summary" id="한줄-요약">${summaryIsObjective ? "" : summaryHtml}</div>` : ""}
+              </div></div>` : ""}
+              ${prerequisiteHtml ? `<div class="lesson-prerequisites">${prerequisiteHtml}</div>` : ""}
             </header>
 
             <article class="lesson-body">
@@ -2889,14 +3084,15 @@ export class BamLearningApp {
           </div>
       </main>
     `;
-    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: "learn", mainContent });
-
+    this.root.innerHTML = this.renderServiceShell({ current: "learn", mainContent });
+    this.syncMenuState();
   }
 
   renderQuiz() {
     if (!this.curriculum || !this.quizCollection || !this.quizSession) return;
     if (this.reviewNeedsRestart) {
-      this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: "review", mainContent: `<main class="main-area service-main" id="lesson-content" tabindex="-1"><h1>풀이를 확인해 주세요.</h1><p role="status">${escapeHtml(this.reviewRestoreNotice)}</p><button class="button button--primary" type="button" data-review-start-new>현재 문제로 새로 시작</button> <a href="#/review">문제 목록으로 이동</a></main>` });
+      this.root.innerHTML = this.renderServiceShell({ current: "review", mainContent: `<main class="main-area service-main" id="lesson-content" tabindex="-1"><h1>풀이를 확인해 주세요.</h1><p role="status">${escapeHtml(this.reviewRestoreNotice)}</p><button class="button button--primary" type="button" data-review-start-new>현재 문제로 새로 시작</button> <a href="#/review">문제 목록으로 이동</a></main>` });
+      this.syncMenuState();
       return;
     }
     this.saveReviewSession();
@@ -2968,8 +3164,8 @@ export class BamLearningApp {
             otherFeedbackExpanded: session.expandedQuestionIds?.has(question?.id) ?? false,
           });
 
-    this.root.innerHTML = renderLearningShell({ theme: this.themeController?.getState(), current: "review", mainContent });
-
+    this.root.innerHTML = this.renderServiceShell({ current: "review", mainContent });
+    this.syncMenuState();
   }
 
   renderCodeQuest() {
@@ -3525,16 +3721,38 @@ export class BamLearningApp {
     const toggle = document.querySelector("[data-toggle-menu]");
     const mainArea = document.querySelector(".main-area");
     const mobileHeader = document.querySelector(".mobile-header");
+    const footer = document.querySelector(".service-footer");
     const skipLink = document.querySelector(".skip-link");
     const isMobile = this.mobileMedia.matches;
+    const activeElement = document.activeElement;
+    const focusInSidebar = sidebar?.contains(activeElement);
+    const focusInHeader = mobileHeader?.contains(activeElement);
+    this.menuOpen = isMobile && this.menuOpen;
     sidebar?.classList.toggle("is-open", this.menuOpen);
     backdrop?.classList.toggle("is-visible", this.menuOpen);
     sidebar?.toggleAttribute("inert", isMobile && !this.menuOpen);
     mainArea?.toggleAttribute("inert", isMobile && this.menuOpen);
     mobileHeader?.toggleAttribute("inert", isMobile && this.menuOpen);
+    footer?.toggleAttribute("inert", isMobile && this.menuOpen);
     skipLink?.toggleAttribute("inert", isMobile && this.menuOpen);
+    if (this.menuOpen) {
+      sidebar?.setAttribute("role", "dialog");
+      sidebar?.setAttribute("aria-modal", "true");
+    } else {
+      sidebar?.removeAttribute("role");
+      sidebar?.removeAttribute("aria-modal");
+    }
     toggle?.setAttribute("aria-expanded", String(this.menuOpen));
     document.body.classList.toggle("menu-open", this.menuOpen);
+
+    // Resizing or asynchronous rendering must not strand focus in hidden content.
+    if (isMobile && !this.menuOpen && focusInSidebar) {
+      toggle?.focus();
+    } else if (!isMobile && (focusInHeader || activeElement?.matches(".sidebar-close"))) {
+      sidebar?.querySelector("a[href]")?.focus();
+    } else if (this.menuOpen && !focusInSidebar) {
+      sidebar?.querySelector(".sidebar-close")?.focus();
+    }
   }
 
   announce(message) {
