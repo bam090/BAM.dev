@@ -70,3 +70,11 @@
 `[확정 결정]` scripts validator는 명시한 다섯 `id`·파일 경로·원문 SHA-256·`archivedFromCatalog=true`가 모두 일치한 보관 원문만 legacy 답변 섹션 형식 요구에서 면제한다. H1 길이·학습 목표·schema·ID·order·경로 검사는 유지하고, 활성 문서 전체·미등록 보관 문서·원문이 변조된 보관 문서에는 면제를 적용하지 않는다. 원문 바이트·메타데이터와 활성 분모 160은 유지한다.
 
 `[현재 사실]` validator 계약 수정은 진행 중이며 새 독립 테스트와 `test_engineer` 검증은 아직 수행하지 않았다. 기존 91/91 PASS는 앞선 호환·기록 범위의 실제 결과로만 유지한다. 최종 후속 검증과 Git 결과는 인계 보고와 PR에서 실제로 확인하며, merge와 Pages 설정 변경 보류는 유지한다.
+
+## Pages 정적 배포 반환 (2026-09-14)
+
+`[현재 사실]` bam의 PR #17 병합 승인 뒤 [PR #17](https://github.com/bam090/BAM.dev/pull/17)은 `MERGED`이고 `dev`의 병합 SHA는 `f0b2853749af9fc1ea06c3003432baac0ba9c761`이다. `CI / verify` 성공과 Pages 배포는 별개다. [Pages 실행 34820115895](https://github.com/bam090/BAM.dev/actions/runs/34820115895)는 `content/lessons/algorithm/bfs-dfs-graph-grid.md`의 Java 배열 `{{1, 2}`를 Liquid 구문으로 처리해 실패했다. 앱은 루트 `index.html`의 JavaScript module과 `fetch()`로 교안 Markdown 원문을 읽는다.
+
+`[확정 결정]` 배포 원본인 `dev:/`의 루트에 빈 `.nojekyll` 파일을 두어 Jekyll 처리를 건너뛴다. Pages source 설정은 `dev:/`로 유지하고 GitHub 설정은 변경하지 않으며, 이 표식은 Markdown 원문을 정적 파일로 보존한다.
+
+`[확인 필요]` 이 후속 PR의 실제 Pages 배포와 게시 사이트 동작은 아직 검증하지 않았다. 최종 승인·병합 뒤 해당 Pages 실행과 공개 사이트를 확인해 결과를 기록한다.
