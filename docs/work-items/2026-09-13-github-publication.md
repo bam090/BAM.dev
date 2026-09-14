@@ -42,3 +42,23 @@
 | 새 commit·push·PR·CI | 미실행. 수행 뒤 실제 SHA·PR·CI 결과를 인계하며 성공을 미리 기록하지 않음 |
 
 완료 기준은 승인된 스냅샷만 게시하고 원본 로컬·밤위키·기존 원격 이력을 보존하며, 실제 Draft PR과 CI 결과를 확인하는 것이다. 원격 기능의 결합과 M0 전체 완료는 이 게시만으로 주장하지 않는다. 이번 문서 정정은 실행 동작·사용자 데이터·접근성·모바일·오프라인 계약을 바꾸지 않는다. 앞선 UI 증거를 재사용할 때는 제품 파일의 동일성을 확인한다. 임시 보고와 로컬 gate는 GitHub CI 실행이나 배포 완료 증거가 아니다. 이 표는 게시 시작 시점의 인계 기록으로 유지하고, 이후 실제 commit·PR·CI 식별자와 결과는 PR 및 Git 담당의 인계 결과에 기록한다.
+
+## 후속 통합 준비 (2026-09-14)
+
+`[현재 사실]` 위 게시 시작 시점의 기록은 보존한다. 현재 PR #17의 CI·게시 완료 기록과 병합 승인은 별개이며, 병합은 보류 상태다. `/private/tmp/bam-integration-readiness/inventory.json`의 고정 tree 대조는 `449dbfef35ea762ef87d672b8747f6f8aed48c27` ↔ `db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0`, 330 경로(A 199/M 99/D 32)다.
+
+`[확정 결정]` 통합 전에 해결할 복원 대상은 다음 다섯 가지다.
+
+1. `bam.dev.progress.v1`의 revision 기록 유실을 복원한다.
+2. 삭제된 `#/my` 내 학습 기록 화면과 유틸리티 진입을 복원한다.
+3. legacy algorithm 별칭 7개와 직접 JavaScript hash·보관 URL 우선 처리를 복원한다.
+4. BrowserStorage가 정상 primary-key 열거를 기준으로 하며, 다른 탭의 키 삭제 뒤 stale cache를 제외하도록 복원한다.
+5. 원 `dev`의 Java 02~06 정적 원문 5개와 공식 출처를 원문 바이트·ID·slug 그대로 archived 복원한다. schema의 과정 내 연속 order를 위해 보관 문서 내부 order는 기존 활성 최대 33 뒤의 34~38로 두고, 원래 old order 2~6은 출처에 보관한다. 활성 order와 분모 160은 유지한다.
+
+`[현재 사실]` MyPage·progress·storage·navigation은 각 담당의 구현 보고 뒤 독립 content/doc 검증에서 문서 단어 반환을 해소해 최종 PASS했다. 독립 `test_engineer`는 선택한 8개 test 파일을 한 번 실행해 91/91 PASS(fail·cancel 0)를 확인했고, localhost `42873` 격리 desktop에서 `#/my` 키보드 진입→활성 0/160·과정 링크→보관 문서 1개 상세 키보드 진입→`java/types-and-methods` 정확 재진입과 console warn/error 0을 확인했다. progress 무쓰기·memory/read-error·Spring 재도전도 선택 검사에서 PASS했다. 이 기록은 최종 통합 PASS·병합·새 commit·배포를 뜻하지 않는다.
+
+`[확정 결정]` Java Docker·HTTP·시스템 JDK 실행기는 현재 확정 실행 정책과 맞지 않으므로 재활성화하지 않는다. Git 원본 SHA 보관, Java 학습·문서·객관식 및 현재 원문 보관 연결은 유지한다. 이 범위는 콘텐츠 삭제 정책의 승인을 만들지 않는다.
+
+`[확정 결정]` 최종 명시적 병합 승인 전에는 merge와 Pages 설정 변경을 하지 않는다.
+
+`[현재 사실]` 기존 660 PASS는 재사용 근거이며, 이번 범위에서는 전체 build와 모바일 검증을 실행하지 않았다. 독립 `project_integrator`가 위 focused·데스크톱 검증 증거를 검토 중이다. 최종 통합 판정과 Git 결과는 인계 보고와 PR에서 실제로 확인한다.

@@ -6,6 +6,7 @@ import {
   buildCodingTestHash,
   buildCodingTestListHash,
   buildLessonHash,
+  buildMyPageHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
@@ -13,6 +14,7 @@ import {
   getAdjacentLessons,
   parseCodingTestHash,
   parseLessonHash,
+  parseMyPageHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -118,6 +120,14 @@ test("잘못된 Web Project 해시는 해석하지 않는다", () => {
   assert.equal(parseWebProjectHash("#/web-project"), null);
 });
 
+test("마이페이지 해시를 만들고 정확한 경로만 해석한다", () => {
+  assert.equal(buildMyPageHash(), "#/my");
+  assert.deepEqual(parseMyPageHash("#/my"), { kind: "my-page" });
+  assert.deepEqual(parseMyPageHash("#/my/?from=lesson"), { kind: "my-page" });
+  assert.equal(parseMyPageHash("#/my/records"), null);
+  assert.equal(parseMyPageHash("#/my-page"), null);
+});
+
 test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한다", () => {
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "js-03-functions-scope-closure").order, 3);
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "not-found").order, 1);
@@ -135,6 +145,37 @@ test("planned 과정의 직접 경로와 최근 교안은 탐색 가능한 기�
 
   assert.equal(direct.id, "js-01-runtime");
   assert.equal(restored.id, "js-01-runtime");
+});
+
+test("JavaScript 보관 hash 문서는 direct match를 유지하고 나머지 7개 legacy slug만 알고리즘으로 연결한다", () => {
+  const directHashLesson = resolveLessonRoute(
+    curriculum,
+    "#/learn/javascript/hash-map-set",
+  );
+  assert.equal(directHashLesson.id, "js-09-hash-map-set");
+  assert.equal(directHashLesson.courseId, "javascript");
+  assert.equal(directHashLesson.archivedFromCatalog, true);
+
+  const algorithmAliases = [
+    "implementation-and-string-simulation",
+    "stack-and-queue",
+    "sorting-two-pointers-sliding-window",
+    "brute-force-backtracking-recursion",
+    "bfs-dfs-graph-grid",
+    "heap-and-greedy",
+    "binary-search-and-dynamic-programming",
+  ];
+  for (const slug of algorithmAliases) {
+    const lesson = resolveLessonRoute(curriculum, `#/learn/javascript/${slug}`);
+    assert.equal(lesson.courseId, "algorithm", slug);
+    assert.equal(lesson.slug, slug);
+  }
+
+  const unapprovedAlias = resolveLessonRoute(
+    curriculum,
+    "#/learn/javascript/weighted-graphs-dijkstra",
+  );
+  assert.equal(unapprovedAlias.id, "js-01-runtime");
 });
 
 test("planned 카테고리 아래 과정은 직접 학습 경로를 열지 않는다", () => {

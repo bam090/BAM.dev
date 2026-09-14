@@ -130,5 +130,6 @@ HTML·CSS 객관식과 Quest는 위 교안의 안정적인 `lessonId`·`conceptI
 - 새 프로젝트 작성본: `content/lessons/java/types-and-methods.md`와 Java 객관식 1문항
 - 범위: 공통 교안·객관식 계약의 언어 독립성을 유지하는 읽기·추론 샘플
 - 공식문서 확인 기록일: 2026-08-18
+- 2026-09-14 복원 출처: `db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0`의 기존 Java 교안 5개와 `docs/references/java-official-sources.md`를 바이트 그대로 복원하고 보관 목록으로만 등록했습니다.
 
 Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했습니다. 이는 과거 출처 확인 기록이며 MVP의 컴파일 기준을 뜻하지 않습니다. Java 코딩테스트는 `DEC-JAVA-CODING-TEST-01`에 따라 MVP 목표로 확정됐지만 콘텐츠·runner·설치 지원은 아직 없습니다. 패키지 내부 고정 JDK 제공은 [`DEC-JAVA-RUNTIME-01`](roadmap.md#2026-09-02-확정-제품-결정), JDK 25 LTS 계열의 정식 Java 25 언어·표준 API와 preview 금지는 [`DEC-JAVA-VERSION-02`](roadmap.md#2026-09-04-확정-제품-결정)로 확정됐습니다. 현재 Java 샘플은 MVP 편입 전에 Java 25 기준 출처·컴파일 적합성을 다시 검증해야 하고, 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책과 컴파일·호출·IPC·격리·OS별 패키징은 [`DEC-JAVA-RUNNER-01`](roadmap.md#bam-결정-대기-목록) 결정 대기입니다. Java 정식 교안 과정·Code Quest·웹과제의 시점은 별도 [`DEC-JAVA-01`](roadmap.md#bam-결정-대기-목록) 결정 대기다.

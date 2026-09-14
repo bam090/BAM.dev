@@ -1,14 +1,20 @@
 import { CATALOG_TOPICS } from "./learning-catalog-view.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
+import { buildMyPageHash } from "../core/navigation.js";
 
 export function renderServiceIcon(kind) {
   const shapes = {
     home: '<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',
     learn: '<path d="M12 5v15M3 4c4-1 6 0 9 1 3-1 5-2 9-1v15c-4-1-6 0-9 1-3-1-5-2-9-1Z"/>',
     review: '<path d="m3 6 2 2 3-4M11 6h10M3 13h5M11 13h10M3 20h5M11 20h10"/>',
+    history: '<path d="M4 5h16v15H4Z"/><path d="M8 3v4M16 3v4M8 11h8M8 15h5"/>',
     search: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
   };
   return `<svg class="service-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[kind] ?? ""}</svg>`;
+}
+
+export function renderSidebarUtilityLink({ isCurrent = false } = {}) {
+  return `<a class="sidebar-utility-link${isCurrent ? " is-current" : ""}" href="${buildMyPageHash()}"${isCurrent ? ' aria-current="page"' : ""}>${renderServiceIcon("history")}내 학습 기록</a>`;
 }
 
 export function renderSidebarSearch(query = "", results = {}) {

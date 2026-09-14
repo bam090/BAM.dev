@@ -6,6 +6,7 @@ import {
   MemoryStorage,
   PROGRESS_STORAGE_KEY,
   createEmptyProgress,
+  getCurrentCompletedQuestIds,
   normalizeProgress,
 } from "../src/repositories/progress-repository.js";
 
@@ -32,6 +33,7 @@ test("최근 교안과 완료 상태를 같은 버전 데이터에 저장한다"
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    completedQuestRevisions: [],
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
@@ -72,11 +74,116 @@ test("1차 저장 형식을 읽을 때 객관식 필드를 빈 배열로 보완�
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    completedQuestRevisions: [],
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
     updatedAt: "2026-08-15T12:00:00.000Z",
   });
+});
+
+test("기존 dev 진도의 Quest revision과 Java 실습 기록을 교안·객관식 저장 뒤에도 보존한다", () => {
+  const storage = new MemoryStorage();
+  const completedAt = "2026-08-15T10:00:00.000Z";
+  const legacyState = {
+    ...createEmptyProgress(),
+    completedLessonIds: ["java-02-control-flow-arrays"],
+    lastLessonId: "java-02-control-flow-arrays",
+    questDrafts: [
+      {
+        questId: "quest-java-distinct-names",
+        languageId: "java",
+        source: "class Solution {}",
+        updatedAt: completedAt,
+      },
+    ],
+    questAttempts: [
+      {
+        id: `quest-${completedAt}-1`,
+        questId: "quest-java-distinct-names",
+        questRevision: 2,
+        languageId: "java",
+        outcome: "passed",
+        passed: 2,
+        total: 2,
+        completedAt,
+      },
+    ],
+    completedQuestIds: ["quest-java-distinct-names"],
+    completedQuestRevisions: [
+      {
+        questId: "quest-java-distinct-names",
+        questRevision: 2,
+        completedAt,
+      },
+    ],
+    codingTestDrafts: [
+      {
+        problemId: "coding-test-java-maximum-window-sum",
+        problemRevision: 1,
+        languageId: "java",
+        source: "class Solution {}",
+        updatedAt: completedAt,
+      },
+    ],
+    codingTestSubmissions: [
+      {
+        id: `coding-test-${completedAt}-1`,
+        problemId: "coding-test-java-maximum-window-sum",
+        problemRevision: 1,
+        languageId: "java",
+        outcome: "passed",
+        passed: 3,
+        total: 3,
+        completedAt,
+      },
+    ],
+    completedCodingTestProblems: [
+      {
+        problemId: "coding-test-java-maximum-window-sum",
+        problemRevision: 1,
+        completedAt,
+      },
+    ],
+    updatedAt: completedAt,
+  };
+  storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(legacyState));
+  const repository = new LocalStorageProgressRepository(storage, fixedClock);
+
+  repository.setLessonCompleted("js-01-runtime", true);
+  repository.recordQuizAttempt({
+    languageId: "javascript",
+    answers: [
+      {
+        questionId: "quiz-javascript-storage-compatibility",
+        lessonId: "js-01-runtime",
+        selectedOptionId: "a",
+        isCorrect: true,
+      },
+    ],
+  });
+
+  const saved = repository.getProgress();
+  for (const field of [
+    "questDrafts",
+    "questAttempts",
+    "completedQuestIds",
+    "completedQuestRevisions",
+    "codingTestDrafts",
+    "codingTestSubmissions",
+    "completedCodingTestProblems",
+  ]) {
+    assert.deepEqual(saved[field], legacyState[field], field);
+  }
+  assert.deepEqual(saved.completedLessonIds, [
+    "java-02-control-flow-arrays",
+    "js-01-runtime",
+  ]);
+  assert.equal(saved.quizAttempts.length, 1);
+  assert.deepEqual(
+    JSON.parse(storage.getItem(PROGRESS_STORAGE_KEY)).completedQuestRevisions,
+    legacyState.completedQuestRevisions,
+  );
 });
 
 test("손상된 객관식 시도와 공백 ID를 정규화 과정에서 버린다", () => {
@@ -343,6 +450,7 @@ test("Code Quest 제출 요약을 저장하고 완전 통과한 Quest만 완료 
   });
 
   assert.deepEqual(wrong.completedQuestIds, []);
+  assert.deepEqual(wrong.completedQuestRevisions, []);
   assert.equal(Object.hasOwn(wrong.questAttempts[0], "source"), false);
 
   const passed = repository.recordQuestAttempt({
@@ -354,6 +462,13 @@ test("Code Quest 제출 요약을 저장하고 완전 통과한 Quest만 완료 
     total: 2,
   });
   assert.deepEqual(passed.completedQuestIds, ["quest-javascript-sum-values"]);
+  assert.deepEqual(passed.completedQuestRevisions, [
+    {
+      questId: "quest-javascript-sum-values",
+      questRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
   assert.equal(passed.questAttempts.length, 2);
   assert.equal(passed.questAttempts[1].questRevision, 2);
   assert.equal(passed.questAttempts[1].completedAt, "2026-08-16T12:00:00.000Z");
@@ -391,6 +506,113 @@ test("보관 한도 밖의 유효한 통과 기록도 완료 상태 복구에 �
   assert.equal(progress.questAttempts.length, 50);
   assert.equal(progress.questAttempts.some((attempt) => attempt.id === oldPassedAttempt.id), false);
   assert.deepEqual(progress.completedQuestIds, ["quest-javascript-old-passed"]);
+  assert.deepEqual(progress.completedQuestRevisions, [
+    {
+      questId: "quest-javascript-old-passed",
+      questRevision: 1,
+      completedAt,
+    },
+  ]);
+});
+
+test("Quest 통과가 attempt 보관 한도 밖으로 밀려도 완료 revision을 유지한다", () => {
+  const repository = new LocalStorageProgressRepository(new MemoryStorage(), fixedClock);
+  const questId = "quest-javascript-retained-completion";
+  repository.recordQuestAttempt({
+    questId,
+    questRevision: 2,
+    languageId: "javascript",
+    outcome: "passed",
+    passed: 1,
+    total: 1,
+  });
+  for (let index = 0; index < 50; index += 1) {
+    repository.recordQuestAttempt({
+      questId,
+      questRevision: 2,
+      languageId: "javascript",
+      outcome: "wrong_answer",
+      passed: 0,
+      total: 1,
+    });
+  }
+
+  const progress = repository.getProgress();
+  assert.equal(progress.questAttempts.length, 50);
+  assert.equal(
+    progress.questAttempts.some((attempt) => attempt.outcome === "passed"),
+    false,
+  );
+  assert.deepEqual(progress.completedQuestRevisions, [
+    {
+      questId,
+      questRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
+  assert.deepEqual(
+    [...getCurrentCompletedQuestIds(progress, [{ id: questId, revision: 2 }])],
+    [questId],
+  );
+});
+
+test("Quest 완료 selector는 현재 revision과 versioned 기록을 우선하고 legacy revision 1만 인정한다", () => {
+  const quests = [
+    { id: "quest-javascript-current", revision: 2 },
+    { id: "quest-javascript-old", revision: 2 },
+    { id: "quest-javascript-legacy", revision: 1 },
+  ];
+  const completedAt = "2026-08-16T12:00:00.000Z";
+
+  const completed = getCurrentCompletedQuestIds(
+    {
+      completedQuestIds: quests.map((quest) => quest.id),
+      completedQuestRevisions: [
+        {
+          questId: "quest-javascript-current",
+          questRevision: 2,
+          completedAt,
+        },
+        {
+          questId: "quest-javascript-old",
+          questRevision: 1,
+          completedAt,
+        },
+      ],
+    },
+    quests,
+  );
+
+  assert.deepEqual([...completed], [
+    "quest-javascript-current",
+    "quest-javascript-legacy",
+  ]);
+});
+
+test("높은 Quest 완료 revision은 나중의 구버전 통과 기록으로 내려가지 않는다", () => {
+  const progress = normalizeProgress({
+    ...createEmptyProgress(),
+    completedQuestRevisions: [
+      {
+        questId: "quest-javascript-stale-tab",
+        questRevision: 2,
+        completedAt: "2026-08-16T12:00:00.000Z",
+      },
+      {
+        questId: "quest-javascript-stale-tab",
+        questRevision: 1,
+        completedAt: "2026-08-16T12:00:01.000Z",
+      },
+    ],
+  });
+
+  assert.deepEqual(progress.completedQuestRevisions, [
+    {
+      questId: "quest-javascript-stale-tab",
+      questRevision: 2,
+      completedAt: "2026-08-16T12:00:00.000Z",
+    },
+  ]);
 });
 
 test("Code Quest 제출 결과의 ID·리비전·점수·결과 일관성을 거부한다", () => {

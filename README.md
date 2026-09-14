@@ -2,7 +2,7 @@
 
 BAM.dev는 프로그래밍 문법을 읽는 데서 멈추지 않고, 개념을 설명하고 직접 구현하며 한 명의 개발자로 성장하도록 돕는 학습 가이드입니다.
 
-현재 정적 학습문서는 **전체 182개, 활성 160개, 보관 22개**입니다. 활성 목록은 HTML 15·CSS 20·JavaScript 33·Java 32·Spring 46·알고리즘 14개입니다. 알고리즘 학습문서는 정식 Java 25를 기준으로 제공합니다. 객관식은 **284문항**(JavaScript 69·Java 주제 64·Spring 92·HTML 12·CSS 47)이며 Java 언어 컬렉션에 Java와 Spring의 156문항을 함께 저장합니다. 개념 발췌는 177개입니다. Code Quest 18개(JavaScript 9·HTML 5·CSS 4), JavaScript 코딩테스트 6문제와 HTML·CSS Web Project 1개는 유지합니다.
+현재 정적 학습문서는 **전체 187개, 활성 160개, 보관 27개**입니다. 활성 목록은 HTML 15·CSS 20·JavaScript 33·Java 32·Spring 46·알고리즘 14개입니다. 알고리즘 학습문서는 정식 Java 25를 기준으로 제공합니다. 객관식은 **284문항**(JavaScript 69·Java 주제 64·Spring 92·HTML 12·CSS 47)이며 Java 언어 컬렉션에 Java와 Spring의 156문항을 함께 저장합니다. 개념 발췌는 177개입니다. Code Quest 18개(JavaScript 9·HTML 5·CSS 4), JavaScript 코딩테스트 6문제와 HTML·CSS Web Project 1개는 유지합니다.
 
 Spring Security·JPA·Spring Data JPA의 문서·객관식·발췌를 작성하고 기존 Spring 과정에 연결했습니다. 독립 내용·실행·최종 통합 판정은 [이번 작업 카드](docs/work-items/2026-09-14-spring-security-jpa.md#검증-범위와-증거)에서 구분합니다. 앞선 CSS·Spring 기초의 전체 검사 651/651은 [이전 작업의 검증 결과](docs/work-items/2026-09-14-css-quiz-spring-foundations.md#검증-증거와-남은-판정)입니다. Spring 제공은 정적 학습에 한정하며 Java runner·Spring/DB 실행 실습·설치 앱·React 이관은 미구현입니다. Git 게시 완료를 뜻하지 않습니다.
 

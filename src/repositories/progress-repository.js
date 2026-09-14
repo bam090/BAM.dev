@@ -41,6 +41,11 @@ const STORED_QUEST_ATTEMPT_FIELDS = new Set([
   ...QUEST_ATTEMPT_INPUT_FIELDS,
   "completedAt",
 ]);
+const COMPLETED_QUEST_REVISION_FIELDS = new Set([
+  "questId",
+  "questRevision",
+  "completedAt",
+]);
 const CODING_TEST_DRAFT_INPUT_FIELDS = new Set([
   "problemId",
   "problemRevision",
@@ -81,6 +86,7 @@ export function createEmptyProgress() {
     questDrafts: [],
     questAttempts: [],
     completedQuestIds: [],
+    completedQuestRevisions: [],
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
@@ -114,12 +120,25 @@ export function normalizeProgress(value) {
       ? value.completedQuestIds.filter(isQuestId)
       : [],
   );
+  const completedQuestRevisions = normalizeCompletedQuestRevisions(
+    value.completedQuestRevisions,
+  );
+  for (const questId of completedQuestRevisions.keys()) {
+    completedQuestIds.add(questId);
+  }
   for (const storedValue of Array.isArray(value.questAttempts) ? value.questAttempts : []) {
     const attempt = normalizeStoredQuestAttempt(storedValue);
     if (!attempt || questAttemptIds.has(attempt.id)) continue;
     questAttemptIds.add(attempt.id);
     questAttempts.push(attempt);
-    if (isCompletedQuestAttempt(attempt)) completedQuestIds.add(attempt.questId);
+    if (isCompletedQuestAttempt(attempt)) {
+      completedQuestIds.add(attempt.questId);
+      retainCompletedQuestRevision(completedQuestRevisions, {
+        questId: attempt.questId,
+        questRevision: attempt.questRevision,
+        completedAt: attempt.completedAt,
+      });
+    }
   }
   const retainedQuestAttempts = questAttempts.slice(-MAX_QUEST_ATTEMPTS);
   const codingTestDrafts = normalizeCodingTestDrafts(value.codingTestDrafts);
@@ -153,6 +172,7 @@ export function normalizeProgress(value) {
     questDrafts,
     questAttempts: retainedQuestAttempts,
     completedQuestIds: [...completedQuestIds],
+    completedQuestRevisions: [...completedQuestRevisions.values()],
     codingTestDrafts,
     codingTestSubmissions: codingTestSubmissions.slice(-MAX_CODING_TEST_SUBMISSIONS),
     completedCodingTestProblems: [...completedCodingTestProblems.values()],
@@ -489,6 +509,95 @@ function isCompletedQuestAttempt(attempt) {
   return attempt.outcome === "passed" && attempt.total > 0 && attempt.passed === attempt.total;
 }
 
+function normalizeCompletedQuestRevision(value) {
+  const completed = snapshotPlainDataDto(
+    value,
+    COMPLETED_QUEST_REVISION_FIELDS,
+  );
+  if (
+    !completed ||
+    !isQuestId(completed.questId) ||
+    !isValidProblemRevision(completed.questRevision) ||
+    !isValidDateString(completed.completedAt)
+  ) {
+    return null;
+  }
+  return {
+    questId: completed.questId,
+    questRevision: completed.questRevision,
+    completedAt: completed.completedAt,
+  };
+}
+
+function retainCompletedQuestRevision(completedByQuestId, completed) {
+  const previous = completedByQuestId.get(completed.questId);
+  if (
+    !previous ||
+    previous.questRevision < completed.questRevision ||
+    (previous.questRevision === completed.questRevision &&
+      previous.completedAt <= completed.completedAt)
+  ) {
+    completedByQuestId.set(completed.questId, completed);
+  }
+}
+
+function normalizeCompletedQuestRevisions(value) {
+  const completedByQuestId = new Map();
+  for (const storedValue of Array.isArray(value) ? value : []) {
+    const completed = normalizeCompletedQuestRevision(storedValue);
+    if (completed) {
+      retainCompletedQuestRevision(completedByQuestId, completed);
+    }
+  }
+  return completedByQuestId;
+}
+
+export function getCurrentCompletedQuestIds(progress, quests) {
+  const questById = new Map(
+    (Array.isArray(quests) ? quests : [])
+      .filter(
+        (quest) =>
+          isQuestId(quest?.id) && isValidProblemRevision(quest?.revision),
+      )
+      .map((quest) => [quest.id, quest]),
+  );
+  const completedIds = new Set();
+  const versionedIds = new Set();
+
+  for (const storedValue of Array.isArray(progress?.completedQuestRevisions)
+    ? progress.completedQuestRevisions
+    : []) {
+    const completed = normalizeCompletedQuestRevision(storedValue);
+    if (!completed || !questById.has(completed.questId)) continue;
+    versionedIds.add(completed.questId);
+    if (questById.get(completed.questId).revision === completed.questRevision) {
+      completedIds.add(completed.questId);
+    }
+  }
+
+  for (const attempt of Array.isArray(progress?.questAttempts)
+    ? progress.questAttempts
+    : []) {
+    const quest = questById.get(attempt?.questId);
+    if (!quest || quest.revision !== attempt?.questRevision) continue;
+    if (isCompletedQuestAttempt(attempt)) completedIds.add(quest.id);
+  }
+
+  for (const questId of Array.isArray(progress?.completedQuestIds)
+    ? progress.completedQuestIds
+    : []) {
+    if (
+      questById.get(questId)?.revision === 1 &&
+      !versionedIds.has(questId) &&
+      !completedIds.has(questId)
+    ) {
+      completedIds.add(questId);
+    }
+  }
+
+  return completedIds;
+}
+
 function normalizeQuestDraftInput(draft) {
   const snapshot = snapshotPlainDataDto(draft, QUEST_DRAFT_INPUT_FIELDS);
   if (!snapshot) {
@@ -775,13 +884,24 @@ export class LocalStorageProgressRepository extends ProgressRepository {
       completedAt,
     };
     const completedQuestIds = new Set(progress.completedQuestIds);
-    if (isCompletedQuestAttempt(storedAttempt)) completedQuestIds.add(storedAttempt.questId);
+    const completedQuestRevisions = normalizeCompletedQuestRevisions(
+      progress.completedQuestRevisions,
+    );
+    if (isCompletedQuestAttempt(storedAttempt)) {
+      completedQuestIds.add(storedAttempt.questId);
+      retainCompletedQuestRevision(completedQuestRevisions, {
+        questId: storedAttempt.questId,
+        questRevision: storedAttempt.questRevision,
+        completedAt,
+      });
+    }
 
     return this.#save(
       {
         ...progress,
         questAttempts: [...progress.questAttempts, storedAttempt].slice(-MAX_QUEST_ATTEMPTS),
         completedQuestIds: [...completedQuestIds],
+        completedQuestRevisions: [...completedQuestRevisions.values()],
       },
       completedAt,
     );

@@ -12,6 +12,7 @@ import {
   buildCodingTestHash,
   buildCodingTestListHash,
   buildLessonHash,
+  buildMyPageHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
@@ -19,6 +20,7 @@ import {
   getAdjacentLessons,
   parseCodingTestHash,
   parseLessonHash,
+  parseMyPageHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -58,6 +60,7 @@ import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js
 import { scoreWebProject } from "./grading/web-project-scoring.js";
 import {
   createBrowserStorage,
+  getCurrentCompletedQuestIds,
   LocalStorageProgressRepository,
   PROGRESS_STORAGE_KEY,
 } from "./repositories/progress-repository.js";
@@ -69,6 +72,7 @@ import {
 } from "./repositories/web-project-repository.js";
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
 import { renderAppShell, renderLearningShell } from "./ui/app-shell.js";
+import { renderMyPageView } from "./ui/my-page-view.js";
 import { createThemeController } from "./ui/theme.js";
 import {
   renderCourseNavigation,
@@ -319,14 +323,16 @@ export class BamLearningApp {
         return;
       }
       if (event.key === WEB_PROJECT_STORAGE_KEY) {
-        if (this.currentView === "web-project-list") this.renderWebProjectList();
+        if (this.currentView === "my-page") this.renderMyPage();
+        else if (this.currentView === "web-project-list") this.renderWebProjectList();
         else if (this.currentView === "web-project" && this.webProjectState) {
           this.handleExternalWebProjectStorageChange();
         }
         return;
       }
       if (event.key !== PROGRESS_STORAGE_KEY) return;
-      if (this.currentLesson) this.renderLesson();
+      if (this.currentView === "my-page") this.renderMyPage();
+      else if (this.currentLesson) this.renderLesson();
       else if (this.currentView === "review" && this.quizCollection) {
         this.refreshQuizHistory();
         this.renderQuiz();
@@ -411,6 +417,17 @@ export class BamLearningApp {
     }
     if (["#/learn", "#/learn/", "#/review", "#/review/"].includes(routePath)) {
       await this.openLearningCatalog(routePath.startsWith("#/review") ? "review" : "learn");
+      return;
+    }
+
+    const myPageRoute = parseMyPageHash(window.location.hash);
+    if (myPageRoute) {
+      await this.openMyPageRoute();
+      return;
+    }
+    if (/^#\/my(?:\/|$)/u.test(String(window.location.hash))) {
+      window.history.replaceState(null, "", buildMyPageHash());
+      await this.openMyPageRoute();
       return;
     }
 
@@ -520,6 +537,24 @@ export class BamLearningApp {
     }
 
     await this.openLessonRoute({ useLastLesson });
+  }
+
+  async openMyPageRoute() {
+    const sequence = this.enterView("my-page");
+    const canonicalHash = buildMyPageHash();
+    if (window.location.hash !== canonicalHash) {
+      window.history.replaceState(null, "", canonicalHash);
+    }
+    this.root.innerHTML = this.renderServiceShell({
+      current: "my-page",
+      mainContent: '<main class="main-area service-main" id="lesson-content" tabindex="-1"><p role="status">학습 기록을 준비하고 있어요…</p></main>',
+    });
+    this.syncMenuState();
+    await this.loadSidebarCatalog();
+    if (sequence !== this.renderSequence) return;
+    this.renderMyPage();
+    document.title = "마이페이지 · BAM.dev";
+    this.finishServiceNavigation();
   }
 
   leaveCurrentView(reason = "navigation") {
@@ -773,6 +808,7 @@ export class BamLearningApp {
 
   getServiceSidebar(current) {
     const navigation = this.getServiceNavigation();
+    const isCatalogService = ["learn", "review"].includes(current);
     const activeHref = current === "learn" && this.currentLesson
       ? buildLessonHash(this.currentLesson.courseId, this.currentLesson.slug)
       : current === "review" && this.quizCollection
@@ -780,8 +816,8 @@ export class BamLearningApp {
         : "";
     return {
       current, activeHref, routes: navigation.routes, query: navigation.query,
-      topicId: this.catalogFilters?.[current]?.topicId ?? null,
-      items: current !== "home" && this.curriculum ? getLearningCatalogItems({ curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts ?? [], kind: current }) : [],
+      topicId: isCatalogService ? this.catalogFilters?.[current]?.topicId ?? null : null,
+      items: isCatalogService && this.curriculum ? getLearningCatalogItems({ curriculum: this.curriculum, collections: this.quizCollections, concepts: this.reviewConcepts ?? [], kind: current }) : [],
       recent: navigation.recentLessonIds.flatMap((id) => {
         const lesson = this.curriculum?.lessons.find((item) => item.id === id);
         return lesson ? [{ title: lesson.title, href: buildLessonHash(lesson.courseId, lesson.slug) }] : [];
@@ -886,6 +922,51 @@ export class BamLearningApp {
       kind, filters: this.catalogFilters[kind], saved: this.savedReviewSession,
       failedLanguages: this.catalogFailedLanguages,
     }) });
+    this.syncMenuState();
+  }
+
+  renderMyPage() {
+    if (!this.curriculum) return;
+
+    let progress = {};
+    let webProjectState = {};
+    let isPersistent = true;
+    const storageReadErrors = [];
+    try {
+      progress = this.progressRepository.getProgress();
+      isPersistent =
+        this.progressRepository.getPersistenceStatus().isPersistent === true;
+    } catch {
+      isPersistent = false;
+      storageReadErrors.push("progress");
+    }
+    try {
+      webProjectState = this.webProjectRepository.getState();
+      isPersistent =
+        isPersistent &&
+        this.webProjectRepository.getPersistenceStatus().isPersistent === true;
+    } catch {
+      isPersistent = false;
+      storageReadErrors.push("web-project");
+    }
+
+    const mainContent = renderMyPageView({
+      curriculum: this.curriculum,
+      progress,
+      quizCollections: this.quizCollections,
+      codeQuestCollections: this.codeQuestCollections,
+      codingTestCollections: this.codingTestCollection
+        ? [this.codingTestCollection]
+        : [],
+      webProjectCollection: this.webProjectCollection,
+      webProjectState,
+      isPersistent,
+      storageReadErrors,
+    });
+    this.root.innerHTML = this.renderServiceShell({
+      current: "my-page",
+      mainContent,
+    });
     this.syncMenuState();
   }
 
@@ -3418,10 +3499,8 @@ export class BamLearningApp {
     const quests = getCodeQuestsInOrder(collection);
     const currentIndex = quests.findIndex((quest) => quest.id === state.quest.id);
     const adjacent = getAdjacentCodeQuests(collection, state.quest.id);
-    const completedQuestIds = new Set(progress.completedQuestIds);
-    const completedQuestCount = quests.filter((quest) =>
-      completedQuestIds.has(quest.id),
-    ).length;
+    const completedQuestIds = getCurrentCompletedQuestIds(progress, quests);
+    const completedQuestCount = completedQuestIds.size;
     const codingTestProblems =
       language.id === this.codingTestCollection?.languageId
         ? getCodingTestProblemsInOrder(this.codingTestCollection)
@@ -3635,9 +3714,10 @@ export class BamLearningApp {
     );
     const questCollection = this.codeQuestCollections.get(language.id) ?? null;
     const quests = getCodeQuestsInOrder(questCollection);
-    const completedQuestCount = quests.filter((quest) =>
-      progress.completedQuestIds.includes(quest.id),
-    ).length;
+    const completedQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      quests,
+    ).size;
     const codingTestProblems =
       language.id === this.codingTestCollection?.languageId
         ? getCodingTestProblemsInOrder(this.codingTestCollection)
@@ -3832,9 +3912,10 @@ export class BamLearningApp {
     const languageQuestCollection =
       this.codeQuestCollections.get(language.id) ?? null;
     const quests = getCodeQuestsInOrder(languageQuestCollection);
-    const completedQuestCount = quests.filter((quest) =>
-      progress.completedQuestIds.includes(quest.id),
-    ).length;
+    const completedQuestCount = getCurrentCompletedQuestIds(
+      progress,
+      quests,
+    ).size;
     const problems = getCodingTestProblemsInOrder(collection);
 
     this.root.innerHTML = renderAppShell({

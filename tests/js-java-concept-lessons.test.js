@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { parseLessonHash, resolveLessonRoute } from "../src/core/navigation.js";
@@ -67,7 +68,7 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
   }
 });
 
-test("보관된 JS 9개·Java 1개와 활성 runtime은 기존 깊은 URL을 계속 해석한다", () => {
+test("보관된 JS 9개·Java 6개와 활성 runtime은 기존 깊은 URL을 계속 해석한다", () => {
   const originals = [
     ["js-notes-values", "javascript-notes", "values"],
     ["js-notes-functions", "javascript-notes", "functions"],
@@ -79,6 +80,11 @@ test("보관된 JS 9개·Java 1개와 활성 runtime은 기존 깊은 URL을 계
     ["js-06-async-fetch", "javascript", "async-await-fetch"],
     ["js-07-review-practice", "javascript", "review-and-practice"],
     ["java-01-types-methods", "java", "types-and-methods"],
+    ["java-02-control-flow-arrays", "java", "operators-control-flow-and-arrays"],
+    ["java-03-classes-objects", "java", "classes-objects-and-encapsulation"],
+    ["java-04-collections-generics", "java", "collections-generics-list-and-map"],
+    ["java-05-exceptions-debugging", "java", "exceptions-and-debugging"],
+    ["java-06-review-practice", "java", "review-problem-solving-and-testing"],
   ];
   for (const [id, courseId, slug] of originals) {
     const lesson = resolveLessonRoute(curriculum, `#/learn/${courseId}/${slug}`);
@@ -89,4 +95,20 @@ test("보관된 JS 9개·Java 1개와 활성 runtime은 기존 깊은 URL을 계
   assert.equal(runtime?.id, "js-01-runtime");
   assert.equal(Boolean(runtime.archivedFromCatalog), false);
   assert.equal(runtime.answerHeading, undefined);
+});
+
+test("복원한 Java 02~06 교안과 공식 출처 기록은 origin/dev 원문 바이트를 유지한다", async () => {
+  const expectedHashes = new Map([
+    ["content/lessons/java/operators-control-flow-and-arrays.md", "9fb9d02d87121a971eed784e5e69d03bf65acc10fc85036ad42449e4b243d0ea"],
+    ["content/lessons/java/classes-objects-and-encapsulation.md", "9c7527ae36b618c4cd6d7fec2816d8ddbd4c765633a6888b2073433b16b5a4ea"],
+    ["content/lessons/java/collections-generics-list-and-map.md", "67c2b89b706ec739c20741e636890c08288cd6a5155bbef06f97cb636486e7a5"],
+    ["content/lessons/java/exceptions-and-debugging.md", "47207680c3574a0dd75ad88371f8503e505b0e01f8935d11ec17d6681f904ead"],
+    ["content/lessons/java/review-problem-solving-and-testing.md", "145bb45dd6967a046b56c919cce7769f8d27e3bc2e6f9e3bb98d7529b8530732"],
+    ["docs/references/java-official-sources.md", "d6efdf5eaca5792e89610c674cdace7a86c4cbbddce74fddd849ffc7669ebad3"],
+  ]);
+
+  for (const [file, expectedHash] of expectedHashes) {
+    const content = await readFile(new URL(`../${file}`, import.meta.url));
+    assert.equal(createHash("sha256").update(content).digest("hex"), expectedHash, file);
+  }
 });

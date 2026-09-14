@@ -1,6 +1,17 @@
 export const DEFAULT_LANGUAGE_ID = "javascript";
 export const DEFAULT_COURSE_ID = "javascript";
 
+const LEGACY_ALGORITHM_SLUGS = new Set([
+  "implementation-and-string-simulation",
+  "hash-map-set",
+  "stack-and-queue",
+  "sorting-two-pointers-sliding-window",
+  "brute-force-backtracking-recursion",
+  "bfs-dfs-graph-grid",
+  "heap-and-greedy",
+  "binary-search-and-dynamic-programming",
+]);
+
 export function buildLessonHash(courseId, slug) {
   return `#/learn/${encodeURIComponent(courseId)}/${encodeURIComponent(slug)}`;
 }
@@ -28,6 +39,10 @@ export function buildWebProjectListHash() {
 
 export function buildWebProjectHash(slug) {
   return `#/web-projects/${encodeURIComponent(slug)}`;
+}
+
+export function buildMyPageHash() {
+  return "#/my";
 }
 
 export function parseLessonHash(hash) {
@@ -110,6 +125,11 @@ export function parseWebProjectHash(hash) {
   }
 }
 
+export function parseMyPageHash(hash) {
+  const cleanHash = String(hash ?? "").split("?")[0].replace(/^#/, "");
+  return /^\/my\/?$/.test(cleanHash) ? { kind: "my-page" } : null;
+}
+
 export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
   const navigableCategoryIds = new Set(
     (curriculum.categories ?? [])
@@ -135,6 +155,17 @@ export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
     : null;
 
   if (routedLesson) return routedLesson;
+
+  const legacyAlgorithmLesson =
+    parsed?.courseId === DEFAULT_COURSE_ID && LEGACY_ALGORITHM_SLUGS.has(parsed.slug)
+      ? curriculum.lessons.find(
+          (lesson) =>
+            navigableCourseIds.has(lesson.courseId) &&
+            lesson.courseId === "algorithm" &&
+            lesson.slug === parsed.slug,
+        )
+      : null;
+  if (legacyAlgorithmLesson) return legacyAlgorithmLesson;
 
   const preferredLesson = preferredLessonId
     ? curriculum.lessons.find(

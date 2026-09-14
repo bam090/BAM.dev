@@ -45,6 +45,7 @@
 | 프런트엔드 현재·목표 기술과 점진 이관 경계 | [`architecture.md`](architecture.md#목표-설치형-구조), [`roadmap.md`](roadmap.md#bam-결정-대기-목록) | UI 구현·의존성·빌드·Worker 경계를 바꿀 때 |
 | 콘텐츠 데이터 계약과 안정 ID | [`content-schema.md`](content-schema.md) | 콘텐츠 파일·스키마·연결을 바꿀 때 |
 | 독립 학습문서·객관식 진입, 키워드·풀이·개념·문서 왕복·재도전 | [`designs/lesson-review.md`](designs/lesson-review.md) | 학습 문서와 객관식 복습 흐름을 연결하거나 변경할 때 |
+| `#/my` 학습 기록, 로컬 저장 표시·진도·재도전·기존 기록 호환 | [`designs/learning-history.md`](designs/learning-history.md) | 내 학습 기록 화면·저장 호환·기록 재진입을 변경할 때 |
 | 객관식 표현·전제·선택지 작성 기준과 사용자 피드백 반영 | [`designs/lesson-review.md`](designs/lesson-review.md#객관식-문항-작성과-검토-기준) | 객관식을 생성·수정하거나 독립 검토할 때 반드시 읽음 |
 | 전역 시각 언어·팔레트·semantic token·상태·대비 | [`designs/visual-design.md`](designs/visual-design.md) | UI 색상·theme·focus·상태 표현을 바꿀 때 |
 | Code Quest 정보 구조·진도·학습 지도 | [`designs/code-quest.md`](designs/code-quest.md) | Code Quest UI·route·진도·탐색을 바꿀 때 |

@@ -43,6 +43,29 @@ test("과정 조회와 실행 언어별 평가 조회를 분리한다", () => {
   assert.deepEqual(archivedHash.conceptIds, ["algo.hashing", "js.map-collection", "js.set-collection"]);
 });
 
+test("Java 활성 32개는 그대로 두고 기존 교안 6개를 안정 ID와 연속 후순위 order로 보관한다", () => {
+  const javaLessons = getLessonsForCourse(curriculum, "java");
+  const activeLessons = javaLessons.filter((lesson) => lesson.archivedFromCatalog !== true);
+  const archivedLessons = javaLessons.filter((lesson) => lesson.archivedFromCatalog === true);
+
+  assert.equal(activeLessons.length, 32);
+  assert.deepEqual(
+    activeLessons.map((lesson) => lesson.order),
+    Array.from({ length: 32 }, (_, index) => index + 2),
+  );
+  assert.deepEqual(
+    archivedLessons.map(({ id, order, slug }) => ({ id, order, slug })),
+    [
+      { id: "java-01-types-methods", order: 1, slug: "types-and-methods" },
+      { id: "java-02-control-flow-arrays", order: 34, slug: "operators-control-flow-and-arrays" },
+      { id: "java-03-classes-objects", order: 35, slug: "classes-objects-and-encapsulation" },
+      { id: "java-04-collections-generics", order: 36, slug: "collections-generics-list-and-map" },
+      { id: "java-05-exceptions-debugging", order: 37, slug: "exceptions-and-debugging" },
+      { id: "java-06-review-practice", order: 38, slug: "review-problem-solving-and-testing" },
+    ],
+  );
+});
+
 test("탐색 가능한 과정의 교안은 과정별로 1부터 순서대로 제공된다", () => {
   for (const course of curriculum.courses.filter((item) => item.status !== "planned")) {
     const lessons = getLessonsForCourse(curriculum, course.id);

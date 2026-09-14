@@ -4,7 +4,7 @@ import { renderCodeQuestNavigationLink } from "./code-quest-view.js";
 import { renderCodingTestNavigationLink } from "./coding-test-view.js";
 import { renderWebProjectNavigationLink } from "./web-project-view.js";
 import { renderThemeControls } from "./theme.js";
-import { renderServiceIcon, renderSidebarSearch, renderSidebarContext, renderSidebarRecent } from "./service-sidebar-view.js";
+import { renderServiceIcon, renderSidebarSearch, renderSidebarContext, renderSidebarRecent, renderSidebarUtilityLink } from "./service-sidebar-view.js";
 
 const FEATURE_NAVIGATION_RENDERERS = Object.freeze({
   review: renderReviewNavigationLink,
@@ -34,9 +34,9 @@ export function renderLearningShell({ current = "home", menuOpen = false, mainCo
         <a href="${escapeHtml(sidebar.routes?.learn ?? "#/learn")}" data-service-link="learn"${current === "learn" ? ' aria-current="page"' : ""}>${renderServiceIcon("learn")}학습문서</a>
         <a href="${escapeHtml(sidebar.routes?.review ?? "#/review")}" data-service-link="review"${current === "review" ? ' aria-current="page"' : ""}>${renderServiceIcon("review")}객관식 문제</a>
       </nav>
-      <div class="sidebar-context desktop-navigation" data-sidebar-context>${renderSidebarContext({ ...sidebar, current })}</div>
+      <div class="sidebar-context desktop-navigation" data-sidebar-context>${renderSidebarContext({ ...sidebar, current: ["learn", "review"].includes(current) ? current : "home" })}</div>
       <div class="sidebar-recent desktop-navigation" data-sidebar-recent>${renderSidebarRecent(sidebar.recent)}</div>
-      <div class="service-sidebar-settings">${renderThemeControls(theme)}</div>
+      <div class="service-sidebar-settings">${renderSidebarUtilityLink({ isCurrent: current === "my-page" })}${renderThemeControls(theme)}</div>
     </aside>
     <div class="sidebar-backdrop${menuOpen ? " is-visible" : ""}" data-close-menu aria-hidden="true"></div>
     ${mainContent}
@@ -136,6 +136,7 @@ export function renderAppShell({
         </nav>
 
         ${renderFeatureNavigation(featureNavigation)}
+        <div class="sidebar-utility">${renderSidebarUtilityLink()}</div>
       </aside>
 
       <div class="sidebar-backdrop${menuOpen ? " is-visible" : ""}" data-close-menu aria-hidden="true"></div>
