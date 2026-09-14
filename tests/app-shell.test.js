@@ -58,6 +58,9 @@ test("브랜드는 모바일 상단과 서비스 사이드바에서 같은 BAM.d
   assert.match(learning, /href="#\/"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?홈<\/a>/);
   assert.match(learning, /href="#\/learn"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?학습문서<\/a>/);
   assert.match(learning, /href="#\/review"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?객관식 문제<\/a>/);
+  assert.match(learning, /href="#\/quest"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?Code Quest<\/a>/);
+  assert.match(learning, /href="#\/coding-tests"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?코딩테스트<\/a>/);
+  assert.match(learning, /href="#\/web-projects"[^>]*>(?:<svg\b[^>]*>[\s\S]*?<\/svg>)?Web Project<\/a>/);
   assert.match(learning, /<footer\b[^>]*>[\s\S]*?BAM\.dev · 개발자로 성장하는 나의 공간[\s\S]*?<\/footer>/);
   assert.match(learning, /data-theme-choice="light"/);
   assert.match(learning, /data-theme-choice="dark"/);
@@ -66,14 +69,29 @@ test("브랜드는 모바일 상단과 서비스 사이드바에서 같은 BAM.d
   assert.doesNotMatch(renderShell(), /brand-mark|>B<\/span>/);
 });
 
-test("서비스 사이드바는 기존 세 경로의 현재 위치와 이름 있는 메뉴 조작부를 제공한다", () => {
-  for (const [current, href] of [["home", "#/"], ["learn", "#/learn"], ["review", "#/review"]]) {
+test("서비스 사이드바는 여섯 서비스와 내 학습 기록 중 현재 위치 하나만 표시한다", () => {
+  for (const [current, href] of [
+    ["home", "#/"],
+    ["learn", "#/learn"],
+    ["review", "#/review"],
+    ["quest", "#/quest"],
+    ["coding-test", "#/coding-tests"],
+    ["web-project", "#/web-projects"],
+    ["my-page", "#/my"],
+  ]) {
     for (const menuOpen of [false, true]) {
       const html = renderLearningShell({ current, menuOpen });
       const navigation = html.match(/<nav\b[^>]*aria-label="서비스 선택"[^>]*>[\s\S]*?<\/nav>/)?.[0] ?? "";
-      assert.equal((navigation.match(/<a\b/g) ?? []).length, 3);
-      assert.equal((navigation.match(/aria-current="page"/g) ?? []).length, 1);
-      assert.ok(navigation.includes(`href="${href}" data-service-link="${current}" aria-current="page"`));
+      const sidebar = html.match(/<aside\b[^>]*>[\s\S]*?<\/aside>/)?.[0] ?? "";
+      assert.equal((navigation.match(/<a\b/g) ?? []).length, 6);
+      assert.equal((sidebar.match(/aria-current="page"/g) ?? []).length, 1);
+      if (current === "my-page") {
+        assert.match(sidebar, new RegExp(`href="${href}"[^>]*aria-current="page"`));
+        assert.equal((navigation.match(/aria-current="page"/g) ?? []).length, 0);
+      } else {
+        assert.ok(navigation.includes(`href="${href}" data-service-link="${current}" aria-current="page"`));
+        assert.equal((navigation.match(/aria-current="page"/g) ?? []).length, 1);
+      }
       const sidebarId = html.match(/<aside\b[^>]*\bid="([^"]+)"/)?.[1];
       assert.ok(sidebarId);
       assert.ok(html.includes(`aria-controls="${sidebarId}" aria-expanded="${menuOpen}"`));

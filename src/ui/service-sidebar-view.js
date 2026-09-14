@@ -7,6 +7,9 @@ export function renderServiceIcon(kind) {
     home: '<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',
     learn: '<path d="M12 5v15M3 4c4-1 6 0 9 1 3-1 5-2 9-1v15c-4-1-6 0-9 1-3-1-5-2-9-1Z"/>',
     review: '<path d="m3 6 2 2 3-4M11 6h10M3 13h5M11 13h10M3 20h5M11 20h10"/>',
+    quest: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 4l-4 16"/>',
+    "coding-test": '<path d="M5 4h14v16H5Z"/><path d="m8 9 2 2-2 2M12 14h4"/>',
+    "web-project": '<path d="M3 5h18v14H3Z"/><path d="M3 9h18M7 7h.01M10 7h.01"/>',
     history: '<path d="M4 5h16v15H4Z"/><path d="M8 3v4M16 3v4M8 11h8M8 15h5"/>',
     search: '<circle cx="10" cy="10" r="6"/><path d="m15 15 6 6"/>',
   };
@@ -33,7 +36,7 @@ export function renderSidebarSearchResults({ learn = [], review = [], loading = 
 }
 
 export function renderSidebarContext({ current = "home", items = [], topicId = null, activeHref = "", loading = false } = {}) {
-  if (current === "home") return "";
+  if (current !== "learn" && current !== "review") return "";
   const isReview = current === "review";
   const selectedItems = topicId === null ? [] : items.filter((item) => topicId === "all" || item.topicId === topicId);
   const activeIndex = selectedItems.findIndex((item) => item.href === activeHref);

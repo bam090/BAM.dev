@@ -9,9 +9,29 @@
 - `DEC-PUBLIC-EVALUATION-01` 적용: Quest 결과에 영향을 주는 모든 assertion·입력·기대 동작은 설치본에 포함되고 확인 가능해야 하며 비공개·숨김 사례를 추가 실행하지 않는다.
 - `DEC-LOCAL-EVALUATION-01` 적용: 설치형 MVP의 JavaScript Quest는 공개 테스트마다 새 one-shot Worker를 사용한다. 코딩테스트와 내부 runner DTO·실행 추상화를 재사용할 수 있지만 Docker·Spring Boot·PostgreSQL·Nginx·계정·사용자 관리 수신 포트를 요구하지 않고 제품 경계를 합치지 않는다. Java Code Quest 실행은 별도 결정 전까지 이 계약에 포함하지 않는다.
 - `[현재 사실]` Code Quest는 언어별 JSON·schema, `#/quest/<language>/<quest>` route, runner router와 Quest 전용 초안·실행·완료 진도를 사용한다.
-- `[현재 사실]` 현재 UI는 언어와 `order` 중심이며 과정·주제 탐색기와 학습 지도는 아직 구현되지 않았다.
+- `[현재 사실]` `#/quest` 과정·주제 목록, 검색·상태 필터·과정 번호 이동, 이어서 풀기와 실제 교안·개념 관계 지도를 구현했다. 상세에는 과정→주제→현재 Quest, 진도·관련 교안과 같은 과정의 이전/다음 이동을 제공하고 홈·236px 서비스 사이드바에서 연결한다. 반환된 세 UI 결함을 수정하고 독립 focused·대표 데스크톱 검증 PASS를 받았다. 최종 독립 문서 재검·통합도 PASS이며 근거와 한계는 [작업 카드](../work-items/2026-09-14-code-quest-navigation.md)에서 구분한다.
 
 설치형 앱 전환은 별도 결정이다. Code Quest를 개선해도 설치 프로그램이 되지 않으며, 설치·오프라인 경계는 [`local-application.md`](local-application.md)가 담당한다.
+
+### 데스크톱 탐색 첫 구현 계약
+
+`[확정 결정]` bam의 2026-09-14 구현 승인 범위는 기존 JavaScript·HTML·CSS Quest 내용을 보존한 데스크톱 웹 탐색 개선이다. 홈·서비스 사이드바에서 `#/quest` 목록으로 진입하고 과정→주제→현재 Quest, 검색·번호 이동·주제/상태 필터·이어서 풀기·다음 Quest·관련 문서·실제 관계 학습 지도를 제공한다. 기존 `#/quest/<language>/<quest>` URL은 그대로 유효하다. 현재 Vanilla JavaScript·정적 콘텐츠·저장소·평가기를 재사용하며 모바일 검증·SQL·Java runner·설치 앱·React 이관·DB·서버·시각 자산 추가·Git 게시는 이 작업에 포함하지 않는다. 진행과 검증 상태는 [작업 카드](../work-items/2026-09-14-code-quest-navigation.md)에 기록한다.
+
+`[추론]` 승인 목표를 구현하기 위한 이번 최소 설계는 아래의 읽기 전용 projection이다. 검증된 Quest `lessonId`의 교안에서 `courseId`를 읽고 그 `lessonId` 자체를 주제로 사용한다. 표시 번호는 과정 안에서 기존 `order`와 안정 ID 순으로 계산하며 원본 order·ID·revision·source·저장 상태를 수정하지 않는다. 연결이 없거나 유효하지 않은 항목은 가짜 과정·주제로 추론하지 않고 기존 콘텐츠 검증 오류 경계로 반환한다. 스키마에 과정·주제·표시 번호를 영구 저장하는 선택은 후속 `DEC-QUEST-CATALOG-01`에 남긴다.
+
+목록에서 과정을 고르면 해당 과정의 주제·Quest와 범위가 명시된 진도가 표시된다. 검색은 번호·제목·요약을 대상으로 하고 주제·상태 필터와 함께 적용한다. 번호 이동은 현재 과정의 전체 표시 번호를 기준으로 하며 숨겨진 필터 결과도 유효한 대상이면 기존 상세 URL로 이동한다. 빈 결과·유효하지 않은 번호는 입력을 보존하고 이유를 안내한다. 다음 Quest는 필터와 무관하게 같은 과정의 기존 순서에서 고르며 마지막에는 목록으로 돌아가는 행동을 제공한다. 이어서 풀기는 진행 중 항목을 우선하고, 없으면 현재 완료가 아닌 첫 항목, 모두 완료이면 첫 항목의 다시 풀기로 연결한다. 최근 활동 시각이 있는 진행 중 항목은 최근 순, 동률·시각 없음은 표시 순으로 고른다.
+
+관련 문서는 실제 `lessonId`의 기존 문서 URL로 연결한다. 학습 지도는 연결 교안과 실제 `conceptIds`를 보여 주고 해당 관계의 Quest로 이동하게 하며, 추가 선수 관계나 학습 순서를 만들어 내지 않는다. 목록·지도 탐색만으로 초안 생성·완료 표시·시도 기록 쓰기를 하지 않는다. 실패 시 이번 탐색 UI와 연결만 되돌릴 수 있으며 사용자 콘텐츠와 저장 기록을 초기화하지 않는다.
+
+`[현재 사실]` 이번 문제 탐색기와 학습 지도는 페이지 내부 영역으로 구현했으며 별도 overlay가 아니다. 아래 전체 목표 중 modal 열기·Escape·호출자 초점 복원은 이 형태에 적용하지 않는다. 실제 토글 버튼·입력의 초점 유지와 자연스러운 키보드 순서는 대표 데스크톱에서 확인했다. 지도 이동은 버튼으로 해당 영역에 초점·스크롤을 옮기며 상세 URL을 유지한다. 모바일·설치 앱·원격 게시는 구현자 검사 범위에 포함되지 않는다.
+
+### 단계 힌트 공개 시 읽던 위치 보존
+
+`[확정 결정]` 2026-09-14 bam의 후속 요청에 따라 Code Quest에서 다음 힌트를 공개할 때 현재 화면의 `scrollX`·`scrollY`를 유지한다. 새 힌트에 접근성 초점을 옮기는 경우에도 `preventScroll`을 사용해 읽던 위치를 바꾸지 않는다. 힌트 공개 순서·내용·학습자 source·실행/저장 계약은 그대로 두며, 이전 화면이 예약한 비동기 초점 처리가 route 이동 뒤 다른 화면의 초점이나 스크롤을 바꾸면 안 된다.
+
+일반 제품 UI 수정으로 `src/app.js`의 힌트 공개 흐름과 별도 영향 테스트에 한정한다. 대표 데스크톱에서 첫째·둘째·마지막 힌트 공개 전후 위치와 source 보존, 지연 처리 전 route 이동의 무영향을 확인한다. 전체 검사·빌드·모바일 검사를 추가하지 않는다. 구현·검증·후속 게시 상태는 [기존 탐색 작업 카드](../work-items/2026-09-14-code-quest-navigation.md#후속-힌트-스크롤-보존과-게시)를 따른다.
+
+`[현재 사실]` 힌트 스크롤 보존을 구현했고 독립 focused 26/26과 대표 데스크톱 검증을 통과했다. Chrome 1440×1000 어두운 theme의 HTML `document-structure`에서 힌트 1·2·3 공개마다 위치와 source를 보존했으며 새 힌트 초점·마지막 버튼 비활성도 확인했다. stale 비동기 처리의 무영향은 자동 회귀 검사로 확인했다. 후속 통합·Git 게시 결과는 아직 대기 중이며 상세 조건·hash·미실행 범위는 작업 카드를 따른다.
 
 ## 코딩테스트와의 분리 경계
 
@@ -58,11 +78,11 @@ Code Quest 화면은 다음 세 단계의 현재 위치를 한 문장과 탐색 
 - `완료`: 현재 revision의 공개 완료 조건을 통과한 증거가 있음
 - `이전 완료`: PASS가 이전 revision이거나 완료 ID는 있지만 PASS revision 증거가 보관되지 않음
 
-`[현재 사실]` Quest 초안과 `completedQuestIds` 자체는 revision을 저장하지 않는다. 보관 중인 `questAttempts`는 `questRevision`을 저장하므로 현재 또는 이전 revision의 PASS를 복원할 수 있다. 시도 보관 한도 밖에서는 완료 ID만 남아 revision을 알 수 없는 경우가 있다.
+`[현재 사실]` Quest 초안과 `completedQuestIds` 자체는 revision을 저장하지 않는다. `completedQuestRevisions`는 Quest ID·revision·완료 시각을 보존하며 `questAttempts`도 `questRevision`을 저장한다. 완료 revision 레코드는 시도 보관 한도 밖에서도 남고, 이 두 곳에 근거가 없는 완료 ID만 revision 미상이다. 현재 저장소의 기존 `getCurrentCompletedQuestIds`는 revision 1의 legacy 완료 ID를 인정하는 호환 계약도 갖는다. 이번 탐색 표시에서는 이 selector·저장 동작을 바꾸지 않고 새 projection을 홈의 Quest 안내·목록·Quest 상세에 일관되게 사용해 legacy를 `이전 완료`로 구분한다. 다른 화면의 기존 집계는 이 작업의 변경 범위가 아니다.
 
-`[제안]` Code Quest 전용 진도 projection은 PASS attempt가 현재 revision과 같으면 `current_revision`, 이전이면 `older_revision`, 완료 ID만 있으면 `legacy_unversioned`로 판정한다. 뒤의 두 경우는 `이전 완료`로 표시하고 현재 revision을 다시 통과해야 완료로 승격한다. revision 없는 초안은 원본 source를 보존한 채 revision을 알 수 없다고 알리고 조용히 새 starter에 귀속하지 않는다.
+`[추론]` 이번 읽기 전용 진도 projection은 `completedQuestRevisions` 또는 유효한 PASS attempt의 revision이 현재와 같으면 `current_revision`, 현재와 다른 완료 revision 근거만 있으면 `older_revision`, 완료 ID만 있으면 `legacy_unversioned`로 판정한다. PASS attempt는 `outcome === passed`, `total > 0`, `passed === total`을 모두 만족해야 한다. 뒤의 두 경우는 `이전 완료` 이력으로 보존하고 현재 revision을 다시 통과해야 완료로 승격한다. revision 없는 초안은 원본 source를 보존하고 `저장된 초안의 문제 버전은 확인할 수 없습니다`라고 안내한다. 과거 코드라고 단정하거나 현재 starter로 덮어쓰거나 현재 revision의 초안이라고 주장하지 않는다.
 
-상태 우선순위는 `현재 revision 완료 → 현재 초안·시도 진행 중 → 이전 완료 → 시작 전`이다. 이전 완료 기록이 있는 학습자가 현재 문제를 다시 풀면 주 상태는 `진행 중`으로 표시하고 이전 이력은 보조 상태로 유지한다.
+이번 상태 우선순위는 `현재 revision 완료 근거 → 현재 revision 시도 → 이전 PASS/legacy 완료 → 초안 또는 기타 시도 → 시작 전`이다. 이전 완료와 revision 미상의 초안만 함께 있으면 `이전 완료`를 유지하며 초안 존재·버전 미상을 보조 안내한다. attempt의 실제 `questRevision`이 현재와 같으면 `진행 중` 근거이며 이전 이력은 보조 상태다. 완료 이력이 없는 초안·기타 시도는 revision을 확정하지 않는 `진행 중`이다. 현재 revision PASS 이후 실패한 재시도나 초안이 있어도 이미 확인한 완료를 취소하지 않는다. 최근 활동은 배열 위치를 최신으로 가정하지 않고 초안 `updatedAt`·시도 `completedAt`으로 비교한다.
 
 진도는 항상 범위와 분모를 함께 표시한다.
 
@@ -80,7 +100,7 @@ Code Quest 화면은 다음 세 단계의 현재 위치를 한 문장과 탐색 
 - 주제와 `시작 전 | 진행 중 | 이전 완료 | 완료` 필터
 - 현재 필터 결과 수
 - 문제 번호, 제목, 짧은 요구, 현재 위치와 진행 상태
-- 키보드로 열기·이동·닫기 및 닫은 뒤 호출 버튼으로 초점 복원
+- 키보드 이동. overlay로 제공할 때에는 열기·닫기 및 닫은 뒤 호출 버튼으로 초점 복원
 
 학습 지도는 문제 문구나 정규식으로 교안을 역추론하지 않는다. 번들된 curriculum의 lesson `courseId`·`conceptIds`와 Quest의 `lessonId`·`conceptIds` 관계를 검증해 다음 관계를 보여 준다.
 
@@ -96,13 +116,13 @@ Code Quest 화면은 다음 세 단계의 현재 위치를 한 문장과 탐색 
 - 진행률은 범위·분모 텍스트와 접근 가능한 `progressbar`를 함께 제공한다.
 - 현재 과정·주제·문제에는 `aria-current`, 주제·상태 필터에는 `aria-pressed`를 사용한다.
 - 검색·필터 결과 변화는 사용자의 입력을 방해하지 않는 상태 안내로 전달한다.
-- 탐색기와 학습 지도를 열면 제목 또는 첫 입력으로 초점을 옮기고 닫으면 호출 버튼으로 돌려보낸다.
+- 탐색기와 학습 지도를 overlay로 제공할 때에는 열면 제목 또는 첫 입력으로 초점을 옮기고 닫으면 호출 버튼으로 돌려보낸다. 이번 inline 영역은 토글·입력의 초점 유지와 자연스러운 키보드 순서를 검증한다.
 - 320px 폭에서 과정→주제→문제→편집기→결과의 한 열 흐름을 유지한다.
 - 최소 44px 조작 영역, 키보드 이동, 고대비와 reduced motion을 지원한다.
 
 ## Code Quest 전용 표시 모델
 
-`[제안]` 현재 JSON을 바꾸기 전에 UI가 필요한 표시값을 Quest와 curriculum 관계에서 읽기 전용으로 계산한다. 이는 코딩테스트를 포함하는 통합 카탈로그가 아니다.
+`[추론]` 이번 구현은 현재 JSON을 바꾸지 않고 UI가 필요한 표시값을 Quest와 curriculum 관계에서 읽기 전용으로 계산한다. 아래는 의미 계약이며 모든 값을 새 객체 필드로 저장할 의무는 없다. 이는 코딩테스트를 포함하는 통합 카탈로그가 아니다.
 
 ```text
 id / revision / slug
@@ -117,7 +137,7 @@ knownPassedRevision: positive integer | null
 draftSourceRevision: positive integer | unknown | none
 ```
 
-`courseId`는 검증된 `lessonId → courseId`, 초기 `topicId`는 검증된 `lessonId`에서 파생하고 제목·문구로 추론하지 않는다. 기존 `order`는 저장·복구용으로 보존하고 `displayOrder`가 필요하면 과정 안에서 기존 순서와 안정 ID로 결정론적으로 계산한다. 실제 필드 저장·route·표시 순서는 `DEC-QUEST-CATALOG-01`에서 확정한다.
+`courseId`는 검증된 `lessonId → courseId`, 초기 `topicId`는 검증된 `lessonId`에서 파생하고 제목·문구로 추론하지 않는다. 이번 표시 순서·기존 route 보존은 [첫 구현 계약](#데스크톱-탐색-첫-구현-계약)을 적용하며 영구 필드 저장은 `DEC-QUEST-CATALOG-01`의 후속 선택이다. legacy 난이도에 새 의미나 단계는 부여하지 않는다.
 
 ## 단계적 개선
 
@@ -131,6 +151,8 @@ draftSourceRevision: positive integer | unknown | none
 
 ## 완료 조건
 
+아래는 제품의 전체 목표다. 이번 작업은 승인된 데스크톱 웹에서 검색·번호·필터·현재 위치·진도·문서/지도·홈/사이드바 연결·공개 실행·초안 보존을 검증하며, 모바일·설치 앱 목표를 이번 완료 gate로 확대하지 않는다.
+
 - 한 화면에서 과정·주제·현재 Quest를 확인할 수 있다.
 - 검색·직접 이동·주제·상태 필터와 학습 지도를 키보드·모바일에서 사용할 수 있다.
 - 현재 위치와 진행 상태, 주제 진도와 Code Quest 전체 진도의 의미가 섞이지 않는다.
@@ -141,10 +163,9 @@ draftSourceRevision: positive integer | unknown | none
 
 ## 확인이 필요한 선택
 
-- Code Quest 과정·주제 탐색 진입점과 기존 URL 유지 방식
-- `courseId`, `topicId`, `displayOrder`를 projection으로 둘지 실제 스키마에 저장할지
+- 검증 뒤 `courseId`, `topicId`, `displayOrder`를 실제 스키마에 저장할 이점이 있는지
 - legacy `difficulty`를 UI에 표시할지와 표시 의미
-- `이전 완료`와 revision을 학습자에게 설명할 정확한 문구
+- 이후 revision별 초안 저장을 도입할지와 기존 초안의 명시적 이전 방식
 - Java Code Quest를 언제 활성화하고 어떤 로컬 실행 경계를 사용할지
 
 결정 상태는 [`../roadmap.md`](../roadmap.md#bam-결정-대기-목록)에서 관리한다.

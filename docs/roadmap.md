@@ -138,6 +138,10 @@ Java 학습문서·객관식의 첫 목표 포함은 최신 결정으로 확정�
 
 ## 2026-09-14 확정 제품 결정
 
+`[확정 결정]` bam의 “사이드바 밤데브 학습문서랑 객관식에 적용된 사이드바로 전체 적용해줘”에 따라 [전체 화면 서비스 사이드바 통일](designs/visual-design.md#전체-화면의-서비스-사이드바-통일)을 진행한다. 기존 서비스 탐색을 재사용하고 각 제품 본문·유효 링크·초안·진도·실행/내역을 보존한다. 데스크톱 변경 영향 검사에 한정하며 모바일 추가 작업·검사·Git 게시 승인을 포함하지 않는다. `[현재 사실]` 제품 구현과 비동기 문맥 반환 수정 후 독립 focused·대표 데스크톱 검증 PASS. 최종 독립 문서 검토·통합도 PASS이며 근거와 미실행 범위는 [작업 카드](work-items/2026-09-14-global-service-sidebar.md)에서 판정한다.
+
+`[확정 결정]` `DEC-QUEST-NAVIGATION-01` — bam의 구현 승인에 따라 기존 JavaScript·HTML·CSS Quest 내용을 보존하며 데스크톱 웹의 과정→주제→현재 Quest, 검색·번호 이동·주제/상태 필터·이어서/다음·관련 문서·실제 관계 학습 지도와 홈·사이드바 진입을 구현한다. [첫 구현 계약](designs/code-quest.md#데스크톱-탐색-첫-구현-계약)의 읽기 전용 projection을 적용하며 기존 ID·URL·order·revision·초안·진도·평가기와 별도 코딩테스트 경계를 유지한다. 모바일·SQL·Java runner·설치 앱·React·DB·서버·자산 추가·Git 게시 승인은 포함하지 않는다. `[현재 사실]` 탐색 목록·학습 지도·상세 위치/진도·홈/사이드바 연결을 구현했고 세 UI 반환 수정 후 독립 focused·대표 데스크톱 검증 PASS를 받았다. 최종 독립 문서 재검·통합도 PASS이며 근거와 한계는 [작업 카드](work-items/2026-09-14-code-quest-navigation.md)에서 확인한다. M3 전체나 설치형 MVP 완료를 뜻하지 않는다.
+
 `[확정 결정]` `DEC-REVIEW-IMMEDIATE-RETRY-01` — bam의 오답 즉시 재도전 구현 승인에 따라 같은 카드에서 다시 풀고 이번 풀이의 첫 오답을 완료 기록까지 보존한다. [제품 계약](designs/lesson-review.md#오답-문항의-즉시-재도전)과 [선택 필드 계약](content-schema.md#즉시-재도전과-첫-오답의-v1-확장)에 한정하며 기존 R2 전체 이력 목표와 구분한다. `[현재 사실]` 제품·독립 테스트를 반영했고 독립 focused 14/14와 HTML 2문항 대표 데스크톱 흐름을 통과해 `test_engineer` PASS를 받았다. 실제 범위·재사용·미실행은 [현재 증거](designs/lesson-review.md#오답-즉시-재도전의-검증-증거)에서 구분한다. 최종 통합은 전체 diff·문서·이 증거를 별도로 확인하며 Git 게시는 별도다.
 
 | ID | 결정 | 이유 | 상태 |
@@ -212,7 +216,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 | `DEC-REVIEW-CONTENT-01` | 첫 과목의 제공 키워드·문항 수·행동 유형 비율과 CS의 정확한 키워드·깊이 | 기존 검증 재료를 활용해 필요한 키워드별 복수문항·단일/복합 대표만 먼저 확인. 정확한 수를 목표로 대량 생성하지 않으며 CS는 해당 확장 단계에서 결정 | 공개 가능한 실제 제공 범위와 콘텐츠 검증량이 달라짐 | `[확인 필요]` 과정 순서·첫 Java 포함은 확정 |
 | `DEC-MVP-01` | 설치형 MVP의 정식 과정·외부 웹과제, JavaScript·Java 코딩테스트의 실제 포함 문제와 과정별 관찰 가능한 핵심 완료 행동 중 무엇이 release 차단 범위인지 | 첫 학습문서·객관식 목표는 `DEC-INDEPENDENT-LEARNING-01`의 HTML·CSS·JavaScript·Java이며, 설치형 release 차단의 정확한 콘텐츠 ID와 분리된 Code Quest·JavaScript·Java 코딩테스트 묶음은 별도로 정한다. 외부 과제는 검증한 첫 묶음만 포함하고 각 과정·코딩테스트 언어에서 M6 전 직접 구현·전이를 요구할 핵심 완료 행동을 함께 승인 | Java 코딩테스트의 MVP 포함 자체는 `DEC-JAVA-CODING-TEST-01`로 확정됐지만 실제 문제 묶음·수량과 완료 행동이 없으면 구현 우선순위와 A/E/C/T gap의 차단 여부를 판정할 수 없음 | `[확인 필요]` |
 | `DEC-DESKTOP-01` | 공식 지원 OS, desktop shell, 설치 파일, 업데이트와 데이터 backup 방식 | `DEC-DESKTOP-PROTOTYPE-01`의 단일 후보에서 설치·Worker·오프라인·저장·접근성·패키지 비용을 측정한 뒤 결과에 맞춰 결정하고 ADR 채택 | prototype은 진행할 수 있지만 공식 지원·M4 완료·설치형 MVP 승인을 주장할 수 없음 | `[확인 필요]` prototype 증거 대기 |
-| `DEC-QUEST-CATALOG-01` | Code Quest 전용 과정·주제 탐색의 route, `courseId`·`topicId`·표시 순서, current/older/unknown revision과 legacy 난이도 표시 | 기존 Quest route·ID·order·진도를 보존하고 `lessonId` 연결로 과정·주제와 PASS attempt·완료 ID 증거를 읽기 전용 파생한 뒤 UI 검증 후 저장 여부 판단 | Code Quest 탐색·직접 번호 이동·revision·난이도 표시 계약을 확정할 수 없음 | `[확인 필요]` |
+| `DEC-QUEST-CATALOG-01` | 검증 후 과정·주제·표시 순서의 영구 저장, revision별 초안 이전과 legacy 난이도 의미 | `DEC-QUEST-NAVIGATION-01`의 데스크톱 첫 구현은 기존 URL·ID·order·진도를 보존한 읽기 전용 projection으로 진행하고 실제 이점이 있을 때만 저장 변경을 판단 | 영구 스키마·저장 변경과 난이도 의미 부여에는 추가 결정 필요. 승인된 첫 탐색 UI를 차단하지 않음 | `[확인 필요]` 후속 저장·의미 계약만 대기 |
 | `DEC-WEB-REPO-01` | 과제 저장소 수와 branch·tag·학습자 push 모델, 과제 ID·starter/solution·빌드·공개 검증 manifest 계약 | 한 저장소, `main` 안내, 보호된 `starter/<track>/<id>`·`solution/<track>/<id>`와 고정 commit SHA, 학습자 로컬 `work/<id>`를 우선 검토하고 Spring Boot 과제도 같은 고정 참조·공개 검증 원칙으로 별도 승인 | 저장소 구조와 BAM manifest, Spring Boot 과제의 실제 배포·검증 계약을 확정할 수 없음 | `[확인 필요]` |
 | `DEC-WEB-OFFLINE-01` | 최초 GitHub 접속 없이 과제를 시작하도록 starter·solution snapshot과 빌드 의존성 cache를 설치본 또는 별도 묶음에 포함할지 | 핵심 앱은 완전 오프라인, Git 과제는 pinned 두 commit과 필요한 고정 의존성을 한 번 확보한 뒤 오프라인으로 진행한다. 무네트워크 대체가 필요하면 별도 archive·cache와 비-Git 비교 안내를 함께 제공 | 설치 크기와 “오프라인 과제” 표현, Spring Boot 빌드의 네트워크 경계가 달라짐 | `[확인 필요]` |
 | `DEC-WEB-MIGRATION-01` | 현재 인앱 Web Project를 외부 웹과제와 병행·이관·종료 중 어떻게 처리할지 | 첫 외부 과제가 검증될 때까지 병행하고 데이터 export 뒤 종료 여부 재평가 | 기존 초안·진도와 두 제품 명칭이 혼란스러울 수 있음 | `[확인 필요]` |

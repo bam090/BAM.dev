@@ -3,6 +3,24 @@ import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
 import { ExecutionCoordinator } from "../src/core/execution-coordinator.js";
 
+test("화면 종류는 전역 사이드바의 실제 서비스 하나로만 분류한다", () => {
+  const app = Object.create(BamLearningApp.prototype);
+  for (const [service, views] of [
+    ["home", ["home", "unknown"]],
+    ["learn", ["lesson", "learn-catalog"]],
+    ["review", ["review", "review-catalog"]],
+    ["quest", ["quest", "quest-catalog"]],
+    ["coding-test", ["coding-test", "coding-test-list"]],
+    ["web-project", ["web-project", "web-project-list"]],
+    ["my-page", ["my-page"]],
+  ]) {
+    for (const view of views) {
+      app.currentView = view;
+      assert.equal(app.getCurrentService(), service, view);
+    }
+  }
+});
+
 test("leaveCurrentView는 예약 작업을 정리하고 사용자 취소를 탐색 취소로 승격한다", () => {
   const app = Object.create(BamLearningApp.prototype);
   const calls = [];

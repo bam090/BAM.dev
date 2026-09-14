@@ -9,8 +9,10 @@ const { concepts } = await load("../content/review-concepts.json");
 const collections = new Map(await Promise.all(["html", "css", "javascript", "java"].map(async (id) => [id, await load(`../content/quizzes/${id}.json`)])));
 const options = { curriculum, concepts, collections };
 
-test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공한다", () => {
-  const html = renderLearningHome();
+test("홈은 학습문서·객관식·Code Quest의 독립 진입을 제공한다", () => {
+  const html = renderLearningHome({
+    questOverview: { completedCount: 4, totalCount: 18 },
+  });
   const title = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "";
   assert.equal(title.replace(/<[^>]+>/g, "").trim(), "배운 개념이 내 것이 되는 곳.");
   assert.doesNotMatch(title, /<br\b|,/);
@@ -19,10 +21,13 @@ test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공�
     "지금 필요한 공부부터 바로 시작하세요!", "01 / LEARN", "개념별 학습문서", "주제별 학습문서를 통해",
     "개념을 읽고 예제를 살펴보세요.", "핵심 질문에 내 말로 답해 봅니다.", "02 / PRACTICE",
     "객관식 문제 풀어보기", "얼마나 이해했을까?", "문제를 풀고 선택한 답의 이유를 확인하세요.",
-    "헷갈리는 개념은 바로 다시 읽을 수 있어요.", "읽고 이해하기", "스스로 답하기", "개념 다시 보기", "나의 속도로, 필요한 만큼",
+    "헷갈리는 개념은 바로 다시 읽을 수 있어요.", "03 / CODE QUEST", "짧은 코드로 확인하기",
+    "배운 개념을 직접 작성하며", "공개된 실행 결과와 피드백으로 이해를 확인하세요.", "4/18개 Quest 완료",
+    "읽고 이해하기", "스스로 답하기", "개념 다시 보기", "나의 속도로, 필요한 만큼",
   ]) assert.ok(html.includes(phrase), phrase);
   assert.match(html, /href="#\/learn"[^>]*>[\s\S]*?학습문서 읽기/);
   assert.match(html, /href="#\/review"[^>]*>[\s\S]*?객관식 문제 풀기/);
+  assert.match(html, /href="#\/quest"[^>]*>[\s\S]*?Code Quest 탐색/);
   assert.match(html, /궁금한 개념은 문서로 읽고 이해한 내용은 문제로 확인하세요\.<br\s*\/?>\s*지금 필요한 공부부터 바로 시작하세요!/);
   assert.match(html, /개념을 읽고 예제를 살펴보세요\.<br\s*\/?>\s*핵심 질문에 내 말로 답해 봅니다\./);
   assert.match(html, /문제를 풀고 선택한 답의 이유를 확인하세요\.<br\s*\/?>\s*헷갈리는 개념은 바로 다시 읽을 수 있어요\./);

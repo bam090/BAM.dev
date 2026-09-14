@@ -33,6 +33,9 @@ export function renderLearningShell({ current = "home", menuOpen = false, mainCo
         <a href="#/" data-service-link="home"${current === "home" ? ' aria-current="page"' : ""}>${renderServiceIcon("home")}홈</a>
         <a href="${escapeHtml(sidebar.routes?.learn ?? "#/learn")}" data-service-link="learn"${current === "learn" ? ' aria-current="page"' : ""}>${renderServiceIcon("learn")}학습문서</a>
         <a href="${escapeHtml(sidebar.routes?.review ?? "#/review")}" data-service-link="review"${current === "review" ? ' aria-current="page"' : ""}>${renderServiceIcon("review")}객관식 문제</a>
+        <a href="${escapeHtml(sidebar.routes?.quest ?? "#/quest")}" data-service-link="quest"${current === "quest" ? ' aria-current="page"' : ""}>${renderServiceIcon("quest")}Code Quest</a>
+        <a href="${escapeHtml(sidebar.routes?.["coding-test"] ?? "#/coding-tests")}" data-service-link="coding-test"${current === "coding-test" ? ' aria-current="page"' : ""}>${renderServiceIcon("coding-test")}코딩테스트</a>
+        <a href="${escapeHtml(sidebar.routes?.["web-project"] ?? "#/web-projects")}" data-service-link="web-project"${current === "web-project" ? ' aria-current="page"' : ""}>${renderServiceIcon("web-project")}Web Project</a>
       </nav>
       <div class="sidebar-context desktop-navigation" data-sidebar-context>${renderSidebarContext({ ...sidebar, current: ["learn", "review"].includes(current) ? current : "home" })}</div>
       <div class="sidebar-recent desktop-navigation" data-sidebar-recent>${renderSidebarRecent(sidebar.recent)}</div>
@@ -111,7 +114,7 @@ export function renderAppShell({
         </div>
 
         <div class="sidebar-services">
-          <nav aria-label="서비스 선택"><a href="#/">홈</a><a href="#/learn">학습문서</a><a href="#/review">객관식 문제</a></nav>
+          <nav aria-label="서비스 선택"><a href="#/">홈</a><a href="#/learn">학습문서</a><a href="#/review">객관식 문제</a><a href="#/quest">Code Quest</a></nav>
           ${renderThemeControls(theme)}
         </div>
 
