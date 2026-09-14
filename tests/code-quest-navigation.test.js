@@ -56,14 +56,14 @@ test("실제 Quest는 교안 관계로 과정·주제·표시 번호를 만들�
 
   assert.deepEqual(
     catalog.courses.map(({ id, totalCount }) => [id, totalCount]),
-    [["javascript", 9], ["css", 4], ["html", 5]],
+    [["javascript", 12], ["css", 8], ["html", 8]],
   );
-  assert.equal(catalog.items.length, 18);
+  assert.equal(catalog.items.length, 28);
 
   const javascript = catalog.courses.find((course) => course.id === "javascript");
   assert.deepEqual(
     javascript.items.map((item) => item.displayOrder),
-    [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
   );
   const deliveryFee = javascript.items[0];
   assert.equal(deliveryFee.id, "quest-javascript-delivery-fee");
@@ -195,7 +195,7 @@ test("현재 PASS·현재 시도·이전 PASS·legacy 완료·revision 미상 �
   const javascript = createCodeQuestCatalog(curriculum, stateCollections, progress)
     .courses.find((course) => course.id === "javascript");
   assert.equal(javascript.completedCount, 1);
-  assert.equal(javascript.totalCount, 9);
+  assert.equal(javascript.totalCount, 12);
   assert.equal(
     javascript.resumeItem.id,
     draftOnly.id,

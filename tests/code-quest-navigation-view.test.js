@@ -89,7 +89,7 @@ test("목록은 과정·주제·상태·범위 진도와 필터 결과를 접근
     new RegExp(`data-quest-topic="${catalogItem.topicId}" aria-pressed="true"`),
   );
   assert.match(html, /data-quest-status="in_progress" aria-pressed="true"/);
-  assert.match(html, /data-quest-result-count role="status"[^>]*>JavaScript · 1\/9개 Quest/);
+  assert.match(html, /data-quest-result-count role="status"[^>]*>JavaScript · 1\/12개 Quest/);
   assert.match(html, /data-quest-catalog-notice role="status"[^>]*>&lt;없는 번호&gt;/);
   assert.match(html, new RegExp(`href="${catalogItem.href}"`));
   assert.match(html, /저장된 초안의 문제 버전은 확인할 수 없습니다/);
@@ -114,14 +114,14 @@ test("결과가 없어도 입력과 필터를 보존하고 이유를 상태 텍�
     course,
     items: filterCodeQuestCatalogItems(course.items, filters),
     filters,
-    notice: "1부터 9 사이의 번호를 입력해 주세요.",
+    notice: "1부터 12 사이의 번호를 입력해 주세요.",
   });
 
   assert.match(html, /data-quest-search value="찾을 수 없는 Quest"/);
   assert.match(html, /data-quest-number[^>]*value="100"/);
-  assert.match(html, /JavaScript · 0\/9개 Quest/);
+  assert.match(html, /JavaScript · 0\/12개 Quest/);
   assert.match(html, /조건에 맞는 Quest가 없습니다/);
-  assert.match(html, /1부터 9 사이의 번호를 입력해 주세요/);
+  assert.match(html, /1부터 12 사이의 번호를 입력해 주세요/);
   assert.match(html, /data-quest-catalog-reset/);
 });
 
