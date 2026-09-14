@@ -28,6 +28,22 @@ const codingTests = JSON.parse(
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HINT_STAGES = ["concept", "observation", "implementation"];
 const BOUNDARY_KINDS = ["normal", "minimum", "maximum", "edge"];
+const LEGACY_QUEST_IDS = [
+  "quest-javascript-delivery-fee",
+  "quest-javascript-number-path",
+  "quest-javascript-median",
+  "quest-javascript-compress-signals",
+  "quest-javascript-next-task",
+  "quest-javascript-registered-code-check",
+  "quest-javascript-locker-lookup",
+  "quest-javascript-first-code-at-count",
+  "quest-javascript-unfilled-requests",
+];
+const NEW_QUEST_IDS = [
+  "quest-javascript-number-only-double",
+  "quest-javascript-copy-nested-settings",
+  "quest-javascript-read-string-list",
+];
 const HASH_QUEST_IDS = [
   "quest-javascript-registered-code-check",
   "quest-javascript-locker-lookup",
@@ -251,6 +267,16 @@ test("파일명·Quest ID·slug·revision·order가 안정적이고 전역 중�
   assert.equal(collection.schemaVersion, 1);
   assert.equal(collection.contractVersion, 1);
   assert.ok(collection.quests.length >= 4);
+  assert.deepEqual(
+    collection.quests.slice(0, LEGACY_QUEST_IDS.length).map((quest) => quest.id),
+    LEGACY_QUEST_IDS,
+    "기존 Quest ID와 순서를 보존해야 합니다.",
+  );
+  assert.deepEqual(
+    collection.quests.slice(LEGACY_QUEST_IDS.length).map((quest) => quest.id),
+    NEW_QUEST_IDS,
+    "새 Quest는 기존 Quest 뒤에 승인된 순서로 추가해야 합니다.",
+  );
   assertUnique(questIds, "Quest ID가 중복됩니다.");
   assertUnique(slugs, "Quest slug가 중복됩니다.");
   assertUnique(publicTestIds, "공개 테스트 ID가 다른 Quest와 중복됩니다.");
@@ -261,8 +287,10 @@ test("파일명·Quest ID·slug·revision·order가 안정적이고 전역 중�
     assert.ok(quest.id.startsWith(`quest-${collection.languageId}-`));
     assert.match(quest.id, STABLE_ID_PATTERN);
     assert.match(quest.slug, STABLE_ID_PATTERN);
-    assert.equal(quest.difficulty, "beginner");
-    assert.ok(quest.estimatedMinutes >= 10 && quest.estimatedMinutes <= 25);
+    if (LEGACY_QUEST_IDS.includes(quest.id)) {
+      assert.equal(quest.difficulty, "beginner");
+      assert.ok(quest.estimatedMinutes >= 10 && quest.estimatedMinutes <= 25);
+    }
   });
 });
 
@@ -547,10 +575,12 @@ test("기준 풀이는 공개 테스트와 추가 독립 검증 사례를 모두
     const sourceLineCount = fixture.referenceSource
       .split("\n")
       .filter((line) => line.trim().length > 0).length;
-    assert.ok(
-      sourceLineCount >= 10 && sourceLineCount <= 25,
-      `${quest.id}: 기준 풀이는 10~25줄 범위여야 합니다. 현재 ${sourceLineCount}줄`,
-    );
+    if (LEGACY_QUEST_IDS.includes(quest.id)) {
+      assert.ok(
+        sourceLineCount >= 10 && sourceLineCount <= 25,
+        `${quest.id}: 기존 기준 풀이는 10~25줄 범위여야 합니다. 현재 ${sourceLineCount}줄`,
+      );
+    }
 
     const allCases = [...quest.publicTests, ...fixture.verificationCases];
     for (const testCase of allCases) {

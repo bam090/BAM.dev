@@ -255,7 +255,7 @@ test("번호 이동은 필터와 무관한 과정 전체 번호를 쓰고 잘못
   assert.equal(window.location.hash, "#/quest");
   assert.equal(app.codeQuestCatalogFilters.number, "99");
   assert.match(app.codeQuestCatalogNotice, /99번 Quest가 없습니다/);
-  assert.match(app.codeQuestCatalogNotice, /1부터 9 사이/);
+  assert.match(app.codeQuestCatalogNotice, /1부터 12 사이/);
   assert.equal(calls.renders, 1);
   assert.equal(calls.noticeFocus, 1);
 });

@@ -619,4 +619,284 @@ export const codeQuestSolutionFixtures = {
       edge: ["hash-unfilled-exact-duplicates", "hash-unfilled-one-short"],
     },
   },
+  "quest-javascript-number-only-double": {
+    "referenceSource": "function doubleNumberOnly(value) {\n  if (typeof value !== \"number\") {\n    return null;\n  }\n  return value * 2;\n}",
+    "expectedComplexity": {
+      "time": "O(1)",
+      "space": "O(1)"
+    },
+    "verificationCases": [
+      {
+        "id": "verify-double-fraction",
+        "args": [
+          1.25
+        ],
+        "expected": 2.5
+      },
+      {
+        "id": "verify-double-minimum",
+        "args": [
+          -1000
+        ],
+        "expected": -2000
+      },
+      {
+        "id": "verify-double-maximum",
+        "args": [
+          1000
+        ],
+        "expected": 2000
+      },
+      {
+        "id": "verify-number-only-double-negative",
+        "args": [
+          -4
+        ],
+        "expected": -8
+      },
+      {
+        "id": "verify-number-only-double-empty-text",
+        "args": [
+          ""
+        ],
+        "expected": null
+      },
+      {
+        "id": "verify-number-only-double-object",
+        "args": [
+          {}
+        ],
+        "expected": null
+      }
+    ],
+    "boundaryCoverage": {
+      "normal": [
+        "number-only-double-positive"
+      ],
+      "minimum": [
+        "verify-double-minimum"
+      ],
+      "maximum": [
+        "verify-double-maximum"
+      ],
+      "edge": [
+        "number-only-double-zero",
+        "number-only-double-array"
+      ]
+    },
+    "representativeWrongSolutions": [
+      {
+        "id": "double-coerces-input",
+        "source": "function doubleNumberOnly(value) {\n  const number = Number(value);\n  return Number.isFinite(number) ? number * 2 : null;\n}",
+        "expectedFailingPublicTestIds": [
+          "number-only-double-numeric-text",
+          "number-only-double-false",
+          "number-only-double-null",
+          "number-only-double-array"
+        ]
+      },
+      {
+        "id": "double-rejects-zero",
+        "source": "function doubleNumberOnly(value) {\n  return typeof value === \"number\" && value ? value * 2 : null;\n}",
+        "expectedFailingPublicTestIds": [
+          "number-only-double-zero"
+        ]
+      }
+    ]
+  },
+  "quest-javascript-copy-nested-settings": {
+    "referenceSource": "function previewVolumeChange(profile, volume) {\n  const updated = {\n    ...profile,\n    settings: { ...profile.settings, volume },\n  };\n  return { original: profile, updated };\n}",
+    "expectedComplexity": {
+      "time": "O(k), k = profile과 settings의 직접 속성 수",
+      "space": "O(k), k = profile과 settings의 직접 속성 수"
+    },
+    "verificationCases": [
+      {
+        "id": "verify-copy-extra-number",
+        "args": [
+          {
+            "name": "모래",
+            "active": true,
+            "settings": {
+              "volume": 10,
+              "speed": 1.5
+            }
+          },
+          2
+        ],
+        "expected": {
+          "original": {
+            "name": "모래",
+            "active": true,
+            "settings": {
+              "volume": 10,
+              "speed": 1.5
+            }
+          },
+          "updated": {
+            "name": "모래",
+            "active": true,
+            "settings": {
+              "volume": 2,
+              "speed": 1.5
+            }
+          }
+        }
+      }
+    ],
+    "boundaryCoverage": {
+      "normal": [
+        "copy-nested-settings-basic"
+      ],
+      "minimum": [
+        "copy-nested-settings-zero"
+      ],
+      "maximum": [
+        "copy-nested-settings-maximum"
+      ],
+      "edge": [
+        "copy-nested-settings-same",
+        "copy-nested-settings-extra"
+      ]
+    },
+    "representativeWrongSolutions": [
+      {
+        "id": "copy-shares-inner-settings",
+        "source": "function previewVolumeChange(profile, volume) {\n  const updated = { ...profile };\n  updated.settings.volume = volume;\n  return { original: profile, updated };\n}",
+        "expectedFailingPublicTestIds": [
+          "copy-nested-settings-basic",
+          "copy-nested-settings-zero",
+          "copy-nested-settings-maximum",
+          "copy-nested-settings-extra"
+        ]
+      },
+      {
+        "id": "copy-drops-extra-properties",
+        "source": "function previewVolumeChange(profile, volume) {\n  return { original: profile, updated: { name: profile.name, settings: { volume } } };\n}",
+        "expectedFailingPublicTestIds": [
+          "copy-nested-settings-extra"
+        ]
+      }
+    ]
+  },
+  "quest-javascript-read-string-list": {
+    "referenceSource": "function readStringList(text) {\n  let value;\n  try {\n    value = JSON.parse(text);\n  } catch {\n    return { status: \"syntax-error\", values: [] };\n  }\n  if (!Array.isArray(value) || !value.every(item => typeof item === \"string\")) {\n    return { status: \"shape-error\", values: [] };\n  }\n  return { status: \"ok\", values: value };\n}",
+    "expectedComplexity": {
+      "time": "O(n), n = 입력 문자열 길이",
+      "space": "O(n), n = 입력 문자열 길이"
+    },
+    "verificationCases": [
+      {
+        "id": "verify-json-whitespace",
+        "args": [
+          "  [\"A\\nB\", \"\"]  "
+        ],
+        "expected": {
+          "status": "ok",
+          "values": [
+            "A\nB",
+            ""
+          ]
+        }
+      },
+      {
+        "id": "verify-json-maximum",
+        "args": [
+          "[\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"]"
+        ],
+        "expected": {
+          "status": "ok",
+          "values": [
+            "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          ]
+        }
+      },
+      {
+        "id": "verify-read-string-list-empty-item",
+        "args": [
+          "[\"\"]"
+        ],
+        "expected": {
+          "status": "ok",
+          "values": [
+            ""
+          ]
+        }
+      },
+      {
+        "id": "verify-read-string-list-duplicate",
+        "args": [
+          "[\"CSS\",\"HTML\",\"CSS\"]"
+        ],
+        "expected": {
+          "status": "ok",
+          "values": [
+            "CSS",
+            "HTML",
+            "CSS"
+          ]
+        }
+      },
+      {
+        "id": "verify-read-string-list-empty-text",
+        "args": [
+          ""
+        ],
+        "expected": {
+          "status": "syntax-error",
+          "values": []
+        }
+      },
+      {
+        "id": "verify-read-string-list-object",
+        "args": [
+          "{\"title\":\"함수\"}"
+        ],
+        "expected": {
+          "status": "shape-error",
+          "values": []
+        }
+      }
+    ],
+    "boundaryCoverage": {
+      "normal": [
+        "read-string-list-normal"
+      ],
+      "minimum": [
+        "verify-read-string-list-empty-text"
+      ],
+      "maximum": [
+        "verify-json-maximum"
+      ],
+      "edge": [
+        "read-string-list-empty-array",
+        "read-string-list-mixed"
+      ]
+    },
+    "representativeWrongSolutions": [
+      {
+        "id": "json-skips-element-check",
+        "source": "function readStringList(text) {\n  let value;\n  try {\n    value = JSON.parse(text);\n  } catch {\n    return { status: \"syntax-error\", values: [] };\n  }\n  if (!Array.isArray(value)) {\n    return { status: \"shape-error\", values: [] };\n  }\n  return { status: \"ok\", values: value };\n}",
+        "expectedFailingPublicTestIds": [
+          "read-string-list-number",
+          "read-string-list-mixed"
+        ]
+      },
+      {
+        "id": "json-merges-failure-stages",
+        "source": "function readStringList(text) {\n  let value;\n  try {\n    value = JSON.parse(text);\n  } catch {\n    return { status: \"shape-error\", values: [] };\n  }\n  if (!Array.isArray(value) || !value.every(item => typeof item === \"string\")) {\n    return { status: \"shape-error\", values: [] };\n  }\n  return { status: \"ok\", values: value };\n}",
+        "expectedFailingPublicTestIds": [
+          "read-string-list-broken"
+        ]
+      },
+      {
+        "id": "json-rejects-empty-array",
+        "source": "function readStringList(text) {\n  let value;\n  try {\n    value = JSON.parse(text);\n  } catch {\n    return { status: \"syntax-error\", values: [] };\n  }\n  if (!Array.isArray(value) || value.length === 0 || !value.every(item => typeof item === \"string\")) {\n    return { status: \"shape-error\", values: [] };\n  }\n  return { status: \"ok\", values: value };\n}",
+        "expectedFailingPublicTestIds": [
+          "read-string-list-empty-array"
+        ]
+      }
+    ]
+  },
+
 };

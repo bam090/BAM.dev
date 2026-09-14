@@ -104,6 +104,8 @@
 
 ## 유지 규칙
 
+[개념별 Code Quest 확장](work-items/2026-09-14-concept-code-quests.md)은 [품질 계약](designs/code-quest.md#개념별-직접-작성-경험-확장)에 따라 신규 콘텐츠를 추가하고 기존 문제를 보존했다. 독립 콘텐츠·실행 검토 PASS, 독립 문서 최종 재검·로컬 통합도 PASS다. 승인된 Git 게시 진행 중이며 실제 결과는 작업 카드의 게시 인수 기준을 따른다. 최종 계약·실제 검사 범위는 작업 카드에서 확인한다.
+
 [Spring Security·JPA 확장](work-items/2026-09-14-spring-security-jpa.md)은 공식 문서를 근거로 기존 Spring 과정 뒤에 작은 정적 문서·객관식을 추가하는 승인 범위다. [학습 흐름 계약](designs/lesson-review.md#spring-securityjpa-정적-학습-확장)에 따라 본문·문항·발췌를 작성하고 연결했다. 독립 내용·문서·대표 데스크톱 검증과 이번 전체 gate·빌드·보존 검사를 통과하고 최종 통합 PASS 판정을 받았다. 단위별 경험·출처·반환 수정·실제 검증 한계는 작업 카드에서 확인한다.
 
 현재 [CSS 객관식·Spring 기초 작업](work-items/2026-09-14-css-quiz-spring-foundations.md)은 [복습 확장 계약](designs/lesson-review.md#css-객관식과-springspring-boot-기초-확장)의 본문·문항·연결·표시를 반영했다. 관리 연결 검사와 독립 내용·문서·데스크톱 검증, 수정 후 전체 gate·정적 빌드·보존 검사를 통과했다. 최초 실패·수정과 실제 검증 한계는 작업 카드에 구분한다. Spring 핵심·Spring Boot의 정적 문서·문항과 실제 실행 과제의 범위를 구분하며, 작성자 경험 계획·출처·단계별 증거는 작업 카드에서 확인한다.
