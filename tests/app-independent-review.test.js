@@ -835,7 +835,9 @@ test("완료 후 재실행과 결과 재확인으로 완료 기록을 중복 저
   app.progressRepository.setLessonCompleted("js-notes-values", true);
   await app.openReviewRoute("javascript", lesson.id);
   while (app.quizSession.screen === "question") {
-    choose(app, "a"); app.gradeCurrentQuizQuestion(); app.showNextQuizQuestion();
+    choose(app, "a"); app.gradeCurrentQuizQuestion();
+    if (app.quizSession.currentIndex < app.quizSession.questions.length - 1) app.showNextQuizQuestion();
+    else app.finishQuizSession(); // 이 사례는 다음 키워드 이동이 아닌 현재 결과의 재확인을 검증한다.
   }
   const score = app.quizSession.summary.correct;
   assert.equal(app.progressRepository.getProgress().quizAttempts.length, 1);
