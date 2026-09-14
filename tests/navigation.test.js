@@ -7,6 +7,7 @@ import {
   buildCodingTestListHash,
   buildLessonHash,
   buildMyPageHash,
+  buildQuestCatalogHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
@@ -15,6 +16,7 @@ import {
   parseCodingTestHash,
   parseLessonHash,
   parseMyPageHash,
+  parseQuestCatalogHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -71,6 +73,14 @@ test("Code Quest 해시를 만들고 다시 해석한다", () => {
     languageId: "javascript",
     slug: "delivery-fee-policy",
   });
+});
+
+test("Code Quest 목록 해시는 기존 상세 해시와 겹치지 않는다", () => {
+  assert.equal(buildQuestCatalogHash(), "#/quest");
+  assert.deepEqual(parseQuestCatalogHash("#/quest"), { kind: "list" });
+  assert.deepEqual(parseQuestCatalogHash("#/quest/?from=home"), { kind: "list" });
+  assert.equal(parseQuestCatalogHash("#/quest/javascript/delivery-fee-policy"), null);
+  assert.equal(parseQuestHash("#/quest"), null);
 });
 
 test("잘못된 Code Quest 해시는 해석하지 않는다", () => {

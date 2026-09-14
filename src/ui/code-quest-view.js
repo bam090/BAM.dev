@@ -67,6 +67,13 @@ const DRAFT_STATUS_COPY = Object.freeze({
   failed: "초안을 저장하지 못했습니다. 코드는 편집기에 그대로 유지됩니다.",
 });
 
+const QUEST_PROGRESS_COPY = Object.freeze({
+  not_started: "시작 전",
+  in_progress: "진행 중",
+  previously_completed: "이전 완료",
+  completed: "완료",
+});
+
 function normalizeOutcome(outcome) {
   return typeof outcome === "string" && Object.hasOwn(OUTCOME_COPY, outcome)
     ? outcome
@@ -401,13 +408,96 @@ function renderPaginationItem(item, direction) {
   return `
     <a class="pagination-link pagination-link--${direction}" href="${escapeHtml(item.href ?? "#")}">
       <span aria-hidden="true">${isPrevious ? "←" : "→"}</span>
-      <span><small>${isPrevious ? "이전 Quest" : "다음 Quest"}</small><strong>${escapeHtml(item.title ?? "Code Quest")}</strong></span>
+      <span><small>${escapeHtml(item.label ?? (isPrevious ? "이전 Quest" : "다음 Quest"))}</small><strong>${escapeHtml(item.title ?? "Code Quest")}</strong></span>
     </a>
   `;
 }
 
 export function getCodeQuestDraftStatusMessage(status) {
   return DRAFT_STATUS_COPY[normalizeDraftStatus(status)];
+}
+
+function renderCatalogProgress(label, completedCount, totalCount, percent) {
+  const completed = Math.max(0, safeInteger(completedCount));
+  const total = Math.max(completed, safeInteger(totalCount));
+  const value = clamp(safeInteger(percent), 0, 100);
+  return `<div class="quest-catalog-progress">
+    <div><strong>${escapeHtml(label)}</strong><span>${completed}/${total} 완료</span></div>
+    <div class="progress-track" role="progressbar" aria-label="${escapeHtml(label)} 진도" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${value}"><span style="width: ${value}%"></span></div>
+  </div>`;
+}
+
+function renderQuestProgressBadge(item) {
+  const label = QUEST_PROGRESS_COPY[item?.progress] ?? QUEST_PROGRESS_COPY.not_started;
+  return `<span class="quest-status quest-status--${escapeHtml(item?.progress ?? "not_started")}">${label}</span>`;
+}
+
+function getQuestProgressEvidenceCopy(item) {
+  if (item?.progress !== "previously_completed") return "";
+  if (
+    item.progressEvidence === "older_revision" &&
+    Number.isSafeInteger(item.knownPassedRevision) &&
+    item.knownPassedRevision > 0
+  ) {
+    return `문제 버전 ${item.knownPassedRevision}에서 완료`;
+  }
+  return item.progressEvidence === "legacy_unversioned"
+    ? "완료한 문제 버전을 확인할 수 없습니다."
+    : "";
+}
+
+function renderQuestLearningMap(course) {
+  return `<section class="quest-learning-map" aria-labelledby="quest-map-title">
+    <header><p class="eyebrow">실제 콘텐츠 연결</p><h2 id="quest-map-title">학습 지도</h2><p>교안에 선언된 개념과 연결된 Code Quest만 보여 줍니다.</p></header>
+    <div class="quest-map-topics">${course.topics.map((topic) => `<article>
+      <div><h3>${escapeHtml(topic.title)}</h3><p>${topic.completedCount}/${topic.totalCount} 완료</p><a href="${escapeHtml(topic.items[0]?.lessonHref ?? "#")}">관련 학습문서 읽기</a></div>
+      <ul>${topic.items.map((item) => `<li><a href="${escapeHtml(item.href)}"><span>${String(item.displayOrder).padStart(2, "0")}</span><strong>${escapeHtml(item.title)}</strong></a><small>${getQuestProgressEvidenceCopy(item) ? `진행 상태: ${getQuestProgressEvidenceCopy(item)}<br>` : ""}연결 개념: ${item.conceptIds.map((conceptId) => `<code>${escapeHtml(conceptId)}</code>`).join(" · ")}</small></li>`).join("")}</ul>
+    </article>`).join("")}</div>
+  </section>`;
+}
+
+export function renderCodeQuestCatalogView({
+  catalog,
+  course,
+  items = [],
+  filters = {},
+  notice = "",
+} = {}) {
+  const courses = Array.isArray(catalog?.courses) ? catalog.courses : [];
+  if (!course) {
+    return `<main class="main-area service-main quest-catalog-main" id="lesson-content" tabindex="-1"><section class="catalog-empty"><h1>Code Quest를 준비하지 못했습니다.</h1><p>사용할 수 있는 과정과 문제 연결을 확인해 주세요.</p></section></main>`;
+  }
+  const query = String(filters.query ?? "");
+  const topicId = filters.topicId ?? "all";
+  const status = filters.status ?? "all";
+  const number = String(filters.number ?? "");
+  const resume = course.resumeItem;
+  const statusOptions = [
+    ["all", "전체"],
+    ["not_started", "시작 전"],
+    ["in_progress", "진행 중"],
+    ["previously_completed", "이전 완료"],
+    ["completed", "완료"],
+  ];
+
+  return `<main class="main-area service-main quest-catalog-main" id="lesson-content" tabindex="-1">
+    <header class="catalog-header quest-catalog-header"><p class="eyebrow">읽은 개념을 짧은 코드로 확인하세요</p><h1>Code Quest</h1><p>과정과 학습 주제를 확인하고, 공개된 실행 기준으로 직접 작성해 보세요.</p></header>
+    <nav class="quest-course-tabs" aria-label="Code Quest 과정">${courses.map((item) => `<button type="button" data-quest-course="${escapeHtml(item.id)}" aria-pressed="${String(item.id === course.id)}"${item.id === course.id ? ' aria-current="true"' : ""}><strong>${escapeHtml(item.name)}</strong><span>${item.completedCount}/${item.totalCount} 완료</span></button>`).join("")}</nav>
+    ${renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
+    ${resume ? `<aside class="resume-card quest-resume-card" aria-label="Code Quest 이어서 풀기"><div><strong>${resume.progress === "in_progress" ? "이어서 풀 수 있어요" : resume.progress === "completed" ? "처음부터 다시 풀어 보세요" : "다음 Quest를 시작하세요"}</strong><p>${resume.displayOrder}. ${escapeHtml(resume.title)} · ${QUEST_PROGRESS_COPY[resume.progress]}${getQuestProgressEvidenceCopy(resume) ? ` · ${getQuestProgressEvidenceCopy(resume)}` : ""}</p></div><a class="button button--primary" href="${escapeHtml(resume.href)}">${resume.progress === "in_progress" ? "이어서 풀기" : resume.progress === "completed" ? "다시 풀기" : "시작하기"}</a></aside>` : ""}
+    <section class="quest-catalog-tools" aria-labelledby="quest-explorer-title">
+      <header><h2 id="quest-explorer-title">문제 탐색기</h2><p>검색과 필터를 함께 사용하거나 과정 안의 번호로 바로 이동할 수 있습니다.</p></header>
+      <form data-quest-catalog-form role="search" aria-label="Code Quest 검색"><label>번호·제목·요약 검색<input type="search" data-quest-search value="${escapeHtml(query)}" placeholder="예: 배열, 3" autocomplete="off"></label><button class="button button--secondary" type="submit">찾기</button></form>
+      <form data-quest-number-form aria-label="Quest 번호로 이동" novalidate><label>번호로 이동<input type="number" data-quest-number min="1" max="${course.totalCount}" value="${escapeHtml(number)}" inputmode="numeric"></label><button class="button button--secondary" type="submit">이동</button></form>
+      ${notice ? `<p class="catalog-notice" data-quest-catalog-notice role="status" tabindex="-1">${escapeHtml(notice)}</p>` : ""}
+      <div class="quest-filter-group"><span>학습 주제</span><div>${[["all", "전체"], ...course.topics.map((topic) => [topic.id, `${topic.title} · ${topic.completedCount}/${topic.totalCount}`])].map(([id, label]) => `<button type="button" data-quest-topic="${escapeHtml(id)}" aria-pressed="${String(id === topicId)}"${id === topicId ? ' aria-current="true"' : ""}>${escapeHtml(label)}</button>`).join("")}</div></div>
+      <div class="quest-filter-group"><span>진행 상태</span><div>${statusOptions.map(([id, label]) => `<button type="button" data-quest-status="${id}" aria-pressed="${String(id === status)}">${label}</button>`).join("")}</div></div>
+      ${query || topicId !== "all" || status !== "all" ? '<button class="text-button" type="button" data-quest-catalog-reset>검색과 필터 초기화</button>' : ""}
+      <p class="catalog-count" data-quest-result-count role="status" tabindex="-1">${course.name} · ${items.length}/${course.totalCount}개 Quest</p>
+    </section>
+    ${items.length ? `<div class="quest-catalog-list">${items.map((item) => `<a class="quest-catalog-card" href="${escapeHtml(item.href)}"><span class="quest-catalog-number">${String(item.displayOrder).padStart(2, "0")}</span><div><p>${escapeHtml(item.topicTitle)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${getQuestProgressEvidenceCopy(item) ? `<small>${getQuestProgressEvidenceCopy(item)}</small>` : ""}${item.hasDraft ? '<small>저장된 초안의 문제 버전은 확인할 수 없습니다.</small>' : ""}</div>${renderQuestProgressBadge(item)}</a>`).join("")}</div>` : `<section class="catalog-empty"><h2>조건에 맞는 Quest가 없습니다.</h2><p>검색어 또는 주제·진행 상태 필터를 바꿔 보세요.</p></section>`}
+    ${renderQuestLearningMap(course)}
+  </main>`;
 }
 
 export function renderCodeQuestNavigationLink({
@@ -459,6 +549,10 @@ export function renderCodeQuestView({
   isCompleted = false,
   previous = null,
   next = null,
+  catalogItem = null,
+  catalogCourse = null,
+  catalogTopic = null,
+  catalogHref = "#/quest",
 } = {}) {
   const safeTotal = Math.max(0, safeInteger(total));
   const safeIndex = clamp(currentIndex, 0, Math.max(0, safeTotal - 1));
@@ -474,25 +568,43 @@ export function renderCodeQuestView({
         ? "css"
         : languageId;
   const editorCopy = getEditorCopy(evaluationKind, languageName, quest?.entryPoint);
+  const progress = catalogItem?.progress ?? (isCompleted ? "completed" : "in_progress");
+  const progressLabel = QUEST_PROGRESS_COPY[progress] ?? QUEST_PROGRESS_COPY.in_progress;
 
   return `
     <main class="main-area quest-main" id="lesson-content" tabindex="-1">
       <div class="quest-container">
+        <nav class="quest-breadcrumb" aria-label="현재 Code Quest 위치">
+          <a href="${escapeHtml(catalogHref)}">Code Quest</a><span aria-hidden="true">/</span>
+          <span>${escapeHtml(catalogCourse?.name ?? languageName)}</span><span aria-hidden="true">/</span>
+          <span>${escapeHtml(catalogTopic?.title ?? catalogItem?.topicTitle ?? "학습 주제")}</span><span aria-hidden="true">/</span>
+          <span aria-current="page">${catalogItem?.displayOrder ?? safeIndex + 1}. ${escapeHtml(quest?.title ?? "현재 Quest")}</span>
+        </nav>
         <header class="quest-header">
           <div class="eyebrow">
-            <span>${escapeHtml(languageName)}</span>
+            <span>${escapeHtml(catalogCourse?.name ?? languageName)}</span>
             <span aria-hidden="true">·</span>
-            <span>${escapeHtml(collectionTitle)}</span>
+            <span>${escapeHtml(catalogTopic?.title ?? catalogItem?.topicTitle ?? collectionTitle)}</span>
           </div>
           <div class="quest-title-row">
             <div>
               <p>${difficulty} · ${safeIndex + 1}/${safeTotal} Quest · 약 ${Math.max(0, safeInteger(quest?.estimatedMinutes))}분</p>
               <h1 id="quest-title" tabindex="-1">${escapeHtml(quest?.title ?? "Code Quest")}</h1>
             </div>
-            <span class="quest-completion-badge${isCompleted ? " is-complete" : ""}">${isCompleted ? "완료" : "도전 중"}</span>
+            <span class="quest-completion-badge${progress === "completed" ? " is-complete" : ""}">${progressLabel}</span>
           </div>
           <p class="quest-summary quest-prose">${renderQuestProse(quest?.summary)}</p>
+          ${getQuestProgressEvidenceCopy(catalogItem) ? `<p class="quest-draft-revision-note">${getQuestProgressEvidenceCopy(catalogItem)}</p>` : ""}
+          ${catalogItem?.hasDraft ? '<p class="quest-draft-revision-note">저장된 초안의 문제 버전은 확인할 수 없습니다. 코드는 그대로 보존됩니다.</p>' : ""}
         </header>
+
+        ${catalogCourse && catalogTopic ? `<section class="quest-location-summary" aria-label="현재 과정과 주제 진도">
+          ${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}
+          ${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}
+          <div class="quest-location-actions"><a href="${escapeHtml(catalogHref)}">문제 탐색기로 돌아가기</a><a href="${escapeHtml(catalogItem?.lessonHref ?? "#")}">관련 학습문서 읽기</a><button class="text-button" type="button" data-quest-map-focus>학습 지도 보기</button></div>
+        </section>` : ""}
+
+        ${catalogTopic ? `<section class="quest-detail-map" id="quest-detail-map" aria-labelledby="quest-detail-map-title" tabindex="-1"><p class="quest-section-label">학습 지도</p><h2 id="quest-detail-map-title">${escapeHtml(catalogTopic.title)}에서 연습하는 개념</h2><p>${catalogItem?.conceptIds?.map((conceptId) => `<code>${escapeHtml(conceptId)}</code>`).join(" · ") ?? ""}</p><div>${catalogTopic.items.map((item) => `<a href="${escapeHtml(item.href)}"${item.id === catalogItem?.id ? ' aria-current="page"' : ""}>${item.displayOrder}. ${escapeHtml(item.title)} · ${QUEST_PROGRESS_COPY[item.progress] ?? QUEST_PROGRESS_COPY.not_started}${getQuestProgressEvidenceCopy(item) ? ` · ${getQuestProgressEvidenceCopy(item)}` : ""}</a>`).join("")}</div></section>` : ""}
 
         <div class="quest-workspace">
           <article class="quest-brief-panel">

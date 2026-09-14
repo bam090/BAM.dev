@@ -49,6 +49,9 @@ function createRouteHarness(curriculumOverride = curriculum) {
     openCodingTestListRoute() {
       opened.push({ view: "coding-test-list" });
     },
+    openCodeQuestCatalogRoute() {
+      opened.push({ view: "quest-catalog" });
+    },
     async openReviewRoute(languageId, lessonId) {
       opened.push({ view: "review", languageId, ...(lessonId ? { lessonId } : {}) });
     },
@@ -94,6 +97,16 @@ test("Code Quest 제공 언어인 JavaScript·HTML·CSS의 해시는 해당 과�
     await app.openRoute();
     assert.deepEqual(opened, [{ view: "quest", languageId, slug }]);
   }
+  assert.deepEqual(replacements, []);
+});
+
+test("Code Quest 목록 해시는 상세 경로와 구분해 탐색기를 연다", async (t) => {
+  const replacements = installWindow(t, "#/quest/?from=home");
+  const { app, opened } = createRouteHarness();
+
+  await app.openRoute();
+
+  assert.deepEqual(opened, [{ view: "quest-catalog" }]);
   assert.deepEqual(replacements, []);
 });
 

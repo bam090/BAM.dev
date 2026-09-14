@@ -691,6 +691,258 @@ export function getAdjacentCodeQuests(collectionOrQuests, questId) {
   };
 }
 
+function isStrictPassedQuestAttempt(attempt) {
+  return (
+    attempt?.outcome === "passed" &&
+    Number.isSafeInteger(attempt.questRevision) &&
+    attempt.questRevision > 0 &&
+    Number.isSafeInteger(attempt.passed) &&
+    Number.isSafeInteger(attempt.total) &&
+    attempt.total > 0 &&
+    attempt.passed === attempt.total
+  );
+}
+
+function getActivityTime(value) {
+  const timestamp = Date.parse(value ?? "");
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function getNewestActivityTime(records, field) {
+  let newest = null;
+  for (const record of records) {
+    const timestamp = getActivityTime(record?.[field]);
+    if (timestamp !== null && (newest === null || timestamp > newest)) newest = timestamp;
+  }
+  return newest;
+}
+
+function resolveCodeQuestCollections(collections) {
+  if (collections instanceof Map) return [...collections.values()];
+  return Array.isArray(collections) ? collections : [];
+}
+
+function getQuestProgress(quest, progress) {
+  const attempts = (Array.isArray(progress?.questAttempts) ? progress.questAttempts : [])
+    .filter((attempt) => attempt?.questId === quest.id);
+  const drafts = (Array.isArray(progress?.questDrafts) ? progress.questDrafts : [])
+    .filter((draft) => draft?.questId === quest.id);
+  const completionRecords = (Array.isArray(progress?.completedQuestRevisions)
+    ? progress.completedQuestRevisions
+    : [])
+    .filter((completed) => completed?.questId === quest.id);
+  const passedAttempts = attempts.filter(isStrictPassedQuestAttempt);
+  const passedRevisions = [
+    ...completionRecords.map((completed) => completed.questRevision),
+    ...passedAttempts.map((attempt) => attempt.questRevision),
+  ].filter((revision) => Number.isSafeInteger(revision) && revision > 0);
+  const hasCurrentPass = passedRevisions.includes(quest.revision);
+  const hasCurrentAttempt = attempts.some((attempt) => attempt?.questRevision === quest.revision);
+  const hasLegacyCompletion = (Array.isArray(progress?.completedQuestIds)
+    ? progress.completedQuestIds
+    : []).includes(quest.id);
+  const olderPassedRevisions = passedRevisions.filter((revision) => revision !== quest.revision);
+  const knownPassedRevision = passedRevisions.length ? Math.max(...passedRevisions) : null;
+  const latestAttemptAt = getNewestActivityTime(attempts, "completedAt");
+  const draftUpdatedAt = getNewestActivityTime(drafts, "updatedAt");
+  const recentActivityAt = [latestAttemptAt, draftUpdatedAt]
+    .filter((timestamp) => timestamp !== null)
+    .reduce((newest, timestamp) => Math.max(newest, timestamp), 0) || null;
+
+  if (hasCurrentPass) {
+    return {
+      progress: "completed",
+      progressEvidence: "current_revision",
+      knownPassedRevision,
+      draftSourceRevision: drafts.length ? "unknown" : "none",
+      hasDraft: drafts.length > 0,
+      recentActivityAt,
+    };
+  }
+  if (hasCurrentAttempt) {
+    return {
+      progress: "in_progress",
+      progressEvidence: "current_revision",
+      knownPassedRevision,
+      draftSourceRevision: drafts.length ? "unknown" : "none",
+      hasDraft: drafts.length > 0,
+      recentActivityAt,
+    };
+  }
+  if (olderPassedRevisions.length || hasLegacyCompletion) {
+    return {
+      progress: "previously_completed",
+      progressEvidence: olderPassedRevisions.length ? "older_revision" : "legacy_unversioned",
+      knownPassedRevision,
+      draftSourceRevision: drafts.length ? "unknown" : "none",
+      hasDraft: drafts.length > 0,
+      recentActivityAt,
+    };
+  }
+  if (drafts.length || attempts.length) {
+    return {
+      progress: "in_progress",
+      progressEvidence: "none",
+      knownPassedRevision: null,
+      draftSourceRevision: drafts.length ? "unknown" : "none",
+      hasDraft: drafts.length > 0,
+      recentActivityAt,
+    };
+  }
+  return {
+    progress: "not_started",
+    progressEvidence: "none",
+    knownPassedRevision: null,
+    draftSourceRevision: "none",
+    hasDraft: false,
+    recentActivityAt: null,
+  };
+}
+
+function addCodeQuestProgress(scope) {
+  const completedCount = scope.items.filter((item) => item.progress === "completed").length;
+  return {
+    ...scope,
+    completedCount,
+    totalCount: scope.items.length,
+    percent: scope.items.length ? Math.round((completedCount / scope.items.length) * 100) : 0,
+  };
+}
+
+export function getCodeQuestResumeItem(items) {
+  const ordered = Array.isArray(items) ? items : [];
+  const inProgress = ordered.filter((item) => item.progress === "in_progress");
+  if (inProgress.length) {
+    return [...inProgress].sort((left, right) => {
+      const activityDifference = (right.recentActivityAt ?? -1) - (left.recentActivityAt ?? -1);
+      return activityDifference || left.displayOrder - right.displayOrder || left.id.localeCompare(right.id);
+    })[0];
+  }
+  return ordered.find((item) => item.progress !== "completed") ?? ordered[0] ?? null;
+}
+
+export function createCodeQuestCatalog(curriculum, collections, progress = {}) {
+  const lessons = new Map((curriculum?.lessons ?? []).map((lesson) => [lesson.id, lesson]));
+  const courses = new Map((curriculum?.courses ?? []).map((course) => [course.id, course]));
+  const categories = new Map((curriculum?.categories ?? []).map((category) => [category.id, category]));
+  const courseItems = new Map();
+
+  for (const collection of resolveCodeQuestCollections(collections)) {
+    for (const quest of getCodeQuestsInOrder(collection)) {
+      const lesson = lessons.get(quest.lessonId);
+      const course = lesson ? courses.get(lesson.courseId) : null;
+      const category = course ? categories.get(course.categoryId) : null;
+      const conceptsMatch = Array.isArray(quest.conceptIds) && quest.conceptIds.every(
+        (conceptId) => lesson?.conceptIds?.includes(conceptId),
+      );
+      if (
+        !lesson ||
+        !course ||
+        !category ||
+        course.status === "planned" ||
+        category.status === "planned" ||
+        lesson.languageId !== collection.languageId ||
+        course.languageId !== collection.languageId ||
+        !conceptsMatch
+      ) {
+        throw new Error(`${quest.id ?? "Code Quest"}: 검증된 과정·교안·개념 연결을 만들 수 없습니다.`);
+      }
+      if (!courseItems.has(course.id)) courseItems.set(course.id, []);
+      courseItems.get(course.id).push({
+        id: quest.id,
+        revision: quest.revision,
+        slug: quest.slug,
+        href: `#/quest/${encodeURIComponent(collection.languageId)}/${encodeURIComponent(quest.slug)}`,
+        courseId: course.id,
+        courseName: course.name,
+        languageId: collection.languageId,
+        lessonId: lesson.id,
+        lessonSlug: lesson.slug,
+        lessonTitle: lesson.title,
+        lessonHref: `#/learn/${encodeURIComponent(course.id)}/${encodeURIComponent(lesson.slug)}`,
+        topicId: lesson.id,
+        topicTitle: lesson.title,
+        topicOrder: lesson.order,
+        conceptIds: [...quest.conceptIds],
+        order: quest.order,
+        title: quest.title,
+        summary: quest.summary,
+        difficulty: quest.difficulty,
+        estimatedMinutes: quest.estimatedMinutes,
+        ...getQuestProgress(quest, progress),
+      });
+    }
+  }
+
+  const catalogCourses = (curriculum?.courses ?? []).flatMap((course) => {
+    const items = courseItems.get(course.id);
+    if (!items?.length) return [];
+    items.sort((left, right) => left.order - right.order || left.id.localeCompare(right.id));
+    items.forEach((item, index) => { item.displayOrder = index + 1; });
+    const topicsById = new Map();
+    for (const item of items) {
+      if (!topicsById.has(item.topicId)) {
+        topicsById.set(item.topicId, {
+          id: item.topicId,
+          title: item.topicTitle,
+          lessonId: item.lessonId,
+          lessonSlug: item.lessonSlug,
+          order: item.topicOrder,
+          items: [],
+        });
+      }
+      topicsById.get(item.topicId).items.push(item);
+    }
+    const topics = [...topicsById.values()]
+      .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id))
+      .map(addCodeQuestProgress);
+    const projectedCourse = addCodeQuestProgress({
+      id: course.id,
+      name: course.name,
+      languageId: course.languageId,
+      items,
+      topics,
+    });
+    projectedCourse.resumeItem = getCodeQuestResumeItem(items);
+    return [projectedCourse];
+  });
+
+  return {
+    courses: catalogCourses,
+    items: catalogCourses.flatMap((course) => course.items),
+  };
+}
+
+export function filterCodeQuestCatalogItems(items, { query = "", topicId = "all", status = "all" } = {}) {
+  const normalizedQuery = String(query).normalize("NFKC").trim().toLocaleLowerCase("ko-KR");
+  return (Array.isArray(items) ? items : []).filter((item) => {
+    if (topicId !== "all" && item.topicId !== topicId) return false;
+    if (status !== "all" && item.progress !== status) return false;
+    if (!normalizedQuery) return true;
+    return [String(item.displayOrder), item.title, item.summary]
+      .join(" ")
+      .normalize("NFKC")
+      .toLocaleLowerCase("ko-KR")
+      .includes(normalizedQuery);
+  });
+}
+
+export function findCodeQuestByDisplayOrder(items, displayOrder) {
+  const number = Number(displayOrder);
+  if (!Number.isInteger(number) || number < 1) return null;
+  return (Array.isArray(items) ? items : []).find((item) => item.displayOrder === number) ?? null;
+}
+
+export function getAdjacentCodeQuestCatalogItems(items, questId) {
+  const ordered = Array.isArray(items) ? items : [];
+  const currentIndex = ordered.findIndex((item) => item.id === questId);
+  if (currentIndex === -1) return { previous: null, next: null };
+  return {
+    previous: ordered[currentIndex - 1] ?? null,
+    next: ordered[currentIndex + 1] ?? null,
+  };
+}
+
 export function createCodeQuestExecutionRequest(collection, quest, source, requestId) {
   if (!isPlainRecord(collection) || !Array.isArray(collection.quests)) {
     throw new TypeError("실행할 Code Quest 컬렉션이 필요합니다.");

@@ -13,6 +13,7 @@ import {
   buildCodingTestListHash,
   buildLessonHash,
   buildMyPageHash,
+  buildQuestCatalogHash,
   buildQuestHash,
   buildReviewHash,
   buildWebProjectHash,
@@ -21,6 +22,7 @@ import {
   parseCodingTestHash,
   parseLessonHash,
   parseMyPageHash,
+  parseQuestCatalogHash,
   parseQuestHash,
   parseReviewHash,
   parseWebProjectHash,
@@ -33,9 +35,12 @@ import {
   loadCodingTestCollection,
 } from "./core/coding-test.js";
 import {
+  createCodeQuestCatalog,
   createCodeQuestExecutionRequest,
+  filterCodeQuestCatalogItems,
   findCodeQuestBySlug,
-  getAdjacentCodeQuests,
+  findCodeQuestByDisplayOrder,
+  getAdjacentCodeQuestCatalogItems,
   getCodeQuestsInOrder,
   loadCodeQuestCollection,
 } from "./core/code-quest.js";
@@ -60,7 +65,6 @@ import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js
 import { scoreWebProject } from "./grading/web-project-scoring.js";
 import {
   createBrowserStorage,
-  getCurrentCompletedQuestIds,
   LocalStorageProgressRepository,
   PROGRESS_STORAGE_KEY,
 } from "./repositories/progress-repository.js";
@@ -71,13 +75,9 @@ import {
   WebProjectDraftConflictError,
 } from "./repositories/web-project-repository.js";
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
-import { renderAppShell, renderLearningShell } from "./ui/app-shell.js";
+import { renderLearningShell } from "./ui/app-shell.js";
 import { renderMyPageView } from "./ui/my-page-view.js";
 import { createThemeController } from "./ui/theme.js";
-import {
-  renderCourseNavigation,
-  renderLanguageNavigation,
-} from "./ui/language-navigation.js";
 import { escapeHtml, headingId, renderHighlightedCode, renderInlineCodeText, renderMarkdown, splitLessonOverview, splitMarkdownSection } from "./ui/markdown.js";
 import {
   getQuizSaveStatusMessage,
@@ -89,6 +89,7 @@ import {
 } from "./ui/quiz-view.js";
 import {
   getCodeQuestDraftStatusMessage,
+  renderCodeQuestCatalogView,
   renderCodeQuestLoadingView,
   renderCodeQuestView,
 } from "./ui/code-quest-view.js";
@@ -234,6 +235,14 @@ export class BamLearningApp {
     this.codeQuestCollections = new Map();
     this.codeQuestCollection = null;
     this.codeQuestState = null;
+    this.codeQuestCatalogFilters = {
+      courseId: null,
+      topicId: "all",
+      status: "all",
+      query: "",
+      number: "",
+    };
+    this.codeQuestCatalogNotice = "";
     this.javascriptCodeQuestRunner = new BrowserCodeQuestRunner();
     this.webCodeQuestRunner = new BrowserWebCodeQuestRunner();
     this.codeQuestRunner = new CodeQuestRunnerRouter({
@@ -332,6 +341,7 @@ export class BamLearningApp {
       }
       if (event.key !== PROGRESS_STORAGE_KEY) return;
       if (this.currentView === "my-page") this.renderMyPage();
+      else if (this.currentView === "quest-catalog") this.renderCodeQuestCatalog();
       else if (this.currentLesson) this.renderLesson();
       else if (this.currentView === "review" && this.quizCollection) {
         this.refreshQuizHistory();
@@ -383,6 +393,16 @@ export class BamLearningApp {
         this.updateCatalogFilters();
         return;
       }
+      if (event.target.matches("[data-quest-catalog-form]")) {
+        event.preventDefault();
+        this.updateCodeQuestCatalogSearch();
+        return;
+      }
+      if (event.target.matches("[data-quest-number-form]")) {
+        event.preventDefault();
+        this.openCodeQuestByNumber();
+        return;
+      }
       if (event.target.matches("[data-quiz-form]")) {
         event.preventDefault();
         if (!this.activateQuizQuestionForElement(event.target)) return;
@@ -409,7 +429,15 @@ export class BamLearningApp {
     const routePath = String(window.location.hash).split("?")[0];
     if (["", "#", "#/"].includes(routePath)) {
       this.enterView("home");
-      this.root.innerHTML = this.renderServiceShell({ mainContent: renderLearningHome({ saved: this.savedReviewSession }) });
+      const questCatalog = this.getCodeQuestCatalog();
+      this.root.innerHTML = this.renderServiceShell({ mainContent: renderLearningHome({
+        saved: this.savedReviewSession,
+        questOverview: {
+          courseCount: questCatalog.courses.length,
+          completedCount: questCatalog.items.filter((item) => item.progress === "completed").length,
+          totalCount: questCatalog.items.length,
+        },
+      }) });
       this.syncMenuState();
       document.title = "BAM.dev · 개발 학습";
       this.finishServiceNavigation();
@@ -417,6 +445,11 @@ export class BamLearningApp {
     }
     if (["#/learn", "#/learn/", "#/review", "#/review/"].includes(routePath)) {
       await this.openLearningCatalog(routePath.startsWith("#/review") ? "review" : "learn");
+      return;
+    }
+
+    if (parseQuestCatalogHash(window.location.hash)) {
+      this.openCodeQuestCatalogRoute();
       return;
     }
 
@@ -730,7 +763,11 @@ export class BamLearningApp {
       window.history.replaceState(null, "", canonicalHash);
     }
 
-    this.root.innerHTML = renderQuizLoadingView({ title: language.name });
+    this.root.innerHTML = this.renderServiceShell({
+      current: "review",
+      mainContent: renderQuizLoadingView({ title: language.name }),
+    });
+    this.syncMenuState();
     try {
       const collection = await loadQuizCollection(languageId, this.curriculum);
       if (sequence !== this.renderSequence) return;
@@ -786,8 +823,113 @@ export class BamLearningApp {
 
   getServiceNavigation() {
     this.catalogFilters ??= { learn: { topicId: null, query: "" }, review: { topicId: null, query: "" } };
-    this.serviceNavigation ??= { routes: { learn: "#/learn", review: "#/review" }, recentLessonIds: [], query: "" };
+    this.serviceNavigation ??= {
+      routes: {
+        learn: "#/learn",
+        review: "#/review",
+        quest: buildQuestCatalogHash(),
+        "coding-test": buildCodingTestListHash(),
+        "web-project": buildWebProjectListHash(),
+      },
+      recentLessonIds: [],
+      query: "",
+    };
     return this.serviceNavigation;
+  }
+
+  getCurrentService() {
+    const serviceByView = {
+      home: "home",
+      lesson: "learn",
+      "learn-catalog": "learn",
+      review: "review",
+      "review-catalog": "review",
+      quest: "quest",
+      "quest-catalog": "quest",
+      "coding-test": "coding-test",
+      "coding-test-list": "coding-test",
+      "web-project": "web-project",
+      "web-project-list": "web-project",
+      "my-page": "my-page",
+    };
+    return serviceByView[this.currentView] ?? "home";
+  }
+
+  getCodeQuestCatalog() {
+    return createCodeQuestCatalog(
+      this.curriculum,
+      this.codeQuestCollections,
+      this.progressRepository.getProgress(),
+    );
+  }
+
+  openCodeQuestCatalogRoute() {
+    this.enterView("quest-catalog");
+    const canonicalHash = buildQuestCatalogHash();
+    if (window.location.hash !== canonicalHash) {
+      window.history.replaceState(null, "", canonicalHash);
+    }
+    const catalog = this.getCodeQuestCatalog();
+    if (!catalog.courses.length) {
+      this.renderFatalError(new Error("등록된 Code Quest가 없습니다."));
+      return;
+    }
+    if (!catalog.courses.some((course) => course.id === this.codeQuestCatalogFilters.courseId)) {
+      this.codeQuestCatalogFilters = {
+        ...this.codeQuestCatalogFilters,
+        courseId: catalog.courses[0].id,
+        topicId: "all",
+        status: "all",
+      };
+    }
+    this.renderCodeQuestCatalog();
+    document.title = "Code Quest · BAM.dev";
+    this.finishServiceNavigation();
+  }
+
+  renderCodeQuestCatalog() {
+    const catalog = this.getCodeQuestCatalog();
+    const course = catalog.courses.find(
+      (item) => item.id === this.codeQuestCatalogFilters.courseId,
+    ) ?? catalog.courses[0] ?? null;
+    if (!course) return;
+    const items = filterCodeQuestCatalogItems(course.items, this.codeQuestCatalogFilters);
+    const mainContent = renderCodeQuestCatalogView({
+      catalog,
+      course,
+      items,
+      filters: this.codeQuestCatalogFilters,
+      notice: this.codeQuestCatalogNotice,
+    });
+    this.root.innerHTML = this.renderServiceShell({ current: "quest", mainContent });
+    this.syncMenuState();
+  }
+
+  updateCodeQuestCatalogSearch() {
+    if (this.currentView !== "quest-catalog") return;
+    this.codeQuestCatalogFilters.query = this.root.querySelector("[data-quest-search]")?.value ?? "";
+    this.codeQuestCatalogNotice = "";
+    this.renderCodeQuestCatalog();
+    this.root.querySelector("[data-quest-result-count]")?.focus?.({ preventScroll: true });
+  }
+
+  openCodeQuestByNumber() {
+    if (this.currentView !== "quest-catalog") return;
+    const input = this.root.querySelector("[data-quest-number]");
+    const number = input?.value ?? "";
+    this.codeQuestCatalogFilters.number = number;
+    const catalog = this.getCodeQuestCatalog();
+    const course = catalog.courses.find(
+      (item) => item.id === this.codeQuestCatalogFilters.courseId,
+    );
+    const quest = findCodeQuestByDisplayOrder(course?.items, number);
+    if (quest) {
+      window.location.hash = quest.href;
+      return;
+    }
+    this.codeQuestCatalogNotice = `이 과정에는 ${number || "입력한"}번 Quest가 없습니다. 1부터 ${course?.totalCount ?? 0} 사이의 번호를 입력해 주세요.`;
+    this.renderCodeQuestCatalog();
+    this.root.querySelector("[data-quest-catalog-notice]")?.focus?.({ preventScroll: true });
   }
 
   rememberServiceLocation(kind, topicId) {
@@ -850,7 +992,7 @@ export class BamLearningApp {
       const context = this.root.querySelector?.("[data-sidebar-context]");
       if (context) {
         const focusedTopic = document.activeElement?.matches?.("[data-sidebar-topic]");
-        const current = this.currentView === "home" ? "home" : this.currentView.startsWith("review") ? "review" : "learn";
+        const current = this.getCurrentService();
         context.innerHTML = renderSidebarContext(this.getServiceSidebar(current));
         if (focusedTopic) this.root.querySelector("[data-sidebar-topic]")?.focus({ preventScroll: true });
       }
@@ -1138,7 +1280,11 @@ export class BamLearningApp {
     }
 
     const sequence = this.enterView("quest");
-    this.root.innerHTML = renderCodeQuestLoadingView({ languageName: language.name });
+    this.root.innerHTML = this.renderServiceShell({
+      current: "quest",
+      mainContent: renderCodeQuestLoadingView({ languageName: language.name }),
+    });
+    this.syncMenuState();
 
     try {
       let collection = this.codeQuestCollections.get(languageId) ?? null;
@@ -1232,7 +1378,11 @@ export class BamLearningApp {
     }
 
     const sequence = this.enterView("coding-test");
-    this.root.innerHTML = renderCodingTestLoadingView({ title: language.name });
+    this.root.innerHTML = this.renderServiceShell({
+      current: "coding-test",
+      mainContent: renderCodingTestLoadingView({ title: language.name }),
+    });
+    this.syncMenuState();
 
     try {
       if (
@@ -1320,7 +1470,11 @@ export class BamLearningApp {
 
   openWebProjectRoute(slug) {
     this.enterView("web-project");
-    this.root.innerHTML = renderWebProjectLoadingView();
+    this.root.innerHTML = this.renderServiceShell({
+      current: "web-project",
+      mainContent: renderWebProjectLoadingView(),
+    });
+    this.syncMenuState();
     const collection = this.webProjectCollection;
     const project = findWebProjectBySlug(collection, slug);
     if (!collection || !project) {
@@ -1456,6 +1610,49 @@ export class BamLearningApp {
       this.catalogFilters[kind] = { topicId: null, query: "" };
       this.renderLearningCatalog();
       this.root.querySelector("[data-catalog-search]")?.focus();
+      return;
+    }
+    const questCourse = event.target.closest("[data-quest-course]");
+    if (questCourse && this.currentView === "quest-catalog") {
+      this.codeQuestCatalogFilters = {
+        courseId: questCourse.dataset.questCourse,
+        topicId: "all",
+        status: "all",
+        query: "",
+        number: "",
+      };
+      this.codeQuestCatalogNotice = "";
+      this.renderCodeQuestCatalog();
+      this.root.querySelector('[data-quest-course][aria-pressed="true"]')?.focus({ preventScroll: true });
+      return;
+    }
+    const questTopic = event.target.closest("[data-quest-topic]");
+    if (questTopic && this.currentView === "quest-catalog") {
+      this.codeQuestCatalogFilters.topicId = questTopic.dataset.questTopic;
+      this.codeQuestCatalogNotice = "";
+      this.renderCodeQuestCatalog();
+      this.root.querySelector('[data-quest-topic][aria-pressed="true"]')?.focus({ preventScroll: true });
+      return;
+    }
+    const questStatus = event.target.closest("[data-quest-status]");
+    if (questStatus && this.currentView === "quest-catalog") {
+      this.codeQuestCatalogFilters.status = questStatus.dataset.questStatus;
+      this.codeQuestCatalogNotice = "";
+      this.renderCodeQuestCatalog();
+      this.root.querySelector('[data-quest-status][aria-pressed="true"]')?.focus({ preventScroll: true });
+      return;
+    }
+    if (event.target.closest("[data-quest-catalog-reset]") && this.currentView === "quest-catalog") {
+      this.codeQuestCatalogFilters = {
+        ...this.codeQuestCatalogFilters,
+        topicId: "all",
+        status: "all",
+        query: "",
+        number: "",
+      };
+      this.codeQuestCatalogNotice = "";
+      this.renderCodeQuestCatalog();
+      this.root.querySelector("[data-quest-search]")?.focus({ preventScroll: true });
       return;
     }
     if (event.target.closest("[data-review-start-new]")) {
@@ -1841,6 +2038,12 @@ export class BamLearningApp {
   handleCodeQuestClick(event) {
     if (this.currentView !== "quest" || !this.codeQuestState) return false;
 
+    if (event.target.closest("[data-quest-map-focus]")) {
+      const map = this.root.querySelector("#quest-detail-map");
+      map?.focus({ preventScroll: true });
+      map?.scrollIntoView({ behavior: "instant", block: "start" });
+      return true;
+    }
     if (event.target.closest("[data-quest-run]")) {
       void this.runCurrentCodeQuest();
       return true;
@@ -2721,11 +2924,25 @@ export class BamLearningApp {
     const hintCount = state.quest.hints.length;
     if (state.visibleHintCount >= hintCount) return;
 
+    const scrollX = window.scrollX ?? 0;
+    const scrollY = window.scrollY ?? 0;
+    const renderSequence = this.renderSequence;
     state.visibleHintCount += 1;
+    const visibleHintCount = state.visibleHintCount;
     this.renderCodeQuest();
+    window.scrollTo?.({ left: scrollX, top: scrollY, behavior: "instant" });
     window.requestAnimationFrame(() => {
-      const hints = document.querySelectorAll("[data-quest-hint]");
-      focusMainContent(hints[hints.length - 1] ?? document.querySelector("#quest-hints-title"));
+      if (
+        this.currentView !== "quest" ||
+        this.codeQuestState !== state ||
+        this.renderSequence !== renderSequence ||
+        state.visibleHintCount !== visibleHintCount
+      ) {
+        return;
+      }
+      window.scrollTo?.({ left: scrollX, top: scrollY, behavior: "instant" });
+      const hints = this.root.querySelectorAll("[data-quest-hint]");
+      hints[hints.length - 1]?.focus({ preventScroll: true });
     });
   }
 
@@ -3327,7 +3544,7 @@ export class BamLearningApp {
   }
 
   renderLoadingLesson(lesson) {
-    this.root.innerHTML = `
+    const mainContent = `
       <main class="loading-page" id="lesson-content" tabindex="-1">
         <div class="state-message" role="status">
           <span class="brand-mark" aria-hidden="true">B</span>
@@ -3335,6 +3552,11 @@ export class BamLearningApp {
         </div>
       </main>
     `;
+    this.root.innerHTML = this.renderServiceShell({
+      current: "learn",
+      mainContent,
+    });
+    this.syncMenuState();
   }
 
   renderLesson({ answerOpen = false } = {}) {
@@ -3568,32 +3790,17 @@ export class BamLearningApp {
     const collection = this.codeQuestCollection;
     if (!this.curriculum || !collection || !state) return;
 
-    const language = getLanguage(this.curriculum, collection.languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
-    if (!language || lessons.length === 0) return;
-
     const progress = this.progressRepository.getProgress();
-    const completedLessonIds = new Set(progress.completedLessonIds);
-    const completedLessonCount = lessons.filter((lesson) =>
-      completedLessonIds.has(lesson.id),
-    ).length;
-    const lessonProgressPercent = Math.round(
-      (completedLessonCount / lessons.length) * 100,
-    );
-    const quests = getCodeQuestsInOrder(collection);
+    const catalog = createCodeQuestCatalog(this.curriculum, this.codeQuestCollections, progress);
+    const catalogItem = catalog.items.find((item) => item.id === state.quest.id);
+    const catalogCourse = catalog.courses.find((course) => course.id === catalogItem?.courseId);
+    const catalogTopic = catalogCourse?.topics.find((topic) => topic.id === catalogItem?.topicId);
+    const language = getLanguage(this.curriculum, collection.languageId);
+    if (!language || !catalogItem || !catalogCourse || !catalogTopic) return;
+
+    const quests = catalogCourse.items;
     const currentIndex = quests.findIndex((quest) => quest.id === state.quest.id);
-    const adjacent = getAdjacentCodeQuests(collection, state.quest.id);
-    const completedQuestIds = getCurrentCompletedQuestIds(progress, quests);
-    const completedQuestCount = completedQuestIds.size;
-    const codingTestProblems =
-      language.id === this.codingTestCollection?.languageId
-        ? getCodingTestProblemsInOrder(this.codingTestCollection)
-        : [];
-    const solvedCodingTestProblemIds =
-      codingTestProblems.length > 0
-        ? this.getSolvedCodingTestProblemIds(progress)
-        : new Set();
-    const currentQuestHref = buildQuestHash(language.id, state.quest.slug);
+    const adjacent = getAdjacentCodeQuestCatalogItems(quests, state.quest.id);
     const mainContent = renderCodeQuestView({
       languageId: collection.languageId,
       languageName: language.name,
@@ -3610,122 +3817,34 @@ export class BamLearningApp {
       report: state.report,
       reportPersistenceStatus: state.reportPersistenceStatus,
       visibleHintCount: state.visibleHintCount,
-      isCompleted: completedQuestIds.has(state.quest.id),
+      isCompleted: catalogItem.progress === "completed",
+      catalogItem,
+      catalogCourse,
+      catalogTopic,
+      catalogHref: buildQuestCatalogHash(),
       previous: adjacent.previous
         ? {
-            href: buildQuestHash(language.id, adjacent.previous.slug),
+            href: adjacent.previous.href,
             title: adjacent.previous.title,
           }
         : null,
       next: adjacent.next
         ? {
-            href: buildQuestHash(language.id, adjacent.next.slug),
+            href: adjacent.next.href,
             title: adjacent.next.title,
           }
-        : null,
+        : {
+            href: buildQuestCatalogHash(),
+            label: "다음 행동",
+            title: "Code Quest 목록으로 돌아가기",
+          },
     });
 
-    this.root.innerHTML = renderAppShell({
-      theme: this.themeController?.getState(),
-      homeHref: "#/",
-      menuOpen: this.menuOpen,
-      language,
-      lessonProgress: {
-        completedCount: completedLessonCount,
-        totalCount: lessons.length,
-        percent: lessonProgressPercent,
-      },
-      languageNavigation: renderLanguageNavigation({
-        curriculum: this.curriculum,
-        currentLanguageId: language.id,
-      }),
-      lessonNavigationItems: lessons
-        .map((lesson) => this.renderLessonLink(lesson, null, completedLessonIds))
-        .join(""),
-      featureNavigation: [
-        {
-          kind: "review",
-          options: {
-            href: buildReviewHash(language.id),
-            isCurrent: false,
-          },
-        },
-        {
-          kind: "code-quest",
-          options: {
-            href: currentQuestHref,
-            isCurrent: true,
-            completedCount: completedQuestCount,
-            totalCount: quests.length,
-          },
-        },
-        {
-          kind: "coding-test",
-          options:
-            codingTestProblems.length > 0
-              ? {
-                  href: buildCodingTestListHash(),
-                  isCurrent: false,
-                  solvedCount: solvedCodingTestProblemIds.size,
-                  totalCount: codingTestProblems.length,
-                }
-              : null,
-        },
-        {
-          kind: "web-project",
-          options: this.getWebProjectNavigationOptions(false),
-        },
-      ],
+    this.root.innerHTML = this.renderServiceShell({
+      current: "quest",
       mainContent,
     });
     this.syncMenuState();
-  }
-
-  getWebProjectNavigationOptions(isCurrent = false) {
-    const projects = getWebProjectsInOrder(this.webProjectCollection);
-    if (projects.length === 0) return null;
-    let submissions = [];
-    try {
-      submissions = this.webProjectRepository.listSubmissions();
-    } catch {
-      submissions = [];
-    }
-    const revisionByProjectId = new Map(
-      projects.map((project) => [project.id, project.revision]),
-    );
-    const submittedProjectIds = new Set(
-      submissions
-        .filter(
-          (submission) =>
-            revisionByProjectId.get(submission.projectId) ===
-            submission.projectRevision,
-        )
-        .map((submission) => submission.projectId),
-    );
-    return {
-      href: buildWebProjectListHash(),
-      isCurrent,
-      submittedCount: submittedProjectIds.size,
-      totalCount: projects.length,
-    };
-  }
-
-  getWebProjectShellContext(project = null) {
-    const currentProject =
-      project ?? getWebProjectsInOrder(this.webProjectCollection)[0] ?? null;
-    const referencedLessonIds = new Set(
-      (currentProject?.conceptRefs ?? []).map((reference) => reference.lessonId),
-    );
-    const referencedLesson = this.curriculum?.lessons.find((lesson) =>
-      referencedLessonIds.has(lesson.id),
-    );
-    const language =
-      getLanguage(this.curriculum, referencedLesson?.languageId) ??
-      getLanguage(this.curriculum, DEFAULT_LANGUAGE_ID);
-    const lessons = language
-      ? getLessonsForLanguage(this.curriculum, language.id)
-      : [];
-    return { language, lessons };
   }
 
   renderWebProjectList() {
@@ -3758,7 +3877,7 @@ export class BamLearningApp {
       title: collection.title,
       items,
     });
-    this.renderWebProjectShell(mainContent, projects[0] ?? null);
+    this.renderWebProjectShell(mainContent);
   }
 
   renderWebProject() {
@@ -3778,93 +3897,13 @@ export class BamLearningApp {
       uiError: state.uiError,
       previewSize: state.previewSize,
     });
-    this.renderWebProjectShell(mainContent, state.project);
+    this.renderWebProjectShell(mainContent);
     this.scheduleWebProjectPreviewSync();
   }
 
-  renderWebProjectShell(mainContent, project) {
-    const { language, lessons } = this.getWebProjectShellContext(project);
-    if (!language || lessons.length === 0) {
-      this.root.innerHTML = mainContent;
-      return;
-    }
-    const progress = this.progressRepository.getProgress();
-    const completedLessonIds = new Set(progress.completedLessonIds);
-    const completedLessonCount = lessons.filter((lesson) =>
-      completedLessonIds.has(lesson.id),
-    ).length;
-    const lessonProgressPercent = Math.round(
-      (completedLessonCount / lessons.length) * 100,
-    );
-    const questCollection = this.codeQuestCollections.get(language.id) ?? null;
-    const quests = getCodeQuestsInOrder(questCollection);
-    const completedQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      quests,
-    ).size;
-    const codingTestProblems =
-      language.id === this.codingTestCollection?.languageId
-        ? getCodingTestProblemsInOrder(this.codingTestCollection)
-        : [];
-    const solvedCodingTestProblemIds =
-      codingTestProblems.length > 0
-        ? this.getSolvedCodingTestProblemIds(progress)
-        : new Set();
-    this.root.innerHTML = renderAppShell({
-      theme: this.themeController?.getState(),
-      homeHref: "#/",
-      menuOpen: this.menuOpen,
-      language,
-      lessonProgress: {
-        completedCount: completedLessonCount,
-        totalCount: lessons.length,
-        percent: lessonProgressPercent,
-      },
-      languageNavigation: renderLanguageNavigation({
-        curriculum: this.curriculum,
-        currentLanguageId: language.id,
-      }),
-      lessonNavigationItems: lessons
-        .map((lesson) =>
-          this.renderLessonLink(lesson, null, completedLessonIds),
-        )
-        .join(""),
-      featureNavigation: [
-        {
-          kind: "review",
-          options: {
-            href: buildReviewHash(language.id),
-            isCurrent: false,
-          },
-        },
-        {
-          kind: "code-quest",
-          options: quests[0]
-            ? {
-                href: buildQuestHash(language.id, quests[0].slug),
-                isCurrent: false,
-                completedCount: completedQuestCount,
-                totalCount: quests.length,
-              }
-            : null,
-        },
-        {
-          kind: "coding-test",
-          options:
-            codingTestProblems.length > 0
-              ? {
-                  href: buildCodingTestListHash(),
-                  isCurrent: false,
-                  solvedCount: solvedCodingTestProblemIds.size,
-                  totalCount: codingTestProblems.length,
-                }
-              : null,
-        },
-        {
-          kind: "web-project",
-          options: this.getWebProjectNavigationOptions(true),
-        },
-      ],
+  renderWebProjectShell(mainContent) {
+    this.root.innerHTML = this.renderServiceShell({
+      current: "web-project",
       mainContent,
     });
     this.syncMenuState();
@@ -3972,86 +4011,9 @@ export class BamLearningApp {
     this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
   }
 
-  renderCodingTestShell(
-    mainContent,
-    progressSnapshot = null,
-    solvedProblemIdsSnapshot = null,
-  ) {
-    const collection = this.codingTestCollection;
-    if (!this.curriculum || !collection) return;
-    const language = getLanguage(this.curriculum, collection.languageId);
-    const lessons = getLessonsForLanguage(this.curriculum, collection.languageId);
-    if (!language || lessons.length === 0) return;
-
-    const progress = progressSnapshot ?? this.progressRepository.getProgress();
-    const solvedProblemIds =
-      solvedProblemIdsSnapshot ?? this.getSolvedCodingTestProblemIds(progress);
-    const completedLessonIds = new Set(progress.completedLessonIds);
-    const completedLessonCount = lessons.filter((lesson) =>
-      completedLessonIds.has(lesson.id),
-    ).length;
-    const lessonProgressPercent = Math.round(
-      (completedLessonCount / lessons.length) * 100,
-    );
-    const languageQuestCollection =
-      this.codeQuestCollections.get(language.id) ?? null;
-    const quests = getCodeQuestsInOrder(languageQuestCollection);
-    const completedQuestCount = getCurrentCompletedQuestIds(
-      progress,
-      quests,
-    ).size;
-    const problems = getCodingTestProblemsInOrder(collection);
-
-    this.root.innerHTML = renderAppShell({
-      theme: this.themeController?.getState(),
-      homeHref: "#/",
-      menuOpen: this.menuOpen,
-      language,
-      lessonProgress: {
-        completedCount: completedLessonCount,
-        totalCount: lessons.length,
-        percent: lessonProgressPercent,
-      },
-      languageNavigation: renderLanguageNavigation({
-        curriculum: this.curriculum,
-        currentLanguageId: language.id,
-      }),
-      lessonNavigationItems: lessons
-        .map((lesson) => this.renderLessonLink(lesson, null, completedLessonIds))
-        .join(""),
-      featureNavigation: [
-        {
-          kind: "review",
-          options: {
-            href: buildReviewHash(language.id),
-            isCurrent: false,
-          },
-        },
-        {
-          kind: "code-quest",
-          options: quests[0]
-            ? {
-                href: buildQuestHash(language.id, quests[0].slug),
-                isCurrent: false,
-                completedCount: completedQuestCount,
-                totalCount: quests.length,
-              }
-            : null,
-        },
-        {
-          kind: "coding-test",
-          options: {
-            href: buildCodingTestListHash(),
-            isCurrent: true,
-            solvedCount: solvedProblemIds.size,
-            totalCount: problems.length,
-          },
-        },
-        {
-          kind: "web-project",
-          options: this.getWebProjectNavigationOptions(false),
-        },
-      ],
+  renderCodingTestShell(mainContent) {
+    this.root.innerHTML = this.renderServiceShell({
+      current: "coding-test",
       mainContent,
     });
     this.syncMenuState();
@@ -4114,7 +4076,9 @@ export class BamLearningApp {
     const sidebar = document.querySelector(".sidebar");
     const backdrop = document.querySelector(".sidebar-backdrop");
     const toggle = document.querySelector("[data-toggle-menu]");
-    const mainArea = document.querySelector(".main-area");
+    const mainArea =
+      document.querySelector(".main-area") ??
+      document.querySelector("#lesson-content");
     const mobileHeader = document.querySelector(".mobile-header");
     const footer = document.querySelector(".service-footer");
     const skipLink = document.querySelector(".skip-link");
@@ -4161,8 +4125,7 @@ export class BamLearningApp {
 
   renderEmptyState() {
     this.menuOpen = false;
-    this.syncMenuState();
-    this.root.innerHTML = `
+    const mainContent = `
       <main class="empty-page" id="lesson-content" tabindex="-1" aria-labelledby="empty-title">
         <div class="state-message" role="status">
           <span class="brand-mark" aria-hidden="true">B</span>
@@ -4173,6 +4136,11 @@ export class BamLearningApp {
         <button class="button button--primary" type="button" data-retry>다시 확인</button>
       </main>
     `;
+    this.root.innerHTML = this.renderServiceShell({
+      current: this.getCurrentService(),
+      mainContent,
+    });
+    this.syncMenuState();
     window.requestAnimationFrame(() => {
       focusMainContent(document.querySelector("#lesson-content"));
     });
@@ -4180,10 +4148,9 @@ export class BamLearningApp {
 
   renderFatalError(error) {
     this.menuOpen = false;
-    this.syncMenuState();
     const message = error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.";
     const fallbackLesson = this.curriculum?.lessons?.[0];
-    this.root.innerHTML = `
+    const mainContent = `
       <main class="error-page" id="lesson-content" tabindex="-1" aria-labelledby="error-title">
         <div class="state-message" role="alert">
           <span class="brand-mark" aria-hidden="true">B</span>
@@ -4195,6 +4162,11 @@ export class BamLearningApp {
         ${fallbackLesson ? `<a class="button button--secondary" href="${buildLessonHash(fallbackLesson.courseId, fallbackLesson.slug)}">학습 문서 목록으로 돌아가기</a>` : ""}
       </main>
     `;
+    this.root.innerHTML = this.renderServiceShell({
+      current: this.getCurrentService(),
+      mainContent,
+    });
+    this.syncMenuState();
     window.requestAnimationFrame(() => {
       focusMainContent(document.querySelector("#lesson-content"));
     });

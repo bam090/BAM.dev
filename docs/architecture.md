@@ -27,7 +27,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 ## 현재 브라우저 앱
 
-- 해시 라우팅: 홈은 `#/`, 독립 문서·문제 목록은 `#/learn`·`#/review`입니다. 학습은 `#/learn/<course>/<lesson>`, 복습은 `#/review/<language>[/<lessonId>]`이며 선택적 `concept` query로 키워드를 고릅니다. 문서의 `review`·`section` query는 저장된 유효 문맥과 실제 문서·문항 연결을 검사해 복귀와 절 이동에 사용합니다. Quest는 `#/quest/<language>/<quest>`, 코딩테스트 목록·문제는 `#/coding-tests`와 `#/coding-tests/<language>/<problem>`, Web Project 목록·과제는 `#/web-projects`와 `#/web-projects/<project>`를 사용합니다.
+- 해시 라우팅: 홈은 `#/`, 독립 문서·문제 목록은 `#/learn`·`#/review`입니다. 학습은 `#/learn/<course>/<lesson>`, 복습은 `#/review/<language>[/<lessonId>]`이며 선택적 `concept` query로 키워드를 고릅니다. 문서의 `review`·`section` query는 저장된 유효 문맥과 실제 문서·문항 연결을 검사해 복귀와 절 이동에 사용합니다. Quest 목록·문제는 `#/quest`와 기존 `#/quest/<language>/<quest>`, 코딩테스트 목록·문제는 `#/coding-tests`와 `#/coding-tests/<language>/<problem>`, Web Project 목록·과제는 `#/web-projects`와 `#/web-projects/<project>`를 사용합니다.
 - 콘텐츠 로딩: `curriculum.json` 검증 후 선택한 Markdown과 언어별 객관식·Quest·코딩테스트 JSON 및 Web Project 컬렉션을 각 계약으로 검증합니다. 교안의 실행 예제 데이터는 `content/fixtures/<languageId>/`에 두고 same-origin으로 불러오며 `content/` 전체와 함께 정적 빌드에 포함합니다.
 - Markdown: 프로젝트가 신뢰하는 제한된 문법만 HTML로 변환하며 원시 HTML은 항상 이스케이프합니다.
 - 객관식: 콘텐츠 검증, 한 문제 채점, 전체 요약을 순수 도메인 함수로 분리합니다. 채점 전에는 정답 해설을 렌더링하지 않고 채점 후 정답·선택한 오답의 근거를 먼저 표시하며 다른 보기 해설은 펼칠 수 있습니다. 채점 전후 관련 개념 발췌를 볼 수 있으므로 결과를 독립 숙달의 인증으로 사용하지 않습니다. 개념·문서 왕복·후속 기능 경계는 [학습 복습 설계](designs/lesson-review.md#r1-첫-사용-구현-계약)를 따릅니다.
@@ -43,8 +43,8 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - Web Project 저장: `WebProjectRepository` 계약과 `LocalStorageWebProjectRepository` 구현을 분리합니다. 초안은 프로젝트·리비전별 `bam.dev.web-projects.v1.records.v1.draft.*`, 제출 요약은 프로젝트·리비전·제출 ID별 `bam.dev.web-projects.v1.records.v1.submission.*` 독립 키에 저장해 서로 다른 레코드가 하나의 read-modify-write 경합으로 함께 사라지지 않게 합니다. `bam.dev.web-projects.v1`은 기존 aggregate v1 데이터를 처음 읽을 때 레코드로 옮기는 입력이자, 이후 탭 간 변경 알림용 manifest입니다. 최신 source는 최대 10개 초안에만, source·assertion·배점을 제외한 불변 제출 요약은 최대 20개 저장합니다.
 - Web Project 동시성: 서로 다른 초안과 프로젝트·리비전·제출 ID가 다른 제출은 독립 키라 보존되며 manifest는 레코드 탐색 보조 정보일 뿐 진실 원본이 아닙니다. 같은 프로젝트·revision 초안은 `expectedDraftToken`으로 발견 가능한 stale 쓰기를 거부합니다. legacy aggregate는 해당 독립 레코드가 아직 없을 때만 가져오며, 레코드가 생긴 뒤에는 그것을 진실 원본으로 유지합니다. 다만 Web Storage에는 compare-and-set 트랜잭션이 없으므로 같은 초안 레코드의 토큰 확인 직후 또는 같은 복합 제출 ID의 존재 확인 직후 두 탭이 동시에 쓰는 극히 좁은 구간은 last-write-wins입니다. 강한 단일 사용자 로컬 원자성이 필요해지면 IndexedDB 트랜잭션이나 Web Locks를 사용하는 저장소 구현을 별도 설계합니다.
 - 저장 장애: 브라우저 저장소 접근이 막히면 메모리 저장소로 전환하며 저장소 계약이 영속 여부를 화면에 제공합니다.
-- 과정 전환: 사이드바는 카테고리별 과정을 표시하고, 카테고리와 과정이 모두 탐색 가능하며 첫 교안이 있을 때 해당 교안으로 연결합니다. `planned` 카테고리·과정은 비활성 상태로 표시합니다.
-- 화면 탐색: 홈·문서/문제 목록·교안·객관식의 데스크톱은 [236px 탐색 사이드바](designs/visual-design.md#승인된-탐색-시안-적용)를 사용하며, 기존 실습 화면의 208px 사이드바·분할 화면과 모바일 상단 메뉴·오버레이·1열 fallback은 보존합니다.
+- 과정 전환: 공통 서비스 사이드바와 제품별 본문 탐색에서 기존 유효한 과정·교안·실습 링크를 제공합니다. 준비 중인 과정을 새 활성 서비스로 만들지 않습니다.
+- 화면 탐색: [전체 화면 계약](designs/visual-design.md#전체-화면의-서비스-사이드바-통일)에 따라 홈·학습문서·객관식·Quest·코딩테스트·기존 Web Project·내 학습 기록과 로딩/오류 화면에 같은 236px 서비스 shell을 적용했습니다. 기존 분할 편집기·본문 문맥 링크·저장/평가 경계와 모바일 fallback을 보존합니다. Quest의 페이지 내부 탐색·학습 지도는 [Quest 설계](designs/code-quest.md#데스크톱-탐색-첫-구현-계약)를 따릅니다. 대표 데스크톱 12개 route와 변경 영향 검사는 독립 PASS이며 최종 독립 문서 검토·통합도 PASS입니다. 근거와 미실행 범위는 [작업 카드](work-items/2026-09-14-global-service-sidebar.md)를 따릅니다.
 
 ## 목표 설치형 구조
 
@@ -98,7 +98,7 @@ HTML·CSS 소스, 작성 예시와 CSS 고정 fixture는 평가기 호출 전에
 - Spring Boot 과정의 향후 추가와 외부 웹과제 실행 위치는 확정됐지만 과정·과제는 현재 구현되어 있지 않다. MVP 포함 시점·교안 범위·Code Quest 여부와 과제 저장소·빌드·의존성·오프라인·공개 검증 계약은 `DEC-JAVA-01`·`DEC-WEB-REPO-01`·`DEC-WEB-OFFLINE-01`에서 결정한다.
 - [`DEC-DESKTOP-PROTOTYPE-01`](roadmap.md#2026-08-30-확정-제품-결정)에 따라 현재 Mac에서 Electron·DMG 단일 후보를 먼저 검증한다. 이는 구현·채택·지원 선언이 아니며, 공식 OS·shell·설치 형식·업데이트와 export/import를 포함한 백업·복구 방식은 prototype 증거 뒤 `DEC-DESKTOP-01`이 확정될 때까지 목표 구현으로 취급하지 않는다.
 - 현재 인앱 Web Project를 외부 Git 웹과제와 병행할지, 검증 뒤 대체할지 결정해야 한다.
-- Code Quest 전용 과정·주제·표시 순서를 현재 관계에서 파생할지 저장할지는 `DEC-QUEST-CATALOG-01`에서 결정한다.
+- Code Quest의 [데스크톱 탐색 첫 구현](designs/code-quest.md#데스크톱-탐색-첫-구현-계약)은 기존 Quest·curriculum·진도를 읽기 전용으로 파생하고 기존 상세 URL에 `#/quest` 진입점을 더하는 승인 범위다. 저장·스키마·평가기 변경 없이 구현하며, 과정·주제·표시 순서의 영구 저장은 `DEC-QUEST-CATALOG-01`의 후속 선택이다. 실제 구현·검증 상태는 작업 카드에서 구분한다.
 - 코딩테스트의 전체 공개 테스트 동작을 학습자 UI에서 어떤 용어와 펼침 상태로 보여 줄지는 [`designs/coding-test.md`](designs/coding-test.md)의 확인 항목이다.
 
 ## 보안과 접근성
