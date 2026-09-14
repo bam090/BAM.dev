@@ -44,7 +44,7 @@ import {
   loadWebProjectCollection,
 } from "./core/web-project.js";
 import { gradeQuestion, loadQuizCollection, summarizeQuiz } from "./core/quiz.js";
-import { buildKeywordReviewHash, buildReviewLessonHash, getReviewDocumentLesson, getReviewRouteOptions, validateReviewConcepts } from "./core/review-navigation.js";
+import { buildKeywordReviewHash, buildReviewLessonHash, getKeywordReviewScope, getReviewDocumentLesson, getReviewRouteOptions, validateReviewConcepts } from "./core/review-navigation.js";
 import { getReviewContentSignature, LocalStorageReviewSessionRepository, restoreReviewSession, REVIEW_SESSION_STORAGE_KEY } from "./repositories/review-session-repository.js";
 import { getCourseTopic, getLearningCatalogItems, renderLearningHome, renderLearningCatalog } from "./ui/learning-catalog-view.js";
 import { renderSidebarContext, renderSidebarSearchResults } from "./ui/service-sidebar-view.js";
@@ -105,6 +105,12 @@ import { createWebProjectPreviewDocument } from "./ui/web-project-preview.js";
 const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
 const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
 const WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS = 250;
+const CODE_QUEST_LANGUAGE_IDS = new Set(["javascript", "html", "css"]);
+
+function isAvailableCodeQuestLanguage(language) {
+  // 정적 교안·객관식의 available 상태와 Code Quest 지원 범위는 별개다.
+  return language?.status === "available" && CODE_QUEST_LANGUAGE_IDS.has(language.id);
+}
 
 function createDefaultCodingTestFilters() {
   return {
@@ -133,7 +139,7 @@ export async function loadAvailableCodeQuestCollectionsSafely(
 ) {
   const collections = new Map();
   const languages = Array.isArray(curriculum?.languages)
-    ? curriculum.languages.filter((language) => language.status === "available")
+    ? curriculum.languages.filter(isAvailableCodeQuestLanguage)
     : [];
 
   await Promise.all(
@@ -373,8 +379,15 @@ export class BamLearningApp {
       }
       if (event.target.matches("[data-quiz-form]")) {
         event.preventDefault();
-        this.gradeCurrentQuizQuestion();
+        if (!this.activateQuizQuestionForElement(event.target)) return;
+        if (this.quizSession.gradingMode === "batch") this.gradePendingQuizQuestions();
+        else this.gradeCurrentQuizQuestion();
       }
+    });
+    this.root.addEventListener("focusin", (event) => {
+      if (this.currentView !== "review" || !event.target.closest?.("[data-quiz-question-id]")) return;
+      const previousIndex = this.quizSession?.currentIndex;
+      if (this.activateQuizQuestionForElement(event.target) && previousIndex !== this.quizSession.currentIndex) this.saveReviewSession();
     });
     this.root.addEventListener("input", (event) => this.handleInput(event));
     this.root.addEventListener("scroll", (event) => this.handleScroll(event), true);
@@ -445,7 +458,7 @@ export class BamLearningApp {
         questRoute.languageId,
       );
       if (
-        questLanguage?.status === "available" &&
+        isAvailableCodeQuestLanguage(questLanguage) &&
         questLessons.length > 0
       ) {
         await this.openCodeQuestRoute(questRoute.languageId, questRoute.slug);
@@ -708,7 +721,9 @@ export class BamLearningApp {
       const reviewCourse = this.curriculum.courses?.find((course) => course.id === reviewLesson?.courseId);
       this.rememberServiceLocation("review", reviewCourse ? getCourseTopic(reviewCourse) : languageId);
       this.renderQuiz();
-      document.title = `${collection.title} · BAM.dev`;
+      const reviewTitle = reviewCourse && reviewCourse.categoryId !== "language"
+        ? `${reviewCourse.name} · 객관식 복습` : collection.title;
+      document.title = `${reviewTitle} · BAM.dev`;
       window.scrollTo({ top: 0, behavior: "instant" });
       if (this.hasRenderedView) {
         this.focusQuizQuestion();
@@ -892,7 +907,7 @@ export class BamLearningApp {
     const session = this.quizSession;
     if (!this.reviewSessionRepository || this.currentView !== "review" || !session?.questions.length || this.reviewNeedsRestart) return;
     if (captureViewport) {
-      const card = this.root.querySelector?.(".quiz-card, .quiz-result-card");
+      const card = this.getQuizQuestionCard() ?? this.root.querySelector?.(".quiz-result-card");
       const active = document.activeElement;
       session.viewport = {
         anchor: session.questions[session.currentIndex]?.id,
@@ -901,10 +916,15 @@ export class BamLearningApp {
         focusId: active?.id || null,
       };
     }
+    const selectedLesson = this.curriculum.lessons.find((lesson) => lesson.id === this.quizLessonId);
+    const selectedCourse = selectedLesson ? getCourse(this.curriculum, selectedLesson.courseId) : null;
+    const title = selectedCourse?.categoryId === "spring"
+      ? `${selectedCourse.name} · ${selectedLesson.title}` : this.quizCollection.title;
     const saved = {
-      id: session.id, scope: this.getReviewScope(), title: this.quizCollection.title,
+      id: session.id, scope: this.getReviewScope(), title,
       contentSignature: getReviewContentSignature(this.getScopedQuizQuestions()),
       questionIds: session.questions.map((question) => question.id), mode: session.mode,
+      viewMode: session.viewMode ?? "single", gradingMode: session.gradingMode ?? "individual",
       currentIndex: session.currentIndex, selectedOptionIds: [...session.selectedOptionIds],
       gradedQuestionIds: [...session.gradedAnswers.keys()], screen: session.screen,
       recordAttempted: session.recordAttempted, persistenceStatus: session.persistenceStatus,
@@ -930,23 +950,40 @@ export class BamLearningApp {
     if (noticeMessage) noticeMessage.textContent = this.reviewRestoreNotice ?? "";
   }
 
-  restoreReviewViewport() {
+  restoreReviewViewport({ keepFocusVisible = false } = {}) {
     const viewport = this.quizSession?.viewport;
     if (!viewport) return;
     window.requestAnimationFrame(() => {
-      const card = this.root.querySelector?.(".quiz-card, .quiz-result-card");
+      const card = this.getQuizQuestionCard() ?? this.root.querySelector?.(".quiz-result-card");
       const top = Number.isFinite(viewport.offset) && card
         ? (window.scrollY ?? 0) + card.getBoundingClientRect().top - viewport.offset
         : viewport.scrollY;
       window.scrollTo({ top: Number.isFinite(top) ? Math.max(0, top) : 0, behavior: "instant" });
       const focusTarget = viewport.focusId ? document.getElementById(viewport.focusId) : null;
-      (focusTarget ?? this.root.querySelector("[data-related-concept]") ??
-        this.root.querySelector("#quiz-question-title, #quiz-result-title"))?.focus({ preventScroll: true });
+      const legacySelectors = {
+        "quiz-related-concept": "[data-related-concept]",
+        "quiz-feedback-toggle": "[data-quiz-feedback-toggle]",
+        "quiz-question-title": "[data-quiz-question-title]",
+        "quiz-answer-summary-title": "[data-quiz-grade-summary]",
+      };
+      const oldOptionIndex = /^quiz-option-(\d+)$/.exec(viewport.focusId ?? "")?.[1];
+      const legacyTarget = oldOptionIndex !== undefined
+        ? card?.querySelectorAll?.("[data-quiz-option]")[Number(oldOptionIndex)]
+        : card?.querySelector?.(legacySelectors[viewport.focusId] ?? "[data-quiz-question-title]");
+      let target = [focusTarget, legacyTarget, card?.querySelector?.("[data-quiz-question-title]"), this.root.querySelector("#quiz-result-title")]
+        .find((element) => element && !element.disabled && element.isConnected !== false);
+      const bounds = target?.getBoundingClientRect?.();
+      if (keepFocusVisible && bounds && (bounds.top < 0 || bounds.bottom > window.innerHeight)) {
+        // A display change can move the toolbar away from the preserved question.
+        target = card?.querySelector?.("[data-quiz-question-title]") ?? target;
+        target?.scrollIntoView({ behavior: "instant", block: "nearest" });
+      }
+      target?.focus({ preventScroll: true });
     });
   }
 
   openConceptOverlay(button) {
-    const question = this.getCurrentQuizQuestion();
+    const question = this.activateQuizQuestionForElement(button);
     const owner = this.curriculum.lessons.find((item) => item.id === question?.lessonId);
     if (!owner || !question) return;
     const concept = this.reviewConcepts?.find((item) => item.id === question.conceptId && item.lessonId === owner.id);
@@ -1009,7 +1046,7 @@ export class BamLearningApp {
   async openCodeQuestRoute(languageId, slug) {
     const language = getLanguage(this.curriculum, languageId);
     const lessons = getLessonsForLanguage(this.curriculum, languageId);
-    if (!language || language.status !== "available" || lessons.length === 0) {
+    if (!isAvailableCodeQuestLanguage(language) || lessons.length === 0) {
       await this.openLessonRoute();
       return;
     }
@@ -1264,6 +1301,15 @@ export class BamLearningApp {
     if (serviceLink && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       const navigation = this.getServiceNavigation();
       navigation.restoreReadingPosition = serviceLink.dataset.serviceLink === "learn" && this.currentView !== "lesson" ? navigation.readingPosition : null;
+      const topicId = this.catalogFilters.learn.topicId;
+      if (serviceLink.dataset.serviceLink === "review" && ["lesson", "learn-catalog"].includes(this.currentView)
+        && !this.lessonReviewReturn && topicId && topicId !== "all") {
+        event.preventDefault();
+        this.catalogFilters.review = { topicId, query: "" };
+        this.clearSidebarSearch();
+        window.location.hash = "#/review";
+        return;
+      }
       if (serviceLink.getAttribute("href") === window.location.hash && !this.mobileMedia.matches) {
         event.preventDefault();
         this.root.querySelector("#lesson-content")?.focus({ preventScroll: true });
@@ -1497,7 +1543,7 @@ export class BamLearningApp {
     }
 
     const option = event.target.closest("[data-quiz-option]");
-    const question = this.getCurrentQuizQuestion();
+    const question = option ? this.activateQuizQuestionForElement(event.target) : null;
     if (
       !option ||
       !question ||
@@ -1514,11 +1560,13 @@ export class BamLearningApp {
     this.quizSession.selectedOptionIds.set(question.id, option.value);
     this.saveReviewSession();
     // Keep the native radio in place while its click/change activation finishes.
-    for (const input of this.root.querySelectorAll("[data-quiz-option]")) {
+    const card = this.getQuizQuestionCard();
+    for (const input of card?.querySelectorAll("[data-quiz-option]") ?? []) {
       input.closest(".quiz-option")?.classList.toggle("is-selected", input.value === option.value);
     }
-    const checkButton = this.root.querySelector("[data-quiz-check]");
+    const checkButton = card?.querySelector("[data-quiz-check]");
     if (checkButton) checkButton.disabled = false;
+    this.updateQuizBatchControls();
   }
 
   handleInput(event) {
@@ -1729,6 +1777,14 @@ export class BamLearningApp {
 
   handleQuizClick(event) {
     if (this.currentView !== "review") return false;
+    if (event.target.closest("[data-quiz-question-id]")) {
+      if (!this.activateQuizQuestionForElement(event.target)) return true;
+      this.saveReviewSession();
+    }
+    const viewButton = event.target.closest("[data-quiz-view-mode]");
+    if (viewButton) { this.setQuizViewMode(viewButton.dataset.quizViewMode); return true; }
+    const gradingButton = event.target.closest("[data-quiz-grading-mode]");
+    if (gradingButton) { this.setQuizGradingMode(gradingButton.dataset.quizGradingMode); return true; }
     const documentLink = event.target.closest("[data-review-document]");
     if (documentLink && this.quizSession) {
       const route = parseLessonHash(documentLink.getAttribute("href"));
@@ -1754,8 +1810,10 @@ export class BamLearningApp {
       const expanded = this.quizSession.expandedQuestionIds;
       if (expanded.has(question.id)) expanded.delete(question.id);
       else expanded.add(question.id);
+      this.saveReviewSession({ captureViewport: true });
       this.renderQuiz();
-      this.root.querySelector("[data-quiz-feedback-toggle]")?.focus({ preventScroll: true });
+      this.restoreReviewViewport();
+      this.getQuizQuestionCard()?.querySelector("[data-quiz-feedback-toggle]")?.focus({ preventScroll: true });
       return true;
     }
     const retryButton = event.target.closest("[data-quiz-retry]");
@@ -1769,6 +1827,14 @@ export class BamLearningApp {
     }
     if (this.quizSession?.screen !== "question") return false;
 
+    if (event.target.closest("[data-quiz-check-all]")) {
+      this.gradePendingQuizQuestions();
+      return true;
+    }
+    if (event.target.closest("[data-quiz-finish]")) {
+      this.finishQuizSession();
+      return true;
+    }
     if (event.target.closest("[data-quiz-check]")) {
       this.gradeCurrentQuizQuestion();
       return true;
@@ -1782,6 +1848,83 @@ export class BamLearningApp {
       return true;
     }
     return false;
+  }
+
+  activateQuizQuestionForElement(element) {
+    if (this.currentView !== "review" || this.quizSession?.screen !== "question") return null;
+    const card = element?.closest?.("[data-quiz-question-id]");
+    if (!card) return this.getCurrentQuizQuestion();
+    const index = this.quizSession.questions.findIndex((question) => question.id === card.dataset.quizQuestionId);
+    if (index < 0) return null;
+    this.quizSession.currentIndex = index;
+    return this.getCurrentQuizQuestion();
+  }
+
+  getQuizQuestionCard() {
+    const questionId = this.getCurrentQuizQuestion()?.id;
+    return [...(this.root.querySelectorAll?.("[data-quiz-question-id]") ?? [])]
+      .find((card) => card.dataset.quizQuestionId === questionId) ?? null;
+  }
+
+  setQuizViewMode(mode) {
+    if (!["single", "all"].includes(mode) || this.quizSession?.screen !== "question" || this.quizSession.viewMode === mode) return;
+    this.saveReviewSession({ captureViewport: true });
+    this.quizSession.viewMode = mode;
+    this.renderQuiz();
+    this.restoreReviewViewport({ keepFocusVisible: true });
+    this.announce(`${mode === "all" ? "전부" : "하나씩"} 보기로 바꿨습니다. 풀이 상태는 유지됩니다.`);
+  }
+
+  setQuizGradingMode(mode) {
+    if (!["individual", "batch"].includes(mode) || this.quizSession?.screen !== "question" || this.quizSession.gradingMode === mode) return;
+    this.saveReviewSession({ captureViewport: true });
+    this.quizSession.gradingMode = mode;
+    this.renderQuiz();
+    this.restoreReviewViewport({ keepFocusVisible: true });
+    this.announce(`${mode === "batch" ? "전체" : "개별"} 채점으로 바꿨습니다. 선택한 답과 채점 결과는 유지됩니다.`);
+  }
+
+  updateQuizBatchControls() {
+    const session = this.quizSession;
+    if (!session || session.gradingMode !== "batch") return;
+    const pending = session.questions.filter((question) => session.selectedOptionIds.has(question.id) && !session.gradedAnswers.has(question.id)).length;
+    const unanswered = session.questions.filter((question) => !session.selectedOptionIds.has(question.id)).length;
+    for (const button of this.root.querySelectorAll("[data-quiz-check-all]")) {
+      button.textContent = `답한 ${pending}개 채점`;
+      button.disabled = pending === 0;
+    }
+    for (const status of this.root.querySelectorAll("[data-quiz-batch-status]")) {
+      status.textContent = `미채점 선택 ${pending}문항 · 미응답 ${unanswered}문항. 이미 채점한 문항과 미응답은 제외합니다.`;
+    }
+  }
+
+  gradePendingQuizQuestions() {
+    const session = this.quizSession;
+    if (!session || session.screen !== "question" || session.gradingMode !== "batch") return;
+    const pending = session.questions.filter((question) => session.selectedOptionIds.has(question.id) && !session.gradedAnswers.has(question.id));
+    const unanswered = session.questions.filter((question) => !session.selectedOptionIds.has(question.id)).length;
+    if (!pending.length) {
+      this.announce(`새로 채점할 답이 없습니다. 미응답 ${unanswered}개 남음.`);
+      return;
+    }
+    try {
+      // Compute every candidate first; invalid content must not leave a partly graded submission.
+      const answers = pending.map((question) => gradeQuestion(question, session.selectedOptionIds.get(question.id)));
+      const fromEnd = document.activeElement?.id === "quiz-check-all-end";
+      this.saveReviewSession({ captureViewport: true });
+      for (const answer of answers) session.gradedAnswers.set(answer.questionId, answer);
+      this.renderQuiz();
+      this.restoreReviewViewport();
+      const message = `${answers.length}개 채점, 미응답 ${unanswered}개 남음. ${session.gradedAnswers.size === session.questions.length ? "모든 문제를 채점했습니다. 결과 보기를 선택해 주세요." : "남은 답을 선택해 이어서 채점할 수 있습니다."}`;
+      for (const status of this.root.querySelectorAll("[data-quiz-batch-status]")) status.textContent = message;
+      window.requestAnimationFrame(() => {
+        const status = this.root.querySelector(fromEnd ? "#quiz-batch-status-end" : "#quiz-batch-status");
+        status?.scrollIntoView({ behavior: "instant", block: "nearest" });
+        status?.focus({ preventScroll: true });
+      });
+    } catch {
+      this.announce("선택한 답을 채점하지 못했습니다. 선택은 유지됩니다. 다시 확인해 주세요.");
+    }
   }
 
   gradeCurrentQuizQuestion() {
@@ -1799,7 +1942,7 @@ export class BamLearningApp {
       this.quizSession.gradedAnswers.set(question.id, gradedAnswer);
       this.renderQuiz();
       window.requestAnimationFrame(() => {
-        const summary = document.querySelector("[data-quiz-grade-summary]");
+        const summary = this.getQuizQuestionCard()?.querySelector("[data-quiz-grade-summary]");
         summary?.scrollIntoView({ behavior: "instant", block: "center" });
         summary?.focus({ preventScroll: true });
       });
@@ -1819,7 +1962,7 @@ export class BamLearningApp {
 
   showNextQuizQuestion() {
     const question = this.getCurrentQuizQuestion();
-    if (!question || !this.quizSession.gradedAnswers.has(question.id)) {
+    if (!question || (this.quizSession.gradingMode !== "batch" && !this.quizSession.gradedAnswers.has(question.id))) {
       this.announce("정답을 확인한 뒤 다음 문제로 이동할 수 있습니다.");
       return;
     }
@@ -1913,6 +2056,8 @@ export class BamLearningApp {
     this.quizSession = {
       id: createClientEntropy(),
       mode,
+      viewMode: "single",
+      gradingMode: "individual",
       questions: [...questions],
       currentIndex: 0,
       selectedOptionIds: new Map(),
@@ -3005,13 +3150,23 @@ export class BamLearningApp {
     const prerequisiteHtml = renderMarkdown(prerequisite.section, { preserveParagraphLineBreaks: true });
     const bodyHtml = renderMarkdown(prerequisite.body, { skipFirstHeading: true, preserveParagraphLineBreaks: true });
     const answerHtml = renderMarkdown(answer.section, { preserveParagraphLineBreaks: true });
-    const relatedQuestions = this.quizCollections?.get(lesson.languageId)?.questions ?? [];
+    const collection = this.quizCollections?.get(lesson.languageId);
+    const relatedQuestions = collection?.questions ?? [];
+    const seenReviewLinks = new Set();
     const reviewLinks = (this.reviewConcepts ?? []).filter((concept) =>
       getReviewDocumentLesson(this.curriculum, concept)?.id === lesson.id &&
-      relatedQuestions.some((question) => question.lessonId === concept.lessonId && question.conceptId === concept.id));
+      relatedQuestions.some((question) => question.lessonId === concept.lessonId && question.conceptId === concept.id))
+      .map((concept) => {
+        const scope = getKeywordReviewScope(this.curriculum, collection, this.reviewConcepts, concept.lessonId, concept.id);
+        return { title: concept.title, href: buildKeywordReviewHash(lesson.languageId, scope.lessonId, concept.id) };
+      }).filter((link) => {
+        if (seenReviewLinks.has(link.href)) return false;
+        seenReviewLinks.add(link.href);
+        return true;
+      });
     const reviewLinkHtml = lesson.answerHeading
       ? reviewLinks.length
-        ? reviewLinks.map((concept) => `<p class="lesson-review-link"><a class="button button--primary" href="${buildKeywordReviewHash(lesson.languageId, concept.lessonId, concept.id)}">${escapeHtml(concept.title)} 객관식으로 복습하기</a></p>`).join("")
+        ? reviewLinks.map((link) => `<p class="lesson-review-link"><a class="button button--primary" href="${escapeHtml(link.href)}">${escapeHtml(link.title)} 객관식으로 복습하기</a></p>`).join("")
         : `<p class="lesson-review-link" role="status">${this.lessonQuizLoadFailed || this.reviewConceptsLoadFailed ? "관련 문제를 불러오지 못했습니다. 새로고침하여 다시 확인해 주세요." : "이 문서의 관련 객관식 문제는 아직 준비 중입니다."}</p>`
       : `<p class="lesson-review-link"><a class="button button--primary" href="${buildReviewHash(lesson.languageId, lesson.id)}">읽은 내용 객관식으로 복습하기</a></p>`;
     // Read only headings emitted by our Markdown renderer; fenced code is escaped.
@@ -3101,6 +3256,7 @@ export class BamLearningApp {
     const lessons = getLessonsForLanguage(this.curriculum, this.quizCollection.languageId);
     if (!language || lessons.length === 0) return;
     const selectedLesson = lessons.find((lesson) => lesson.id === this.quizLessonId) ?? null;
+    const selectedCourse = selectedLesson ? getCourse(this.curriculum, selectedLesson.courseId) : null;
     const firstLessonHref = buildLessonHash(lessons[0].courseId, lessons[0].slug);
     const session = this.quizSession;
     const question = this.getCurrentQuizQuestion();
@@ -3145,7 +3301,7 @@ export class BamLearningApp {
           ? renderQuizEmptyView({ title: reviewTitle, scopeControls, lessonHref })
         : renderQuizQuestionView({
             languageId: this.quizCollection.languageId,
-            languageName: language.name,
+            languageName: selectedCourse && selectedCourse.categoryId !== "language" ? selectedCourse.name : language.name,
             title: reviewTitle,
             question,
             currentIndex: session.currentIndex,
@@ -3162,6 +3318,20 @@ export class BamLearningApp {
             learningObjective: question?.learningObjective ?? questionLesson?.objectives?.[0] ?? "",
             relatedConceptTitle: this.reviewConcepts?.find((item) => item.id === question?.conceptId && item.lessonId === question?.lessonId)?.title,
             otherFeedbackExpanded: session.expandedQuestionIds?.has(question?.id) ?? false,
+            viewMode: session.viewMode ?? "single",
+            gradingMode: session.gradingMode ?? "individual",
+            questionStates: session.questions.map((item, currentIndex) => {
+              const lesson = lessons.find((candidate) => candidate.id === item.lessonId);
+              return {
+                question: item, currentIndex,
+                selectedOptionId: session.selectedOptionIds.get(item.id) ?? null,
+                gradedAnswer: session.gradedAnswers.get(item.id) ?? null,
+                lessonHref: lesson ? buildLessonHash(lesson.courseId, lesson.slug) : null,
+                learningObjective: item.learningObjective ?? lesson?.objectives?.[0] ?? "",
+                relatedConceptTitle: this.reviewConcepts?.find((concept) => concept.id === item.conceptId && concept.lessonId === item.lessonId)?.title,
+                otherFeedbackExpanded: session.expandedQuestionIds?.has(item.id) ?? false,
+              };
+            }),
           });
 
     this.root.innerHTML = this.renderServiceShell({ current: "review", mainContent });
@@ -3664,7 +3834,7 @@ export class BamLearningApp {
 
   focusQuizQuestion() {
     window.requestAnimationFrame(() => {
-      const title = document.querySelector("#quiz-question-title");
+      const title = this.getQuizQuestionCard()?.querySelector("[data-quiz-question-title]");
       if (title) focusMainContent(title);
       else focusMainContent(document.querySelector("#lesson-content"));
     });

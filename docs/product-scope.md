@@ -35,11 +35,11 @@
 - [`DEC-JAVA-RUNTIME-01`](roadmap.md#2026-09-02-확정-제품-결정)의 MVP 효과: Java 코딩테스트는 시스템 JDK 설정에 의존하지 않고 설치 패키지에 고정된 컴파일러 포함 Java 도구체인을 사용한다. LTS 계열과 콘텐츠 기준은 `DEC-JAVA-VERSION-02`, 정확한 배포판·패치와 나머지 runner 계약은 `DEC-JAVA-RUNNER-01`이 담당한다.
 - [`DEC-JAVA-VERSION-02`](roadmap.md#2026-09-04-확정-제품-결정)의 MVP 효과: 번들 도구체인과 Java 교안·코딩테스트 소스·표준 API 기준을 정식 Java 25로 통일하고 preview 기능은 허용하지 않는다.
 - [`DEC-JAVA-IMPLEMENTATION-01`](roadmap.md#2026-09-04-확정-제품-결정)의 제품 효과: Java를 BAM.dev 실제 제품 구현 언어로 사용하고 최소 제품 구성요소인 Java 코딩테스트 로컬 runner를 Java 25로 작성한다. 구체 runner 계약과 Spring Boot 경계는 별도 결정을 따른다.
-- [`DEC-SPRING-BOOT-01`](roadmap.md#2026-09-04-확정-제품-결정)의 제품 효과: Spring Boot 과정은 앞으로 추가하되 교안은 정적 콘텐츠로 제공하고 실제 실행은 외부 Git 웹과제에서 시작한다. 앱 본체·Java 코딩테스트 runner 포함과 MVP 자동 편입을 뜻하지 않는다.
+- [`DEC-SPRING-BOOT-01`](roadmap.md#2026-09-04-확정-제품-결정)의 제품 효과: Spring Boot를 포함한 과정의 교안은 정적 콘텐츠로 제공하고 실제 실행은 외부 Git 웹과제에서 시작한다. 이번 정적 입문 묶음은 `DEC-CSS-SPRING-FOUNDATIONS-01`로 착수 범위가 확정됐다. 앱 본체·Java 코딩테스트 runner 포함과 MVP 자동 편입을 뜻하지 않는다.
 - [`DEC-FRONTEND-01`](roadmap.md#2026-09-04-확정-제품-결정)의 제품 효과: 목표 UI는 HTML·CSS 기반의 React·TypeScript를 사용하고 JavaScript도 유지한다. 현재 검증된 Vanilla JavaScript·Worker·도메인 로직은 폐기하지 않고 작은 화면·경계부터 이관한다. 이 기술 방향만으로 React·TypeScript 학습 과정의 MVP 편입이 확정되지는 않는다.
 - [`DEC-DOC-01`](roadmap.md#2026-08-29-확정-제품-결정)의 운영 효과: 변경 가능한 주요 제품 경계는 구현 전에 설계 정본을 갖는다. 상세 범위는 [`docs/README.md`](README.md#설계-문서화-범위)가 담당한다.
 
-이 방향 중 두 기능의 분리와 JavaScript 공개 브라우저 평가는 현재 구현에도 존재한다. 현재 화면은 HTML·CSS·Vanilla JavaScript이며 React·TypeScript와 해당 빌드 의존성은 없다. Java 제품 소스·Maven·Gradle 설정도 없다. Java 코딩테스트 콘텐츠·Java 25 제품 runner·설치 지원, 설치 프로그램, React·TypeScript 이관, 새 Code Quest 탐색 UI와 외부 과제 저장소는 아직 목표 상태다. Java 도구체인의 패키지 포함과 정식 Java 25·preview 금지 기준은 확정됐지만 구현된 사실은 아니며, 공식 지원 OS·shell·설치 형식과 Java runner의 나머지 계약은 prototype 증거 뒤 결정한다. Spring Boot 과정과 과제도 현재 구현이 아닌 향후 목표다.
+이 방향 중 두 기능의 분리와 JavaScript 공개 브라우저 평가는 현재 구현에도 존재한다. 현재 화면은 HTML·CSS·Vanilla JavaScript이며 React·TypeScript와 해당 빌드 의존성은 없다. Java 제품 소스·Maven·Gradle 설정도 없다. Java 코딩테스트 콘텐츠·Java 25 제품 runner·설치 지원, 설치 프로그램, React·TypeScript 이관, 새 Code Quest 탐색 UI와 외부 과제 저장소는 아직 목표 상태다. Java 도구체인의 패키지 포함과 정식 Java 25·preview 금지 기준은 확정됐지만 구현된 사실은 아니며, 공식 지원 OS·shell·설치 형식과 Java runner의 나머지 계약은 prototype 증거 뒤 결정한다. Spring 핵심·Spring Boot 정적 입문 문서와 객관식은 [이번 작업](work-items/2026-09-14-css-quiz-spring-foundations.md)으로 본문·문항·연결을 반영하고 독립 내용·문서·데스크톱 검증과 수정 후 전체 gate·빌드·보존 검사를 통과했다. 검증 범위와 한계는 그 카드에 기록한다. 실제 Spring Boot 실행 과제는 아직 목표다.
 
 ## MVP가 답해야 하는 질문
 
@@ -61,10 +61,10 @@
 ### 학습 과정
 
 - `[제안]` 현재 `available`인 JavaScript, 알고리즘, HTML, CSS 과정을 설치본의 오프라인 정식 과정으로 제공한다.
-- `[현재 사실]` Java 과정은 언어 독립성 검증용 `sample`이고 Java 교안·객관식 샘플만 있다. Java 코딩테스트 콘텐츠와 runner는 없다.
+- `[현재 사실]` Java 과정은 승인된 [JS·Java 개념 전환](work-items/2026-09-14-js-java-concepts-and-review.md)으로 정적 학습문서·객관식을 `available`로 제공한다. Java 제품 코드·코딩테스트 콘텐츠·runner·설치 지원은 없다.
 - `[확정 결정]` Java 코딩테스트는 설치형 MVP 필수 목표이며 설치 패키지의 JDK 25 LTS 계열로 정식 Java 25 소스·표준 API를 preview 없이 컴파일·실행한다. `[확인 필요]` 실제 포함 문제 묶음·수량과 관찰 가능한 핵심 완료 행동은 `DEC-MVP-01`, 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책과 컴파일·호출·IPC·격리·OS별 패키징 계약은 `DEC-JAVA-RUNNER-01`에서 정한다.
-- `[확정 결정]` Java 학습문서·객관식은 `DEC-INDEPENDENT-LEARNING-01`의 첫 콘텐츠 목표에 포함한다. `[확인 필요]` 정확한 키워드·검증 묶음과 Java Code Quest·외부 과제의 포함 시점은 `DEC-JAVA-01`에서 구분한다.
-- `[확정 결정]` Spring Boot 과정은 향후 추가하지만 `[확인 필요]` MVP 포함 시점·정확한 교안 범위·Code Quest 여부는 `DEC-JAVA-01`에서 별도로 결정한다. 교안은 정적 콘텐츠이고 실제 Spring Boot 실행은 승인된 외부 웹과제에서만 시작한다.
+- `[확정 결정]` Java 학습문서·객관식은 `DEC-INDEPENDENT-LEARNING-01`의 첫 콘텐츠 목표에 포함하며 이번 승인 묶음의 실제 단위·검증은 위 작업 카드에 기록한다. `[확인 필요]` 설치형 MVP의 정확한 과정·차단 콘텐츠 범위와 Java Code Quest·외부 과제의 포함 시점은 `DEC-MVP-01`·`DEC-JAVA-01`에서 별도로 구분한다. 현재 정적 제공이 이 설치·실습 범위를 자동 승인하지 않는다.
+- `[확정 결정]` Spring 핵심과 Spring Boot를 포함한 정적 문서·객관식의 입문 범위는 [`DEC-CSS-SPRING-FOUNDATIONS-01`](roadmap.md#2026-09-14-확정-제품-결정)에 따라 진행한다. `[확인 필요]` 설치형 MVP의 정확한 차단 묶음과 Code Quest·실행 과제 포함 여부는 `DEC-JAVA-01`에서 별도로 결정한다. 실제 Spring Boot 실행은 승인된 외부 웹과제에서만 시작한다.
 - 과정과 콘텐츠의 실제 목록·수량은 `content/curriculum.json`과 컬렉션이 정본이며, 현재 요약은 프로젝트 [`README.md`](../README.md)에서만 관리한다.
 
 ### 핵심 학습 경험
@@ -99,7 +99,7 @@
 `[제안]` 다음 항목은 오프라인 개인 학습 MVP의 필수 완료 조건이 아니다. Java 코딩테스트 자체는 `DEC-JAVA-CODING-TEST-01`에 따라 이 목록에 포함되지 않는다.
 
 - Java Code Quest의 설치형 MVP 자동 편입. Java 학습문서·객관식의 첫 목표 포함은 최신 독립 학습 결정으로 확정됐으므로 비범위에서 제외
-- Spring Boot 과정·Code Quest·외부 과제의 MVP 편입과 구체 구현
+- Spring·Spring Boot 정적 입문 묶음의 설치형 MVP 자동 편입과 Code Quest·실제 실행 과제 구현
 - 회원가입, 로그인, 다중 사용자, 마이페이지와 원격 동기화
 - Supabase, 원격 API·DB, 서버 저장과 운영 대시보드
 - AI 학습 튜터 또는 외부 모델 호출

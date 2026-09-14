@@ -27,8 +27,37 @@ export function getReviewDocumentLesson(curriculum, concept) {
   const owner = curriculum.lessons.find((lesson) => lesson.id === concept.lessonId);
   const documentId = concept.documentLessonId ?? concept.lessonId;
   const document = curriculum.lessons.find((lesson) => lesson.id === documentId);
-  return owner?.conceptIds.includes(concept.id) && document?.conceptIds.includes(concept.id) &&
-    owner.courseId === document.courseId && owner.languageId === document.languageId ? document : null;
+  if (!owner?.conceptIds.includes(concept.id) || !document?.conceptIds.includes(concept.id) ||
+      owner.languageId !== document.languageId) return null;
+  if (owner.courseId === document.courseId) return document;
+
+  const ownerCourse = curriculum.courses?.find((course) => course.id === owner.courseId);
+  const documentCourse = curriculum.courses?.find((course) => course.id === document.courseId);
+  return ownerCourse?.categoryId === "language" && documentCourse?.categoryId === "language" &&
+    ownerCourse.languageId === owner.languageId && documentCourse.languageId === document.languageId ? document : null;
+}
+
+// Merge only when every question in this language has the same verified reading destination and topic.
+export function getKeywordReviewScope(curriculum, collection, concepts, lessonId, conceptId) {
+  const questions = (collection?.questions ?? []).filter((question) => question.conceptId === conceptId);
+  const ownedQuestions = questions.filter((question) => question.lessonId === lessonId);
+  const fallback = { lessonId, questions: ownedQuestions };
+  if (!ownedQuestions.length || new Set(questions.map((question) => question.lessonId)).size < 2) return fallback;
+
+  let documentId = null;
+  let topicId = null;
+  for (const question of questions) {
+    const concept = concepts.find((item) => item.lessonId === question.lessonId && item.id === conceptId);
+    const document = getReviewDocumentLesson(curriculum, concept);
+    const owner = curriculum.lessons.find((lesson) => lesson.id === question.lessonId);
+    const course = curriculum.courses.find((item) => item.id === owner?.courseId);
+    if (!document || document.languageId !== collection.languageId || !course) return fallback;
+    const topic = course.categoryId === "language" ? course.languageId : course.categoryId;
+    if ((documentId !== null && documentId !== document.id) || (topicId !== null && topicId !== topic)) return fallback;
+    documentId = document.id;
+    topicId = topic;
+  }
+  return { lessonId: null, questions };
 }
 
 export function validateReviewConcepts(data, curriculum) {

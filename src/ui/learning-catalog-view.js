@@ -1,5 +1,5 @@
 import { buildLessonHash } from "../core/navigation.js";
-import { buildKeywordReviewHash, getReviewDocumentLesson } from "../core/review-navigation.js";
+import { buildKeywordReviewHash, getKeywordReviewScope, getReviewDocumentLesson } from "../core/review-navigation.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
 
 export const CATALOG_TOPICS = [
@@ -7,9 +7,9 @@ export const CATALOG_TOPICS = [
   { id: "css", title: "CSS" },
   { id: "javascript", title: "JavaScript" },
   { id: "java", title: "Java" },
+  { id: "spring", title: "Spring · Spring Boot" },
   { id: "algorithm", title: "알고리즘" },
   { id: "all", title: "전체" },
-  { id: "spring", title: "Spring", planned: true },
   { id: "cs", title: "CS", planned: true },
   { id: "typescript", title: "TypeScript", planned: true },
   { id: "react", title: "React", planned: true },
@@ -45,7 +45,7 @@ export function getLearningCatalogItems({ curriculum, collections = new Map(), c
     curriculum.categories.some((category) => category.id === course.categoryId && category.status !== "planned") &&
     (topicId === "all" || getCourseTopic(course) === topicId));
   const search = query.trim().toLocaleLowerCase("ko");
-  return curriculum.lessons.filter((lesson) => allowedCourses.some((course) => course.id === lesson.courseId) &&
+  const items = curriculum.lessons.filter((lesson) => allowedCourses.some((course) => course.id === lesson.courseId) &&
     (kind !== "learn" || !lesson.archivedFromCatalog) &&
     (courseId === "all" || lesson.courseId === courseId)).flatMap((lesson) => {
     const course = allowedCourses.find((item) => item.id === lesson.courseId);
@@ -54,22 +54,29 @@ export function getLearningCatalogItems({ curriculum, collections = new Map(), c
     const related = concepts.filter((concept) => kind === "learn"
       ? getReviewDocumentLesson(curriculum, concept)?.id === lesson.id
       : concept.lessonId === lesson.id);
-    const labels = related.map((concept) => concept.title);
+    const labels = [...new Set(related.map((concept) => concept.title))];
     if (kind === "learn") {
       const matches = [course.name, lesson.title, lesson.summary, ...labels, ...related.map((concept) => concept.excerpt), ...lesson.conceptIds].join(" ").toLocaleLowerCase("ko").includes(search);
       return matches ? [{ title: lesson.title, summary: lesson.summary, courseName: course.name, topicId: getCourseTopic(course), sample: course.status === "sample", href: buildLessonHash(lesson.courseId, lesson.slug), count: lesson.estimatedMinutes, labels }] : [];
     }
     if (questions.length && related.length === 0) {
-      if (![lesson.title, lesson.summary, course.name, ...lesson.conceptIds].join(" ").toLocaleLowerCase("ko").includes(search)) return [];
+      if (![lesson.title, lesson.summary, course.name, ...lesson.conceptIds, ...questions.map((question) => question.prompt)].join(" ").toLocaleLowerCase("ko").includes(search)) return [];
       return [{ title: lesson.title, summary: lesson.summary, courseName: course.name, topicId: getCourseTopic(course), sample: course.status === "sample", href: buildKeywordReviewHash(lesson.languageId, lesson.id), count: questions.length, labels: [] }];
     }
     return [...new Set(questions.map((question) => question.conceptId))].flatMap((conceptId) => {
       const concept = related.find((item) => item.id === conceptId);
       const title = concept?.title ?? lesson.title;
       const document = getReviewDocumentLesson(curriculum, concept) ?? lesson;
-      if (![title, course.name, lesson.title, conceptId, concept?.excerpt ?? "", ...questions.filter((question) => question.conceptId === conceptId).map((question) => question.prompt)].join(" ").toLocaleLowerCase("ko").includes(search)) return [];
-      return [{ title, summary: concept ? `관련 학습문서: ${document.title}` : "관련 학습문서의 설명과 함께 확인할 수 있어요.", courseName: course.name, topicId: getCourseTopic(course), sample: course.status === "sample", href: buildKeywordReviewHash(lesson.languageId, lesson.id, conceptId), count: questions.filter((question) => question.conceptId === conceptId).length, labels: [] }];
+      const scope = getKeywordReviewScope(curriculum, collection, concepts, lesson.id, conceptId);
+      if (![title, course.name, lesson.title, document.title, conceptId, concept?.excerpt ?? "", ...scope.questions.map((question) => question.prompt)].join(" ").toLocaleLowerCase("ko").includes(search)) return [];
+      return [{ title, summary: concept ? `관련 학습문서: ${document.title}` : "관련 학습문서의 설명과 함께 확인할 수 있어요.", courseName: course.name, topicId: getCourseTopic(course), sample: course.status === "sample", href: buildKeywordReviewHash(lesson.languageId, scope.lessonId, conceptId), count: scope.questions.length, labels: [] }];
     });
+  });
+  const seen = new Set();
+  return items.filter((item) => {
+    if (seen.has(item.href)) return false;
+    seen.add(item.href);
+    return true;
   });
 }
 
@@ -81,12 +88,16 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
   const allItems = getLearningCatalogItems({ curriculum, collections, concepts, kind });
   const items = hasSelection ? getLearningCatalogItems({ curriculum, collections, concepts, kind, ...filters, topicId: topicId ?? "all" }) : [];
   const selectedTopic = CATALOG_TOPICS.find((topic) => topic.id === topicId);
+  const failedTopics = isReview ? curriculum.courses.filter((course) => course.status !== "planned" &&
+    curriculum.categories.some((category) => category.id === course.categoryId && category.status !== "planned") &&
+    curriculum.languages.some((language) => language.id === course.languageId && failedLanguages.includes(language.name)))
+    .map(getCourseTopic) : [];
   const topicButtons = CATALOG_TOPICS.map((topic) => {
     const topicItems = topic.id === "all" ? allItems : allItems.filter((item) => item.topicId === topic.id);
     const count = isReview ? topicItems.reduce((sum, item) => sum + item.count, 0) : topicItems.length;
     const sample = topicItems.length > 0 && topicItems.every((item) => item.sample);
-    const failed = isReview && curriculum.languages.some((language) => language.id === topic.id && failedLanguages.includes(language.name));
-    const status = failed ? "불러오기 실패" : count ? `${count}${isReview ? "문제" : "개 문서"}${sample ? " · 샘플" : ""}` : topic.planned ? "준비 중" : "자료 없음";
+    const failed = topic.id === "all" ? failedTopics.length > 0 : failedTopics.includes(topic.id);
+    const status = failed ? (count ? "일부 불러오기 실패" : "불러오기 실패") : count ? `${count}${isReview ? "문제" : "개 문서"}${sample ? " · 샘플" : ""}` : topic.planned ? "준비 중" : "자료 없음";
     return `<button class="catalog-topic" type="button" data-catalog-topic="${topic.id}" aria-pressed="${topic.id === topicId}"${count === 0 && topic.id !== "all" ? " disabled" : ""}><strong>${topic.title}</strong><span>${status}</span>${topic.id === topicId ? '<span class="catalog-topic-selected">선택됨</span>' : ""}</button>`;
   }).join("");
   return `<main class="main-area service-main" id="lesson-content" tabindex="-1">
@@ -100,7 +111,7 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
     </form>
     <section class="catalog-topics" aria-labelledby="catalog-topics-title"><h2 id="catalog-topics-title">주제 선택</h2><div class="catalog-topic-options">${topicButtons}</div></section>
     ${failedLanguages.length ? `<p class="catalog-notice" role="status">${escapeHtml(failedLanguages.join(", "))} 문제를 불러오지 못했습니다. <button type="button" class="text-button" data-retry>다시 불러오기</button></p>` : ""}
-    ${hasSelection ? `<p class="catalog-count" role="status">${selectedTopic?.title ?? "전체"} · ${items.length}${isReview ? `개 문제 묶음 · ${items.reduce((sum, item) => sum + item.count, 0)}문제 · 개별 채점` : "개 문서"}</p>` : ""}
+    ${hasSelection ? `<p class="catalog-count" role="status">${selectedTopic?.title ?? "전체"} · ${items.length}${isReview ? `개 문제 묶음 · ${items.reduce((sum, item) => sum + item.count, 0)}문제` : "개 문서"}</p>` : ""}
     ${items.length ? `<div class="catalog-grid">${items.map((item) => `<a class="catalog-card" href="${escapeHtml(item.href)}"><div class="eyebrow">${escapeHtml(item.courseName)}${item.sample ? " · 샘플" : ""}</div><h2>${renderInlineCodeText(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${item.labels.length ? `<p class="catalog-keywords">${item.labels.map(renderInlineCodeText).join(" · ")}</p>` : ""}<span class="catalog-card-action">${item.count}${isReview ? "문제 풀기" : "분 · 문서 읽기"} <span aria-hidden="true">→</span></span></a>`).join("")}</div>` : hasSelection ? `<section class="catalog-empty"><h2>검색 결과가 없어요.</h2><p>다른 키워드로 찾거나 주제 선택을 바꿔 보세요.</p></section>` : `<section class="catalog-empty"><h2>주제를 선택해 주세요.</h2><p>위에서 배우고 싶은 주제를 고르면 ${isReview ? "문제 묶음이" : "학습문서가"} 보여요.<br>키워드 검색으로 바로 시작할 수도 있어요.</p></section>`}
     ${isReview ? "" : '<footer class="catalog-source-note">일부 학습문서는 밤위키 학습자료를 바탕으로 작성했습니다.</footer>'}
   </main>`;

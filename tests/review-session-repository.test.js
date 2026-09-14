@@ -42,6 +42,40 @@ test("중단 저장은 선택과 제출을 구분하고 현재 문제·해설·�
   assert.equal(session.recordAttempted, false);
 });
 
+test("기존 v1과 낯선 보기·채점 값은 기본 방식으로 복구하되 풀이 범위와 답은 보존한다", () => {
+  for (const optionalModes of [{}, { viewMode: "unknown", gradingMode: "unknown" }, { viewMode: null, gradingMode: 2 }]) {
+    const result = restoreReviewSession(snapshot({ mode: "incorrect", ...optionalModes }), questions, scope);
+    assert.equal(result.status, "restored");
+    assert.equal(result.session.viewMode, "single");
+    assert.equal(result.session.gradingMode, "individual");
+    assert.equal(result.session.mode, "incorrect", "보기 방식은 오답 재도전 범위를 덮어쓰지 않는다.");
+    assert.equal(result.session.selectedOptionIds.get(questions[1].id), "a");
+    assert.equal(result.session.gradedAnswers.has(questions[1].id), false);
+    assert.equal(result.session.expandedQuestionIds.has(questions[0].id), true);
+  }
+});
+
+test("새 보기·채점 네 조합은 같은 v1 키에서 새 저장소 인스턴스까지 복구된다", () => {
+  for (const viewMode of ["single", "all"]) {
+    for (const gradingMode of ["individual", "batch"]) {
+      const storage = new MemoryStorage();
+      const saved = snapshot({ viewMode, gradingMode });
+      new LocalStorageReviewSessionRepository(storage).save(saved);
+      const raw = JSON.parse(storage.getItem(REVIEW_SESSION_STORAGE_KEY));
+      assert.equal(raw.schemaVersion, 1);
+      const result = restoreReviewSession(new LocalStorageReviewSessionRepository(storage).read(), questions, scope);
+      assert.equal(result.status, "restored");
+      assert.equal(result.session.viewMode, viewMode);
+      assert.equal(result.session.gradingMode, gradingMode);
+      assert.equal(result.session.id, saved.id);
+      assert.deepEqual(result.session.questions.map(({ id }) => id), saved.questionIds);
+      assert.deepEqual(result.session.viewport, saved.viewport);
+      assert.deepEqual(result.session.returnContext, saved.returnContext);
+      assert.equal(result.session.recordAttempted, false);
+    }
+  }
+});
+
 test("완료 결과 복원은 저장 당시 같은 콘텐츠에서만 허용하고 재완료 기록을 방지한다", () => {
   const saved = snapshot({ screen: "result", gradedQuestionIds: questions.map((question) => question.id) });
   const { status, session } = restoreReviewSession(saved, questions, scope);

@@ -209,14 +209,74 @@ test("채점 결과는 이름이 있는 단일 focus region으로 제공한다",
     gradedAnswer,
     answeredCount: 1,
   });
-  assert.match(
-    html,
-    /data-quiz-grade-summary tabindex="-1" role="region" aria-labelledby="quiz-answer-summary-title"/,
-  );
-  assert.match(html, /<h3 id="quiz-answer-summary-title">오답입니다\.<\/h3>/);
+  const summary = html.match(/<section[^>]*data-quiz-grade-summary[^>]*>/)?.[0];
+  assert.ok(summary);
+  assert.match(summary, /tabindex="-1"/);
+  assert.match(summary, /role="region"/);
+  const titleId = summary.match(/aria-labelledby="([^"]+)"/)?.[1];
+  assert.ok(titleId?.includes(question.id), "결과의 접근 가능한 이름은 해당 문항에 고유해야 한다.");
+  assert.ok(html.includes(`<h3 id="${titleId}">오답입니다.</h3>`));
   assert.doesNotMatch(html, /data-quiz-grade-summary[^>]*role="status"/);
   assert.doesNotMatch(html, /data-quiz-grade-summary[^>]*aria-live/);
   assert.equal((html.match(/aria-live=/g) ?? []).length, 0);
+});
+
+test("전부 보기의 세 카드는 라디오·이름·해설·개념 초점 대상을 고유하게 연결한다", () => {
+  const questions = ["one", "two", "three"].map((suffix) => ({ ...question, id: `quiz-javascript-${suffix}` }));
+  const questionStates = questions.map((item, currentIndex) => ({
+    question: item, currentIndex,
+    selectedOptionId: currentIndex === 1 ? null : "b",
+    gradedAnswer: currentIndex === 0 ? { ...gradedAnswer, questionId: item.id } : null,
+    lessonHref: "#/learn/javascript/javascript-and-runtime",
+    lessonTitle: "JavaScript 실행", relatedConceptTitle: "실행 결과",
+    otherFeedbackExpanded: currentIndex === 0,
+  }));
+  const html = renderQuestion({ question: questions[1], currentIndex: 1, total: 3, answeredCount: 1, viewMode: "all", questionStates });
+  const allIds = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(new Set(allIds).size, allIds.length, "같은 화면에서 DOM id가 겹치면 안 된다.");
+  const cards = html.split(/<section[^>]*data-quiz-question-id="/).slice(1);
+  assert.equal(cards.length, 3);
+  for (const [index, card] of cards.entries()) {
+    const questionId = questions[index].id;
+    assert.ok(card.startsWith(`${questionId}"`));
+    const titleId = card.slice(0, card.indexOf(">") + 1).match(/aria-labelledby="([^"]+)"/)?.[1];
+    assert.ok(titleId?.includes(questionId));
+    assert.ok(card.includes(`<h2 id="${titleId}"`));
+    const inputs = [...card.matchAll(/<input[^>]*type="radio"[^>]*>/g)].map((match) => match[0]);
+    assert.equal(inputs.length, 4);
+    const names = inputs.map((input) => input.match(/name="([^"]+)"/)?.[1]);
+    assert.deepEqual([...new Set(names)], [`quiz-answer-${questionId}`]);
+    for (const input of inputs) {
+      const inputId = input.match(/\bid="([^"]+)"/)?.[1];
+      assert.ok(inputId?.includes(questionId));
+      assert.ok(card.includes(`<label for="${inputId}">`));
+      for (const reference of input.match(/aria-describedby="([^"]+)"/)?.[1]?.split(" ") ?? []) {
+        assert.ok(card.includes(`id="${reference}"`));
+      }
+    }
+    assert.ok(card.includes(`id="quiz-related-concept-${questionId}"`));
+    if (index === 0) {
+      assert.match(card, /정답 설명/);
+      assert.match(card, /비교식은 boolean을 반환합니다/);
+    } else {
+      assert.doesNotMatch(card, /class="quiz-option-feedback"|data-quiz-grade-summary|is-correct|정답 설명/);
+    }
+  }
+  const single = renderQuestion({ ...questionStates[1], total: 3, viewMode: "single" });
+  const singleInputIds = [...single.matchAll(/<input id="([^"]+)"[^>]*data-quiz-option/g)].map((match) => match[1]);
+  const allSecondInputIds = [...cards[1].matchAll(/<input id="([^"]+)"[^>]*data-quiz-option/g)].map((match) => match[1]);
+  assert.equal(singleInputIds.length, 4);
+  assert.deepEqual(singleInputIds, allSecondInputIds, "보기 전환 후에도 같은 문항 입력으로 초점을 복구할 수 있어야 한다.");
+});
+
+test("하나씩 전체 채점 화면은 답을 모으기 위한 다음 이동을 제공하고 선택 방식도 표시한다", () => {
+  const html = renderQuestion({ total: 3, gradingMode: "batch" });
+  assert.match(html, /data-quiz-next aria-disabled="false"/);
+  assert.match(html, /data-quiz-view-mode="single"[^>]*aria-pressed="true"/);
+  assert.match(html, /data-quiz-view-mode="all"[^>]*aria-pressed="false"/);
+  assert.match(html, /data-quiz-grading-mode="batch"[^>]*aria-pressed="true"/);
+  assert.match(html, /data-quiz-check-all[^>]*disabled/);
+  assert.doesNotMatch(html, /class="quiz-option-feedback"|data-quiz-grade-summary/);
 });
 
 test("마지막 문항은 채점 후 결과 보기 동작을 제공한다", () => {

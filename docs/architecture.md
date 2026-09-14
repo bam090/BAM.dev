@@ -23,7 +23,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 객관식의 `review-concepts.json` 발췌는 개념 오버레이와 문서 절로 연결되고, 진행 상태는 별도 `LocalStorageReviewSessionRepository`로 저장합니다. 위 `ProgressRepository`의 완료 기록과 다른 제품 진도는 유지합니다.
 
-콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 카테고리 아래 과정(`courseId`)이 교안 순서와 학습 경로를 정하고 언어(`languageId`)가 예제·평가 실행 계약을 정합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. 현재 정식 과정은 JavaScript·알고리즘·HTML·CSS이며, 실행 언어는 JavaScript·HTML·CSS 3개이고 Java는 샘플 1개를 유지합니다.
+콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 카테고리 아래 과정(`courseId`)이 교안 순서와 학습 경로를 정하고 언어(`languageId`)가 예제·평가 실행 계약을 정합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. 현재 Java도 정적 교안·객관식의 available 과정·언어로 제공하며, 실행 평가 언어는 기존 JavaScript·HTML·CSS 3개입니다. Java 실행기는 아직 없습니다.
 
 ## 현재 브라우저 앱
 
@@ -94,7 +94,7 @@ HTML·CSS 소스, 작성 예시와 CSS 고정 fixture는 평가기 호출 전에
 ## 목표 전환에서 아직 결정할 경계
 
 - 목표 프런트엔드는 React·TypeScript로 확정됐지만 현재 구현과 도구체인은 Vanilla JavaScript 기준이다. 정확한 React·TypeScript 버전, 빌드 도구·의존성·라이선스, 정적 번들·오프라인 출력, CSP와 one-shot Worker 통합, 기존 모듈 공존·이관 단위, 첫 화면과 rollback 증거는 `DEC-FRONTEND-MIGRATION-01`에서 결정한다. 이 결정 전에는 전체 UI 재작성이나 기존 Worker·도메인 로직 폐기를 시작하지 않는다.
-- Java는 현재 교안·객관식 샘플뿐이며 Java 코딩테스트 콘텐츠·runner·설치 지원은 없다. Java 코딩테스트의 MVP 포함, 설치 패키지 내부 JDK 25 LTS 계열과 정식 Java 25·preview 금지 기준은 확정됐지만 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 컴파일·호출 계약, shell↔runner 경계와 IPC, 격리·OS별 패키징은 `DEC-JAVA-RUNNER-01`과 별도 ADR·prototype 증거가 필요하다. Java 정식 교안 과정·Code Quest·웹과제의 포함 시점은 `DEC-JAVA-01`에서 별도로 결정한다.
+- Java는 현재 승인된 정적 교안·객관식을 available로 제공하며 Java 제품 코드·코딩테스트 콘텐츠·runner·설치 지원은 없다. Java 코딩테스트의 MVP 포함, 설치 패키지 내부 JDK 25 LTS 계열과 정식 Java 25·preview 금지 기준은 확정됐지만 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 컴파일·호출 계약, shell↔runner 경계와 IPC, 격리·OS별 패키징은 `DEC-JAVA-RUNNER-01`과 별도 ADR·prototype 증거가 필요하다. 현재 정적 교안 제공과 별개로 설치형 MVP의 과정 범위 및 Java Code Quest·웹과제의 포함 시점은 `DEC-JAVA-01`에서 구분한다.
 - Spring Boot 과정의 향후 추가와 외부 웹과제 실행 위치는 확정됐지만 과정·과제는 현재 구현되어 있지 않다. MVP 포함 시점·교안 범위·Code Quest 여부와 과제 저장소·빌드·의존성·오프라인·공개 검증 계약은 `DEC-JAVA-01`·`DEC-WEB-REPO-01`·`DEC-WEB-OFFLINE-01`에서 결정한다.
 - [`DEC-DESKTOP-PROTOTYPE-01`](roadmap.md#2026-08-30-확정-제품-결정)에 따라 현재 Mac에서 Electron·DMG 단일 후보를 먼저 검증한다. 이는 구현·채택·지원 선언이 아니며, 공식 OS·shell·설치 형식·업데이트와 export/import를 포함한 백업·복구 방식은 prototype 증거 뒤 `DEC-DESKTOP-01`이 확정될 때까지 목표 구현으로 취급하지 않는다.
 - 현재 인앱 Web Project를 외부 Git 웹과제와 병행할지, 검증 뒤 대체할지 결정해야 한다.
@@ -104,7 +104,7 @@ HTML·CSS 소스, 작성 예시와 CSS 고정 fixture는 평가기 호출 전에
 ## 보안과 접근성
 
 - Markdown 원시 HTML을 실행하지 않습니다.
-- 퀴즈의 질문·코드·선택지·해설도 모두 이스케이프하고 콘텐츠 ID를 DOM ID나 CSS 선택자로 직접 사용하지 않습니다.
+- 퀴즈의 질문·코드·선택지·해설도 모두 이스케이프합니다. `validateQuizCollection`에서 형식·중복을 검증한 문항 ID에는 역할 접두사·접미사를 붙여 고유 DOM ID와 radio 그룹을 만들고 HTML 속성도 이스케이프합니다. 임의 문자열을 HTML이나 CSS 선택자에 직접 삽입하지 않습니다.
 - JavaScript Quest의 사용자 코드는 주 실행 문맥에서 실행하지 않고 테스트마다 새 Worker에서 실행합니다. 이 경계는 DOM 응답성을 지키기 위한 것이며 악의적 코드를 완전히 격리하는 보안 샌드박스는 아닙니다.
 - HTML·CSS Quest는 위 preflight와 inert DOM·CSSOM·one-shot iframe 경계를 사용하고, 위험 source를 평가 전에 거부합니다.
 - 외부 링크는 `https:`만 허용하고 새 창 링크에 `noopener noreferrer`를 적용합니다.

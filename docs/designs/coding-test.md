@@ -14,7 +14,7 @@
 - `DEC-SPRING-BOOT-01` 적용: Java 코딩테스트 runner에는 Spring Boot를 포함하거나 Spring 애플리케이션 실행 모드를 추가하지 않는다. 실제 Spring Boot 실행은 별도 외부 웹과제의 경계다.
 - `[현재 사실]` 현재 JavaScript 코딩테스트는 별도 JSON Schema, `#/coding-tests` route, 목록·필터, 초안·제출·revision별 완료 진도와 `CodingTestRunnerAdapter`를 사용한다.
 - `[현재 사실]` `테스트 실행`은 공개 테스트 일부를, `제출 및 채점`은 같은 문제의 공개 테스트 전체를 로컬 Worker에서 실행한다. 서버로 소스나 결과를 보내지 않는다.
-- `[현재 사실]` 현재 코딩테스트 콘텐츠와 runner는 JavaScript에만 있다. Java는 교안·객관식 샘플뿐이며 Java 제품 소스·Maven·Gradle 설정, HTML·CSS·Java 코딩테스트, Java runner나 설치 지원이 존재한다고 표현하지 않는다.
+- `[현재 사실]` 현재 코딩테스트 콘텐츠와 runner는 JavaScript에만 있다. Java는 승인된 정적 교안·객관식을 available로 제공하지만 Java 제품 소스·Maven·Gradle 설정, HTML·CSS·Java 코딩테스트, Java runner·설치 지원은 없다.
 - `[확정 결정]` Java 코딩테스트의 문제·공개 테스트·runner·설치 패키지 경계를 MVP 목표에 추가한다. 실제 문제 묶음과 핵심 완료 행동은 `DEC-MVP-01`, 실행 방식은 `DEC-JAVA-RUNNER-01`과 별도 격리 ADR·prototype 증거가 확정될 때까지 구현 완료로 간주하지 않는다.
 
 내부에서 Code Quest의 Worker runner와 결과 형식을 재사용하는 것은 제품 통합이 아니다. 화면 명칭, URL, 데이터 원본, 저장 진도와 학습 목적을 서로 섞지 않는다.
@@ -111,7 +111,7 @@ Worker는 완전한 악성 코드 격리가 아니다. 앱 origin에는 민감�
 
 `[현재 사실]` Java 코딩테스트 schema·문제·기준답안 fixture·runner·IPC·설치 산출물은 없다. 다음 항목은 구현 세부가 아니라 Java 코딩테스트 구현 전에 닫아야 할 gate다.
 
-1. `DEC-MVP-01`에서 Java 코딩테스트의 실제 문제 묶음·핵심 완료 행동과 근거 교안·개념 연결을 승인한다. 현재 Java 샘플 범위를 넘어서는 lesson·concept ID를 만들거나 Java 정식 과정을 자동 포함하지 않는다.
+1. `DEC-MVP-01`에서 Java 코딩테스트의 실제 문제 묶음·핵심 완료 행동과 근거 교안·개념 연결을 승인한다. 이미 승인된 정적 Java 교안·개념 ID와 별개로 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. 정적 과정의 제공 상태를 설치형 코딩테스트 묶음의 승인으로 해석하지 않는다.
 2. `DEC-JAVA-RUNNER-01`에서 JDK 25 LTS의 정확한 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 패키지 크기와 업데이트 비용을 결정한다. JRE-only 구성, 시스템 `JAVA_HOME`·`PATH` 의존, Java 25가 아닌 호환 기준과 preview 활성화는 후보가 아니다.
 3. 별도 격리 ADR에서 소스 단위·진입점·컴파일·호출·결과 DTO, shell↔runner 경계와 IPC 허용 목록을 결정한다.
 4. 같은 ADR과 prototype에서 runner 작업 폴더 수명주기, 프로세스·파일·네트워크·환경 변수·시간·메모리·출력 제한, 취소·강제 종료와 잔여 프로세스 정리를 검증한다.

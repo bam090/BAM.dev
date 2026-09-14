@@ -26,6 +26,16 @@
 - 최신 ‘모바일 하지 마’·‘테스트는 최대한 최소한’ 지시에 따라 새 모바일 UI·모바일 검사·추가 콘텐츠 재감사는 하지 않는다. 필요한 구문·핵심 focused 검사와 짧은 데스크톱 smoke를 중복 없이 실행한 뒤 최종 `project_integrator`만 안전한 복제본에서 `npm run check`를 1회 수행한다. 작업자·검증자의 전체 suite 반복은 금지하며 앞선 읽기 배치의 gate 보류나 초기 622개 PASS를 새 검색·route 상태의 검증 면제·통과로 재사용하지 않는다. 실제 명령·결과·미실행 범위를 인계하고 실패는 원인 담당에게 반환한다.
 - 사용자 시안 승인은 확보됐다. 독립 검증·통합 뒤 승인된 변경의 GitHub 게시를 진행하며 구현 완료·검증 PASS·게시 성공은 각각 실제 증거로만 기록한다.
 
+## 후속: 학습 주제를 객관식으로 연결
+
+`[확정 결정]` 사용자 요청에 따라 [탐색 상태 계약](../designs/lesson-review.md#탐색-사이드바의-상태와-복귀)의 학습문서→객관식 전환을 보정한다. 현재 구체 주제를 객관식 목록에 적용하고 이전 검색어를 비우되 유효한 문제 복귀 문맥을 우선한다. 일반 제품 코드 변경이며 교육 내용·모바일·저장/URL 스키마·의존성은 변경하지 않는다. `[현재 사실]` `src/app.js` 9줄과 테스트의 새 시나리오 2개·서비스 클릭 helper 보정을 반영했고 총괄이 실제 diff를 대조했다. focused·전체 gate와 독립 데스크톱 UI 확인을 통과했다.
+
+이번 소유권은 문서 담당이 이 카드·`docs/designs/lesson-review.md`, 구현 담당이 `src/app.js`와 필요한 기존 사이드바 shell, 테스트 담당이 `tests/app-independent-review.test.js`다. 기존 독립 통합 담당이 계약·diff를 감사하고 안전한 복제본의 최종 `npm run check`를 1회 수행한다. 최소 focused 확인 외 모바일·추가 콘텐츠 감사·중복 전체 검사는 하지 않으며, 이번 변경은 로컬 완료 범위로 Git 게시 권한을 행사하지 않는다. 아래 완료·게시 준비 기록은 이 후속 변경 전 탐색 시안 적용의 증거다.
+
+- 후속 focused는 처음 **2/3 PASS**였다. 실패 1건은 HTML 문서 로드 때 이미 생기는 collection을 비어 있다고 가정한 테스트 사전조건 오류로, 실제 빈 collection의 HTML 목록 첫 진입으로 보정한 뒤 해당 검사만 **1/1 PASS**했다. 기존 토큰·fallback 검사는 처음부터 통과했다. 로그: `/private/tmp/bam-review-topic-focused.log`, `/private/tmp/bam-review-topic-focused-corrected.log`.
+- 안전 복제본 `/private/tmp/bam-review-topic-integration-vriup5a2/`의 `full-check-result.json`·`full-check.log`에서 이번 후속 전체 `npm run check` **1회**, exit 0, **628/628 PASS**와 정적 빌드 완료를 확인했다. 이번 Git 작업·모바일 추가 검사는 실행하지 않았다.
+- 독립 데스크톱 UI **PASS**: 별도 `localhost:4201`의 Chrome 1920×1024에서 HTML 두 번째 문서→객관식 HTML 12문제, CSS 문서→객관식 CSS 12문제 선택과 목적 본문 초점, console error/warn 0건을 확인했다. 임시 탭을 닫았으며 사용자 `localhost:4189`·저장값은 조작하지 않았다. 증거 폴더: `/private/tmp/bam-review-topic-integration-vriup5a2/`.
+
 ## 실제 진행·증거
 
 `[현재 사실]` 2026-09-13, 후속 탐색 시안 승인과 정본 선행 기록 뒤 제품 코드 5개 파일에 실제 검색·탐색·상태 복귀를 반영했고 총괄이 실제 diff를 대조했다. 테스트 작성자는 기존 2개 파일에 탐색 시나리오 3개를 추가하고 바뀐 markup의 기존 기대값 3개를 보정했다.

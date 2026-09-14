@@ -59,11 +59,86 @@ function harness(storage = new MemoryStorage()) {
 }
 
 function click(selector, element = {}) {
-  return { target: { closest(candidate) { return candidate === selector ? element : null; } }, preventDefault() {} };
+  return { target: { closest(candidate) { return candidate === selector ? element : null; } }, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+}
+
+async function followService(app, kind) {
+  const match = app.root.innerHTML.match(new RegExp(`href="([^"]+)" data-service-link="${kind}"`));
+  assert.ok(match, `${kind} 서비스 링크가 있어야 한다.`);
+  const href = match[1].replaceAll("&amp;", "&");
+  const event = click("[data-service-link]", { dataset: { serviceLink: kind }, getAttribute: () => href });
+  app.handleClick(event);
+  if (!event.defaultPrevented) window.location.hash = href;
+  await app.openRoute();
 }
 
 function choose(app, optionId) {
   app.handleChange({ target: { closest(selector) { return selector === "[data-quiz-option]" ? { value: optionId } : null; } } });
+}
+
+// 카드마다 다른 DOM 범위를 제공해 첫 카드로 잘못 전달되는 위임 이벤트를 검출한다.
+function reviewCards(app, questions = app.quizSession.questions, tops = [40, 360, 680]) {
+  const focused = [];
+  const cards = questions.map((question, index) => {
+    const card = {
+      dataset: { quizQuestionId: question.id },
+      getBoundingClientRect: () => ({ top: tops[index] }),
+      scrollIntoView() {},
+      closest(selector) { return selector === "[data-quiz-question-id]" || selector === ".quiz-card" ? card : null; },
+    };
+    function control(selector, id, properties = {}) {
+      const element = {
+        id, isConnected: true, ...properties,
+        closest(candidate) { return candidate === selector ? element : card.closest(candidate); },
+        focus() { document.activeElement = element; focused.push(id); },
+        scrollIntoView() {}, setAttribute() {},
+      };
+      return element;
+    }
+    card.radios = question.options.map((option, optionIndex) => {
+      const optionContainer = { classList: { toggle(_className, selected) { optionContainer.selected = selected; } } };
+      const radio = control("[data-quiz-option]", `quiz-option-${question.id}-${optionIndex}`, { value: option.id, optionContainer });
+      const closest = radio.closest;
+      radio.closest = (selector) => selector === ".quiz-option" ? optionContainer : closest(selector);
+      return radio;
+    });
+    card.controls = new Map([
+      ["[data-quiz-check]", control("[data-quiz-check]", `quiz-check-${question.id}`, { disabled: true })],
+      ["[data-quiz-feedback-toggle]", control("[data-quiz-feedback-toggle]", `quiz-feedback-toggle-${question.id}`)],
+      ["[data-related-concept]", control("[data-related-concept]", `quiz-related-concept-${question.id}`)],
+      ["[data-quiz-grade-summary]", control("[data-quiz-grade-summary]", `quiz-answer-summary-${question.id}`)],
+      ["[data-quiz-question-title]", control("[data-quiz-question-title]", `quiz-question-title-${question.id}`)],
+    ]);
+    card.querySelectorAll = (selector) => selector === "[data-quiz-option]" ? card.radios : [];
+    card.querySelector = (selector) => card.controls.get(selector) ?? null;
+    return card;
+  });
+  app.root.querySelectorAll = (selector) => selector === "[data-quiz-question-id]" ? cards : selector === "[data-quiz-option]" ? cards.flatMap((card) => card.radios) : [];
+  app.root.querySelector = (selector) => {
+    const identified = cards.find((card) => selector === `[data-quiz-question-id="${card.dataset.quizQuestionId}"]`);
+    if (identified) return identified;
+    if (selector === ".quiz-card, .quiz-result-card") return cards[0];
+    for (const card of cards) {
+      const byId = [...card.controls.values(), ...card.radios].find((element) => selector === `#${element.id}`);
+      if (byId) return byId;
+    }
+    return cards[0]?.querySelector(selector) ?? null;
+  };
+  return { cards, focused };
+}
+
+function chooseCard(app, card, optionId) {
+  const input = card.radios.find((radio) => radio.value === optionId);
+  assert.ok(input);
+  document.activeElement = input;
+  app.handleChange({ target: input });
+}
+
+function clickCard(app, card, selector) {
+  const control = card.querySelector(selector);
+  assert.ok(control);
+  document.activeElement = control;
+  app.handleQuizClick({ target: control, preventDefault() {} });
 }
 
 function menuEnvironment(app) {
@@ -321,6 +396,62 @@ test("탐색 사이드바는 실제 주제의 가까운 문서와 성공한 최�
   assert.deepEqual(app.progressRepository.getProgress().quizAttempts, []);
 });
 
+test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를 선택하고 이전 검색을 비운다", async (t) => {
+  browser(t);
+  for (const [topicId, documentHash, hasPreviousReview] of [
+    ["html", null, false],
+    ["html", "#/learn/html/wiki-document-skeleton", true],
+    ["css", "#/learn/css/wiki-css-basics", true],
+    ["html", null, true],
+  ]) {
+    const { app, errors } = harness();
+    app.mobileMedia = { matches: false };
+    if (hasPreviousReview) {
+      window.location.hash = "#/review/css/css-foundations-selectors?concept=css.selectors";
+      await app.openRoute();
+      app.catalogFilters.review.query = "이전 검색어";
+    }
+    window.location.hash = "#/";
+    await app.openRoute();
+    await followService(app, "learn");
+    app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topicId }, disabled: false }));
+    if (documentHash) {
+      assert.ok(app.root.innerHTML.includes(`class="catalog-card" href="${documentHash}"`));
+      window.location.hash = documentHash;
+      await app.openRoute();
+    }
+    if (!hasPreviousReview) assert.equal(app.quizCollections.size, 0, "첫 객관식 진입은 문제 목록을 미리 불러오지 않아도 된다.");
+    await followService(app, "review");
+    assert.equal(window.location.hash, "#/review", "과거 CSS 풀이가 아닌 현재 학습 주제의 목록을 연다.");
+    assert.equal(app.currentView, "review-catalog");
+    assert.deepEqual(app.catalogFilters.review, { topicId, query: "" });
+    assert.match(app.root.innerHTML, new RegExp(`<option value="${topicId}" selected>`));
+    assert.match(app.root.innerHTML, new RegExp(`data-catalog-topic="${topicId}" aria-pressed="true"`));
+    const cards = [...app.root.innerHTML.matchAll(/class="catalog-card" href="([^"]+)"/g)].map((match) => match[1]);
+    assert.ok(cards.length > 0);
+    assert.ok(cards.every((href) => new RegExp(`^#/review/${topicId}(?:/|\\?)`).test(href)), "선택 주제의 실제 문제 묶음만 보여 준다.");
+    assert.deepEqual(errors, []);
+  }
+});
+
+test("탐색 사이드바 객관식 전환은 주제 미선택·전체·홈에서 기존 풀이 복귀를 유지한다", async (t) => {
+  browser(t);
+  const previousHash = "#/review/css/css-foundations-selectors?concept=css.selectors";
+  for (const destination of [null, "all", "home"]) {
+    const { app, errors } = harness();
+    app.mobileMedia = { matches: false };
+    window.location.hash = previousHash;
+    await app.openRoute();
+    window.location.hash = destination === "home" ? "#/" : "#/learn";
+    await app.openRoute();
+    if (destination === "all") app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "all" }, disabled: false }));
+    await followService(app, "review");
+    assert.equal(window.location.hash, previousHash);
+    assert.equal(app.currentView, "review");
+    assert.deepEqual(errors, []);
+  }
+});
+
 test("탐색 사이드바 서비스 왕복은 유효 문제 토큰·주제·문서 답과 읽던 위치를 복원한다", async (t) => {
   const hash = "#/review/html/html-01-document-structure?concept=html.semantics";
   const { scrolls } = browser(t, hash);
@@ -342,22 +473,14 @@ test("탐색 사이드바 서비스 왕복은 유효 문제 토큰·주제·문�
   const answer = { open: true };
   app.root.querySelector = (selector) => selector === "#lesson-answer" ? answer : null;
   window.scrollY = 980;
-  async function followService(kind) {
-    const match = app.root.innerHTML.match(new RegExp(`href="([^"]+)" data-service-link="${kind}"`));
-    assert.ok(match, `${kind} 서비스 링크가 있어야 한다.`);
-    const href = match[1].replaceAll("&amp;", "&");
-    app.handleClick(click("[data-service-link]", { dataset: { serviceLink: kind }, getAttribute: () => href }));
-    window.location.hash = href;
-    await app.openRoute();
-  }
-  await followService("review");
+  await followService(app, "review");
   assert.equal(window.location.hash, hash);
   assert.equal(app.quizSession.id, sessionId);
   assert.equal(app.quizSession.selectedOptionIds.get(question.id), "b");
   assert.equal(app.quizSession.gradedAnswers.has(question.id), true);
   assert.equal(app.quizSession.expandedQuestionIds.has(question.id), true);
   answer.open = false; // 새 문서 DOM은 닫힌 상태로 렌더링된다.
-  await followService("learn");
+  await followService(app, "learn");
   assert.equal(window.location.hash, documentHash, "서비스 복귀는 review·section query를 잘라내지 않는다.");
   assert.equal(app.currentLesson.id, documentLesson.id);
   assert.deepEqual(app.catalogFilters, { learn: { topicId: "html", query: "" }, review: { topicId: "html", query: "" } });
@@ -430,6 +553,226 @@ test("현재 키워드의 여러 문항만 열고 선택·채점·해설·다음
   assert.equal(scrolls.at(-1).top, 400);
   assert.equal(focus.at(-1), "quiz-related-concept");
   assert.equal(restored.progressRepository.getProgress().quizAttempts.length, 0);
+  assert.deepEqual(errors, []);
+});
+
+test("전부 보기의 비연속 선택은 해당 카드만 바꾸고 전체 채점은 미응답·기채점을 제외한다", async (t) => {
+  const { focus } = browser(t);
+  const { app, storage, announcements, errors } = harness();
+  await app.openReviewRoute("javascript", lesson.id);
+  const { cards } = reviewCards(app);
+  const batchFocus = [];
+  const batchScrolls = [];
+  const batchStatuses = ["quiz-batch-status", "quiz-batch-status-end"].map((id) => ({
+    id, textContent: "",
+    focus() { document.activeElement = this; batchFocus.push(id); },
+    scrollIntoView(options) { batchScrolls.push({ id, ...options }); },
+  }));
+  const findCardElement = app.root.querySelector;
+  const findCardElements = app.root.querySelectorAll;
+  app.root.querySelector = (selector) => batchStatuses.find(({ id }) => selector === `#${id}`) ?? findCardElement(selector);
+  app.root.querySelectorAll = (selector) => selector === "[data-quiz-batch-status]" ? batchStatuses : findCardElements(selector);
+  const [first, second, third] = app.quizSession.questions;
+  assert.deepEqual([first.id, second.id, third.id], [
+    "quiz-javascript-notes-return-value", "quiz-javascript-notes-early-return", "quiz-javascript-notes-arrow-block-return",
+  ]);
+  const id = app.quizSession.id;
+  app.handleQuizClick(click("[data-quiz-view-mode]", { dataset: { quizViewMode: "all" } }));
+  app.handleQuizClick(click("[data-quiz-grading-mode]", { dataset: { quizGradingMode: "batch" } }));
+  assert.equal(app.quizSession.viewMode, "all");
+  assert.equal(app.quizSession.gradingMode, "batch");
+  app.gradePendingQuizQuestions();
+  assert.equal(app.quizSession.gradedAnswers.size, 0, "미응답은 오답 또는 모름으로 제출하지 않는다.");
+  assert.match(announcements.at(-1), /새로 채점할 답이 없습니다\. 미응답 3개 남음/);
+  app.setQuizGradingMode("individual");
+  chooseCard(app, cards[0], "b");
+  chooseCard(app, cards[2], "a");
+  assert.equal(app.quizSession.currentIndex, 2);
+  assert.deepEqual([...app.quizSession.selectedOptionIds], [[first.id, "b"], [third.id, "a"]]);
+  assert.equal(cards[0].controls.get("[data-quiz-check]").disabled, false);
+  assert.equal(cards[1].controls.get("[data-quiz-check]").disabled, true);
+  assert.deepEqual(cards[0].radios.filter((input) => input.optionContainer.selected).map(({ value }) => value), ["b"]);
+  assert.deepEqual(cards[2].radios.filter((input) => input.optionContainer.selected).map(({ value }) => value), ["a"]);
+  app.setQuizGradingMode("batch");
+  document.activeElement = { id: "quiz-check-all-end" };
+  const announcementsBeforeGrading = announcements.length;
+  app.handleQuizClick(click("[data-quiz-check-all]"));
+  assert.deepEqual([...app.quizSession.gradedAnswers.keys()], [first.id, third.id]);
+  assert.equal(app.quizSession.gradedAnswers.get(first.id).isCorrect, true);
+  assert.equal(app.quizSession.gradedAnswers.get(third.id).isCorrect, false);
+  assert.equal(app.quizSession.selectedOptionIds.has(second.id), false);
+  assert.equal(app.quizSession.screen, "question");
+  assert.equal(app.quizSession.recordAttempted, false);
+  for (const status of batchStatuses) {
+    assert.match(status.textContent, /^2개 채점, 미응답 1개 남음\./);
+    const tag = app.root.innerHTML.match(new RegExp(`<p id="${status.id}"[^>]*>`))?.[0];
+    assert.ok(tag);
+    assert.doesNotMatch(tag, /role="status"|aria-live=/, "성공 안내는 초점 이동과 live 방송을 중복하지 않는다.");
+  }
+  assert.equal(announcements.length, announcementsBeforeGrading, "성공 결과를 announcer로 다시 방송하지 않는다.");
+  assert.deepEqual(batchFocus, ["quiz-batch-status-end"], "하단에서 채점하면 동작한 위치의 결과 안내로 한 번 초점을 옮긴다.");
+  assert.deepEqual(batchScrolls, [{ id: "quiz-batch-status-end", behavior: "instant", block: "nearest" }]);
+  const firstGrade = app.quizSession.gradedAnswers.get(first.id);
+  const thirdGrade = app.quizSession.gradedAnswers.get(third.id);
+  app.gradePendingQuizQuestions();
+  assert.equal(app.quizSession.gradedAnswers.get(first.id), firstGrade, "반복 전체 채점은 이미 채점한 결과를 다시 생성하지 않는다.");
+  assert.equal(app.quizSession.gradedAnswers.get(third.id), thirdGrade);
+  app.finishQuizSession();
+  assert.equal(app.quizSession.screen, "question");
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
+  clickCard(app, cards[2], "[data-quiz-feedback-toggle]");
+  const state = {
+    selected: [...app.quizSession.selectedOptionIds], graded: [...app.quizSession.gradedAnswers],
+    expanded: [...app.quizSession.expandedQuestionIds], signature: app.savedReviewSession.contentSignature,
+  };
+  for (const [viewMode, gradingMode] of [["single", "batch"], ["single", "individual"], ["all", "individual"], ["all", "batch"]]) {
+    app.setQuizViewMode(viewMode);
+    app.setQuizGradingMode(gradingMode);
+    assert.equal(app.quizSession.id, id);
+    assert.equal(app.quizSession.mode, "all", "기존 문항 범위를 보기 방식으로 오해하지 않는다.");
+    assert.equal(app.quizSession.currentIndex, 2);
+    assert.deepEqual([...app.quizSession.selectedOptionIds], state.selected);
+    assert.deepEqual([...app.quizSession.gradedAnswers], state.graded);
+    assert.deepEqual([...app.quizSession.expandedQuestionIds], state.expanded);
+    assert.equal(app.savedReviewSession.contentSignature, state.signature);
+    assert.equal(app.quizSession.recordAttempted, false);
+    assert.equal(focus.at(-1), cards[2].controls.get("[data-quiz-feedback-toggle]").id);
+  }
+  app.setQuizGradingMode("individual");
+  chooseCard(app, cards[1], "c");
+  clickCard(app, cards[1], "[data-quiz-check]");
+  assert.equal(app.quizSession.gradedAnswers.size, 3);
+  assert.equal(app.quizSession.screen, "question", "마지막 채점 자체는 완료 기록이 아니다.");
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
+  app.handleQuizClick(click("[data-quiz-finish]"));
+  app.handleQuizClick(click("[data-quiz-finish]"));
+  app.finishQuizSession();
+  assert.equal(app.quizSession.screen, "result");
+  assert.equal(app.quizSession.summary.correct, 2);
+  assert.equal(app.quizSession.summary.total, 3);
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 1);
+  const restored = harness(storage).app;
+  await restored.openReviewRoute("javascript", lesson.id);
+  assert.equal(restored.quizSession.viewMode, "all");
+  assert.equal(restored.quizSession.gradingMode, "individual");
+  assert.equal(restored.quizSession.screen, "result");
+  assert.equal(restored.progressRepository.getProgress().quizAttempts.length, 1);
+  assert.deepEqual(errors, []);
+});
+
+test("하나씩 전체 채점은 미채점 문항을 이동하지만 마지막 미응답 상태에서 결과를 기록하지 않는다", async (t) => {
+  browser(t);
+  const { app } = harness();
+  await app.openReviewRoute("javascript", lesson.id);
+  assert.equal(app.quizSession.viewMode, "single");
+  assert.equal(app.quizSession.gradingMode, "individual");
+  app.showNextQuizQuestion();
+  assert.equal(app.quizSession.currentIndex, 0, "기본 개별 채점은 기존 다음 문제 조건을 유지한다.");
+  app.setQuizGradingMode("batch");
+  choose(app, "b");
+  app.showNextQuizQuestion();
+  assert.equal(app.quizSession.currentIndex, 1);
+  app.showNextQuizQuestion();
+  assert.equal(app.quizSession.currentIndex, 2);
+  app.showNextQuizQuestion();
+  assert.equal(app.quizSession.screen, "question");
+  assert.equal(app.quizSession.recordAttempted, false);
+  app.gradePendingQuizQuestions();
+  assert.equal(app.quizSession.gradedAnswers.size, 1);
+  app.showNextQuizQuestion();
+  assert.equal(app.quizSession.currentIndex, 2);
+  assert.equal(app.quizSession.screen, "question");
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
+  app.showPreviousQuizQuestion();
+  assert.equal(app.quizSession.currentIndex, 1);
+});
+
+test("이전 고정 초점 ID는 현재 카드에 연결하고 잠긴 라디오에는 초점을 잃지 않는다", async (t) => {
+  browser(t);
+  const { app } = harness();
+  await app.openReviewRoute("javascript", lesson.id);
+  const { cards, focused } = reviewCards(app);
+  app.quizSession.currentIndex = 1;
+  document.getElementById = () => null; // 새 DOM에는 이전 버전의 고정 ID가 없다.
+  app.quizSession.viewport = { anchor: app.getCurrentQuizQuestion().id, offset: 360, scrollY: 400, focusId: "quiz-option-1" };
+  app.restoreReviewViewport();
+  assert.equal(document.activeElement, cards[1].radios[1]);
+  cards[1].radios[1].disabled = true;
+  app.restoreReviewViewport();
+  assert.equal(document.activeElement, cards[1].controls.get("[data-quiz-question-title]"));
+  assert.equal(focused.at(-1), `quiz-question-title-${app.getCurrentQuizQuestion().id}`);
+  app.quizSession.viewport.focusId = "quiz-related-concept";
+  app.restoreReviewViewport();
+  assert.equal(document.activeElement, cards[1].controls.get("[data-related-concept]"));
+});
+
+test("전부 보기 두 번째 카드의 개념·문서는 해당 문항·펼침·위치·초점으로 새로고침 후 돌아온다", async (t) => {
+  const hash = "#/review/javascript";
+  const { scrolls, focus } = browser(t, hash);
+  const fullCollection = JSON.parse(await readFile(new URL("../content/quizzes/javascript.json", import.meta.url), "utf8"));
+  const questionIds = ["quiz-javascript-notes-return-value", "quiz-javascript-notes-const-property", "quiz-javascript-notes-arrow-block-return"];
+  const collection = { ...fullCollection, questions: questionIds.map((id) => fullCollection.questions.find((question) => question.id === id)) };
+  const fetchActualFile = globalThis.fetch;
+  globalThis.fetch = async (path) => path === "./content/quizzes/javascript.json"
+    ? { ok: true, json: async () => collection }
+    : fetchActualFile(path);
+  const { app, storage, errors } = harness();
+  await app.openReviewRoute("javascript");
+  assert.deepEqual(app.quizSession.questions.map(({ id }) => id), questionIds);
+  const { cards } = reviewCards(app);
+  app.setQuizViewMode("all");
+  app.setQuizGradingMode("batch");
+  chooseCard(app, cards[1], "a");
+  app.setQuizGradingMode("individual");
+  clickCard(app, cards[1], "[data-quiz-check]");
+  clickCard(app, cards[1], "[data-quiz-feedback-toggle]");
+  assert.deepEqual([...app.quizSession.expandedQuestionIds], [questionIds[1]]);
+  assert.deepEqual([...app.quizSession.gradedAnswers.keys()], [questionIds[1]]);
+  const sessionId = app.quizSession.id;
+  const handlers = new Map();
+  const dialog = {
+    setAttribute() {}, addEventListener(name, handler) { handlers.set(name, handler); },
+    querySelector() { return { focus() {} }; }, querySelectorAll() { return []; },
+    getBoundingClientRect() { return { left: 0, right: 100, top: 0, bottom: 100 }; },
+    showModal() {}, remove() {},
+  };
+  document.createElement = () => dialog;
+  document.body = { classList: { add() {}, remove() {} } };
+  app.root.append = () => {};
+  clickCard(app, cards[1], "[data-related-concept]");
+  assert.match(dialog.innerHTML, /href="#\/learn\/javascript\/wiki-variables"/);
+  assert.doesNotMatch(dialog.innerHTML, /href="#\/learn\/javascript\/wiki-function-return"/);
+  handlers.get("click")(click("[data-concept-document]"));
+  assert.equal(app.quizSession.returnContext.questionId, questionIds[1]);
+  assert.equal(app.quizSession.viewport.anchor, questionIds[1]);
+  assert.equal(app.quizSession.viewport.offset, 360, "문서 이동 기준은 첫 카드가 아닌 두 번째 카드다.");
+  const conceptFocusId = cards[1].controls.get("[data-related-concept]").id;
+  assert.equal(app.quizSession.viewport.focusId, conceptFocusId);
+  const documentHash = window.location.hash;
+  await app.openRoute();
+  assert.equal(app.currentLesson.id, "js-concept-variables");
+  assert.match(app.root.innerHTML, /data-review-return/);
+  const restored = harness(storage).app;
+  await restored.openLessonRoute();
+  assert.equal(window.location.hash, documentHash);
+  assert.match(restored.root.innerHTML, /data-review-return/);
+  restored.handleClick(click("[data-review-return]"));
+  assert.equal(window.location.hash, hash);
+  reviewCards(restored, collection.questions, [70, 860, 1200]);
+  await restored.openRoute();
+  assert.equal(restored.quizSession.id, sessionId);
+  assert.equal(restored.quizSession.currentIndex, 1);
+  assert.equal(restored.quizSession.viewMode, "all");
+  assert.equal(restored.quizSession.gradingMode, "individual");
+  assert.deepEqual([...restored.quizSession.selectedOptionIds], [[questionIds[1], "a"]]);
+  assert.deepEqual([...restored.quizSession.gradedAnswers.keys()], [questionIds[1]]);
+  assert.deepEqual([...restored.quizSession.expandedQuestionIds], [questionIds[1]]);
+  assert.equal(scrolls.at(-1).top, 900, "두 번째 카드의 새 위치에서 저장된 상대 위치를 복구한다.");
+  assert.equal(focus.at(-1), conceptFocusId);
+  assert.equal(restored.progressRepository.getProgress().quizAttempts.length, 0);
+  window.location.hash = "#/learn/javascript/wiki-variables";
+  await restored.openRoute();
+  assert.doesNotMatch(restored.root.innerHTML, /data-review-return/);
   assert.deepEqual(errors, []);
 });
 
@@ -527,6 +870,90 @@ test("변경된 콘텐츠나 깨진 JSON은 기존 저장을 유지하고 사용
   }
 });
 
+test("공유 키워드에 새 문항이 추가되면 안내 후 사용자가 새로 시작할 때만 풀이를 교체한다", async (t) => {
+  browser(t, "#/review/javascript?concept=js.variables");
+  const currentFetch = globalThis.fetch;
+  const previous = JSON.parse(await readFile(new URL("../content/quizzes/javascript.json", import.meta.url), "utf8"));
+  previous.questions = previous.questions.filter((question) => !question.lessonId.startsWith("js-concept-"));
+  globalThis.fetch = async (path) => String(path).endsWith("content/quizzes/javascript.json")
+    ? { ok: true, json: async () => structuredClone(previous) } : currentFetch(path);
+  const { app, storage, errors } = harness();
+  app.progressRepository.setLessonCompleted("js-notes-values", true);
+  await app.openRoute();
+  assert.equal(app.quizSession.questions.length, 1);
+  choose(app, "b");
+  app.gradeCurrentQuizQuestion();
+  const saved = storage.getItem(REVIEW_SESSION_STORAGE_KEY);
+  const progress = storage.getItem(PROGRESS_STORAGE_KEY);
+  const signature = app.savedReviewSession.contentSignature;
+  globalThis.fetch = currentFetch;
+  const restored = harness(storage).app;
+  await restored.openRoute();
+  assert.equal(restored.reviewNeedsRestart, true);
+  assert.match(restored.root.innerHTML, /role="status"/);
+  assert.match(restored.root.innerHTML, /data-review-start-new/);
+  assert.doesNotMatch(restored.root.innerHTML, /data-quiz-option/);
+  assert.equal(storage.getItem(REVIEW_SESSION_STORAGE_KEY), saved);
+  restored.handleClick(click("[data-review-start-new]"));
+  assert.equal(restored.reviewNeedsRestart, false);
+  assert.equal(restored.quizSession.questions.length, 2);
+  assert.notEqual(restored.savedReviewSession.contentSignature, signature);
+  assert.equal(restored.quizSession.selectedOptionIds.size, 0);
+  assert.equal(restored.quizSession.gradedAnswers.size, 0);
+  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), progress);
+  assert.deepEqual(errors, []);
+});
+
+test("CSS Flexbox의 글쓰기 조건 보완은 해당 풀이만 새 시작을 요구하고 미변경 문항·완료 기록을 보존한다", async (t) => {
+  browser(t);
+  const currentFetch = globalThis.fetch;
+  const previousCollection = JSON.parse(await readFile(new URL("../content/quizzes/css.json", import.meta.url), "utf8"));
+  const flex = previousCollection.questions.find((question) => question.id === "quiz-css-flex-axis");
+  const condition = /\n[ \t]+writing-mode: horizontal-tb;/;
+  assert.match(flex.code, condition, "현재 문항에는 주축 판단의 글쓰기 전제가 있다.");
+  flex.code = flex.code.replace(condition, "");
+  for (const [ownerId, conceptId, changed] of [
+    ["css-position-flex-grid", "css.flexbox", true],
+    ["css-foundations-selectors", "css.selectors", false],
+  ]) {
+    window.location.hash = `#/review/css/${ownerId}?concept=${conceptId}`;
+    globalThis.fetch = async (path) => String(path).endsWith("content/quizzes/css.json")
+      ? { ok: true, json: async () => structuredClone(previousCollection) }
+      : currentFetch(path);
+    const { app, storage, errors } = harness();
+    app.progressRepository.setLessonCompleted("css-position-flex-grid", true);
+    await app.openRoute();
+    choose(app, "b");
+    app.gradeCurrentQuizQuestion();
+    const questionId = app.getCurrentQuizQuestion().id;
+    const sessionId = app.quizSession.id;
+    const signature = app.savedReviewSession.contentSignature;
+    const saved = storage.getItem(REVIEW_SESSION_STORAGE_KEY);
+    const progress = storage.getItem(PROGRESS_STORAGE_KEY);
+    globalThis.fetch = currentFetch;
+    const restored = harness(storage).app;
+    await restored.openRoute();
+    assert.equal(restored.reviewNeedsRestart, changed);
+    if (changed) {
+      assert.match(restored.root.innerHTML, /data-review-start-new/);
+      assert.doesNotMatch(restored.root.innerHTML, /data-quiz-option/);
+      assert.equal(storage.getItem(REVIEW_SESSION_STORAGE_KEY), saved, "새 시작을 고르기 전 이전 풀이를 덮지 않는다.");
+      restored.handleClick(click("[data-review-start-new]"));
+      assert.equal(restored.reviewNeedsRestart, false);
+      assert.notEqual(restored.savedReviewSession.contentSignature, signature);
+      assert.equal(restored.quizSession.selectedOptionIds.size, 0);
+      assert.equal(restored.quizSession.gradedAnswers.size, 0);
+    } else {
+      assert.equal(restored.quizSession.id, sessionId);
+      assert.equal(restored.savedReviewSession.contentSignature, signature);
+      assert.equal(restored.quizSession.selectedOptionIds.get(questionId), "b");
+      assert.equal(restored.quizSession.gradedAnswers.has(questionId), true);
+    }
+    assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), progress, "기존 문서 완료와 완료한 풀이 기록은 바꾸지 않는다.");
+    assert.deepEqual(errors, []);
+  }
+});
+
 test("저장 충돌은 현재 화면을 유지하면서 알리고 다른 탭의 답을 덮지 않는다", async (t) => {
   browser(t);
   const { app, storage } = harness();
@@ -557,20 +984,16 @@ test("보기 선택을 바꿀 때 현재 입력을 교체하지 않고 채점 �
   const { app, storage } = harness();
   await app.openReviewRoute("javascript", lesson.id);
   const originalMarkup = app.root.innerHTML;
-  const selectedCards = new Map();
-  const radios = ["a", "b", "c", "d"].map((value) => ({
-    value,
-    closest() { return { classList: { toggle(_name, selected) { selectedCards.set(value, selected); } } }; },
-  }));
-  const checkButton = { disabled: true };
-  app.root.querySelectorAll = () => radios;
-  app.root.querySelector = (selector) => selector === "[data-quiz-check]" ? checkButton : null;
+  const { cards } = reviewCards(app);
+  const card = cards[0];
+  const radios = card.radios;
+  const checkButton = card.querySelector("[data-quiz-check]");
   for (const value of ["a", "b"]) {
-    choose(app, value);
+    chooseCard(app, card, value);
     assert.equal(app.root.innerHTML, originalMarkup, "선택 중인 입력이 있는 문서 트리를 교체하지 않는다.");
-    assert.equal(app.root.querySelectorAll()[1], radios[1]);
+    assert.equal(card.querySelectorAll("[data-quiz-option]")[1], radios[1]);
     assert.equal(checkButton.disabled, false);
-    assert.deepEqual([...selectedCards].filter(([, selected]) => selected).map(([id]) => id), [value]);
+    assert.deepEqual(radios.filter((input) => input.optionContainer.selected).map(({ value: id }) => id), [value]);
     assert.equal(app.quizSession.selectedOptionIds.get(app.getCurrentQuizQuestion().id), value);
   }
   const restored = harness(storage).app;
@@ -611,129 +1034,240 @@ test("개념 모달의 Tab 양끝은 모달 안에서 순환하고 닫으면 열
   assert.equal(document.activeElement, button);
 });
 
-test("HTML의 기존 풀이를 새 문서에 연결해도 문항 서명·선택·채점·펼침과 복귀를 보존한다", async (t) => {
-  const hash = "#/review/html/html-01-document-structure?concept=html.semantics";
-  browser(t, hash);
-  const { app, storage, errors } = harness();
-  app.reviewConcepts = concepts.filter((concept) => !concept.documentLessonId);
-  await app.openReviewRoute("html", "html-01-document-structure");
-  choose(app, "b");
-  app.gradeCurrentQuizQuestion();
-  app.handleQuizClick(click("[data-quiz-feedback-toggle]"));
-  const question = app.getCurrentQuizQuestion();
-  assert.equal(question.id, "quiz-html-semantic-main");
-  const signature = app.savedReviewSession.contentSignature;
-  const sessionId = app.quizSession.id;
-  const upgraded = harness(storage).app;
-  await upgraded.openReviewRoute("html", "html-01-document-structure");
-  assert.equal(upgraded.quizSession.id, sessionId, "문서 매핑 추가는 기존 풀이의 새 시작 사유가 아니다.");
-  const handlers = new Map();
-  const dialog = {
-    setAttribute() {}, addEventListener(name, callback) { handlers.set(name, callback); },
-    querySelector() { return { focus() {} }; }, showModal() {}, remove() {},
-    getBoundingClientRect() { return { left: 0, right: 100, top: 0, bottom: 100 }; },
-  };
-  document.createElement = () => dialog;
-  document.body = { classList: { add() {}, remove() {} } };
-  upgraded.root.append = () => {};
-  upgraded.openConceptOverlay({ id: "quiz-related-concept", isConnected: true, focus() {} });
-  assert.match(dialog.innerHTML, /href="#\/learn\/html\/wiki-semantic-structure"/);
-  handlers.get("click")(click("[data-concept-document]"));
-  const documentHash = window.location.hash;
-  assert.match(documentHash, /^#\/learn\/html\/wiki-semantic-structure\?review=/);
-  await upgraded.openRoute();
-  assert.equal(upgraded.currentLesson.id, "html-notes-semantic-structure");
-  assert.match(upgraded.root.innerHTML, /data-review-return/);
-  const reloaded = harness(storage).app;
-  await reloaded.openLessonRoute();
-  assert.match(reloaded.root.innerHTML, /data-review-return/);
-  reloaded.handleClick(click("[data-review-return]"));
-  assert.equal(window.location.hash, hash);
-  await reloaded.openRoute();
-  assert.equal(reloaded.quizSession.id, sessionId);
-  assert.equal(reloaded.savedReviewSession.contentSignature, signature);
-  assert.equal(reloaded.quizSession.selectedOptionIds.get(question.id), "b");
-  assert.equal(reloaded.quizSession.gradedAnswers.has(question.id), true);
-  assert.equal(reloaded.quizSession.expandedQuestionIds.has(question.id), true);
-  assert.equal(reloaded.progressRepository.getProgress().quizAttempts.length, 0);
-  assert.deepEqual(errors, []);
-
-  const validSaved = structuredClone(upgraded.savedReviewSession);
-  const oldToken = structuredClone(validSaved);
-  oldToken.returnContext.lessonId = question.lessonId;
-  upgraded.reviewSessionRepository.save(oldToken);
-  const oldLesson = curriculum.lessons.find((item) => item.id === question.lessonId);
-  window.location.hash = buildReviewLessonHash(oldLesson, oldToken.returnContext.token);
-  const oldReturn = harness(storage).app;
-  await oldReturn.openLessonRoute();
-  assert.match(oldReturn.root.innerHTML, /data-review-return/, "새 매핑이 있어도 이전 버전의 원래 문서 복귀 토큰은 유효하다.");
-  for (const [targetId, questionId] of [
-    ["html-notes-media-alternatives", question.id],
-    ["html-notes-semantic-structure", "quiz-html-link-destination"],
+test("기존 소유자의 풀이를 새 문서에 연결해도 문항 서명·선택·채점·펼침과 복귀를 보존한다", async (t) => {
+  const { focus } = browser(t);
+  for (const [languageId, ownerId, conceptId, questionId, documentId, slug, wrongLessonId, wrongQuestionId] of [
+    ["html", "html-01-document-structure", "html.semantics", "quiz-html-semantic-main", "html-notes-semantic-structure", "semantic-structure", "html-notes-media-alternatives", "quiz-html-link-destination"],
+    ["css", "css-foundations-selectors", "css.selectors", "quiz-css-selector-compound-descendant", "css-notes-selectors", "selectors", "css-notes-typography", "quiz-css-unit-inheritance-context"],
+    ["javascript", "js-notes-values", "js.variables", "quiz-javascript-notes-const-property", "js-concept-variables", "variables", "js-concept-callbacks", "quiz-javascript-notes-sync-callback"],
   ]) {
-    const tampered = structuredClone(validSaved);
-    tampered.returnContext.lessonId = targetId;
-    tampered.returnContext.questionId = questionId;
-    upgraded.reviewSessionRepository.save(tampered);
-    const target = curriculum.lessons.find((item) => item.id === targetId);
-    window.location.hash = buildReviewLessonHash(target, tampered.returnContext.token);
-    const rejected = harness(storage).app;
-    await rejected.openLessonRoute();
-    assert.equal(rejected.lessonReviewReturn, null);
-    assert.doesNotMatch(rejected.root.innerHTML, /data-review-return/);
+    const hash = `#/review/${languageId}/${ownerId}?concept=${conceptId}`;
+    const plainDocumentHash = `#/learn/${languageId}/wiki-${slug}`;
+    window.location.hash = hash;
+    const { app, storage, errors } = harness();
+    app.reviewConcepts = concepts.filter((concept) => !concept.documentLessonId);
+    await app.openReviewRoute(languageId, ownerId);
+    choose(app, "b");
+    app.gradeCurrentQuizQuestion();
+    app.handleQuizClick(click("[data-quiz-feedback-toggle]"));
+    const question = app.getCurrentQuizQuestion();
+    assert.equal(question.id, questionId);
+    const signature = app.savedReviewSession.contentSignature;
+    const sessionId = app.quizSession.id;
+    const upgraded = harness(storage).app;
+    await upgraded.openReviewRoute(languageId, ownerId);
+    assert.equal(upgraded.quizSession.id, sessionId, "문서 매핑 추가는 기존 풀이의 새 시작 사유가 아니다.");
+    const handlers = new Map();
+    const dialog = {
+      setAttribute() {}, addEventListener(name, callback) { handlers.set(name, callback); },
+      querySelector() { return { focus() {} }; }, showModal() {}, remove() {},
+      getBoundingClientRect() { return { left: 0, right: 100, top: 0, bottom: 100 }; },
+    };
+    document.createElement = () => dialog;
+    document.body = { classList: { add() {}, remove() {} } };
+    upgraded.root.append = () => {};
+    upgraded.openConceptOverlay({ id: "quiz-related-concept", isConnected: true, focus() {} });
+    assert.ok(dialog.innerHTML.includes(`href="${plainDocumentHash}"`));
+    handlers.get("click")(click("[data-concept-document]"));
+    const documentHash = window.location.hash;
+    assert.ok(documentHash.startsWith(`${plainDocumentHash}?review=`));
+    await upgraded.openRoute();
+    assert.equal(upgraded.currentLesson.id, documentId);
+    assert.match(upgraded.root.innerHTML, /data-review-return/);
+    const reloaded = harness(storage).app;
+    await reloaded.openLessonRoute();
+    assert.match(reloaded.root.innerHTML, /data-review-return/);
+    reloaded.handleClick(click("[data-review-return]"));
+    assert.equal(window.location.hash, hash);
+    await reloaded.openRoute();
+    assert.equal(reloaded.quizSession.id, sessionId);
+    assert.equal(reloaded.savedReviewSession.contentSignature, signature);
+    assert.equal(reloaded.quizSession.selectedOptionIds.get(question.id), "b");
+    assert.equal(reloaded.quizSession.gradedAnswers.has(question.id), true);
+    assert.equal(reloaded.quizSession.expandedQuestionIds.has(question.id), true);
+    assert.equal(focus.at(-1), "quiz-related-concept");
+    assert.equal(reloaded.progressRepository.getProgress().quizAttempts.length, 0);
+    assert.deepEqual(errors, []);
+
+    const validSaved = structuredClone(upgraded.savedReviewSession);
+    const oldToken = structuredClone(validSaved);
+    oldToken.returnContext.lessonId = question.lessonId;
+    upgraded.reviewSessionRepository.save(oldToken);
+    const oldLesson = curriculum.lessons.find((item) => item.id === question.lessonId);
+    window.location.hash = buildReviewLessonHash(oldLesson, oldToken.returnContext.token);
+    const oldReturn = harness(storage).app;
+    await oldReturn.openLessonRoute();
+    assert.match(oldReturn.root.innerHTML, /data-review-return/, "새 매핑이 있어도 이전 버전의 원래 문서 복귀 토큰은 유효하다.");
+    for (const [targetId, questionId] of [
+      [wrongLessonId, question.id],
+      [documentId, wrongQuestionId],
+    ]) {
+      const tampered = structuredClone(validSaved);
+      tampered.returnContext.lessonId = targetId;
+      tampered.returnContext.questionId = questionId;
+      upgraded.reviewSessionRepository.save(tampered);
+      const target = curriculum.lessons.find((item) => item.id === targetId);
+      window.location.hash = buildReviewLessonHash(target, tampered.returnContext.token);
+      const rejected = harness(storage).app;
+      await rejected.openLessonRoute();
+      assert.equal(rejected.lessonReviewReturn, null);
+      assert.doesNotMatch(rejected.root.innerHTML, /data-review-return/);
+    }
   }
 });
 
-test("새 HTML 문서는 정확한 기존 키워드만 연결하고 문제 없는 문서를 전체 문제로 보내지 않는다", async (t) => {
-  browser(t, "#/learn/html/wiki-input-names");
-  const { app, errors } = harness();
-  await app.openRoute();
-  const links = [...app.root.innerHTML.matchAll(/href="(#\/review\/[^\"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(links.toSorted(), [
-    "#/review/html/html-04-forms-accessibility?concept=html.form-submission",
-    "#/review/html/html-04-forms-accessibility?concept=html.labels",
-  ]);
-  for (const href of links) {
-    window.location.hash = href;
+test("새 JS·Java 문서의 공유 개념 CTA는 한 번만 표시하고 서로 다른 개념은 따로 연다", async (t) => {
+  browser(t);
+  for (const [documentHash, expected] of [
+    ["#/learn/javascript/wiki-variables", [["#/review/javascript?concept=js.variables", 2]]],
+    ["#/learn/java/wiki-methods", [["#/review/java?concept=java.methods", 2]]],
+    ["#/learn/javascript/wiki-function-return", [
+      ["#/review/javascript/js-notes-functions?concept=js.function-return", 3],
+      ["#/review/javascript/js-03-functions-scope-closure?concept=js.functions", 1],
+    ]],
+  ]) {
+    window.location.hash = documentHash;
+    const { app, errors } = harness();
     await app.openRoute();
-    assert.equal(app.quizSession.questions.length, 1);
-    const expectedId = href.endsWith("html.labels") ? "quiz-html-label-association" : "quiz-html-form-name-submission";
-    assert.equal(app.getCurrentQuizQuestion().id, expectedId);
+    const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
+    const links = [...main.matchAll(/href="(#\/review\/[^\"]+)"/g)].map((match) => match[1]);
+    assert.deepEqual(links.toSorted(), expected.map(([href]) => href).toSorted());
+    assert.doesNotMatch(main, /data-review-return/);
+    for (const [href, count] of expected) {
+      window.location.hash = href;
+      await app.openRoute();
+      assert.equal(app.quizSession.questions.length, count, href);
+      if (!href.split("?")[0].split("/")[3]) {
+        assert.equal(new Set(app.quizSession.questions.map((question) => question.lessonId)).size, 2);
+      }
+    }
+    assert.deepEqual(errors, []);
   }
-  window.location.hash = "#/learn/html/wiki-media-alternatives";
-  await app.openRoute();
-  assert.match(app.root.innerHTML, /관련 객관식 문제는 아직 준비 중/);
-  const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
-  assert.doesNotMatch(main, /href="#\/review\/html/);
-  assert.doesNotMatch(app.root.innerHTML, /data-review-return/);
-  assert.match(app.root.innerHTML, /data-toggle-complete/);
-  assert.deepEqual(errors, []);
 });
 
-test("보관 HTML의 완료와 깊은 URL은 유지하고 새 문서의 답 보기·완료 기록을 독립 처리한다", async (t) => {
-  browser(t, "#/learn/html/wiki-markup");
-  const { app, storage, errors } = harness();
-  const oldId = "html-01-document-structure";
-  const newId = "html-notes-markup";
-  app.progressRepository.setLessonCompleted(oldId, true);
-  await app.openRoute();
-  assert.equal(app.currentLesson.id, newId);
-  assert.match(app.root.innerHTML, /data-toggle-complete aria-pressed="false"/);
-  const before = storage.getItem(PROGRESS_STORAGE_KEY);
-  const answer = { open: true };
-  app.root.querySelector = (selector) => selector === "#lesson-answer" ? answer : null;
-  app.handleClick({ target: { closest: () => null } });
-  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), before, "직접답 열람만으로 완료하지 않는다.");
-  app.handleClick(click("[data-toggle-complete]"));
-  assert.deepEqual(app.progressRepository.getProgress().completedLessonIds.toSorted(), [oldId, newId].toSorted());
-  app.handleClick(click("[data-toggle-complete]"));
-  assert.deepEqual(app.progressRepository.getProgress().completedLessonIds, [oldId]);
-  window.location.hash = "#/learn/html/document-structure-and-semantics";
-  await app.openRoute();
-  assert.equal(app.currentLesson.id, oldId);
-  assert.equal(window.location.hash, "#/learn/html/document-structure-and-semantics");
-  assert.match(app.root.innerHTML, /data-toggle-complete aria-pressed="true"/);
-  assert.match(app.root.innerHTML, /답변 예시 확인하기/);
-  assert.doesNotMatch(app.root.innerHTML, /data-review-return/);
-  assert.deepEqual(errors, []);
+test("Spring 문서 범위는 과정명을 표시하고 Java 전체 범위와 코드 언어 계약은 유지한다", async (t) => {
+  browser(t);
+  for (const [hash, title, count] of [
+    ["#/review/java/spring-ioc-di?concept=spring.ioc-di", "Spring · Spring Boot", 2],
+    ["#/review/java", "Java", 156],
+  ]) {
+    window.location.hash = hash;
+    const { app, storage, errors } = harness();
+    await app.openRoute();
+    assert.deepEqual(errors, []);
+    assert.equal(app.quizCollection.languageId, "java");
+    assert.equal(app.quizSession.questions.length, count);
+    const eyebrow = app.root.innerHTML.match(/<header class="review-header">\s*<div class="eyebrow">([\s\S]*?)<\/div>/)?.[1] ?? "";
+    assert.ok(eyebrow.includes(`<span>${title}</span>`));
+    assert.ok(document.title.includes(title));
+    assert.match(app.root.innerHTML, /<code class="language-java">/);
+    assert.doesNotMatch(app.root.innerHTML, /<code class="language-spring/);
+    const expectedResumeTitle = hash === "#/review/java" ? app.quizCollection.title : "Spring · Spring Boot · DI(의존성 주입): 필요한 객체를 외부에서 받기";
+    assert.equal(app.savedReviewSession.title, expectedResumeTitle);
+    let resumeApp = app;
+    if (hash === "#/review/java") {
+      assert.doesNotMatch(eyebrow, /Spring/);
+      assert.doesNotMatch(document.title, /Spring/);
+    } else {
+      const question = app.getCurrentQuizQuestion();
+      const wrongOption = question.options.find((option) => !option.isCorrect);
+      choose(app, wrongOption.id);
+      app.gradeCurrentQuizQuestion();
+      app.saveReviewSession({ captureViewport: true });
+      const previous = { ...app.savedReviewSession, title: app.quizCollection.title };
+      app.reviewSessionRepository.save(previous);
+      const restored = harness(storage);
+      resumeApp = restored.app;
+      await resumeApp.openRoute();
+      assert.deepEqual(restored.errors, []);
+      assert.equal(resumeApp.quizSession.selectedOptionIds.get(question.id), wrongOption.id);
+      assert.equal(resumeApp.quizSession.gradedAnswers.get(question.id)?.isCorrect, false);
+      const persisted = JSON.parse(storage.getItem(REVIEW_SESSION_STORAGE_KEY));
+      assert.equal(persisted.schemaVersion, 1);
+      assert.deepEqual(persisted.activeSession, { ...previous, title: expectedResumeTitle }, "이전 Spring 풀이의 제목만 바꾸고 서명·선택·채점·viewport 등 저장 필드는 보존한다.");
+    }
+    for (const destination of ["#/", "#/review"]) {
+      window.location.hash = destination;
+      await resumeApp.openRoute();
+      const card = resumeApp.root.innerHTML.match(/<aside class="resume-card"[\s\S]*?<\/aside>/)?.[0] ?? "";
+      assert.ok(card.includes(expectedResumeTitle), `${hash}: ${destination}`);
+      assert.ok(card.includes(`href="${hash}"`), `${hash}: 복습 범위를 유지한다.`);
+      assert.match(card, /이어서 풀기/);
+    }
+  }
+});
+
+test("새 HTML·CSS 문서는 실제 키워드만 연결하고 문제 없는 문서를 전체 문제로 보내지 않는다", async (t) => {
+  browser(t);
+  for (const [languageId, mappedSlug, unmappedSlug, expectedQuestions] of [
+    ["html", "input-names", "media-alternatives", [
+      ["html-04-forms-accessibility", "html.form-submission", ["quiz-html-form-name-submission"]],
+      ["html-04-forms-accessibility", "html.labels", ["quiz-html-label-association"]],
+    ]],
+    ["css", "layout-review", null, [
+      ["css-position-flex-grid", "css.grid", ["quiz-css-grid-position-choice"]],
+      [null, "css.debugging", ["quiz-css-debugging-cascade-step", "quiz-css-unmatched-selector-debug"]],
+      [null, "css.layout-choice", ["quiz-css-layout-tool-choice", "quiz-css-variable-badge-flow"]],
+      ["css-notes-layout-review", "css.problem-decomposition", ["quiz-css-overflow-one-cause"]],
+      ["css-notes-layout-review", "css.accessibility-review", ["quiz-css-visual-dom-order"]],
+    ]],
+  ]) {
+    window.location.hash = `#/learn/${languageId}/wiki-${mappedSlug}`;
+    const { app, errors } = harness();
+    await app.openRoute();
+    const links = [...app.root.innerHTML.matchAll(/href="(#\/review\/[^\"]+)"/g)].map((match) => match[1]);
+    const expected = expectedQuestions.map(([ownerId, conceptId, questionIds]) => [
+      `#/review/${languageId}${ownerId ? `/${ownerId}` : ""}?concept=${conceptId}`, questionIds,
+    ]);
+    assert.deepEqual(links.toSorted(), expected.map(([href]) => href).toSorted());
+    for (const [href, questionIds] of expected) {
+      window.location.hash = href;
+      await app.openRoute();
+      assert.deepEqual(app.quizSession.questions.map((question) => question.id).toSorted(), questionIds.toSorted());
+    }
+    if (unmappedSlug) {
+      window.location.hash = `#/learn/${languageId}/wiki-${unmappedSlug}`;
+      await app.openRoute();
+      assert.match(app.root.innerHTML, /관련 객관식 문제는 아직 준비 중/);
+      const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
+      assert.ok(!main.includes(`href="#/review/${languageId}`));
+      assert.doesNotMatch(app.root.innerHTML, /data-review-return/);
+      assert.match(app.root.innerHTML, /data-toggle-complete/);
+    }
+    assert.deepEqual(errors, []);
+  }
+});
+
+test("보관 교안의 완료와 깊은 URL은 유지하고 새 문서의 답 보기·완료 기록을 독립 처리한다", async (t) => {
+  browser(t);
+  for (const [languageId, oldId, oldSlug, slug, newId] of [
+    ["html", "html-01-document-structure", "document-structure-and-semantics", "markup", "html-notes-markup"],
+    ["css", "css-foundations-selectors", "css-rules-selectors-values", "css-basics", "css-notes-css-basics"],
+    ["java", "java-01-types-methods", "types-and-methods", "methods", "java-concept-methods"],
+  ]) {
+    window.location.hash = `#/learn/${languageId}/wiki-${slug}`;
+    const { app, storage, errors } = harness();
+    const oldHash = `#/learn/${languageId}/${oldSlug}`;
+    app.progressRepository.setLessonCompleted(oldId, true);
+    await app.openRoute();
+    assert.equal(app.currentLesson.id, newId);
+    assert.match(app.root.innerHTML, /data-toggle-complete aria-pressed="false"/);
+    const before = storage.getItem(PROGRESS_STORAGE_KEY);
+    const answer = { open: true };
+    app.root.querySelector = (selector) => selector === "#lesson-answer" ? answer : null;
+    app.handleClick({ target: { closest: () => null } });
+    assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), before, "직접답 열람만으로 완료하지 않는다.");
+    app.handleClick(click("[data-toggle-complete]"));
+    assert.deepEqual(app.progressRepository.getProgress().completedLessonIds.toSorted(), [oldId, newId].toSorted());
+    app.handleClick(click("[data-toggle-complete]"));
+    assert.deepEqual(app.progressRepository.getProgress().completedLessonIds, [oldId]);
+    window.location.hash = oldHash;
+    await app.openRoute();
+    assert.equal(app.currentLesson.id, oldId);
+    assert.equal(window.location.hash, oldHash);
+    assert.match(app.root.innerHTML, /data-toggle-complete aria-pressed="true"/);
+    assert.match(app.root.innerHTML, /답변 예시 확인하기/);
+    assert.doesNotMatch(app.root.innerHTML, /data-review-return/);
+    assert.deepEqual(errors, []);
+  }
 });

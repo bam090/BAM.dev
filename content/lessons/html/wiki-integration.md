@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[검사 결과를 구분하고 수정하기](#/learn/html/wiki-inspection)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
+[HTML 검증: 문법·의미·접근성 점검](#/learn/html/wiki-inspection)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
 
 ## 코드를 쓰기 전의 여섯 단계
 
@@ -153,10 +153,10 @@ Checker 오류가 0개여도 접근성 확인이나 학습 숙달까지 끝났�
 
 | 막힌 곳 | 다시 물을 질문 | 돌아갈 문서 |
 | --- | --- | --- |
-| 큰 구조를 못 정함 | 이 내용은 소개·이동·중심·보조·마무리 중 무엇인가? | [내용의 역할과 제목으로 문서 나누기](#/learn/html/wiki-semantic-structure) |
+| 큰 구조를 못 정함 | 이 내용은 소개·이동·중심·보조·마무리 중 무엇인가? | [시맨틱 HTML: 내용의 역할과 제목 계층](#/learn/html/wiki-semantic-structure) |
 | 링크·목록·표를 못 고름 | 사용 결과와 항목 사이의 관계는 무엇인가? | [링크와 버튼](#/learn/html/wiki-links-buttons) · [목록](#/learn/html/wiki-lists) · [표](#/learn/html/wiki-tables) |
 | 폼 속성이 헷갈림 | 사람에게 보이는 질문과 서버에 보낼 이름은 무엇인가? | [입력의 레이블과 제출 이름](#/learn/html/wiki-input-names) |
-| 검사 결과를 못 나눔 | 도구가 찾을 문법인가, 사람이 볼 의미·이용 문제인가? | [검사 결과를 구분하고 수정하기](#/learn/html/wiki-inspection) |
+| 검사 결과를 못 나눔 | 도구가 찾을 문법인가, 사람이 볼 의미·이용 문제인가? | [HTML 검증: 문법·의미·접근성 점검](#/learn/html/wiki-inspection) |
 
 ## 이어서 연습하기
 

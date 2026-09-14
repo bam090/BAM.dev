@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[HTML의 역할과 요소 읽기](#/learn/html/wiki-markup), [내용의 역할과 제목으로 문서 나누기](#/learn/html/wiki-semantic-structure)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
+[HTML의 역할과 요소 읽기](#/learn/html/wiki-markup), [시맨틱 HTML: 내용의 역할과 제목 계층](#/learn/html/wiki-semantic-structure)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
 
 ## 목적부터 묻는 선택 순서
 

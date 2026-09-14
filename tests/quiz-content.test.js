@@ -211,8 +211,12 @@ test("퀴즈 스키마는 언어 중립 컬렉션을 허용한다", () => {
 });
 
 test("JavaScript 기초 7개 교안에 basic과 application 문항이 하나씩 있다", () => {
+  const originalIds = new Set([
+    "js-01-runtime", "js-02-values-control-flow", "js-03-functions-scope-closure",
+    "js-04-collections", "js-05-dom-events", "js-06-async-fetch", "js-07-review-practice",
+  ]);
   const lessons = curriculum.lessons.filter(
-    (lesson) => lesson.courseId === "javascript" && lesson.languageId === quiz.languageId,
+    (lesson) => originalIds.has(lesson.id),
   );
 
   assert.equal(quiz.schemaVersion, 1);

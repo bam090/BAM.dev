@@ -19,6 +19,12 @@
       "name": "CS",
       "status": "planned",
       "description": "컴퓨터 과학의 기초 개념을 다루는 과정입니다."
+    },
+    {
+      "id": "spring",
+      "name": "Spring",
+      "status": "available",
+      "description": "Spring 핵심부터 Spring Boot 설정과 웹 요청·응답까지 작은 개념 문서로 학습합니다."
     }
   ],
   "courses": [
@@ -38,7 +44,7 @@
       "languageId": "java",
       "name": "Java",
       "shortName": "Java",
-      "status": "sample",
+      "status": "available",
       "accent": "java",
       "description": "타입과 객체 중심으로 프로그램을 설계합니다."
     },
@@ -81,6 +87,16 @@
       "status": "available",
       "accent": "javascript",
       "description": "해시부터 그래프와 동적 계획법까지 문제 해결 원리를 익힙니다."
+    },
+    {
+      "id": "spring",
+      "categoryId": "spring",
+      "languageId": "java",
+      "name": "Spring · Spring Boot",
+      "shortName": "Spring",
+      "status": "available",
+      "accent": "java",
+      "description": "Java 객체 연결과 Boot 설정에서 시작해 MVC 요청 처리, Security 접근 제어, JPA 데이터 저장·조회와 테스트 경계를 익힙니다."
     }
   ],
   "languages": [
@@ -112,7 +128,7 @@
       "id": "java",
       "name": "Java",
       "shortName": "Java",
-      "status": "sample",
+      "status": "available",
       "accent": "java",
       "description": "타입과 객체 중심으로 프로그램을 설계합니다."
     }
@@ -146,7 +162,8 @@
         "sha256": "f8e8830657878543ffae84334a3c33d270ec2453f486e6a77d2fafafabf4cdc5",
         "importedAt": "2026-09-09",
         "importMode": "copy"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-notes-functions",
@@ -176,7 +193,8 @@
         "sha256": "c9fa256cdd5b7e364477f0bae0ae9d0a3a750a37dc59f7f511b0c822219683f0",
         "importedAt": "2026-09-09",
         "importMode": "copy"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-notes-collections",
@@ -207,7 +225,8 @@
         "sha256": "9186ad12699f3ac69f0231b18ab08627513f2cabe435d8a13757825bea8dd082",
         "importedAt": "2026-09-09",
         "importMode": "copy"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-01-runtime",
@@ -263,7 +282,8 @@
       "source": {
         "kind": "user-authored",
         "verifiedAt": "2026-08-24"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-03-functions-scope-closure",
@@ -290,7 +310,8 @@
       "source": {
         "kind": "user-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-04-collections",
@@ -318,7 +339,8 @@
       "source": {
         "kind": "user-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-05-dom-events",
@@ -346,7 +368,8 @@
       "source": {
         "kind": "user-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-06-async-fetch",
@@ -374,7 +397,8 @@
       "source": {
         "kind": "user-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-07-review-practice",
@@ -401,7 +425,8 @@
       "source": {
         "kind": "user-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-08-implementation-simulation",
@@ -896,7 +921,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-01-cascade-box-model",
@@ -922,7 +948,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-flow-display-overflow",
@@ -950,7 +977,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-position-flex-grid",
@@ -978,7 +1006,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-responsive-states-motion",
@@ -1007,7 +1036,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-review-practice",
@@ -1035,7 +1065,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-01-types-methods",
@@ -1060,7 +1091,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-18"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-markup",
@@ -1123,7 +1155,7 @@
       "courseId": "html",
       "order": 8,
       "slug": "wiki-semantic-structure",
-      "title": "내용의 역할과 제목으로 문서 나누기",
+      "title": "시맨틱 HTML: 내용의 역할과 제목 계층",
       "summary": "소개·이동·중심·보조·마무리와 제목의 상하 관계를 먼저 찾은 뒤 그 관계에 맞는 요소를 고릅니다.",
       "essentialQuestion": "페이지의 네모 상자를 그대로 태그로 옮기지 않고, 어떤 순서로 구조와 제목을 정할까요?",
       "answerHeading": "핵심 질문 답",
@@ -1316,7 +1348,7 @@
       "courseId": "html",
       "order": 15,
       "slug": "wiki-form-controls",
-      "title": "받을 값과 선택 관계에 맞는 입력",
+      "title": "폼 컨트롤: 값과 선택에 맞는 입력 고르기",
       "summary": "입력은 값의 목적에 맞게 고르고 하나의 선택은 같은 name의 radio, 독립된 여러 선택은 checkbox로 나타냅니다.",
       "essentialQuestion": "숫자처럼 보이는 값과 여러 선택지를 받는 입력은 어떤 단서로 나눌까요?",
       "answerHeading": "핵심 질문 답",
@@ -1343,7 +1375,7 @@
       "courseId": "html",
       "order": 16,
       "slug": "wiki-constraint-validation",
-      "title": "내장 검증의 역할과 한계",
+      "title": "HTML 폼 내장 검증의 역할과 한계",
       "summary": "내장 검증은 흔한 실수를 먼저 알려 주지만 우회할 수 있으므로 서버 검증과 이해할 수 있는 안내가 별도로 필요합니다.",
       "essentialQuestion": "required·minlength·pattern·email 검사는 무엇을 보장하며, 통과한 뒤에도 무엇을 확인해야 할까요?",
       "answerHeading": "핵심 질문 답",
@@ -1370,7 +1402,7 @@
       "courseId": "html",
       "order": 17,
       "slug": "wiki-form-submission",
-      "title": "제출되는 값과 보내는 방식",
+      "title": "폼 제출: 보내는 값과 GET·POST 방식",
       "summary": "폼은 제출 가능한 이름·값을 정해진 방식으로 보내며 입력 상태와 method·enctype은 서로 다른 제출 조건을 정합니다.",
       "essentialQuestion": "수정할 수 없는 입력도 항상 제출될까요? 선택한 값은 GET·POST·파일 폼에서 어떻게 보내질까요?",
       "answerHeading": "핵심 질문 답",
@@ -1429,7 +1461,7 @@
       "courseId": "html",
       "order": 19,
       "slug": "wiki-inspection",
-      "title": "검사 결과를 구분하고 수정하기",
+      "title": "HTML 검증: 문법·의미·접근성 점검",
       "summary": "Checker로 문법과 콘텐츠 모델을 확인하고 의미·대체 정보·키보드 사용은 문맥과 실제 조작으로 다시 확인합니다.",
       "essentialQuestion": "화면이 보이고 Checker 오류가 없어도 왜 검사가 끝나지 않으며 어떤 순서로 수정할까요?",
       "answerHeading": "핵심 질문 답",
@@ -1479,6 +1511,3347 @@
         "sha256": "2bcdc48e97d744a585203cf6cdbf2f3574286440a84de29238aa67f9675c68db",
         "importedAt": "2026-09-13",
         "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-css-basics",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 7,
+      "slug": "wiki-css-basics",
+      "title": "CSS의 역할과 적용",
+      "summary": "CSS는 HTML의 표현을 정하며 연결된 규칙의 선택자로 대상을 찾고 속성에 값을 적용합니다.",
+      "essentialQuestion": "CSS는 HTML과 어떤 역할을 나누며 규칙을 어떻게 연결하고 읽나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "HTML과 CSS의 역할을 구분하고 스타일시트를 연결해 선택자·속성·값으로 규칙을 읽을 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "css.syntax",
+        "css.stylesheet-linking"
+      ],
+      "contentFile": "content/lessons/css/wiki-css-basics.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/01 CSS란 무엇인가.md",
+        "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-selectors",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 8,
+      "slug": "wiki-selectors",
+      "title": "선택자로 원하는 요소 찾기",
+      "summary": "선택자를 공백 없이 이으면 같은 요소의 조건을, 공백이나 결합자를 넣으면 요소 사이의 관계를 표현합니다.",
+      "essentialQuestion": "같은 요소의 조건과 요소 사이의 관계를 선택자로 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "선택자에서 같은 요소의 조건과 후손·자식·형제 관계를 구분해 원하는 요소를 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "css.selectors"
+      ],
+      "contentFile": "content/lessons/css/wiki-selectors.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/01 CSS란 무엇인가.md",
+        "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-cascade",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 9,
+      "slug": "wiki-cascade",
+      "title": "캐스케이드와 명시도",
+      "summary": "캐스케이드는 겹친 선언 중 하나를 고르며 명시도와 작성 순서는 앞선 우선순위 조건이 같을 때 비교합니다.",
+      "essentialQuestion": "같은 요소의 같은 속성에 여러 선언이 겹치면 무엇부터 비교하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "같은 요소의 같은 속성에 선언이 겹칠 때 적용 조건·우선순위·명시도·작성 순서로 결과를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "css.cascade"
+      ],
+      "contentFile": "content/lessons/css/wiki-cascade.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/01 CSS란 무엇인가.md",
+        "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-inheritance",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 10,
+      "slug": "wiki-inheritance",
+      "title": "상속과 초기값",
+      "summary": "상속 여부는 속성마다 정해지며 inherit은 부모 계산값, initial은 명세 초기값, unset은 상속 여부에 맞는 값을 사용합니다.",
+      "essentialQuestion": "자식에게 어떤 값이 상속되며 inherit·initial·unset은 어떻게 다른가요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "부모의 계산값을 이어받는 상속과 inherit·initial·unset의 차이를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "css.inheritance"
+      ],
+      "contentFile": "content/lessons/css/wiki-inheritance.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/01 CSS란 무엇인가.md",
+        "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-units",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 11,
+      "slug": "wiki-units",
+      "title": "길이 단위의 계산 기준",
+      "summary": "길이 단위는 기준이 서로 다르며 특히 %는 속성별 기준, em은 사용하는 속성의 글자 크기 기준을 확인해야 합니다.",
+      "essentialQuestion": "px·%·rem·em은 무엇을 기준으로 계산되며 em은 속성에 따라 어떻게 달라지나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "px·%·rem·em의 계산 기준을 찾고 같은 단위도 속성에 따라 기준이 달라지는 경우를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "css.values-units"
+      ],
+      "contentFile": "content/lessons/css/wiki-units.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/02 값과 표현.md",
+        "sha256": "a8f1a1cf892c1745624664199bdd25485a084eecbcf4ea74f17a53171edec375",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-typography",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 12,
+      "slug": "wiki-typography",
+      "title": "읽기 쉬운 글꼴과 줄 간격",
+      "summary": "글꼴에는 대체 후보를 두고 단위 없는 line-height로 글자 크기를 따라가며 사용자 간격 변경에도 내용을 보존합니다.",
+      "essentialQuestion": "앞 글꼴을 사용할 수 없거나 글자와 줄 간격이 커져도 읽히려면 무엇을 정하고 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "글꼴을 사용할 수 없거나 글자·줄 간격이 커지는 상황을 고려해 대체 글꼴과 line-height를 정할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "css.typography"
+      ],
+      "contentFile": "content/lessons/css/wiki-typography.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/02 값과 표현.md",
+        "sha256": "a8f1a1cf892c1745624664199bdd25485a084eecbcf4ea74f17a53171edec375",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-color-contrast",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 13,
+      "slug": "wiki-color-contrast",
+      "title": "색과 대비로 정보 전달하기",
+      "summary": "색은 실제 배경과의 대비로 확인하며 상태를 색 하나에만 맡기지 않고 배경 알파와 요소 전체 opacity를 구분합니다.",
+      "essentialQuestion": "글자·배경색과 상태 단서를 고를 때 무엇을 확인하고 투명도는 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "글자와 배경의 대비를 확인하고 색 이외의 상태 단서와 알맞은 투명도 표현을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "css.color-contrast"
+      ],
+      "contentFile": "content/lessons/css/wiki-color-contrast.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/02 값과 표현.md",
+        "sha256": "a8f1a1cf892c1745624664199bdd25485a084eecbcf4ea74f17a53171edec375",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-box-model",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 14,
+      "slug": "wiki-box-model",
+      "title": "박스 모델과 box-sizing",
+      "summary": "content-box의 width는 내용 너비이고 border-box의 width는 padding과 border까지 포함하며 margin은 두 경우 모두 바깥에 있습니다.",
+      "essentialQuestion": "box-sizing에 따라 width가 포함하는 영역과 실제 박스 너비는 어떻게 달라지나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "content·padding·border·margin을 구분하고 box-sizing에 따라 선언한 너비와 실제 박스 너비를 계산할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "css.box-model"
+      ],
+      "contentFile": "content/lessons/css/wiki-box-model.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/03 박스와 일반 흐름.md",
+        "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-display",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 15,
+      "slug": "wiki-display",
+      "title": "일반 흐름과 display",
+      "summary": "display는 박스가 주변 흐름에 참여하는 방식과 안쪽 배치를 정하며 HTML 요소의 의미를 바꾸지는 않습니다.",
+      "essentialQuestion": "같은 줄·새 줄·숨김 요구에 맞는 display를 어떻게 고르고 무엇을 함께 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "같은 줄·새 줄·숨김 요구에 맞는 display 값을 고르고 HTML 의미와 박스 배치를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "css.normal-flow",
+        "css.display"
+      ],
+      "contentFile": "content/lessons/css/wiki-display.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/03 박스와 일반 흐름.md",
+        "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-spacing",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 16,
+      "slug": "wiki-spacing",
+      "title": "간격의 주인과 margin 합침",
+      "summary": "안쪽은 padding, 바깥은 margin, 반복 항목 사이는 부모 gap으로 관리하며 일반 흐름의 세로 margin은 조건에 따라 합쳐집니다.",
+      "essentialQuestion": "안쪽·바깥쪽·항목 사이 간격을 누가 관리하며 세로 margin을 왜 무조건 더하면 안 되나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "padding·margin·부모 gap 중 간격을 관리할 위치를 고르고 세로 margin이 합쳐지는 조건을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "css.spacing"
+      ],
+      "contentFile": "content/lessons/css/wiki-spacing.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/03 박스와 일반 흐름.md",
+        "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-overflow",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 17,
+      "slug": "wiki-overflow",
+      "title": "overflow(넘침): 크기 제한과 내용 표시",
+      "summary": "넘침은 고정 크기·긴 콘텐츠·최소 크기부터 확인하고 필요한 줄바꿈이나 스크롤로 내용을 읽을 수 있게 유지합니다.",
+      "essentialQuestion": "넘침이 생겼을 때 원인을 어떻게 찾고 전체 내용을 읽을 수 있게 유지하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "넘침의 원인을 구분하고 크기 제한·줄바꿈·스크롤 중 내용을 보존하는 방법을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "css.overflow"
+      ],
+      "contentFile": "content/lessons/css/wiki-overflow.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/03 박스와 일반 흐름.md",
+        "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-flexbox",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 18,
+      "slug": "wiki-flexbox",
+      "title": "Flexbox로 한 축 정렬하기",
+      "summary": "Flexbox는 한 축의 항목을 배치하며 justify-content는 주축, align-items는 교차축을 따릅니다.",
+      "essentialQuestion": "부모와 직접 자식을 찾은 뒤 주축·교차축을 기준으로 정렬과 줄바꿈을 어떻게 정하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "배치하는 부모와 직접 자식을 찾고 주축·교차축을 기준으로 정렬과 줄바꿈을 정할 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "css.flexbox"
+      ],
+      "contentFile": "content/lessons/css/wiki-flexbox.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/04 Flexbox와 Grid.md",
+        "sha256": "dcf11789e0367dbda3850d3fa024f62daadeded30c5ef95ae751a53b4c56f1ed",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-grid",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 19,
+      "slug": "wiki-grid",
+      "title": "Grid로 행과 열 만들기",
+      "summary": "Grid는 부모가 직접 자식의 행과 열을 배치하며 fr은 사용할 수 있는 남은 공간의 몫입니다.",
+      "essentialQuestion": "행과 열을 맞추는 항목의 트랙·간격·남은 공간을 어떻게 정의하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "행과 열의 관계를 보고 Grid의 트랙·간격·남은 공간을 정의할 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "css.grid"
+      ],
+      "contentFile": "content/lessons/css/wiki-grid.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/04 Flexbox와 Grid.md",
+        "sha256": "dcf11789e0367dbda3850d3fa024f62daadeded30c5ef95ae751a53b4c56f1ed",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-positioning",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 20,
+      "slug": "wiki-positioning",
+      "title": "relative와 absolute의 위치 기준",
+      "summary": "relative는 원래 자리를 남기고 absolute는 흐름에서 빠져 가까운 위치 기준 박스를 따릅니다.",
+      "essentialQuestion": "요소의 원래 자리를 남길지와 무엇을 위치 기준으로 삼을지를 어떻게 정하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "요소의 원래 자리를 남길지 판단하고 absolute 요소가 따를 위치 기준을 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "css.positioning"
+      ],
+      "contentFile": "content/lessons/css/wiki-positioning.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/05 position 속성과 요소가 겹치는 순서.md",
+        "sha256": "796ed33afa8efc1160a195bbdc70d77915485cef81be6d07f2d89425d70e6247",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-fixed-sticky",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 21,
+      "slug": "wiki-fixed-sticky",
+      "title": "fixed와 sticky의 차이",
+      "summary": "fixed는 흐름에서 빠져 기준 영역에 고정되고 sticky는 자리를 남긴 채 스크롤 영역과 자신의 containing block(위치 기준 박스) 범위 안에서 붙습니다.",
+      "essentialQuestion": "화면에 계속 고정할 요소와 자기 영역 안에서 붙일 요소를 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "fixed와 sticky의 흐름 참여·위치 기준을 구분하고 붙지 않는 원인을 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "css.positioning"
+      ],
+      "contentFile": "content/lessons/css/wiki-fixed-sticky.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/05 position 속성과 요소가 겹치는 순서.md",
+        "sha256": "796ed33afa8efc1160a195bbdc70d77915485cef81be6d07f2d89425d70e6247",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-stacking-context",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 22,
+      "slug": "wiki-stacking-context",
+      "title": "쌓임 맥락과 z-index",
+      "summary": "쌓임 맥락은 요소들을 한 묶음으로 다루며 자식의 z-index는 부모 묶음 밖의 전역 순위가 아닙니다.",
+      "essentialQuestion": "자식의 z-index가 커도 다른 부모 묶음 앞으로 나오지 못하는 이유는 무엇인가요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "겹친 요소의 부모 쌓임 맥락을 찾아 큰 z-index만으로 앞뒤를 바꿀 수 없는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "css.stacking-context"
+      ],
+      "contentFile": "content/lessons/css/wiki-stacking-context.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/05 position 속성과 요소가 겹치는 순서.md",
+        "sha256": "796ed33afa8efc1160a195bbdc70d77915485cef81be6d07f2d89425d70e6247",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-responsive",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 23,
+      "slug": "wiki-responsive",
+      "title": "유연한 배치와 미디어 쿼리",
+      "summary": "유연한 크기와 배치를 먼저 사용하고 내용이 불편해지는 분기점에서 미디어 쿼리로 선언 후보를 추가합니다.",
+      "essentialQuestion": "유연한 크기로 해결할 문제와 미디어 쿼리가 필요한 문제를 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "콘텐츠가 흐를 수 있는 크기를 먼저 정하고 배치를 바꿔야 하는 조건에 미디어 쿼리를 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "css.responsive-design",
+        "css.media-queries"
+      ],
+      "contentFile": "content/lessons/css/wiki-responsive.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/06 반응형 상태와 모션.md",
+        "sha256": "a14b6e4a93cf9ecc50c0069a652649173f918826f803985e95046d9a9e757d3b",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-states",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 24,
+      "slug": "wiki-states",
+      "title": "가상 클래스·가상 요소와 상태 표시",
+      "summary": "가상 클래스는 요소의 상태나 조건을, 가상 요소는 특정 부분을 선택하며 중요한 정보는 HTML과 보이는 상태 표시로 유지합니다.",
+      "essentialQuestion": "요소의 상태와 표현되는 부분을 구분해 입력 방법이 달라도 알아볼 수 있게 하려면 어떻게 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "요소의 상태와 표현되는 부분을 구분하고 hover 없이도 상태를 알아볼 수 있는 표시를 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "css.pseudo-classes",
+        "css.pseudo-elements"
+      ],
+      "contentFile": "content/lessons/css/wiki-states.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/06 반응형 상태와 모션.md",
+        "sha256": "a14b6e4a93cf9ecc50c0069a652649173f918826f803985e95046d9a9e757d3b",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-motion",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 25,
+      "slug": "wiki-motion",
+      "title": "CSS 모션: 변형·전환·애니메이션과 동작 줄이기",
+      "summary": "시각 변형·두 상태 전환·여러 시점 재생을 구분하고 동작 줄이기에서는 장식 움직임을 줄이되 정보는 남깁니다.",
+      "essentialQuestion": "transform·transition·animation을 어떻게 고르고 동작 줄이기에서 어떤 표시를 남겨야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "transform·transition·animation을 목적에 맞게 구분하고 움직임을 줄여도 포커스와 상태 표시를 유지할 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "css.motion-accessibility"
+      ],
+      "contentFile": "content/lessons/css/wiki-motion.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/06 반응형 상태와 모션.md",
+        "sha256": "a14b6e4a93cf9ecc50c0069a652649173f918826f803985e95046d9a9e757d3b",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "css-notes-layout-review",
+      "languageId": "css",
+      "courseId": "css",
+      "order": 26,
+      "slug": "wiki-layout-review",
+      "title": "CSS 레이아웃 종합 진단",
+      "summary": "연결·규칙·박스·부모 배치·넘침·환경 순서로 원인을 찾고 필요한 관계마다 도구를 고릅니다.",
+      "essentialQuestion": "화면이 어긋났을 때 어떤 증거를 어떤 순서로 확인해 배치 도구를 고르나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "화면이 어긋난 증거를 순서대로 좁히고 콘텐츠 관계에 맞는 배치 도구를 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 8,
+      "conceptIds": [
+        "css.debugging",
+        "css.layout-choice",
+        "css.problem-decomposition",
+        "css.accessibility-review",
+        "css.grid",
+        "css.flexbox",
+        "css.positioning"
+      ],
+      "contentFile": "content/lessons/css/wiki-layout-review.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/07 CSS 레이아웃 판단 정리.md",
+        "sha256": "053d5e847c2c418dbf84e78fca5d1b8f7f6770dbabc17d99e01aeea124179626",
+        "importedAt": "2026-09-13",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-values-types",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 8,
+      "slug": "wiki-values-types",
+      "title": "값과 타입 구분하기",
+      "summary": "타입은 값의 종류이며 숫자처럼 보이는 글자도 문자열이고 null은 원시값입니다.",
+      "essentialQuestion": "숫자처럼 보이는 문자열과 숫자, 원시값과 객체를 무엇으로 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "값의 타입을 확인하고 원시값과 객체, 숫자와 숫자처럼 보이는 문자열을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "js.type-identification"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-values-types.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/01 값과 실행 흐름.md",
+        "sha256": "39fdbd7cd80c55d751f45982bda0e935dae416d55cdad0022d55013de2e84a80",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-variables",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 9,
+      "slug": "wiki-variables",
+      "title": "const·let과 재대입",
+      "summary": "const는 이름의 재대입을 막고 let은 허용하며, 객체 속성 변경은 별도로 판단합니다.",
+      "essentialQuestion": "이름에 다른 값을 다시 넣는 일과 객체 속성을 바꾸는 일은 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "이름의 재대입과 객체 속성 변경을 구분해 const와 let을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "js.variables"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-variables.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/01 값과 실행 흐름.md",
+        "sha256": "39fdbd7cd80c55d751f45982bda0e935dae416d55cdad0022d55013de2e84a80",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-operators",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 10,
+      "slug": "wiki-operators",
+      "title": "연산자: 계산·비교와 조건의 값",
+      "summary": "덧셈은 타입을, 엄격 비교는 타입과 값을, 조건은 truthy·falsy를 기준으로 결과를 만듭니다.",
+      "essentialQuestion": "같은 값도 덧셈·엄격 비교·조건 자리에서 왜 다르게 처리되나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "덧셈·엄격 비교·조건 판단에서 같은 값이 어떻게 다르게 처리되는지 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.operators",
+        "js.values-types"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-operators.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/01 값과 실행 흐름.md",
+        "sha256": "39fdbd7cd80c55d751f45982bda0e935dae416d55cdad0022d55013de2e84a80",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-control-flow",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 11,
+      "slug": "wiki-control-flow",
+      "title": "조건문과 반복문의 실행 범위",
+      "summary": "조건문은 실행할 갈래를 고르고 반복문은 조건을 검사하며 같은 흐름을 되풀이합니다.",
+      "essentialQuestion": "필요한 코드를 언제 실행하고 언제 멈추는지 어떻게 판단하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "조건 분기와 반복의 시작·검사·변화·종료를 따라 실제 실행 범위를 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.control-flow"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-control-flow.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/01 값과 실행 흐름.md",
+        "sha256": "39fdbd7cd80c55d751f45982bda0e935dae416d55cdad0022d55013de2e84a80",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-function-return",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 12,
+      "slug": "wiki-function-return",
+      "title": "함수의 입력과 반환",
+      "summary": "return은 호출자에게 값을 돌려주고 함수를 끝내며, 콘솔 출력과 지역 변수 계산은 반환을 대신하지 않습니다.",
+      "essentialQuestion": "호출자는 어떤 값을 받고 어느 지점에서 함수 실행이 끝나나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "인수가 매개변수로 들어가고 반환값이 호출한 자리에 돌아오는 과정과 종료 지점을 추적할 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "js.function-return",
+        "js.functions"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-function-return.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/02 함수.md",
+        "sha256": "2d8f8af7238851f1729099f7eab1229a8bd4dc4da576a6efe6daedf1ba953d70",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-callbacks",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 13,
+      "slug": "wiki-callbacks",
+      "title": "함수 값과 동기 콜백",
+      "summary": "콜백은 받은 쪽이 호출하는 함수이며 전달했다고 바로 실행되거나 반드시 비동기가 되는 것은 아닙니다.",
+      "essentialQuestion": "함수를 값으로 건넨 시점과 받은 쪽이 호출한 시점은 어떻게 다른가요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "함수 자체를 전달하는 것과 함수를 호출한 결과를 전달하는 것을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "js.callbacks"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-callbacks.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/02 함수.md",
+        "sha256": "2d8f8af7238851f1729099f7eab1229a8bd4dc4da576a6efe6daedf1ba953d70",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-function-effects",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 14,
+      "slug": "wiki-function-effects",
+      "title": "계산과 부수 효과의 경계",
+      "summary": "같은 입력의 계산 결과와 객체·화면·저장소를 바꾸는 동작을 분리하면 변화의 위치가 드러납니다.",
+      "essentialQuestion": "함수의 입력·반환값·바깥 변경을 어떻게 나누나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "입력·반환값·바깥 상태 변경을 구분해 계산과 표시의 책임을 나눌 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "js.function-side-effects"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-function-effects.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/02 함수.md",
+        "sha256": "2d8f8af7238851f1729099f7eab1229a8bd4dc4da576a6efe6daedf1ba953d70",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-arrays-objects",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 15,
+      "slug": "wiki-arrays-objects",
+      "title": "배열과 객체로 정보 담기",
+      "summary": "배열은 인덱스로 순서 있는 요소를 찾고 객체는 속성 키로 한 대상의 정보를 찾습니다.",
+      "essentialQuestion": "순서와 이름 중 어떤 것으로 값을 찾을지 어떻게 선택하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "순서로 찾을 값은 배열에, 이름으로 찾을 정보는 객체에 담고 원하는 값을 읽을 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "js.objects",
+        "js.collection-shape"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-arrays-objects.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/03 배열과 객체.md",
+        "sha256": "bf4e5809e5b8f39af9791d1e40aca9577276b1e717db877c7d18ec5d9228624e",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-iteration",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 16,
+      "slug": "wiki-iteration",
+      "title": "배열 순회: 값·키·요소 처리 방식 고르기",
+      "summary": "for...of는 값을, for...in은 열거 가능한 문자열 키를 순회하고 forEach는 각 요소를 처리한 뒤 undefined를 반환합니다.",
+      "essentialQuestion": "값을 읽을지 키를 읽을지, 새 결과 배열이 필요한지를 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "배열의 값·속성 키·각 요소 처리라는 목적에 맞게 반복 방법을 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "js.iteration",
+        "js.arrays"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-iteration.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/03 배열과 객체.md",
+        "sha256": "bf4e5809e5b8f39af9791d1e40aca9577276b1e717db877c7d18ec5d9228624e",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-array-methods",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 17,
+      "slug": "wiki-array-methods",
+      "title": "결과 모양으로 배열 메서드 고르기",
+      "summary": "map은 변환한 배열, filter는 선택한 배열, find는 첫 요소나 undefined를 반환합니다.",
+      "essentialQuestion": "모든 변환·여러 선택·하나 찾기 중 필요한 결과를 어떻게 만드나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "필요한 결과가 전체 변환·여러 선택·하나 찾기인지 정하고 배열 메서드와 처리 순서를 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.array-methods"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-array-methods.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/03 배열과 객체.md",
+        "sha256": "bf4e5809e5b8f39af9791d1e40aca9577276b1e717db877c7d18ec5d9228624e",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-object-sharing",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 18,
+      "slug": "wiki-object-sharing",
+      "title": "같은 객체의 공유와 재대입",
+      "summary": "객체 대입은 같은 객체를 공유할 수 있지만 한 변수나 매개변수의 재대입이 다른 이름까지 바꾸지는 않습니다.",
+      "essentialQuestion": "한쪽 변경이 언제 다른 쪽에서도 보이나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "같은 객체를 공유하는 이름을 찾고 속성 변경과 변수 재대입이 전달되는 범위를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.object-identity"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-object-sharing.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/04 참조 공유와 복사.md",
+        "sha256": "12705d4f8a535d8c47afcc08eca010e6ffc0c624c2c9d0fb631a61d940e5aa09",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-shallow-copy",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 19,
+      "slug": "wiki-shallow-copy",
+      "title": "얕은 복사와 바꿀 경로",
+      "summary": "펼침은 새 바깥 대상을 만들지만 안쪽 객체는 공유하므로 원본 보존에는 바뀌는 경로의 복사가 필요합니다.",
+      "essentialQuestion": "새 바깥 객체를 만들어도 무엇이 공유되고, 원본을 보존하려면 어디까지 새로 만들어야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "얕은 복사 뒤 공유되는 중첩 객체를 찾고 원본을 보존할 변경 경로까지 새로 만들 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "js.shallow-copy",
+        "js.object-sharing"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-shallow-copy.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/04 참조 공유와 복사.md",
+        "sha256": "12705d4f8a535d8c47afcc08eca010e6ffc0c624c2c9d0fb631a61d940e5aa09",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-scope-hoisting",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 20,
+      "slug": "wiki-scope-hoisting",
+      "title": "스코프와 호이스팅: 이름 탐색과 선언 전 접근",
+      "summary": "이름은 작성된 코드의 가까운 범위부터 찾고, let·const는 선언 평가 전까지 사용할 수 없습니다.",
+      "essentialQuestion": "같은 이름은 어디서 찾으며 선언 전에는 왜 쓸 수 없나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "선언 위치에 따라 이름을 찾고 let·const의 선언 전 접근 오류를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.scope-hoisting"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-scope-hoisting.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/05 스코프·클로저·객체 모델.md",
+        "sha256": "d37a775d9e14ece4db55ca58b0cf9fa5ef424f9b8908acd6402f246b9bec6aff",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-closure",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 21,
+      "slug": "wiki-closure",
+      "title": "호출 뒤에도 이어지는 클로저",
+      "summary": "클로저는 선언 위치의 바인딩을 계속 사용하므로 변경이 이어지고 새 생성 호출의 상태는 분리됩니다.",
+      "essentialQuestion": "바깥 함수 호출이 끝난 뒤에도 어느 상태가 계속 남나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "함수가 만들어진 환경의 상태가 이어지는 이유와 서로 다른 생성 호출의 독립 상태를 추적할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "js.closure"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-closure.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/05 스코프·클로저·객체 모델.md",
+        "sha256": "d37a775d9e14ece4db55ca58b0cf9fa5ef424f9b8908acd6402f246b9bec6aff",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-object-model",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 22,
+      "slug": "wiki-object-model",
+      "title": "prototype·class와 메서드 호출",
+      "summary": "객체는 자기에게 없는 속성을 프로토타입에서 찾고, class 인스턴스는 상태를 따로 가지며 메서드를 공유할 수 있습니다.",
+      "essentialQuestion": "객체는 메서드를 어디서 찾고 상태와 this는 누구에게 속하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "객체의 개별 상태와 프로토타입의 공유 메서드를 구분하고 호출 대상에 따른 this를 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.object-model"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-object-model.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/05 스코프·클로저·객체 모델.md",
+        "sha256": "d37a775d9e14ece4db55ca58b0cf9fa5ef424f9b8908acd6402f246b9bec6aff",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-dom-properties",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 23,
+      "slug": "wiki-dom-properties",
+      "title": "DOM의 현재 값을 읽고 바꾸기",
+      "summary": "HTML은 처음 문서이고 DOM은 현재 구조이며, 입력 프로퍼티와 원래 속성은 서로 다른 값을 가질 수 있습니다.",
+      "essentialQuestion": "원래 HTML과 현재 DOM을 구분해 어떤 값을 읽고 바꿔야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "준비된 DOM 요소를 찾고 현재 입력값·글·클래스·데이터 속성을 목적에 맞게 읽고 바꿀 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "web.dom"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-dom-properties.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/06 DOM·폼·이벤트.md",
+        "sha256": "165e138a12883e07244d8138d2d08330bb2ffe85e9e23d44c4dc653eeb3e490c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-forms-state",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 24,
+      "slug": "wiki-forms-state",
+      "title": "폼 입력에서 상태와 화면으로",
+      "summary": "폼은 입력을 모으고, 이벤트 처리 함수는 상태를 바꾸며, render는 그 상태를 화면에 보여 줍니다.",
+      "essentialQuestion": "폼 제출과 입력 변경을 받아 상태와 화면을 어떻게 일치시키나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "폼의 제출값을 검증해 상태에 반영하고 같은 상태로 목록과 안내를 갱신할 수 있습니다."
+      ],
+      "estimatedMinutes": 8,
+      "conceptIds": [
+        "js.forms-state"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-forms-state.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/06 DOM·폼·이벤트.md",
+        "sha256": "165e138a12883e07244d8138d2d08330bb2ffe85e9e23d44c4dc653eeb3e490c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-event-delegation",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 25,
+      "slug": "wiki-event-delegation",
+      "title": "이벤트 대상과 위임",
+      "summary": "target에서 시작해 담당 요소를 찾고, currentTarget과 포함 관계를 확인하면 부모 리스너로 자식의 동작을 처리할 수 있습니다.",
+      "essentialQuestion": "버튼 안의 글자를 눌러도 부모 리스너가 올바른 버튼을 어떻게 찾나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "안쪽 요소에서 발생한 이벤트를 부모에서 받고 담당 버튼과 데이터 ID를 안전하게 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "web.event-delegation"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-event-delegation.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/06 DOM·폼·이벤트.md",
+        "sha256": "165e138a12883e07244d8138d2d08330bb2ffe85e9e23d44c4dc653eeb3e490c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-event-defaults",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 26,
+      "slug": "wiki-event-defaults",
+      "title": "이벤트의 기본 동작 취소와 전파",
+      "summary": "preventDefault는 취소 가능한 기본 동작을, 전파 중단 메서드는 이벤트를 받는 리스너의 범위를 다룹니다.",
+      "essentialQuestion": "링크 이동만 취소하면서 부모 리스너는 계속 실행하려면 무엇을 사용하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "브라우저의 이동·제출을 취소할 때와 다른 리스너의 실행을 막을 때를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "web.event-defaults"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-event-defaults.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/06 DOM·폼·이벤트.md",
+        "sha256": "165e138a12883e07244d8138d2d08330bb2ffe85e9e23d44c4dc653eeb3e490c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-errors-input",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 27,
+      "slug": "wiki-errors-input",
+      "title": "입력 검증과 오류 종류",
+      "summary": "예상 가능한 입력은 조건으로 확인하고, 예외는 오류의 종류와 발생 위치를 단서로 처리합니다.",
+      "essentialQuestion": "빈칸 입력과 코드 실행 중 오류는 무엇을 보고 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "입력으로 고칠 수 있는 실패를 먼저 검사하고 오류 이름과 발생 시점으로 조사 대상을 좁힐 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.errors-input"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-errors-input.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/07 오류와 디버깅.md",
+        "sha256": "7180cb8e1e3e59d0f04080e976f269fe6633d58eecc8ff648607274b81896dde",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-error-boundaries",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 28,
+      "slug": "wiki-error-boundaries",
+      "title": "예외 처리: try·catch·finally의 역할",
+      "summary": "catch는 실패를 받아 의미 있게 처리하고, finally는 앞의 반환값과 오류를 덮지 않는 마무리를 맡습니다.",
+      "essentialQuestion": "오류는 어디에서 잡고 finally에는 어떤 일을 두어야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "오류를 복구하거나 안내할 수 있는 경계에서 받고 원래 결과를 보존하며 마무리할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.error-boundaries"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-error-boundaries.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/07 오류와 디버깅.md",
+        "sha256": "7180cb8e1e3e59d0f04080e976f269fe6633d58eecc8ff648607274b81896dde",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-debugging",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 29,
+      "slug": "wiki-debugging",
+      "title": "실제 값으로 디버깅하기",
+      "summary": "정상인 단계의 증거를 남긴 뒤 다음 경계의 실제 값과 호출을 확인하면 디버깅 범위를 줄일 수 있습니다.",
+      "essentialQuestion": "이미 입력과 계산이 맞는데 화면만 다르면 다음으로 무엇을 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "문제를 재현하고 중단점에서 값과 타입을 비교해 처음 어긋난 단계를 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "js.debugging"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-debugging.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/07 오류와 디버깅.md",
+        "sha256": "7180cb8e1e3e59d0f04080e976f269fe6633d58eecc8ff648607274b81896dde",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-promise-chain",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 30,
+      "slug": "wiki-promise-chain",
+      "title": "Promise 상태와 반환 연결",
+      "summary": "Promise의 결과는 한 번 정해지며 then이 만든 다음 Promise에는 콜백의 반환값이나 오류가 이어집니다.",
+      "essentialQuestion": "Promise의 결과는 언제 고정되고 다음 then에는 무엇이 전달되나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "Promise의 확정 상태와 then의 반환을 추적해 다음 단계가 받는 값이나 실패를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "js.promise"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-promise-chain.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/08 비동기 흐름.md",
+        "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-async-await",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 31,
+      "slug": "wiki-async-await",
+      "title": "async·await와 실패 처리",
+      "summary": "async는 Promise를 반환하고 await는 현재 함수의 이어질 실행을 미루며 rejection을 받을 자리를 만듭니다.",
+      "essentialQuestion": "async 함수의 결과와 실패는 호출한 쪽에서 어떻게 받아야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "async의 호출 결과를 기다리고 Promise의 실패를 await 경계나 catch에서 처리할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "js.async-failures"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-async-await.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/08 비동기 흐름.md",
+        "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-async-state",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 32,
+      "slug": "wiki-async-state",
+      "title": "비동기 화면의 진행 상태",
+      "summary": "loading을 먼저 보여 주고 결과에 따라 success나 error로 바꾼 뒤 현재 상태를 다시 그립니다.",
+      "essentialQuestion": "결과를 기다리는 동안과 성공·실패 뒤 화면에는 무엇을 보여 주나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "요청 전·대기·성공·실패를 상태로 나누어 데이터와 사용자 안내를 함께 갱신할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.async-state"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-async-state.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/08 비동기 흐름.md",
+        "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-async-composition",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 33,
+      "slug": "wiki-async-composition",
+      "title": "비동기 작업 조합: 순차 실행과 동시 시작",
+      "summary": "다음 작업이 앞 결과를 필요로 하면 차례대로 기다리고, 독립 작업은 함께 시작하되 결과 확정과 취소를 구분합니다.",
+      "essentialQuestion": "여러 비동기 작업을 언제 차례대로, 언제 함께 시작해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "작업의 입력 의존성을 보고 순차 실행과 동시 시작을 고르며 all·race의 실패와 취소를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "js.async-await"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-async-composition.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/08 비동기 흐름.md",
+        "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-event-loop",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 34,
+      "slug": "wiki-event-loop",
+      "title": "이벤트 루프: 동기 코드·microtask·task의 실행 순서",
+      "summary": "현재 동기 코드가 끝난 뒤 microtask를 처리하고 다음 task로 넘어가므로 타이머 0도 바로 끼어들지 않습니다.",
+      "essentialQuestion": "Promise 반응과 0ms 타이머는 현재 코드에 어떤 순서로 이어지나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "같은 실행 안의 동기 코드와 Promise 반응·타이머 콜백 순서를 나누어 예측할 수 있습니다."
+      ],
+      "estimatedMinutes": 4,
+      "conceptIds": [
+        "js.event-loop"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-event-loop.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/08 비동기 흐름.md",
+        "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-json",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 35,
+      "slug": "wiki-json",
+      "title": "JSON 변환과 데이터 검증",
+      "summary": "JSON은 일부 값을 표현하는 문자열 형식이며 문법이 맞아도 프로그램이 요구하는 데이터 모양은 따로 검사해야 합니다.",
+      "essentialQuestion": "JSON으로 왕복하면 무엇이 바뀌며 파싱 뒤에는 무엇을 검사해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "JavaScript 값과 JSON 문자열을 변환하고 파싱 뒤 필드·타입을 확인해 사용할 수 있는 데이터를 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "js.json"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-json.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/09 데이터 보존과 HTTP.md",
+        "sha256": "a4c648fa9543f8cc32399a62deb4a1b4fadf69ec3d9247df42f04f9dbbc26a59",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-web-storage",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 36,
+      "slug": "wiki-web-storage",
+      "title": "Web Storage의 저장과 복원",
+      "summary": "Web Storage는 origin별 문자열 저장소이므로 파싱과 검증을 거쳐 복원하고 실제 쓰기 성공 뒤에 저장 완료를 알립니다.",
+      "essentialQuestion": "브라우저에 상태를 저장하고 다시 읽을 때 어떤 실패를 확인해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "작은 편의 상태를 문자열로 저장·복원하고 부재·형태 오류·저장 실패를 구분해 안내할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "web.storage"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-web-storage.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/09 데이터 보존과 HTTP.md",
+        "sha256": "a4c648fa9543f8cc32399a62deb4a1b4fadf69ec3d9247df42f04f9dbbc26a59",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-http",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 37,
+      "slug": "wiki-http",
+      "title": "HTTP 요청·응답과 origin 경계",
+      "summary": "HTTP 상태는 요청의 큰 결과를, 본문은 전달할 데이터를, CORS는 다른 origin 응답의 공유 가능 여부를 나타냅니다.",
+      "essentialQuestion": "HTTP 성공, 응답 본문 존재, CORS 허용은 왜 별도로 확인해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "요청 메서드·응답 상태·본문·CORS의 역할을 구분해 성공과 읽기 가능 여부를 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "web.http"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-http.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/09 데이터 보존과 HTTP.md",
+        "sha256": "a4c648fa9543f8cc32399a62deb4a1b4fadf69ec3d9247df42f04f9dbbc26a59",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-fetch",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 38,
+      "slug": "wiki-fetch",
+      "title": "fetch 응답의 실패 경계",
+      "summary": "fetch가 Response를 줬어도 HTTP 상태와 본문 읽기·데이터 모양을 확인해야 사용할 결과인지 알 수 있습니다.",
+      "essentialQuestion": "fetch로 응답을 받았을 때 무엇을 어떤 순서로 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "요청 실패·HTTP 실패·본문 파싱·데이터 형태 검증을 순서대로 나누어 처리할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "web.fetch-response"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-fetch.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/09 데이터 보존과 HTTP.md",
+        "sha256": "a4c648fa9543f8cc32399a62deb4a1b4fadf69ec3d9247df42f04f9dbbc26a59",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "js-concept-flow-review",
+      "languageId": "javascript",
+      "courseId": "javascript",
+      "order": 39,
+      "slug": "wiki-flow-review",
+      "title": "데이터 흐름 종합: 입력부터 최신 화면까지",
+      "summary": "상태를 기준으로 한 방향으로 화면을 그리고, 저장 결과와 요청의 최신성을 확인해야 사용자의 현재 행동이 보존됩니다.",
+      "essentialQuestion": "여러 검색과 저장이 이어져도 화면을 현재 입력과 일치시키려면 어떤 경계를 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "입력·상태·저장·요청·화면을 연결하고 저장 실패와 늦은 응답에도 현재 사용자의 선택을 유지할 수 있습니다."
+      ],
+      "estimatedMinutes": 12,
+      "conceptIds": [
+        "js.data-flow"
+      ],
+      "contentFile": "content/lessons/javascript/wiki-flow-review.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-02",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/10 JavaScript 흐름 종합.md",
+        "sha256": "559e7f5aea97325d0c5e6435d3f57dd57f3484a25082aa5e7312be8e8ad4a16e",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-runtime",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 2,
+      "slug": "wiki-runtime",
+      "title": "JDK와 JVM: Java 컴파일과 실행",
+      "summary": "javac가 Java 소스를 클래스 파일로 만들고 java가 호환되는 JVM에서 클래스를 실행합니다.",
+      "essentialQuestion": "Java 소스가 어떤 도구와 파일을 거쳐 실행되나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "소스·클래스 파일·JDK·JVM의 역할과 실행 조건을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.runtime"
+      ],
+      "contentFile": "content/lessons/java/wiki-runtime.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/01 Java란 무엇인가.md",
+        "sha256": "f99781e3ad03e4dd949538e426083fb8716038d6b8c2e0e36b384292fc9ec18c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-types-variables",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 3,
+      "slug": "wiki-types-variables",
+      "title": "타입과 변수의 값",
+      "summary": "타입은 값과 연산을 제한하며 지역 변수는 읽기 전에 모든 가능한 경로에서 초기화되어야 합니다.",
+      "essentialQuestion": "변수의 타입과 초기화를 보고 어떤 값을 사용할 수 있는지 어떻게 판단하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "기본 값과 참조값을 구분하고 지역 변수를 읽기 전에 값이 정해졌는지 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.types"
+      ],
+      "contentFile": "content/lessons/java/wiki-types-variables.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/01 Java란 무엇인가.md",
+        "sha256": "f99781e3ad03e4dd949538e426083fb8716038d6b8c2e0e36b384292fc9ec18c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-numeric-operations",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 4,
+      "slug": "wiki-numeric-operations",
+      "title": "계산 전에 정하는 숫자 타입",
+      "summary": "숫자는 연산 전에 타입이 맞춰지고 정수 계산의 손실은 결과 대입 타입만 바꿔도 복구되지 않습니다.",
+      "essentialQuestion": "수학에서 예상한 값과 Java 계산 결과가 달라질 때 어떤 타입을 먼저 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "승격·정수 나눗셈·오버플로를 고려해 계산 타입을 정할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.numeric-operations"
+      ],
+      "contentFile": "content/lessons/java/wiki-numeric-operations.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/01 Java란 무엇인가.md",
+        "sha256": "f99781e3ad03e4dd949538e426083fb8716038d6b8c2e0e36b384292fc9ec18c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-control-flow",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 5,
+      "slug": "wiki-control-flow",
+      "title": "조건과 반복의 실행 경계",
+      "summary": "조건은 실행할 길을 고르고 반복은 시작값·계속 조건·갱신으로 같은 흐름의 종료를 정합니다.",
+      "essentialQuestion": "필요한 코드를 언제 실행하고 언제 멈추게 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "분기와 반복에서 실행할 갈래·계속할 조건·갱신 순서를 추적할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.control-flow"
+      ],
+      "contentFile": "content/lessons/java/wiki-control-flow.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/01 Java란 무엇인가.md",
+        "sha256": "f99781e3ad03e4dd949538e426083fb8716038d6b8c2e0e36b384292fc9ec18c",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-arrays",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 6,
+      "slug": "wiki-arrays",
+      "title": "배열의 원소와 경계",
+      "summary": "배열은 고정 길이 객체이며 배열 안의 각 배열은 서로 다른 길이를 가질 수 있습니다.",
+      "essentialQuestion": "배열을 읽거나 바꿀 때 어떤 생성과 인덱스 조건을 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "배열 생성·유효 인덱스·행별 길이를 구분해 원소에 접근할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.arrays"
+      ],
+      "contentFile": "content/lessons/java/wiki-arrays.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/02 배열·문자열·메서드.md",
+        "sha256": "16ff16658ac8efb7fd6b92275d94ff76e0c767c0b8f4aa5a689c20aa3f2cdbb4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-strings",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 7,
+      "slug": "wiki-strings",
+      "title": "문자열의 값과 조립",
+      "summary": "String은 불변이므로 결과를 받아 쓰고 여러 단계의 조립에는 같은 빌더를 바꾸는 방법을 검토합니다.",
+      "essentialQuestion": "문자열의 내용을 확인하거나 이어 만들 때 어떤 값이 바뀌나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "String 반환값과 StringBuilder 변경을 구분하고 문자열 내용을 비교할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.strings"
+      ],
+      "contentFile": "content/lessons/java/wiki-strings.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/02 배열·문자열·메서드.md",
+        "sha256": "16ff16658ac8efb7fd6b92275d94ff76e0c767c0b8f4aa5a689c20aa3f2cdbb4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-methods",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 8,
+      "slug": "wiki-methods",
+      "title": "메서드의 입력·출력 계약",
+      "summary": "메서드는 받은 값과 돌려줄 값의 타입을 선언하며 호출 선택은 인수와 매개변수 구성에 따릅니다.",
+      "essentialQuestion": "호출 코드와 메서드 본문이 같은 입력·출력 약속을 지키는지 어떻게 확인하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "메서드 선언과 호출의 입력·반환 타입을 대조해 계약이 맞는지 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.methods"
+      ],
+      "contentFile": "content/lessons/java/wiki-methods.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/02 배열·문자열·메서드.md",
+        "sha256": "16ff16658ac8efb7fd6b92275d94ff76e0c767c0b8f4aa5a689c20aa3f2cdbb4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-argument-values",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 9,
+      "slug": "wiki-argument-values",
+      "title": "값 전달: 매개변수 재대입과 객체 변경",
+      "summary": "Java는 참조값도 복사해 전달하므로 매개변수 재대입과 같은 객체의 변경은 호출자에게 다르게 보입니다.",
+      "essentialQuestion": "메서드 안의 변경은 언제 호출한 쪽에서도 보이나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "호출 뒤 바뀌는 값이 매개변수인지 공유된 객체 내용인지 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.argument-values"
+      ],
+      "contentFile": "content/lessons/java/wiki-argument-values.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/02 배열·문자열·메서드.md",
+        "sha256": "16ff16658ac8efb7fd6b92275d94ff76e0c767c0b8f4aa5a689c20aa3f2cdbb4",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-objects",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 10,
+      "slug": "wiki-objects",
+      "title": "클래스·객체·참조와 this",
+      "summary": "클래스는 타입과 구현을 선언하고 인스턴스 필드와 메서드는 각 대상 객체의 상태를 다룹니다.",
+      "essentialQuestion": "여러 변수가 등장할 때 어느 객체의 상태가 바뀌는지 어떻게 찾나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "타입 선언과 실행 중 객체·참조 변수를 구분하고 대상 객체의 상태를 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.objects"
+      ],
+      "contentFile": "content/lessons/java/wiki-objects.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/03 클래스·객체와 캡슐화.md",
+        "sha256": "9c89c66e0c8a0f1382d7cab00bba6080cd2820ef3ce2666b664e3e4bb37c9acc",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-constructors",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 11,
+      "slug": "wiki-constructors",
+      "title": "생성자와 올바른 첫 상태",
+      "summary": "생성자는 첫 상태를 준비하며 Java 25의 위임 전 인수 검사는 생성 중인 객체의 자유로운 사용을 허용하지 않습니다.",
+      "essentialQuestion": "객체가 완성되기 전에 어떤 값을 준비하고 어떤 접근을 제한해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "생성자와 위임으로 초기 조건을 지키고 Java 25의 초기 구성 제한을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.constructors"
+      ],
+      "contentFile": "content/lessons/java/wiki-constructors.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/03 클래스·객체와 캡슐화.md",
+        "sha256": "9c89c66e0c8a0f1382d7cab00bba6080cd2820ef3ce2666b664e3e4bb37c9acc",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-encapsulation",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 12,
+      "slug": "wiki-encapsulation",
+      "title": "상태 규칙을 지키는 캡슐화",
+      "summary": "private 필드와 의미 있는 공개 행동이 함께 있어야 상태 변경 규칙을 객체 안에서 지킬 수 있습니다.",
+      "essentialQuestion": "필드를 감추는 것만으로 충분하지 않은 이유는 무엇인가요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "객체가 허용한 행동을 통해서만 상태가 바뀌도록 책임을 모을 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.encapsulation"
+      ],
+      "contentFile": "content/lessons/java/wiki-encapsulation.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/03 클래스·객체와 캡슐화.md",
+        "sha256": "9c89c66e0c8a0f1382d7cab00bba6080cd2820ef3ce2666b664e3e4bb37c9acc",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-packages-access",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 13,
+      "slug": "wiki-packages-access",
+      "title": "패키지와 접근 범위",
+      "summary": "패키지는 이름·접근 경계이며 import는 이름을 줄여 쓸 뿐 접근 권한을 늘리지 않습니다.",
+      "essentialQuestion": "타입을 import했는데도 멤버를 사용할 수 없는 이유는 무엇인가요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "패키지 이름과 접근 제어를 구분해 다른 코드에서 사용할 수 있는 멤버를 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.packages-access"
+      ],
+      "contentFile": "content/lessons/java/wiki-packages-access.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/04 static·final과 객체 비교.md",
+        "sha256": "9901786150d68d05087621cce2fa72fba396a2112c9abb88e783b121830ec210",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-static-members",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 14,
+      "slug": "wiki-static-members",
+      "title": "static과 인스턴스 멤버",
+      "summary": "인스턴스 멤버는 객체마다 존재하고 static 멤버는 클래스에 속하지만 접근 권한은 별도입니다.",
+      "essentialQuestion": "어떤 값과 동작을 객체에 두고 어떤 것을 클래스에 두나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "객체별 상태와 클래스 공유 상태를 나누고 static 메서드의 대상 객체 유무를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.static-members"
+      ],
+      "contentFile": "content/lessons/java/wiki-static-members.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/04 static·final과 객체 비교.md",
+        "sha256": "9901786150d68d05087621cce2fa72fba396a2112c9abb88e783b121830ec210",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-final-immutability",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 15,
+      "slug": "wiki-final-immutability",
+      "title": "final과 불변 객체",
+      "summary": "final은 참조의 재대입을 막으며 가리키는 객체의 변경까지 막으려면 별도의 설계가 필요합니다.",
+      "essentialQuestion": "final을 붙인 뒤에도 무엇이 바뀔 수 있나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "변수 재대입 금지와 객체 상태 불변을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.final-immutability"
+      ],
+      "contentFile": "content/lessons/java/wiki-final-immutability.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/04 static·final과 객체 비교.md",
+        "sha256": "9901786150d68d05087621cce2fa72fba396a2112c9abb88e783b121830ec210",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-equality-hashing",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 16,
+      "slug": "wiki-equality-hashing",
+      "title": "equals와 hashCode: 객체의 동일성과 동등성",
+      "summary": "equals로 같은 값인 객체는 같은 해시코드를 가져야 하지만 같은 해시코드가 같은 값을 뜻하지는 않습니다.",
+      "essentialQuestion": "서로 다른 객체를 같은 값으로 다룰 때 어떤 비교 약속을 지켜야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "참조 동일성과 논리적 같음을 구분하고 동등성·해시 계약을 함께 지킬 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.equality-hashing"
+      ],
+      "contentFile": "content/lessons/java/wiki-equality-hashing.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/04 static·final과 객체 비교.md",
+        "sha256": "9901786150d68d05087621cce2fa72fba396a2112c9abb88e783b121830ec210",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-inheritance-dispatch",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 17,
+      "slug": "wiki-inheritance-dispatch",
+      "title": "상속과 실제 객체의 메서드",
+      "summary": "상속은 타입 관계를 만들며 재정의한 인스턴스 메서드는 실제 객체에 따라 선택됩니다.",
+      "essentialQuestion": "상위 타입 변수로 하위 객체의 메서드를 부르면 어떤 구현이 실행되나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "선언 타입의 사용 가능 멤버와 실제 객체의 오버라이딩 메서드를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "java.inheritance-dispatch"
+      ],
+      "contentFile": "content/lessons/java/wiki-inheritance-dispatch.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/05 상속·인터페이스와 다형성.md",
+        "sha256": "347bf0700b273faee3ee68a7af4633597035b478340e8c0b317b0610c2343ce3",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-abstract-interfaces",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 18,
+      "slug": "wiki-abstract-interfaces",
+      "title": "추상 클래스와 인터페이스의 역할",
+      "summary": "추상 클래스는 공통 상태와 구현을, 인터페이스는 여러 객체가 제공할 역할을 나타냅니다.",
+      "essentialQuestion": "공통 부분을 공유할 때 추상 클래스와 인터페이스 중 무엇을 고르나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "공통 상태·구현과 여러 클래스의 역할 요구를 보고 추상 클래스와 인터페이스를 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.abstract-interfaces"
+      ],
+      "contentFile": "content/lessons/java/wiki-abstract-interfaces.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/05 상속·인터페이스와 다형성.md",
+        "sha256": "347bf0700b273faee3ee68a7af4633597035b478340e8c0b317b0610c2343ce3",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-composition-injection",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 19,
+      "slug": "wiki-composition-injection",
+      "title": "조합·위임과 생성자 주입",
+      "summary": "가진 객체에 일을 위임하고 역할 타입으로 전달받으면 사용하는 코드와 구체 구현의 결합을 줄일 수 있습니다.",
+      "essentialQuestion": "협력 구현이 바뀔 때 사용하는 코드를 덜 바꾸려면 어떻게 연결하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "바뀌는 협력 역할을 생성자로 받아 구현을 교체할 수 있도록 책임을 나눌 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.composition-injection"
+      ],
+      "contentFile": "content/lessons/java/wiki-composition-injection.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/05 상속·인터페이스와 다형성.md",
+        "sha256": "347bf0700b273faee3ee68a7af4633597035b478340e8c0b317b0610c2343ce3",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-generics",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 20,
+      "slug": "wiki-generics",
+      "title": "제네릭: 타입 인수로 저장·조회 타입 정하기",
+      "summary": "제네릭은 담을 타입을 미리 약속하지만 null이나 객체 상태 같은 모든 오류를 막지는 않습니다.",
+      "essentialQuestion": "목록에 담을 타입을 생략하면 어떤 검사가 약해지나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "타입 인수와 raw type을 구분해 저장·조회 계약을 컴파일 단계에 드러낼 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.generics"
+      ],
+      "contentFile": "content/lessons/java/wiki-generics.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/06 제네릭과 컬렉션.md",
+        "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-lists",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 21,
+      "slug": "wiki-lists",
+      "title": "순서 있는 List의 크기와 삭제",
+      "summary": "List는 순서와 중복을 유지하며 ArrayList의 준비 용량은 현재 원소 수와 다릅니다.",
+      "essentialQuestion": "목록의 크기와 삭제할 대상을 어떤 값으로 판단하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "List의 순서·중복·현재 크기를 읽고 숫자 목록의 위치 삭제와 값 삭제를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.lists"
+      ],
+      "contentFile": "content/lessons/java/wiki-lists.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/06 제네릭과 컬렉션.md",
+        "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-sets-maps",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 22,
+      "slug": "wiki-sets-maps",
+      "title": "Set과 Map으로 중복·키 다루기",
+      "summary": "Set은 같은 값을 한 번 보관하고 Map은 같은 키의 값을 바꾸며 순서는 구현체에 따릅니다.",
+      "essentialQuestion": "같은 입력이 다시 들어올 때 값을 하나만 남길지 키의 정보를 갱신할지 어떻게 고르나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "중복 제거와 키별 값 갱신 요구를 구분하고 동등성·순서 조건을 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.sets-maps"
+      ],
+      "contentFile": "content/lessons/java/wiki-sets-maps.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/06 제네릭과 컬렉션.md",
+        "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-deque",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 23,
+      "slug": "wiki-deque",
+      "title": "Deque로 큐와 스택 사용하기",
+      "summary": "Deque는 양 끝을 사용해 FIFO와 LIFO를 표현하며 빈 상태를 값으로 받을지 예외로 받을지 구분합니다.",
+      "essentialQuestion": "처리할 순서와 비어 있을 가능성을 보고 어느 끝에서 어떻게 꺼내나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "필요한 처리 순서와 빈 상태에 맞게 Deque의 넣고 꺼내는 연산을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.deque"
+      ],
+      "contentFile": "content/lessons/java/wiki-deque.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/06 제네릭과 컬렉션.md",
+        "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-collection-choice",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 24,
+      "slug": "wiki-collection-choice",
+      "title": "컬렉션 선택: 보관 규칙과 연산 비용",
+      "summary": "컬렉션 선택과 비용은 인터페이스 이름이 아니라 필요한 규칙·구현체·연산 조건을 함께 봅니다.",
+      "essentialQuestion": "같은 데이터라도 사용하는 방법이 달라지면 어떤 보관 도구를 골라야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "데이터 이름 대신 순서·중복·키·처리 방향과 자주 할 연산으로 컬렉션을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.collection-choice"
+      ],
+      "contentFile": "content/lessons/java/wiki-collection-choice.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/06 제네릭과 컬렉션.md",
+        "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-exceptions",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 25,
+      "slug": "wiki-exceptions",
+      "title": "예외 처리와 전달",
+      "summary": "예외는 정상 흐름의 중단을 알리며 처리할 수 없다면 성공 값으로 숨기지 않고 원인을 전달합니다.",
+      "essentialQuestion": "예외를 어느 위치에서 처리하고 언제 호출자에게 전달해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "실패를 복구할 책임과 정보를 보고 처리·전달·원인 보존을 결정할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.exceptions"
+      ],
+      "contentFile": "content/lessons/java/wiki-exceptions.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/07 예외와 자원 정리.md",
+        "sha256": "a849953fd7843789ca1beec966f9a14f8b5718de9a80c7e27d5b3223674a09e9",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-resources",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 26,
+      "slug": "wiki-resources",
+      "title": "try-with-resources: 자원 종료와 예외 보존",
+      "summary": "try-with-resources는 준비된 자원을 역순으로 닫고 본문 실패와 닫기 실패를 구분해 보존합니다.",
+      "essentialQuestion": "자원을 사용하다 실패해도 무엇을 닫고 어떤 예외를 남겨야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "정상·예외 종료에서 자원을 닫고 여러 실패가 생겼을 때 남는 원인을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.resources"
+      ],
+      "contentFile": "content/lessons/java/wiki-resources.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/07 예외와 자원 정리.md",
+        "sha256": "a849953fd7843789ca1beec966f9a14f8b5718de9a80c7e27d5b3223674a09e9",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-lambdas",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 27,
+      "slug": "wiki-lambdas",
+      "title": "람다와 함수형 인터페이스",
+      "summary": "람다는 대상 함수형 인터페이스의 한 추상 메서드 계약을 채웁니다.",
+      "essentialQuestion": "값을 대신할 처리 방법을 어떤 타입으로 전달하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "전달할 동작의 입력·출력에 맞는 함수형 인터페이스와 람다를 읽을 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.lambdas"
+      ],
+      "contentFile": "content/lessons/java/wiki-lambdas.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/08 람다·Stream과 날짜·시간.md",
+        "sha256": "c4cbfc4995f1ce5b3127d8d7424b05365de76863c89df251dcbffb6b60f0ebd1",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-streams",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 28,
+      "slug": "wiki-streams",
+      "title": "Stream으로 값을 고르고 바꾸어 모으기",
+      "summary": "Stream은 소스에서 필요한 값을 처리해 결과를 만드는 일회성 흐름이며 저장소나 공유 상태 변경 도구가 아닙니다.",
+      "essentialQuestion": "값들을 처리 단계로 연결할 때 무엇을 언제 실행하고 어떤 상태를 바꾸지 않아야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "Stream 처리 순서와 원본·공유 상태 경계를 구분해 필요한 결과를 만들 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "java.streams"
+      ],
+      "contentFile": "content/lessons/java/wiki-streams.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/08 람다·Stream과 날짜·시간.md",
+        "sha256": "c4cbfc4995f1ce5b3127d8d7424b05365de76863c89df251dcbffb6b60f0ebd1",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-date-time",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 29,
+      "slug": "wiki-date-time",
+      "title": "날짜·시점·시간량 구분하기",
+      "summary": "날짜와 시간 타입은 담을 정보의 뜻으로 고르며 지역 없는 날짜·시각만으로 한순간을 확정할 수 없습니다.",
+      "essentialQuestion": "기록하려는 시간이 날짜인지 한순간인지 시간량인지 어떻게 구분하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "날짜·한순간·지역 규칙·시간량을 구분하고 불변 시간값의 반환값을 사용할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.date-time"
+      ],
+      "contentFile": "content/lessons/java/wiki-date-time.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/08 람다·Stream과 날짜·시간.md",
+        "sha256": "c4cbfc4995f1ce5b3127d8d7424b05365de76863c89df251dcbffb6b60f0ebd1",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-shared-state",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 30,
+      "slug": "wiki-shared-state",
+      "title": "동시성: 공유 상태의 원자성·가시성·순서",
+      "summary": "공유 값의 읽기·계산·쓰기와 값이 보이는 관계는 별개이며 volatile만으로 복합 갱신이 원자적이 되지는 않습니다.",
+      "essentialQuestion": "여러 작업이 같은 상태를 바꿀 때 무엇을 한 덩어리로 보호해야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "공유 갱신의 위험을 찾고 원자성·가시성·순서에 맞는 보장을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.shared-state"
+      ],
+      "contentFile": "content/lessons/java/wiki-shared-state.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/09 여러 작업과 공유 상태.md",
+        "sha256": "bc84352b8c1f9140bfc1a6e86db3df0f8b18b8b43400e7df9a99d9d89bde684e",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-tasks-results",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 31,
+      "slug": "wiki-tasks-results",
+      "title": "ExecutorService와 Future로 작업 결과 모으기",
+      "summary": "작업이 결과를 반환하고 호출자가 완료를 확인해 합치면 불필요한 공유 갱신을 줄일 수 있습니다.",
+      "essentialQuestion": "여러 작업의 결과를 언제 안전하게 받아 모으고 가상 스레드는 어디에 쓰나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "작업·스레드·executor·Future의 역할을 나누고 완료된 결과를 한 곳에서 합칠 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "java.tasks-results"
+      ],
+      "contentFile": "content/lessons/java/wiki-tasks-results.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/09 여러 작업과 공유 상태.md",
+        "sha256": "bc84352b8c1f9140bfc1a6e86db3df0f8b18b8b43400e7df9a99d9d89bde684e",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-test-contracts",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 32,
+      "slug": "wiki-test-contracts",
+      "title": "공개 계약에서 테스트 조건 찾기",
+      "summary": "테스트는 선택한 입력에서 호출자가 관찰할 약속을 확인하며 내부 구현이나 모든 경우의 무결함을 증명하지 않습니다.",
+      "essentialQuestion": "메서드가 지킬 약속에서 적은 수의 의미 있는 확인 조건을 어떻게 고르나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "입력·결과·예외·외부 변화에서 정상·경계·실패 조건을 골라 확인할 수 있습니다."
+      ],
+      "estimatedMinutes": 7,
+      "conceptIds": [
+        "java.test-contracts"
+      ],
+      "contentFile": "content/lessons/java/wiki-test-contracts.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/10 테스트와 Java 흐름 정리.md",
+        "sha256": "1957b34641de4cad3439169930c810e8f4defc691c4a4ff12a1ab9f36537de44",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "java-concept-test-tools",
+      "languageId": "java",
+      "courseId": "java",
+      "order": 33,
+      "slug": "wiki-test-tools",
+      "title": "JUnit·AssertJ·Mockito의 테스트 역할",
+      "summary": "JUnit은 테스트 실행 틀, AssertJ는 결과 비교 표현, Mockito는 외부 협력 대역을 맡습니다.",
+      "essentialQuestion": "확인할 사실에 따라 JUnit·AssertJ·Mockito 중 어떤 역할이 필요한가요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "테스트 실행 틀·assertion·협력 대역의 역할을 나누고 필요한 도구만 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "java.test-tools"
+      ],
+      "contentFile": "content/lessons/java/wiki-test-tools.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-03",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/04 Java/10 테스트와 Java 흐름 정리.md",
+        "sha256": "1957b34641de4cad3439169930c810e8f4defc691c4a4ff12a1ab9f36537de44",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "spring-framework-boot",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 1,
+      "slug": "framework-boot",
+      "title": "Spring과 Spring Boot의 관계",
+      "summary": "Spring Boot는 Spring Framework 기반 애플리케이션의 시작과 구성을 돕습니다.",
+      "essentialQuestion": "Spring Boot를 쓰면 Spring을 따로 이해하지 않아도 될까요?",
+      "objectives": [
+        "Java, Spring Framework, Spring Boot가 맡는 일을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.framework-boot"
+      ],
+      "contentFile": "content/lessons/spring/framework-boot.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-ioc-di",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 2,
+      "slug": "ioc-di",
+      "title": "DI(의존성 주입): 필요한 객체를 외부에서 받기",
+      "summary": "DI는 객체가 필요한 협력자를 바깥에서 받고, Spring 컨테이너가 그 연결을 맡는 방식입니다.",
+      "essentialQuestion": "서비스가 필요한 객체를 직접 만들지 않으면 누가 연결할까요?",
+      "objectives": [
+        "컨테이너가 등록된 협력 객체를 찾아 서비스 생성자로 전달하는 흐름을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.ioc-di"
+      ],
+      "contentFile": "content/lessons/spring/ioc-di.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-bean-registration",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 3,
+      "slug": "bean-registration",
+      "title": "Bean을 등록하는 두 방법",
+      "summary": "탐색할 클래스에는 @Component를, 객체 생성 과정을 설정하려면 @Bean 메서드를 사용합니다.",
+      "essentialQuestion": "@Component와 @Bean은 언제 골라 쓸까요?",
+      "objectives": [
+        "직접 작성한 클래스와 생성 방법을 제어해야 하는 객체에 맞는 Bean 등록 방법을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.bean-registration"
+      ],
+      "contentFile": "content/lessons/spring/bean-registration.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-bean-selection",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 4,
+      "slug": "bean-selection",
+      "title": "@Primary와 @Qualifier로 Bean 후보 선택하기",
+      "summary": "같은 타입의 Bean이 여러 개면 그중 무엇을 원하는지 선택 조건을 확인합니다.",
+      "essentialQuestion": "같은 인터페이스의 Bean이 둘이면 어떤 객체가 주입될까요?",
+      "objectives": [
+        "단일 의존성의 타입 후보를 @Qualifier 또는 @Primary 조건으로 좁힐 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.bean-selection"
+      ],
+      "contentFile": "content/lessons/spring/bean-selection.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-singleton-state",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 5,
+      "slug": "singleton-state",
+      "title": "Singleton Bean과 요청별 상태",
+      "summary": "Singleton은 컨테이너의 같은 Bean을 공유하므로 요청별 값을 인스턴스 필드에 섞지 않아야 합니다.",
+      "essentialQuestion": "Singleton 서비스 필드에 요청값을 담아도 될까요?",
+      "objectives": [
+        "Singleton Bean의 공유 범위를 설명하고 요청별 값을 필드에 보관할 때의 위험을 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.singleton-state"
+      ],
+      "contentFile": "content/lessons/spring/singleton-state.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-boot-start",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 6,
+      "slug": "boot-start",
+      "title": "Spring Boot 시작점 읽기",
+      "summary": "main이 Boot 시작을 요청하고, 설정·자동구성·컴포넌트 탐색으로 애플리케이션 컨텍스트를 준비합니다.",
+      "essentialQuestion": "main에서 SpringApplication.run은 무엇을 시작할까요?",
+      "objectives": [
+        "SpringApplication.run과 @SpringBootApplication의 역할을 나누고 웹 서버 시작의 조건을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.boot-start"
+      ],
+      "contentFile": "content/lessons/spring/boot-start.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-starters",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 7,
+      "slug": "starters",
+      "title": "Starter와 의존성 버전",
+      "summary": "Starter는 용도에 맞는 라이브러리 묶음이며, Boot의 의존성 관리는 함께 사용할 버전을 맞춥니다.",
+      "essentialQuestion": "starter 하나를 추가하면 무엇이 함께 준비될까요?",
+      "objectives": [
+        "필요한 기능의 starter를 선택하고 Boot 의존성 관리가 버전 선택을 돕는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.starters"
+      ],
+      "contentFile": "content/lessons/spring/starters.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-auto-configuration",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 8,
+      "slug": "auto-configuration",
+      "title": "자동구성의 조건 읽기",
+      "summary": "자동구성은 라이브러리·기존 Bean·설정값 등의 조건에 따라 기본 구성을 선택합니다.",
+      "essentialQuestion": "같은 Boot인데 준비되는 Bean은 왜 다를까요?",
+      "objectives": [
+        "자동구성이 적용되는 조건과 직접 등록한 Bean이 그 조건에 미치는 영향을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.auto-configuration"
+      ],
+      "contentFile": "content/lessons/spring/auto-configuration.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-component-scan",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 9,
+      "slug": "component-scan",
+      "title": "컴포넌트 탐색 범위",
+      "summary": "@Service가 있어도 탐색 범위 밖이면 기본 컴포넌트 탐색으로 등록되지 않습니다.",
+      "essentialQuestion": "@Service를 붙였는데 왜 Bean이 없을까요?",
+      "objectives": [
+        "시작 클래스의 패키지 위치를 보고 기본 탐색에 포함되는 컴포넌트를 판정할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.component-scan"
+      ],
+      "contentFile": "content/lessons/spring/component-scan.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-external-config",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 10,
+      "slug": "external-config",
+      "title": "외부 설정과 @ConfigurationProperties",
+      "summary": "외부 설정은 같은 코드를 다른 값으로 사용할 수 있게 하며 여러 출처의 우선순위가 적용됩니다.",
+      "essentialQuestion": "코드가 같아도 실행할 때 설정값을 바꿀 수 있을까요?",
+      "objectives": [
+        "같은 설정 키의 출처 우선순위를 적용하고 접두사별 값을 타입에 묶는 방법을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.external-config"
+      ],
+      "contentFile": "content/lessons/spring/external-config.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-profiles",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 11,
+      "slug": "profiles",
+      "title": "Profile로 환경별 구성 고르기",
+      "summary": "Profile은 특정 환경에서 사용할 설정과 Bean을 선택하는 조건입니다.",
+      "essentialQuestion": "local 설정은 파일이 있다는 이유만으로 적용될까요?",
+      "objectives": [
+        "활성 profile에 따라 적용되는 설정 파일과 Bean의 포함 조건을 판정할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.profiles"
+      ],
+      "contentFile": "content/lessons/spring/profiles.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-mvc-flow",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 12,
+      "slug": "mvc-flow",
+      "title": "Spring MVC와 DispatcherServlet의 요청 처리",
+      "summary": "DispatcherServlet이 MVC 처리 흐름을 조정하고 컨트롤러는 HTTP 입력과 업무 호출을 연결합니다.",
+      "essentialQuestion": "URL 요청은 어떻게 Java 메서드 호출로 이어질까요?",
+      "objectives": [
+        "HTTP 요청의 분배, 인수 준비, 업무 처리와 응답 변환의 책임을 나눌 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.mvc-flow"
+      ],
+      "contentFile": "content/lessons/spring/mvc-flow.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-request-mapping",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 13,
+      "slug": "request-mapping",
+      "title": "경로와 HTTP 메서드 매핑",
+      "summary": "요청 매핑은 URL 경로뿐 아니라 GET·POST 같은 HTTP 메서드도 함께 비교합니다.",
+      "essentialQuestion": "같은 URL이면 GET과 POST도 같은 메서드를 부를까요?",
+      "objectives": [
+        "클래스와 메서드의 경로를 결합하고 HTTP 메서드 조건까지 적용해 요청 대상을 판정할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.request-mapping"
+      ],
+      "contentFile": "content/lessons/spring/request-mapping.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-request-parameters",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 14,
+      "slug": "request-parameters",
+      "title": "경로 변수와 쿼리 파라미터",
+      "summary": "경로의 자리는 @PathVariable, 쿼리나 폼 파라미터는 @RequestParam으로 받습니다.",
+      "essentialQuestion": "/notices/7?page=2의 7과 2는 어떻게 받을까요?",
+      "objectives": [
+        "경로 변수와 쿼리 값을 해당 인수에 연결하고 값 누락과 타입 변환 실패를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.request-parameters"
+      ],
+      "contentFile": "content/lessons/spring/request-parameters.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-request-body",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 15,
+      "slug": "request-body",
+      "title": "@RequestBody로 JSON 요청 본문 받기",
+      "summary": "@RequestBody는 메시지 변환기를 통해 HTTP 본문을 지정한 Java 타입으로 읽습니다.",
+      "essentialQuestion": "JSON 본문은 어떻게 컨트롤러 인수가 될까요?",
+      "objectives": [
+        "JSON 본문을 @RequestBody로 받는 흐름과 Content-Type 조건의 역할을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.request-body"
+      ],
+      "contentFile": "content/lessons/spring/request-body.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-responses",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 16,
+      "slug": "responses",
+      "title": "응답 본문과 상태 코드",
+      "summary": "@RestController는 반환값을 응답 본문으로 연결하고 ResponseEntity는 상태와 헤더도 지정합니다.",
+      "essentialQuestion": "반환 문자열은 화면 이름일까요, 응답 본문일까요?",
+      "objectives": [
+        "반환값을 본문으로 처리하는 방식과 ResponseEntity의 상태·헤더·본문 역할을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.responses"
+      ],
+      "contentFile": "content/lessons/spring/responses.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-validation",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 17,
+      "slug": "validation",
+      "title": "Bean Validation과 @Valid로 입력 검증하기",
+      "summary": "JSON으로 읽을 수 있는 입력도 별도의 값 제약을 만족해야 합니다.",
+      "essentialQuestion": "JSON으로 읽힌 객체는 이미 유효한 입력일까요?",
+      "objectives": [
+        "JSON 변환과 값의 제약 검사를 구별하고 @Valid로 객체 검증이 적용되는 조건을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.validation"
+      ],
+      "contentFile": "content/lessons/spring/validation.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-exception-handling",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 18,
+      "slug": "exception-handling",
+      "title": "예외를 HTTP 오류로 바꾸기",
+      "summary": "예외 처리는 실패를 없애는 일이 아니라 호출자가 이해할 HTTP 응답으로 변환하는 일입니다.",
+      "essentialQuestion": "서비스 예외를 클라이언트가 이해할 오류로 바꾸는 자리는 어디일까요?",
+      "objectives": [
+        "알려진 업무 예외를 상태 코드와 응답 본문으로 바꾸고 공통 오류 처리의 범위를 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.exception-handling"
+      ],
+      "contentFile": "content/lessons/spring/exception-handling.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-unit-tests",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 19,
+      "slug": "unit-tests",
+      "title": "객체 테스트와 Spring 연결 테스트",
+      "summary": "new로 만든 객체의 행동 테스트와 컨테이너의 등록·주입 테스트는 서로 다른 근거를 제공합니다.",
+      "essentialQuestion": "서비스를 new해서 테스트하면 Bean 연결까지 확인한 걸까요?",
+      "objectives": [
+        "직접 생성한 객체 테스트가 확인하는 행동과 Spring 컨텍스트를 거쳐야 확인할 구성을 구별할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.unit-tests"
+      ],
+      "contentFile": "content/lessons/spring/unit-tests.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-mvc-tests",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 20,
+      "slug": "mvc-tests",
+      "title": "MockMvc로 확인하는 MVC 테스트 범위",
+      "summary": "MockMvc는 서버를 띄우지 않고도 DispatcherServlet을 통과하는 MVC 요청 처리를 검사합니다.",
+      "essentialQuestion": "컨트롤러 메서드를 직접 부르면 HTTP 매핑도 검증될까요?",
+      "objectives": [
+        "컨트롤러 직접 호출, MockMvc와 Boot 테스트가 실제로 통과하는 경로를 비교할 수 있습니다."
+      ],
+      "estimatedMinutes": 5,
+      "conceptIds": [
+        "spring.mvc-tests"
+      ],
+      "contentFile": "content/lessons/spring/mvc-tests.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-authentication-authorization",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 21,
+      "slug": "security-authentication-authorization",
+      "title": "인증과 인가를 나누어 보기",
+      "summary": "인증은 누구인지 확인하고, 인가는 그 사용자가 해당 행동을 할 수 있는지 판단합니다.",
+      "essentialQuestion": "로그인한 사용자가 모든 기능을 쓸 수 있을까요?",
+      "objectives": [
+        "인증 결과와 기능별 권한 판단을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-authentication-authorization"
+      ],
+      "contentFile": "content/lessons/spring/security-authentication-authorization.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-filter-chain",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 22,
+      "slug": "security-filter-chain",
+      "title": "SecurityFilterChain과 보안 필터 흐름",
+      "summary": "보안 필터는 MVC 앞에서 요청을 검사하며, 처음 일치한 SecurityFilterChain의 필터들을 적용합니다.",
+      "essentialQuestion": "컨트롤러가 실행되지 않았는데 보안 응답이 나오는 이유는 무엇일까요?",
+      "objectives": [
+        "요청에 적용되는 보안 체인과 컨트롤러 전에 멈추는 지점을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-filter-chain"
+      ],
+      "contentFile": "content/lessons/spring/security-filter-chain.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-request-rules",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 23,
+      "slug": "security-request-rules",
+      "title": "요청 인가: 경로·HTTP 메서드별 접근 규칙",
+      "summary": "요청의 메서드와 경로를 읽고, 선언된 순서에서 처음 맞는 인가 규칙을 적용합니다.",
+      "essentialQuestion": "여러 접근 규칙이 같은 요청과 맞으면 무엇을 적용할까요?",
+      "objectives": [
+        "HTTP 메서드·경로·선언 순서로 적용할 인가 규칙을 선택할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-request-rules"
+      ],
+      "contentFile": "content/lessons/spring/security-request-rules.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-form-login",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 24,
+      "slug": "security-form-login",
+      "title": "로그인 폼이 인증으로 이어지는 과정",
+      "summary": "로그인 화면은 입력을 받고, 인증 필터와 인증 제공자는 전달된 자격 증명을 확인합니다.",
+      "essentialQuestion": "로그인 폼을 보여 주는 일과 자격 증명을 확인하는 일은 어떻게 다를까요?",
+      "objectives": [
+        "기본 폼의 요청 형식과 사용자 조회·비밀번호 대조 역할을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-form-login"
+      ],
+      "contentFile": "content/lessons/spring/security-form-login.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-password-storage",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 25,
+      "slug": "security-password-storage",
+      "title": "PasswordEncoder: 비밀번호 해시 생성과 대조",
+      "summary": "비밀번호는 복구할 원문 대신 단방향 저장값으로 보관하고, matches로 입력과 대조합니다.",
+      "essentialQuestion": "같은 비밀번호를 다시 인코딩한 문자열이 다르면 로그인 실패일까요?",
+      "objectives": [
+        "비밀번호 저장값의 단순 문자열 비교와 PasswordEncoder의 대조를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-password-storage"
+      ],
+      "contentFile": "content/lessons/spring/security-password-storage.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-session-logout",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 26,
+      "slug": "security-session-logout",
+      "title": "세션 기반 로그인과 로그아웃",
+      "summary": "세션 기반 로그인은 서버의 인증 정보를 다음 요청에 이어 쓰고, 로그아웃은 그 상태를 정리합니다.",
+      "essentialQuestion": "로그인 후 상태는 어디에 이어지고 로그아웃은 무엇을 지울까요?",
+      "objectives": [
+        "세션을 통한 인증 지속과 표준 로그아웃의 상태 정리를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-session-logout"
+      ],
+      "contentFile": "content/lessons/spring/security-session-logout.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-csrf",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 27,
+      "slug": "security-csrf",
+      "title": "쿠키 인증과 CSRF 방어",
+      "summary": "CSRF 방어는 브라우저가 자동으로 보내는 인증 정보만으로 변경 요청을 믿지 않도록 돕습니다.",
+      "essentialQuestion": "로그인한 브라우저의 요청에도 CSRF 토큰을 확인하는 이유는 무엇일까요?",
+      "objectives": [
+        "세션 인증·인가와 변경 요청의 CSRF 검사를 별도 조건으로 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-csrf"
+      ],
+      "contentFile": "content/lessons/spring/security-csrf.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-cors",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 28,
+      "slug": "security-cors",
+      "title": "다른 출처의 브라우저 요청과 CORS",
+      "summary": "CORS는 브라우저의 다른 출처 접근을 조정하며, 사용자 인증이나 업무 권한을 부여하지 않습니다.",
+      "essentialQuestion": "CORS를 허용하면 로그인과 권한 검사도 통과할까요?",
+      "objectives": [
+        "CORS 사전 확인과 실제 요청의 인증·인가·CSRF 책임을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-cors"
+      ],
+      "contentFile": "content/lessons/spring/security-cors.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-method-authorization",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 29,
+      "slug": "security-method-authorization",
+      "title": "@PreAuthorize로 서비스 메서드 인가하기",
+      "summary": "메서드 인가는 서비스 호출에도 권한 조건을 두며, 기본 프록시를 통과하는 호출에 적용됩니다.",
+      "essentialQuestion": "URL을 통과한 뒤 서비스 메서드에서도 권한을 확인할 수 있을까요?",
+      "objectives": [
+        "메서드 인가 활성화와 프록시 호출 여부에 따라 검사 경계를 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-method-authorization"
+      ],
+      "contentFile": "content/lessons/spring/security-method-authorization.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-oauth2-oidc",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 30,
+      "slug": "security-oauth2-oidc",
+      "title": "OAuth 2.0과 OIDC의 역할",
+      "summary": "OAuth 2.0은 API 접근 권한을 위임하고, OIDC는 그 위에 사용자 인증 정보를 주고받는 규칙을 더합니다.",
+      "essentialQuestion": "외부 로그인과 토큰을 받는 API는 같은 역할일까요?",
+      "objectives": [
+        "외부 로그인 Client, Resource Server와 토큰별 사용 목적을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-oauth2-oidc"
+      ],
+      "contentFile": "content/lessons/spring/security-oauth2-oidc.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-jwt-resource-server",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 31,
+      "slug": "security-jwt-resource-server",
+      "title": "JWT를 받는 API의 검증",
+      "summary": "JWT 내용을 읽는 것과 신뢰하는 것은 다르며, 검증 후에도 요청에 필요한 권한을 확인합니다.",
+      "essentialQuestion": "JWT의 내용을 읽을 수 있으면 믿어도 될까요?",
+      "objectives": [
+        "JWT의 서명·발급자·시간·대상 검증과 scope 기반 인가를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-jwt-resource-server"
+      ],
+      "contentFile": "content/lessons/spring/security-jwt-resource-server.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-security-tests",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 32,
+      "slug": "security-tests",
+      "title": "보안 테스트가 확인하는 경로",
+      "summary": "보안 테스트는 실제 검사 경로를 포함하고, 인증·권한·CSRF 조건을 분리해야 원인을 설명할 수 있습니다.",
+      "essentialQuestion": "권한과 CSRF 실패를 테스트에서 어떻게 구분할까요?",
+      "objectives": [
+        "보안 필터 포함 여부와 인증 대역·CSRF 조건에 따라 테스트 근거를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.security-tests"
+      ],
+      "contentFile": "content/lessons/spring/security-tests.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-roles",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 33,
+      "slug": "jpa-roles",
+      "title": "JPA·Hibernate·Spring Data JPA의 역할",
+      "summary": "JPA는 객체 저장의 표준이고 Hibernate는 구현체이며 Spring Data JPA는 Repository 작성을 돕습니다.",
+      "essentialQuestion": "회원 객체를 DB에 저장할 때 JPA, Hibernate, Repository는 어떤 일을 나누나요?",
+      "objectives": [
+        "표준·구현체·저장소 지원의 역할을 저장 흐름에 연결할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-roles"
+      ],
+      "contentFile": "content/lessons/spring/jpa-roles.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-table-keys",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 34,
+      "slug": "jpa-table-keys",
+      "title": "기본키와 외래키: 행 식별과 테이블 연결",
+      "summary": "기본키는 한 행을 구별하고 외래키는 다른 표의 행을 연결합니다.",
+      "essentialQuestion": "같은 이름의 회원과 그 회원의 주문은 어떤 값으로 구별하고 연결하나요?",
+      "objectives": [
+        "표의 행·열·기본키·외래키를 읽고 이름이 같은 회원을 구별할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-table-keys"
+      ],
+      "contentFile": "content/lessons/spring/jpa-table-keys.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-entity-id",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 35,
+      "slug": "jpa-entity-id",
+      "title": "엔티티와 식별자 매핑",
+      "summary": "엔티티 매핑은 Java 상태와 테이블을 연결하며 @Id가 영속 식별자를 지정합니다.",
+      "essentialQuestion": "평범한 Java 객체를 JPA가 다룰 회원으로 표시하려면 무엇이 필요한가요?",
+      "objectives": [
+        "엔티티 선언·기본 생성자·식별자와 열 매핑을 코드에서 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-entity-id"
+      ],
+      "contentFile": "content/lessons/spring/jpa-entity-id.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-repository-crud",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 36,
+      "slug": "jpa-repository-crud",
+      "title": "Repository로 생성·조회·삭제 요청하기",
+      "summary": "Repository의 타입 계약과 조회 결과의 빈 상태를 읽으면 기본 저장소 요청을 구분할 수 있습니다.",
+      "essentialQuestion": "회원 한 명을 조회할 때 어떤 타입과 없는 결과를 다뤄야 하나요?",
+      "objectives": [
+        "JpaRepository의 엔티티·ID 타입을 읽고 CRUD 메서드와 빈 조회 결과를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-repository-crud"
+      ],
+      "contentFile": "content/lessons/spring/jpa-repository-crud.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-context-states",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 37,
+      "slug": "jpa-context-states",
+      "title": "영속성 컨텍스트와 엔티티 상태",
+      "summary": "영속성 컨텍스트는 엔티티를 관리하며 DB에 행이 있다는 사실과 객체가 관리된다는 사실은 다릅니다.",
+      "essentialQuestion": "같은 ID를 다시 읽는 것과 객체의 관리가 끝나는 것은 어떻게 다른가요?",
+      "objectives": [
+        "new·managed·detached·removed 상태와 한 컨텍스트의 식별자별 관리 원칙을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-context-states"
+      ],
+      "contentFile": "content/lessons/spring/jpa-context-states.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-save-merge",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 38,
+      "slug": "jpa-save-merge",
+      "title": "save와 persist·merge 구분하기",
+      "summary": "save의 신규 판정과 merge가 반환하는 관리 객체를 구분해야 이후 변경을 놓치지 않습니다.",
+      "essentialQuestion": "save에 넘긴 객체와 반환된 객체는 왜 구분해야 하나요?",
+      "objectives": [
+        "기본 신규 판정 조건을 확인하고 merge가 반환한 관리 객체를 이어서 사용할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-save-merge"
+      ],
+      "contentFile": "content/lessons/spring/jpa-save-merge.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-transactions",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 39,
+      "slug": "jpa-transactions",
+      "title": "트랜잭션 안에서 변경 감지하기",
+      "summary": "쓰기 트랜잭션의 관리 엔티티 변경은 감지되며 여러 저장소 요청은 업무 단위로 묶어야 합니다.",
+      "essentialQuestion": "조회한 회원의 이름만 바꾸면 언제 저장 변경으로 이어지나요?",
+      "objectives": [
+        "활성 쓰기 트랜잭션·관리 상태에서 변경 감지를 설명하고 서비스 작업 단위의 경계를 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-transactions"
+      ],
+      "contentFile": "content/lessons/spring/jpa-transactions.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-flush-commit",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 40,
+      "slug": "jpa-flush-commit",
+      "title": "flush와 커밋의 차이",
+      "summary": "flush는 DB와의 동기화이고 커밋은 트랜잭션 확정이므로 서로 같은 단계가 아닙니다.",
+      "essentialQuestion": "DB로 변경을 보낸 뒤에도 트랜잭션을 되돌릴 수 있나요?",
+      "objectives": [
+        "영속성 컨텍스트 동기화와 트랜잭션 확정을 구분하고 flush 시점의 오류 가능성을 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-flush-commit"
+      ],
+      "contentFile": "content/lessons/spring/jpa-flush-commit.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-relations",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 41,
+      "slug": "jpa-relations",
+      "title": "연관관계의 주인과 외래키",
+      "summary": "양방향 일대다 관계에서는 다대일 쪽이 외래키 변경을 결정하고 양쪽 참조는 코드가 맞춥니다.",
+      "essentialQuestion": "양방향 관계에서 어느 필드를 바꿔야 DB 연결 변경을 표현하나요?",
+      "objectives": [
+        "many-to-one 외래키 매핑과 mappedBy의 방향을 읽고 양쪽 객체 참조를 일관되게 맞출 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-relations"
+      ],
+      "contentFile": "content/lessons/spring/jpa-relations.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-fetch-loading",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 42,
+      "slug": "jpa-fetch-loading",
+      "title": "지연 로딩(LAZY)과 즉시 로딩(EAGER)",
+      "summary": "LAZY와 EAGER는 로딩 시점의 계약이며 추가 조회가 가능한 범위와 SQL 형태를 함께 살펴야 합니다.",
+      "essentialQuestion": "LAZY로 둔 연관 객체는 언제든 추가로 읽을 수 있나요?",
+      "objectives": [
+        "LAZY와 EAGER의 계약을 구분하고 관리 범위가 끝난 미초기화 연관의 조회 요구를 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-fetch-loading"
+      ],
+      "contentFile": "content/lessons/spring/jpa-fetch-loading.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-query-methods",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 43,
+      "slug": "jpa-query-methods",
+      "title": "조회 메서드 이름과 JPQL",
+      "summary": "조회 메서드 이름과 JPQL은 엔티티 속성을 기준으로 읽고 사용자 값은 매개변수로 전달합니다.",
+      "essentialQuestion": "Java 속성과 DB 열 이름이 다를 때 조회 조건에는 어느 이름을 쓰나요?",
+      "objectives": [
+        "메서드 이름의 조건과 JPQL의 엔티티·속성 이름을 읽고 바인딩 값과 쿼리 구조를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-query-methods"
+      ],
+      "contentFile": "content/lessons/spring/jpa-query-methods.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-fetch-plan",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 44,
+      "slug": "jpa-fetch-plan",
+      "title": "N+1을 관찰하고 조회 계획 세우기",
+      "summary": "목록 이후 연관 조회가 반복되는지 관찰하고 필요한 데이터에 맞는 fetch 계획을 고릅니다.",
+      "essentialQuestion": "목록 조회 뒤에 연관 조회가 반복될 때 무엇을 바꿔야 하나요?",
+      "objectives": [
+        "주어진 조회 패턴에서 N+1을 진단하고 화면에 필요한 연관 데이터를 위한 fetch 계획을 비교할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-fetch-plan"
+      ],
+      "contentFile": "content/lessons/spring/jpa-fetch-plan.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-pagination",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 45,
+      "slug": "jpa-pagination",
+      "title": "Page와 Slice로 목록 나누기",
+      "summary": "Page는 전체 규모를, Slice는 다음 데이터의 존재를 다루며 페이징에는 정렬 조건도 필요합니다.",
+      "essentialQuestion": "전체 페이지 수가 필요한 목록과 다음 묶음만 필요한 목록은 어떻게 다르나요?",
+      "objectives": [
+        "Page·Slice와 페이지 번호·정렬 조건을 읽고 count와 연관 조회 조건을 따로 검토할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-pagination"
+      ],
+      "contentFile": "content/lessons/spring/jpa-pagination.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
+      }
+    },
+    {
+      "id": "spring-jpa-member-login",
+      "courseId": "spring",
+      "languageId": "java",
+      "order": 46,
+      "slug": "jpa-member-login",
+      "title": "UserDetailsService: DB 회원 조회와 인증 연결",
+      "summary": "DB 회원 조회 결과를 UserDetails로 연결하고 비밀번호 검증은 Spring Security의 인증 흐름에 맡깁니다.",
+      "essentialQuestion": "DB에서 찾은 회원은 어떻게 비밀번호 인증에 사용되나요?",
+      "objectives": [
+        "Repository 조회·UserDetailsService 변환·PasswordEncoder 검증의 경계를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "spring.jpa-member-login"
+      ],
+      "contentFile": "content/lessons/spring/jpa-member-login.md",
+      "answerHeading": "핵심 질문 답",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-14"
       }
     }
   ]

@@ -1,4 +1,4 @@
-# 내장 검증의 역할과 한계
+# HTML 폼 내장 검증의 역할과 한계
 
 ## 학습 목표
 
@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[입력의 레이블과 제출 이름](#/learn/html/wiki-input-names), [받을 값과 선택 관계에 맞는 입력](#/learn/html/wiki-form-controls)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
+[입력의 레이블과 제출 이름](#/learn/html/wiki-input-names), [폼 컨트롤: 값과 선택에 맞는 입력 고르기](#/learn/html/wiki-form-controls)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
 
 ## 내장 검증은 흔한 입력 실수를 먼저 알려 준다
 

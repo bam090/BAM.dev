@@ -1757,6 +1757,39 @@ article.lesson-body > h3 {
   color: var(--color-text);
 }
 
+.quiz-mode-controls {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.quiz-mode-group, .quiz-batch-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.quiz-mode-group > span { min-width: 76px; font-weight: 700; }
+.quiz-mode-group [aria-pressed="true"] {
+  border-color: var(--color-primary-strong);
+  background: var(--color-brand-tint);
+  color: var(--color-primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.quiz-batch-controls p, .quiz-list-result p { margin: 0; color: var(--color-text-soft); }
+.quiz-question-list { display: grid; gap: 28px; }
+.quiz-list-result { display: grid; justify-items: center; gap: 12px; margin-top: 28px; }
+.quiz-card .quiz-actions--individual { grid-template-columns: 1fr; }
+.quiz-card .quiz-actions--batch { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.quiz-actions:empty { display: none; }
+
 .quiz-actions {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

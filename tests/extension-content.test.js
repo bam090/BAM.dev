@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { getLessonsForLanguage, validateCurriculum } from "../src/core/content.js";
+import { getLessonsForCourse, getLessonsForLanguage, validateCurriculum } from "../src/core/content.js";
 import { validateQuizCollection } from "../src/core/quiz.js";
 import { splitMarkdownSection } from "../src/ui/markdown.js";
 
@@ -19,12 +19,12 @@ const AVAILABLE_CONTRACTS = [
   {
     languageId: "css",
     lessonCount: 6,
-    quizCount: 12,
+    quizCount: 47,
     sourcePattern: /https:\/\/(?:www\.w3\.org|drafts\.csswg\.org)\//,
   },
 ];
 
-test("HTML의 보관·파생 교안과 기존 CSS 교안은 같은 과정의 연속 순서와 공식 출처를 유지한다", async () => {
+test("HTML·CSS의 보관·파생 교안은 같은 과정의 연속 순서와 공식 출처를 유지한다", async () => {
   for (const contract of AVAILABLE_CONTRACTS) {
     const language = curriculum.languages.find(
       (item) => item.id === contract.languageId,
@@ -36,7 +36,7 @@ test("HTML의 보관·파생 교안과 기존 CSS 교안은 같은 과정의 연
     assert.ok(language, `${contract.languageId}: 언어 메타데이터가 필요합니다.`);
     assert.equal(language.status, "available");
     assert.equal(originalLessons.length, contract.lessonCount);
-    assert.equal(derivedLessons.length, contract.languageId === "html" ? 15 : 0);
+    assert.equal(derivedLessons.length, contract.languageId === "html" ? 15 : 20);
     assert.deepEqual(
       originalLessons.map((lesson) => lesson.order),
       Array.from({ length: contract.lessonCount }, (_, index) => index + 1),
@@ -67,7 +67,7 @@ test("HTML의 보관·파생 교안과 기존 CSS 교안은 같은 과정의 연
         assert.ok(splitMarkdownSection(markdown, lesson.answerHeading).section, lesson.id);
       } else {
         assert.equal(lesson.source.kind, "bam-authored");
-        assert.equal(Boolean(lesson.archivedFromCatalog), contract.languageId === "html");
+        assert.equal(Boolean(lesson.archivedFromCatalog), true);
         assert.match(markdown, /## (?:최종 )?확인 문제/);
         assert.match(markdown, /## 면접 답변 예시/);
       }
@@ -102,18 +102,52 @@ test("HTML·CSS 객관식은 모든 문항을 같은 언어의 교안·개념과
   }
 });
 
-test("Java는 한 개의 읽기·추론 샘플 교안과 객관식을 유지한다", async () => {
+test("Java 정적 학습은 32개 개념 문서와 64문항을 제공하고 기존 샘플의 ID·URL을 보존한다", async () => {
   const language = curriculum.languages.find((item) => item.id === "java");
-  const lessons = getLessonsForLanguage(curriculum, "java");
+  const lessons = getLessonsForCourse(curriculum, "java");
   const quiz = JSON.parse(
     await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"),
   );
 
-  assert.equal(language?.status, "sample");
-  assert.equal(lessons.length, 1);
+  assert.equal(language?.status, "available");
+  assert.equal(curriculum.courses.find((course) => course.id === "java")?.status, "available");
+  assert.equal(lessons.length, 33);
   assert.equal(lessons[0].id, "java-01-types-methods");
-  assert.equal(quiz.questions.length, 1);
+  assert.equal(lessons[0].slug, "types-and-methods");
+  assert.equal(lessons[0].archivedFromCatalog, true);
+  assert.equal(lessons.filter((lesson) => !lesson.archivedFromCatalog).length, 32);
+  assert.equal(quiz.questions.filter((question) => lessons.some((lesson) => lesson.id === question.lessonId)).length, 64);
   assert.equal(quiz.questions[0].id, "quiz-java-method-return");
+  assert.equal(quiz.questions[0].lessonId, "java-01-types-methods");
+  assert.deepEqual(validateQuizCollection(quiz, curriculum), []);
+});
+
+test("Spring은 Security·JPA를 포함한 46개 정적 교안·92문항을 기존 Java 컬렉션에 연결한다", async () => {
+  const course = curriculum.courses.find((item) => item.id === "spring");
+  assert.equal(course?.categoryId, "spring");
+  assert.equal(course?.languageId, "java");
+  assert.equal(course?.name, "Spring · Spring Boot");
+  assert.equal(course?.status, "available");
+  assert.equal(course?.accent, "java");
+  assert.equal(curriculum.categories.find((item) => item.id === "spring")?.status, "available");
+  assert.equal(curriculum.languages.some((item) => item.id === "spring"), false);
+  const lessons = getLessonsForCourse(curriculum, "spring");
+  const quiz = JSON.parse(await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"));
+  assert.equal(lessons.length, 46);
+  assert.deepEqual(lessons.map((lesson) => lesson.order), Array.from({ length: 46 }, (_, index) => index + 1));
+  assert.equal(quiz.questions.length, 156);
+  for (const lesson of lessons) {
+    assert.equal(lesson.id, `spring-${lesson.slug}`);
+    assert.equal(lesson.contentFile, `content/lessons/spring/${lesson.slug}.md`);
+    assert.equal(lesson.languageId, "java");
+    assert.equal(Boolean(lesson.archivedFromCatalog), false);
+    assert.equal(lesson.source.kind, "bam-authored");
+    for (const field of ["originalPath", "sha256", "importedAt", "importMode"]) assert.equal(Object.hasOwn(lesson.source, field), false, `${lesson.id}: ${field}`);
+    assert.ok(lesson.conceptIds.every((id) => id.startsWith("spring.")), lesson.id);
+    const questions = quiz.questions.filter((question) => question.lessonId === lesson.id);
+    assert.equal(questions.length, 2, lesson.id);
+    assert.ok(questions.every((question) => question.id.startsWith(`quiz-java-${lesson.id}-`)), lesson.id);
+  }
 });
 
 test("모든 정식·샘플 언어가 학습 링크와 짝을 이루는 객관식 컬렉션을 가진다", async () => {

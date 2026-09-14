@@ -41,6 +41,8 @@ export function restoreReviewSession(saved, questions, scope) {
     if (saved.screen === "result" && gradedAnswers.size !== sessionQuestions.length) throw new Error();
     return { status: "restored", session: {
       id: saved.id, mode: saved.mode, questions: sessionQuestions, currentIndex: saved.currentIndex,
+      viewMode: saved.viewMode === "all" ? "all" : "single",
+      gradingMode: saved.gradingMode === "batch" ? "batch" : "individual",
       selectedOptionIds, gradedAnswers, screen: saved.screen,
       summary: saved.screen === "result" ? summarizeQuiz(sessionQuestions, [...gradedAnswers.values()]) : null,
       recordAttempted: saved.recordAttempted === true || saved.screen === "result",

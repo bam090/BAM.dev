@@ -44,7 +44,7 @@ category ──► course ──► lesson ──► Markdown
 | `accent` | CSS에서 허용한 테마 키 |
 | `description` | 언어의 지원·실행 범위 설명 |
 
-`available`은 현재 단계에서 정식 평가에 사용할 수 있는 언어, `sample`은 콘텐츠·라우팅 계약의 언어 독립성을 확인하는 최소 지원 표본, `planned`는 아직 탐색할 수 없는 예정 언어를 뜻합니다. `sample`이라고 해서 브라우저 실행·채점까지 제공한다는 뜻은 아닙니다. 과정의 노출 상태와 언어의 평가 지원 상태는 별도 필드이므로 둘을 같은 목록으로 가정하지 않습니다.
+`available`은 현재 단계에서 교안·객관식을 정식으로 탐색할 수 있는 언어, `sample`은 콘텐츠·라우팅 계약의 언어 독립성을 확인하는 최소 지원 표본, `planned`는 아직 탐색할 수 없는 예정 언어를 뜻합니다. 이 상태만으로 Code Quest·코딩테스트 실행 지원을 보장하지 않습니다. 현재 Code Quest 필수 제공 대상은 `javascript`, `html`, `css` 중 `available`인 언어이며 Java 정적 제공은 별개입니다. 과정의 노출 상태와 언어 상태는 별도 필드입니다.
 
 ## 교안
 
@@ -93,13 +93,44 @@ category ──► course ──► lesson ──► Markdown
 | `lesson.answerHeading` | 선택적인 비어 있지 않은 문자열. 새 HTML 파생 교안은 `핵심 질문 답`을 사용하며 Markdown에 같은 실제 `##` 절이 반드시 있어야 한다. 명시한 절이 없으면 콘텐츠 검증 실패이며 출처 종류로 답변을 추정해 대체하지 않는다. 필드가 없는 기존 교안만 종전 fallback을 유지한다. |
 | `source.originalPath` | 기존 안전한 `profile/` 경로 외에 `wiki/학습자료/밤데브 학습문서/` 아래 실제 보관함 상대 Markdown 경로를 허용한다. 절대 경로·역슬래시·제어문자·빈 부분·`.`·`..`는 계속 금지한다. |
 | `source.importMode` | 기존 `copy`·`excerpt`에 `derived`를 추가한다. `derived`는 승인 원문에 기초한 분할·재구성과 목표·질문·직접답 보완이며 원문과 같은 문장/바이트라고 주장하지 않는다. |
-| `reviewConcept.documentLessonId` | 선택 필드. `lessonId`는 기존 문항의 소유 교안, `documentLessonId`는 상세 읽기와 `heading`·`excerpt`의 실제 교안이다. 없으면 두 역할 모두 기존 `lessonId`를 사용한다. 두 교안 모두 존재하고 같은 개념 ID를 선언하며 `courseId`·`languageId`가 서로 같고 실제 문항의 언어와도 일치해야 한다. |
+| `reviewConcept.documentLessonId` | 선택 필드. `lessonId`는 문항의 소유 교안, `documentLessonId`는 상세 읽기와 `heading`·`excerpt`의 실제 교안이다. 없으면 두 역할 모두 기존 `lessonId`를 사용한다. 두 교안 모두 존재하고 같은 개념 ID를 선언하며 실제 문항의 언어와 일치해야 한다. 기존 같은 과정 조건과 승인된 언어 과정 간 예외는 아래 [공유 상세 문서 계약](#javascriptjava-파생-교안과-공유-상세-문서)을 따른다. |
 
 `source`의 네 반입 필드는 여전히 함께 필요하고 `sha256`은 **파생본이 아닌 원본 전체 바이트**의 해시다. `copy`만 제품 본문과 기록 해시의 일치를 요구하며, `excerpt`·`derived`는 원문 snapshot과 구간·제외·재작성 기록을 독립 대조한다. 실제 원문 확인일과 이번 검증일·반입일을 구분하고 기존 JS 반입 자료의 `profile/` 계보를 현재 HTML 계보로 덮어쓰지 않는다.
 
 기존 HTML 5교안에는 보관 표시만 추가한다. 새 교안은 같은 `courseId: html` 배열의 `order: 6`부터 연속 추가하고 안정 ID를 새로 부여한다. 활성 목록에서 읽기 위치를 다시 계산할 뿐 내부 순서나 기존 ID를 재사용하지 않는다. 신규 문서의 완료 ID는 사용자가 직접 표시하기 전까지 없다.
 
 기존 객관식·Quest·Web Project JSON과 문항 ID·`lessonId`·`conceptId`·내용·진행 서명은 그대로 유지한다. 신규 문서의 CTA는 위 개념 발췌 역관계에서 **실제 존재하는** 문항의 기존 `#/review/<language>/<lessonId>?concept=<conceptId>` 범위로 연결한다. 연결이 없는 문서는 빈 풀이를 시작하지 않는다. 복귀 검증은 기존 소유 교안과 명시된 상세 문서 중 실제 매핑된 대상만 허용하며 토큰·문항·세션 검증을 생략하지 않는다.
+
+### CSS 파생 교안의 전환 계약
+
+`[확정 결정]` [CSS 전환](designs/lesson-review.md#css-개념-문서-전환)은 위 HTML 데이터 계약을 새 스키마·저장 키 없이 재사용한다. 기존 CSS 6교안에는 `archivedFromCatalog: true`만 추가하고 ID·slug·`order`·본문·기존 문항/실습 관계를 유지한다. 새 문서는 같은 `courseId/languageId: css`에서 `order: 7`부터 추가하며 `id: css-notes-<키>`, `slug: wiki-<키>`, `contentFile: content/lessons/css/wiki-<키>.md`, `answerHeading: 핵심 질문 답`을 사용한다.
+
+`source.originalPath`는 실제 밤위키 CSS 원문 상대 경로, `sha256`은 해당 원본 전체 바이트, `importMode`는 `derived`다. 새 CSS `reviewConcept`는 기존 문항 소유 `lessonId`를 보존하고 검증된 새 상세 문서를 `documentLessonId`로 연결한다. 원문 구간·최종 ID·실제 heading/발췌·문항 매핑과 검증 상태는 [CSS 작업 카드](work-items/2026-09-13-css-concept-lessons.md)에 둔다. 기존 CSS 본문을 이 원문의 반입본이라고 표시하거나 기존 완료·시도를 새 ID로 복사하지 않는다. 기존 문항 계약도 유지하되 `quiz-css-flex-axis.code`의 `writing-mode: horizontal-tb;` 한 줄 보완만 허용한다. 코드 서명 변경은 기존 진행 세션의 콘텐츠 변경 안전 처리에 맡기며 서명을 억지로 유지하거나 저장 키를 이관하지 않는다.
+
+### JavaScript·Java 파생 교안과 공유 상세 문서
+
+`[확정 결정]` [JS·Java 전환](designs/lesson-review.md#javascriptjava-개념-문서와-객관식-전환)은 기존 `derived`·보관·직접답 metadata와 정적 JSON 형식을 재사용한다. 공유 상세 문서·검증된 키워드 범위와 보관 처리는 현재 코드·JSON에 반영됐다. 최종 단위/문항 매핑·수량·독립 단계 판정은 [작업 카드](work-items/2026-09-14-js-java-concepts-and-review.md)가 담당한다.
+
+- 새 ID는 `js-concept-<key>`·`java-concept-<key>`, slug는 `wiki-<key>`, 파일은 각각 `content/lessons/javascript/`·`content/lessons/java/` 아래다. 기존 order를 유지하고 JS 8부터, Java 2부터 연속 추가한다. 새 단위의 `answerHeading`은 실제 `핵심 질문 답` 절을 가리킨다.
+- 기존 JS runtime은 ID·본문·활성을 유지하며 `answerHeading` 없이 기존 면접 답변 형식도 보존했다. 모든 기존 교안의 직접답 UI를 일괄 전환한 것으로 해석하지 않는다. 나머지 기존 JS·Java 교안에는 보관 표시만 추가한다. 기존 source·ID·slug·본문·완료·문항 소유 관계를 새 파생으로 덮어쓰지 않는다.
+- 원문은 `wiki/학습자료/밤데브 학습문서/03 JavaScript/`·`04 Java/` 아래 실제 상대 경로이며 `importMode: derived`·원본 전체 SHA와 재구성 구간을 기록한다. 기존 source 날짜를 새 검증 PASS로 쓰지 않고 원문 기록일·이번 확인/반입일을 구분한다. 원본 경로 안전 검사와 `copy` 해시 계약은 유지한다.
+- 공유 상세 문서는 **같은 `courseId`이거나**, 두 과정 모두 `categoryId: language`이고 같은 `languageId`일 때만 허용한다. 두 교안의 언어·concept 선언, 실제 문항의 `lessonId`·언어·concept, 실제 `heading`·발췌와 교안 존재 조건을 계속 검사한다. 알고리즘과 언어 과정 사이의 공유는 같은 JavaScript라도 허용하지 않는다.
+- 목록/문서 CTA는 언어 내 해당 concept 문항 전부의 매핑이 같은 상세 문서·주제로 귀결될 때만 한 카드로 합치고 기존 v1 `lessonId: null` 언어+concept 선택을 사용한다. 조건이 성립하지 않으면 기존 소유별 묶음을 유지한다. 기존 소유 교안 URL·route 검증·문서 복귀 토큰 검사를 완화하지 않는다.
+- 기존 JS 27개·Java 1개 문항 객체는 그대로 두고 새 객체만 해당 언어 컬렉션에 추가한다. 기존 문항 ID·진도 키는 유지하지만 범위의 문항 집합 변경은 활성 세션의 콘텐츠 서명을 바꿀 수 있으며 기존 변경 감지·안내 계약을 따른다. 문항 객체 보존을 모든 범위의 세션 서명 불변으로 주장하지 않는다.
+- Java 언어·과정의 `status`는 현재 `available`이다. 이 값은 정적 학습문서·객관식 제공 상태이며 Java runner·코딩테스트·Spring·설치형 release 준비를 나타내지 않는다. 콘텐츠 검사는 Code Quest 필수 제공을 available인 JavaScript·HTML·CSS로 한정하고, 앱의 초기 Quest 로드·해시 진입·실제 열기도 같은 조건을 사용한다. 미제공 Java Quest는 기존 기본 JavaScript 교안으로 복귀한다. 별도 스키마 버전·저장 키·실행 의존성은 추가하지 않았다.
+
+### CSS 객관식과 Spring 정적 콘텐츠
+
+`[확정 결정]` [CSS·Spring 확장](designs/lesson-review.md#css-객관식과-springspring-boot-기초-확장)은 기존 schemaVersion 1·진도 키·route를 재사용한다. 이 계약을 콘텐츠와 검사·표시에 반영했다. 실제 ID·단위·출처·독립 검증 상태는 [작업 카드](work-items/2026-09-14-css-quiz-spring-foundations.md)에 둔다.
+
+- CSS는 기존 `content/quizzes/css.json`에 새 문항만 추가한다. 기존 문항 객체·소유 교안은 유지하고 필요한 새 `reviewConcept`를 추가한다. 새 CSS 문항은 기존 교안의 conceptIds에 모두 연결되어 기존 교안 metadata를 수정하지 않았다. 기존 CSS 본문과 출처는 이번 작업의 시작 기준 그대로 보존한다.
+- Spring은 `category.id: spring`, `course.id/categoryId: spring`, `course.languageId: java`, `course.name: Spring · Spring Boot`, `accent: java`를 사용한다. 실행 언어 `spring`이나 별도 Spring 퀴즈 컬렉션을 만들지 않는다. 과정의 `available`은 정적 문서·객관식 제공만 뜻한다.
+- Spring 교안은 `id: spring-<key>`, `slug: <key>`, `contentFile: content/lessons/spring/<key>.md`, 과정 안의 연속 `order: 1`부터 추가한다. `conceptIds`는 `spring.*`, `answerHeading`은 실제 `핵심 질문 답` 절이다. 문서 URL은 `#/learn/spring/<slug>`다.
+- 새 Spring 문항은 `quiz-java-spring-<key>-...` ID로 `content/quizzes/java.json`에 추가하고 `lessonId`는 새 Spring 교안을 가리킨다. 기존 Java 문항 객체는 보존한다. 새 문항의 `learningObjective`·네 보기의 정오와 이유·개념 연결을 검사하며 문제 URL은 기존 `#/review/java/<lessonId>?concept=<conceptId>`를 사용한다. Java 언어 전체 범위와 Java/Spring 주제별 범위는 서로 다른 선택이다.
+- 같은 Java 언어라는 이유로 Spring과 Java 언어 과정의 상세 문서를 공유하지 않는다. Spring은 별도 카테고리이므로 기존 공유 조건 중 같은 과정 조건만 사용한다. 실제 같은 Spring 문서의 heading·원문 발췌를 연결하며 학습 문서 관리자가 교육 문장을 새로 만들지 않는다.
+- Spring `source.kind`는 기존 허용값 `bam-authored`, `verifiedAt`은 공식 자료를 실제 확인한 날짜다. 이 값은 프로젝트의 새 작성 콘텐츠 분류이며 사용자의 직접 집필을 주장하지 않는다. 본문과 카드에 승인된 에이전트 새 저작·공식 URL·확인일을 기록한다. 대응하는 밤위키 원문이 없으므로 `originalPath`·`sha256`·`importedAt`·`importMode`는 만들지 않는다.
+
+새 ID는 기존 완료나 시도를 상속하지 않는다. 기존 문항을 보존해도 추가 문항을 포함하는 활성 범위의 콘텐츠 서명은 바뀔 수 있으며, v1의 변경 감지·새 시작 안내를 유지한다. 빌드·Java/Spring 실행 의존성이나 새 스키마 버전은 추가하지 않는다.
 
 ## 객관식 컬렉션
 
@@ -124,7 +155,7 @@ category ──► course ──► lesson ──► Markdown
 
 ## R1 개념 발췌와 진행 세션 계약
 
-`[확정 결정]` 아래는 [R1 첫 사용 범위](designs/lesson-review.md#r1-첫-사용-구현-계약)의 구현 계약이다. 현재 코드·발췌 파일에 적용돼 있으며, 실제 콘텐츠·실행·통합 검증 범위는 [첫 사용 작업 카드](work-items/2026-09-12-independent-review-first-use.md#독립-검증과-실행-증거)에 기록한다. 아래 전체 목표의 `conceptRefs`·문항 revision·시도 이력 이관을 R1에서 구현하지 않는다.
+`[확정 결정]` 아래는 [R1 첫 사용 범위](designs/lesson-review.md#r1-첫-사용-구현-계약)의 구현 계약이다. 현재 코드·발췌 파일에 적용돼 있으며, 실제 콘텐츠·실행·통합 검증 범위는 [첫 사용 작업 카드](work-items/2026-09-12-independent-review-first-use.md#독립-검증과-실행-증거)에 기록한다. 아래 전체 목표의 `conceptRefs`·문항 revision·시도 이력 이관을 R1에서 구현하지 않는다. 현재 보기·채점 선택은 아래 [v1 확장](#보기채점-방식의-v1-확장)만 추가했다.
 
 ### 개념 발췌 파일
 
@@ -155,7 +186,15 @@ category ──► course ──► lesson ──► Markdown
 | `returnContext` | 문제에서 문서로 이동할 때 생성하는 `token`·`sessionId`·`lessonId`·`questionId`. 문서 URL의 토큰, 저장된 세션·대상 문서·실제 문항 연결과 복구 가능한 콘텐츠가 일치할 때만 복귀 허용 |
 | `viewport` | `anchor`·카드의 `offset`·`scrollY`·`focusId`. 해당 카드 위치와 초점을 복구하며 대상이 없으면 관련 개념 버튼 또는 문제/결과 제목으로 이동 |
 
-같은 origin·브라우저 프로필에서 선택·채점·탐색·문서 이동에 필요한 변경을 저장하고 새로고침·재실행으로 복구한다. 저장 차단·내용 손상·서명 불일치·누락 문항은 저장 성공이나 0점 완료로 위장하지 않고 안내하며 기존 완료 기록을 보존한다. 저장 직전에 마지막 읽은 값과 현재 값을 비교하고 `storage` 변경을 감지하면 오래된 탭의 쓰기를 거부해 저장된 풀이를 불러오도록 안내한다. Web Storage의 읽기·쓰기 사이를 트랜잭션으로 묶지 않으므로 완전히 동시인 쓰기의 원자성까지 보장하지 않는다. 상세 자동 검증과 실제 브라우저 검증의 구분은 작업 카드에 남긴다. 생애 최초·재도전 이벤트 ledger·모름·헷갈림·전체 보기·전체 채점은 이 키에 추측해 추가하지 않는다.
+같은 origin·브라우저 프로필에서 선택·채점·탐색·문서 이동에 필요한 변경을 저장하고 새로고침·재실행으로 복구한다. 저장 차단·내용 손상·서명 불일치·누락 문항은 저장 성공이나 0점 완료로 위장하지 않고 안내하며 기존 완료 기록을 보존한다. 저장 직전에 마지막 읽은 값과 현재 값을 비교하고 `storage` 변경을 감지하면 오래된 탭의 쓰기를 거부해 저장된 풀이를 불러오도록 안내한다. Web Storage의 읽기·쓰기 사이를 트랜잭션으로 묶지 않으므로 완전히 동시인 쓰기의 원자성까지 보장하지 않는다. 상세 자동 검증과 실제 브라우저 검증의 구분은 작업 카드에 남긴다. 생애 최초·재도전 이벤트 ledger·모름·헷갈림은 이 키에 추측해 추가하지 않는다. 보기·채점 방식은 아래 제한된 v1 확장만 적용한다.
+
+### 보기·채점 방식의 v1 확장
+
+`[확정 결정]` [보기·채점 첫 확장](designs/lesson-review.md#보기-방식과-채점-방식의-첫-확장)은 기존 물리 키·`schemaVersion: 1`·활성 세션 하나를 유지한다. 선택적 `viewMode: single | all`과 `gradingMode: individual | batch`만 더하며 누락·낯선 값은 각각 `single`·`individual`로 복구한다. 기존 `mode: all | incorrect`는 문항 범위로 그대로 보존한다. 콘텐츠·문항 revision·제출 이벤트 스키마를 확장하지 않는다.
+
+방식 변경은 세션 ID와 `questionIds`, `selectedOptionIds`, `gradedQuestionIds`, `expandedQuestionIds`, 기존 완료 기록을 유지하며 `currentIndex`는 실제 동작 카드에 맞춘다. 선택과 채점은 기존 문항/보기 ID로 구별한다. 전체 채점은 선택된 미채점 문항만 기존 채점 함수로 평가하고 미응답·기채점 문항은 건너뛴다. 모든 문항을 채점한 뒤 사용자가 결과 보기를 선택할 때까지 완료 시도를 저장하지 않는다. 결과 표시 시 `recordAttempted`를 포함한 기존 결과 저장·복구 계약을 유지한다.
+
+`returnContext`와 `viewport`는 전부 보기의 실제 문항 카드도 가리킬 수 있다. 문서 왕복·새로고침에서 방식·위치·초점을 복구한다. 새 DOM ID는 두 보기에서 같은 문항 ID 접미사를 사용하고 구버전 `focusId`가 없으면 현재 카드의 동일 역할 조작 또는 제목으로 이동한다. 기존 토큰·문항·문서·콘텐츠 서명 검증은 완화하지 않는다. 저장 장애와 탭 충돌의 한계도 기존과 같다. 자동 기대값, 데스크톱 사용 검증과 최종 gate의 실제 결과는 [작업 카드](work-items/2026-09-14-review-display-and-grading.md)에 기록한다.
 
 ## 독립 학습문서·객관식 목표 계약
 
@@ -265,7 +304,7 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 
 `테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 같은 브라우저 공개 데이터이고 이것이 학습자 결과에 쓰이는 전체 집합입니다. 비공개·숨김 테스트나 원격 추가 채점은 사용하지 않습니다. 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/coding-test-content.test.js`에서 실제 JavaScript 런타임으로 검증합니다. 이 개발 fixture는 설치본의 학습자 답안에는 실행하지 않고 결과·완료에 영향을 주지 않습니다.
 
-`[확정 결정]` `DEC-JAVA-CODING-TEST-01`에 따라 Java 코딩테스트 계약을 별도 언어 컬렉션으로 추가하는 것은 MVP 목표다. 안정 ID·revision·교안·개념 연결, `publicTests`만 완료에 사용하는 원칙과 Code Quest와의 분리는 유지한다. 현재 Java 교안·개념은 샘플 범위뿐이므로 `DEC-MVP-01`이 실제 Java 문제 묶음과 근거 연결을 정하기 전에 존재하지 않는 ID를 만들거나 Java 정식 과정을 전제하지 않는다. Java 학습자 소스·공개 테스트 계약은 `DEC-JAVA-VERSION-02`에 따라 정식 Java 25 언어·표준 API와 preview 금지를 전제로 한다. Java의 소스 단위, 진입점, 인수·반환 직렬화, 컴파일·호출 결과와 오류 DTO도 현재 JavaScript `functionContract`를 그대로 복사하지 않는다. 실제 schemaVersion과 필드는 승인된 문제 묶음, `DEC-JAVA-RUNNER-01`, 별도 격리 ADR과 prototype 증거가 정해진 뒤 스키마 변경으로 제안한다.
+`[확정 결정]` `DEC-JAVA-CODING-TEST-01`에 따라 Java 코딩테스트 계약을 별도 언어 컬렉션으로 추가하는 것은 MVP 목표다. 안정 ID·revision·교안·개념 연결, `publicTests`만 완료에 사용하는 원칙과 Code Quest와의 분리는 유지한다. 승인된 Java 교안·개념 ID는 현재 커리큘럼에 존재한다. `DEC-MVP-01`이 실제 Java 코딩테스트 문제 묶음과 근거 연결을 정하기 전에 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. Java 학습자 소스·공개 테스트 계약은 `DEC-JAVA-VERSION-02`에 따라 정식 Java 25 언어·표준 API와 preview 금지를 전제로 한다. Java의 소스 단위, 진입점, 인수·반환 직렬화, 컴파일·호출 결과와 오류 DTO도 현재 JavaScript `functionContract`를 그대로 복사하지 않는다. 실제 schemaVersion과 필드는 승인된 문제 묶음, `DEC-JAVA-RUNNER-01`, 별도 격리 ADR과 prototype 증거가 정해진 뒤 스키마 변경으로 제안한다.
 
 ## Web Project 컬렉션
 

@@ -29,15 +29,17 @@
 
 ## 정본과 작업 라우팅
 
+[`DEC-INSTRUCTIONS-01`](roadmap.md#2026-09-14-확정-운영-결정)에 따라 아래 표에서 이번 판단·변경에 해당하는 정본의 관련 절만 읽는다. 이미 확인한 내용은 변경되었거나 근거가 부족할 때 다시 확인하며, 읽기 전용 답변에는 변경 파이프라인을 적용하지 않는다.
+
 | 찾으려는 내용 | 정본 | 언제 읽는가 |
 | --- | --- | --- |
-| 현재 제품 소개·실행 방법·구현 수량 | [`README.md`](../README.md) | 모든 작업 시작 시 현재 스냅샷 확인 |
+| 현재 제품 소개·실행 방법·구현 수량 | [`README.md`](../README.md) | 제품 소개·실행 방법·구현 수량이 필요한 경우 |
 | 제품 목표, 오프라인 개인 학습 MVP 범위·비범위·완료 조건 | [`product-scope.md`](product-scope.md) | 기능 필요성과 MVP 포함 여부를 판단할 때 |
 | 현재와 MVP 목표의 차이 | [`product-scope.md`](product-scope.md) | MVP gap을 판단할 때 |
 | 전환 순서, MVP 이후 단계, bam 결정 대기 항목 | [`roadmap.md`](roadmap.md) | 우선순위나 다음 작업을 정할 때 |
 | bam이 작성하는 교안의 단위·구조·문체·예제·출처·완료 조건과 제출 교안 관리 경계 | [`lesson-authoring.md`](lesson-authoring.md) | bam이 교안을 작성하거나 `learning_document_manager`가 제출 교안을 관리할 때 |
 | 알고리즘 접근 방식·조합, 새 학습 경험, 반복과 중복 판정 | [`learning-content-design.md`](learning-content-design.md) | 교안·객관식·Code Quest·코딩테스트·웹과제를 만들거나 바꿀 때 |
-| 작업 유형별 파이프라인, 역할, 증거, 완료·실패·통합 조건 | [`development-workflow.md`](development-workflow.md) | 모든 변경을 시작하고 인계할 때 |
+| 작업 유형별 파이프라인, 역할, 증거, 완료·실패·통합 조건 | [`development-workflow.md`](development-workflow.md) | 변경을 시작할 때 해당 유형과 역할의 절 확인. 인계·반환 시에는 바뀐 범위와 무효화된 증거 확인 |
 | 사람이 이해하기 쉬운 코드의 구현·검토 기준 | [`development-workflow.md`](development-workflow.md#사람이-이해하기-쉬운-코드-기준) | 제품 코드를 설계·구현·테스트·통합할 때 |
 | 현재 런타임·저장소·평가 안전 경계 | [`architecture.md`](architecture.md) | 제품 코드나 평가 방식을 바꿀 때 |
 | 프런트엔드 현재·목표 기술과 점진 이관 경계 | [`architecture.md`](architecture.md#목표-설치형-구조), [`roadmap.md`](roadmap.md#bam-결정-대기-목록) | UI 구현·의존성·빌드·Worker 경계를 바꿀 때 |
@@ -80,8 +82,8 @@
 | 제품 영역 | 현재 사실 정본 | 목표 설계 정본 | 커버리지 상태 |
 | --- | --- | --- | --- |
 | 제품 목표·MVP | [`product-scope.md`](product-scope.md) | 같은 문서 | 작성됨, 세부 결정 대기 |
-| 교안 학습 구조 | 실제 교안·[`content-schema.md`](content-schema.md) | [`lesson-authoring.md`](lesson-authoring.md) | bam 집필 계약·제출 교안 관리 경계 작성. [HTML 원문 기반 개념 문서 작업](work-items/2026-09-13-html-concept-lessons.md)의 작은 단위·파생·질문/직접답과 연결을 반영했으며 독립 검증·통합 판정은 카드 참조. 기존 교안 전체 소급 감사와 구분 |
-| 학습 문서·객관식 복습 | 현재 교안·퀴즈 코드와 [`content-schema.md`](content-schema.md) | [`designs/lesson-review.md`](designs/lesson-review.md) | R1 홈·독립 목록·키워드/단원 탐색·개별 채점·개념/문서 왕복·진행 복구 구현. 두 보기/전체 채점·모름·헷갈림·문제별 시도 이력은 후속 목표. [첫 사용 작업 카드](work-items/2026-09-12-independent-review-first-use.md)의 실제 검증과 [앞선 설계 이력](work-items/2026-09-12-independent-review-design.md)을 구분 |
+| 교안 학습 구조 | 실제 교안·[`content-schema.md`](content-schema.md) | [`lesson-authoring.md`](lesson-authoring.md) | bam 집필 계약·제출 교안 관리 경계 작성. [HTML 원문 기반 개념 문서 작업](work-items/2026-09-13-html-concept-lessons.md)의 작은 단위·파생·질문/직접답과 연결을 반영했으며 독립 검증·통합 판정은 카드 참조. 후속 [CSS 개념 전환](work-items/2026-09-13-css-concept-lessons.md)도 같은 작은 파생·안정 ID 계약으로 콘텐츠와 연결을 반영했으며 독립 검증·통합 상태는 카드 참조. 후속 [JS·Java 개념/객관식 전환](work-items/2026-09-14-js-java-concepts-and-review.md)은 작은 교안·추가 문제·공유 상세 연결을 반영했고 독립 내용·콘텐츠 검사 및 작성자 focused는 통과. 독립 데스크톱 실행과 수정 후 최종 통합·정적 빌드·보존 검사도 통과. 실패 이력과 검증 한계는 카드 참조. 기존 교안 전체 소급 감사와 구분 |
+| 학습 문서·객관식 복습 | 현재 교안·퀴즈 코드와 [`content-schema.md`](content-schema.md) | [`designs/lesson-review.md`](designs/lesson-review.md) | R1 홈·독립 목록·키워드/단원 탐색·개별 채점·개념/문서 왕복·진행 복구 구현. [보기·채점 첫 확장](work-items/2026-09-14-review-display-and-grading.md)의 두 보기·개별/전체 채점 코드를 반영했고 반환 수정 후 독립 데스크톱 검증·최종 통합·빌드·보존 검사 통과. 모름·헷갈림·문제별 시도 이력은 후속 목표. [첫 사용 작업 카드](work-items/2026-09-12-independent-review-first-use.md)의 실제 검증과 [앞선 설계 이력](work-items/2026-09-12-independent-review-design.md)을 구분. [JS·Java 후속 계약](designs/lesson-review.md#javascriptjava-개념-문서와-객관식-전환)의 같은 언어 과정 공유 상세 문서·검증된 키워드 카드/CTA 중복 제거를 구현. 기존 문항 소유와 복귀·세션 계약을 보존하며 독립 실행·수정 후 최종 통합 PASS와 검증 한계는 작업 카드 참조 |
 | 학습 경험 포트폴리오 | 현재 콘텐츠·검증 기록 | [`learning-content-design.md`](learning-content-design.md) | 조건부 소급 범위·깊이 확정, 실제 release 대상 결정·감사 대기 |
 | 전역 시각 시스템 | `styles/tokens.css`, `styles/app.css` | [`designs/visual-design.md`](designs/visual-design.md) | 밝은 아이보리/보라·어두운 차콜/라벤더, theme 선택과 승인 홈·목록·읽기 UI 반영. 독립 UI 검증·통합 gate PASS와 미실행 범위는 [시안 채택 작업 카드](work-items/2026-09-13-approved-preview-adoption.md) 참조. Ocean 적용은 과거 이력 |
 | 프런트엔드 기술 전환 | [`architecture.md`](architecture.md), `package.json` | [`architecture.md`](architecture.md#목표-설치형-구조), ADR 0001 | React·TypeScript 목표와 점진 이관 확정, 현재 Vanilla JavaScript·무의존성 기준선 유지, 도구체인·prototype·첫 화면 결정 대기 |
@@ -100,6 +102,10 @@
 - [`0004-local-web-project-evaluation.md`](decisions/0004-local-web-project-evaluation.md): 로컬 Web Project 평가와 저장
 
 ## 유지 규칙
+
+[Spring Security·JPA 확장](work-items/2026-09-14-spring-security-jpa.md)은 공식 문서를 근거로 기존 Spring 과정 뒤에 작은 정적 문서·객관식을 추가하는 승인 범위다. [학습 흐름 계약](designs/lesson-review.md#spring-securityjpa-정적-학습-확장)에 따라 본문·문항·발췌를 작성하고 연결했다. 독립 내용·문서·대표 데스크톱 검증과 이번 전체 gate·빌드·보존 검사를 통과하고 최종 통합 PASS 판정을 받았다. 단위별 경험·출처·반환 수정·실제 검증 한계는 작업 카드에서 확인한다.
+
+현재 [CSS 객관식·Spring 기초 작업](work-items/2026-09-14-css-quiz-spring-foundations.md)은 [복습 확장 계약](designs/lesson-review.md#css-객관식과-springspring-boot-기초-확장)의 본문·문항·연결·표시를 반영했다. 관리 연결 검사와 독립 내용·문서·데스크톱 검증, 수정 후 전체 gate·정적 빌드·보존 검사를 통과했다. 최초 실패·수정과 실제 검증 한계는 작업 카드에 구분한다. Spring 핵심·Spring Boot의 정적 문서·문항과 실제 실행 과제의 범위를 구분하며, 작성자 경험 계획·출처·단계별 증거는 작업 카드에서 확인한다.
 
 - 사실이 바뀌면 표에서 지정한 정본 한 곳을 먼저 고치고, 다른 문서는 링크나 짧은 안내만 갱신한다.
 - 현재 수량은 `content/curriculum.json`과 컬렉션을 읽는 검증 결과로 확인하고 [`README.md`](../README.md)에만 요약한다.

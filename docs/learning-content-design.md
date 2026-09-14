@@ -214,6 +214,8 @@ M2의 한 묶음 시범과 이후 batch PASS를 전체 감사 PASS로 바꾸지 
 | `MVP-LEGACY-COVERAGE-MAP` | `DEC-MVP-01`이 정할 release 차단 콘텐츠 | 미분류 | umbrella 전수 지도와 깊이별 감사 필요 | `[현재 사실]` `DEC-MVP-01` 미결정·감사 미착수 | 범위 결정 뒤 manifest ID snapshot 필요 |
 | `MVP-ALGO-LEGACY-AUDIT` | umbrella 중 `courseId: algorithm` 및 실제 풀이 흐름상 연결 문제군 | 미분류 | 교안 묶음·문제별 심층 매핑 필요 | `[현재 사실]` 감사 미착수 | umbrella의 하위 batch. 일부 해시 Quest 점진성은 [`problem-verification.md`](problem-verification.md)에만 기록되어 있으며 전체 과정 카드는 없음 |
 | `HTML-CONCEPT-LESSONS-20260913` | 승인된 밤위키 HTML 원문에서 파생한 개념 교안 | L0/L1과 지원 있는 조합 복습 | 분할 자체를 새 A/E/C/T로 세지 않고 직접답·관찰·조건과 재사용 경험을 구분 | `[현재 사실]` 독립 콘텐츠·실행·UI와 수정 후 통합 gate·빌드·보존 검사 PASS | [HTML 작업 카드](work-items/2026-09-13-html-concept-lessons.md). 기존 전체 release 감사·학습 성과 완료를 뜻하지 않음 |
+| `CSS-CONCEPT-LESSONS-20260913` | 승인된 밤위키 CSS 원문에서 파생하는 개념 교안 | L0/L1과 지원 있는 진단 복습 | 글꼴·글자 간격·색 정보 조건 C와 재사용 A/E·직접답 지원을 구분하며 분할 자체를 새 경험으로 세지 않음 | `[현재 사실]` 독립 콘텐츠·문서·focused/대표 데스크톱과 수정 후 통합·빌드·보존 PASS, 예제 계산 미검증 | [CSS 작업 카드](work-items/2026-09-13-css-concept-lessons.md). 실제 학습자 성과·전체 소급 감사와 구분 |
+| `JS-JAVA-CONCEPTS-REVIEW-20260914` | 공개 승인 원문에서 파생하는 JS·Java 개념 교안과 추가 객관식 | L0 관찰·L1 단일 판단·L2 조건·일부 지원 있는 L3 | 분할 자체와 기존 판단은 재사용으로 구분. 새 문제별 타입·상태·반환·실패 경계 A/E/C와 기존 28문항 대비 차이를 확인 | `[현재 사실]` 집필·연결 반영, 독립 정적 내용 검토·관리 콘텐츠 검사·작성자 focused PASS. 독립 문서·데스크톱 실행과 수정 후 최종 통합·정적 빌드·보존 검사도 PASS | [작업 카드](work-items/2026-09-14-js-java-concepts-and-review.md). 정적 자료 제공과 Java 실행기·학습 성과·전체 release 감사는 구분 |
 
 현재 콘텐츠를 이 체계로 이미 통과했다고 간주하지 않는다. 위 표는 장기 상태 요약이며 항목별 원시 판정과 명령 로그는 작업 증거에 두고 복사하지 않는다. 전체 감사 대상은 `DEC-MVP-01`이 확정된 뒤 실제 manifest에서 고정한다.
 

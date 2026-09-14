@@ -448,7 +448,7 @@ test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 �
   const routeSource = appSource.slice(routeStart, routeEnd);
   const questSource = appSource.slice(questStart, questEnd);
   assert.match(routeSource, /parseQuestHash\(window\.location\.hash\)/);
-  assert.match(routeSource, /questLanguage\?\.status === "available"/);
+  // 지원 언어와 Java fallback 동작은 app-language-routing.test.js에서 검증한다.
   assert.match(routeSource, /questLessons\.length > 0/);
   assert.match(routeSource, /openCodeQuestRoute\(questRoute\.languageId, questRoute\.slug\)/);
   assert.match(routeSource, /buildLessonHash\(fallbackLesson\.courseId, fallbackLesson\.slug\)/);

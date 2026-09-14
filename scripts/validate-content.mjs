@@ -403,6 +403,8 @@ for (const lesson of curriculum.lessons) {
     if (!markdown.includes("## 학습 목표")) {
       contentErrors.push(`${lesson.id}: 학습 목표 섹션이 없습니다.`);
     }
+    // 명시한 직접답 절은 위에서 검사하며, 작은 새 저작에는 종전 답변 형식을 요구하지 않는다.
+    if (lesson.answerHeading !== undefined) continue;
     if (!markdown.includes("## 확인 문제") && !markdown.includes("## 최종 확인 문제")) {
       contentErrors.push(`${lesson.id}: 확인 문제 섹션이 없습니다.`);
     }
@@ -656,7 +658,11 @@ for (const fileName of questFileNames) {
   }
 }
 
-for (const language of curriculum.languages.filter((item) => item.status === "available")) {
+// 정적 교안·객관식의 available 상태와 실행형 Code Quest 제공 범위는 별개다.
+const requiredCodeQuestLanguages = new Set(["javascript", "html", "css"]);
+for (const language of curriculum.languages.filter((item) =>
+  item.status === "available" && requiredCodeQuestLanguages.has(item.id),
+)) {
   if (!questCollections.has(language.id)) {
     contentErrors.push(`${language.id}: 사용 가능한 언어의 Code Quest 콘텐츠가 없습니다.`);
   }

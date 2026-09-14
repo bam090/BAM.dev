@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
 import { LocalStorageProgressRepository, MemoryStorage, PROGRESS_STORAGE_KEY } from "../src/repositories/progress-repository.js";
-import { renderMarkdown } from "../src/ui/markdown.js";
+import { renderMarkdown, splitMarkdownSection } from "../src/ui/markdown.js";
 
 function createLessonApp(completed, categoryId = "language", {
   source,
@@ -240,37 +240,86 @@ test("명시한 직접답만 접어서 보여 주고 원문 출처나 기존 답
   }
 });
 
-test("HTML 새 15문서는 각각 직접답과 활성 순서를 사용하고 보관 5문서와 이전다음이 섞이지 않는다", async () => {
+test("HTML·CSS 개념 문서는 직접답과 활성 순서를 사용하고 보관 문서와 이전다음이 섞이지 않는다", async () => {
   const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
-  const htmlLessons = curriculum.lessons.filter((lesson) => lesson.courseId === "html");
-  const active = htmlLessons.filter((lesson) => !lesson.archivedFromCatalog);
-  const archived = htmlLessons.filter((lesson) => lesson.archivedFromCatalog);
-  assert.equal(active.length, 15);
-  assert.deepEqual(active.map((lesson) => lesson.order), Array.from({ length: 15 }, (_, index) => index + 6));
-  assert.equal(archived.length, 5);
-  for (const group of [active, archived]) {
-    for (const [index, lesson] of group.entries()) {
-      const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
-      const app = createLessonApp(false);
-      Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: markdown, renderPaginationLink: BamLearningApp.prototype.renderPaginationLink });
-      app.renderLesson();
-      const html = app.root.innerHTML;
-      assert.ok(html.includes(`<span>${index + 1}/${group.length}단원</span>`), lesson.id);
-      const pagination = html.match(/<nav class="lesson-pagination"[\s\S]*?<\/nav>/)?.[0] ?? "";
-      const expected = [group[index - 1], group[index + 1]].filter(Boolean).map((item) => `#/learn/html/${item.slug}`);
-      assert.deepEqual([...pagination.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), expected, lesson.id);
-      if (lesson.archivedFromCatalog) continue;
-      assert.equal(lesson.answerHeading, "핵심 질문 답");
-      assert.equal(lesson.source.importMode, "derived");
-      assert.equal((markdown.match(/^## 핵심 질문 답$/gm) ?? []).length, 1, lesson.id);
-      const directAnswer = markdown.match(/(?:^|\n)## 핵심 질문 답\n([\s\S]*?)(?=\n## |$)/)?.[1].trim();
-      assert.ok(directAnswer, lesson.id);
-      const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
-      assert.ok(answer.includes(renderMarkdown(directAnswer, { preserveParagraphLineBreaks: true })), lesson.id);
-      assert.doesNotMatch(answer.split(">")[0], /\sopen(?:\s|$)/);
-      assert.doesNotMatch(html, /면접 답변 예시|profile\/|wiki\/학습자료/);
-      assert.ok(html.includes(`<h2 id="completion-title">${lesson.essentialQuestion}</h2>`), lesson.id);
+  for (const [courseId, activeCount, archivedCount] of [["html", 15, 5], ["css", 20, 6]]) {
+    const lessons = curriculum.lessons.filter((lesson) => lesson.courseId === courseId);
+    const active = lessons.filter((lesson) => !lesson.archivedFromCatalog);
+    const archived = lessons.filter((lesson) => lesson.archivedFromCatalog);
+    assert.equal(active.length, activeCount, courseId);
+    assert.deepEqual(active.map((lesson) => lesson.order), Array.from({ length: activeCount }, (_, index) => index + archivedCount + 1), courseId);
+    assert.equal(archived.length, archivedCount, courseId);
+    for (const group of [active, archived]) {
+      for (const [index, lesson] of group.entries()) {
+        const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+        const app = createLessonApp(false);
+        Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: markdown, renderPaginationLink: BamLearningApp.prototype.renderPaginationLink });
+        app.renderLesson();
+        const html = app.root.innerHTML;
+        assert.ok(html.includes(`<span>${index + 1}/${group.length}단원</span>`), lesson.id);
+        const pagination = html.match(/<nav class="lesson-pagination"[\s\S]*?<\/nav>/)?.[0] ?? "";
+        const expected = [group[index - 1], group[index + 1]].filter(Boolean).map((item) => `#/learn/${courseId}/${item.slug}`);
+        assert.deepEqual([...pagination.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), expected, lesson.id);
+        if (lesson.archivedFromCatalog) continue;
+        assert.equal(lesson.answerHeading, "핵심 질문 답");
+        assert.equal(lesson.source.importMode, "derived");
+        assert.equal((markdown.match(/^## 핵심 질문 답$/gm) ?? []).length, 1, lesson.id);
+        const directAnswer = markdown.match(/(?:^|\n)## 핵심 질문 답\n([\s\S]*?)(?=\n## |$)/)?.[1].trim();
+        assert.ok(directAnswer, lesson.id);
+        const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
+        assert.ok(answer.includes(renderMarkdown(directAnswer, { preserveParagraphLineBreaks: true })), lesson.id);
+        assert.doesNotMatch(answer.split(">")[0], /\sopen(?:\s|$)/);
+        assert.doesNotMatch(html, /면접 답변 예시|profile\/|wiki\/학습자료/);
+        assert.ok(html.includes(`<h2 id="completion-title">${lesson.essentialQuestion}</h2>`), lesson.id);
+      }
     }
+  }
+});
+
+test("Spring의 명시 직접답과 선수 링크를 읽고 CSS·Spring 활성 문서 모두 실제 객관식으로 이동한다", async () => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  const { concepts } = JSON.parse(await readFile(new URL("../content/review-concepts.json", import.meta.url), "utf8"));
+  const collections = new Map(await Promise.all(["css", "java"].map(async (id) => [id, JSON.parse(await readFile(new URL(`../content/quizzes/${id}.json`, import.meta.url), "utf8"))])));
+  const lessons = curriculum.lessons.filter((lesson) => ["css", "spring"].includes(lesson.courseId) && !lesson.archivedFromCatalog);
+  assert.equal(lessons.length, 66);
+  for (const lesson of lessons) {
+    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+    const app = createLessonApp(false);
+    Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: markdown, reviewConcepts: concepts, quizCollections: collections });
+    app.renderLesson();
+    const html = app.root.innerHTML;
+    const links = [...html.matchAll(/<p class="lesson-review-link"><a[^>]*href="([^"]+)"/g)].map((match) => match[1].replaceAll("&amp;", "&"));
+    assert.ok(links.length > 0, `${lesson.id}: 관련 문제 CTA가 필요합니다.`);
+    assert.equal(new Set(links).size, links.length, lesson.id);
+    for (const href of links) {
+      const [route, query] = href.split("?");
+      const [, service, languageId, ownerId] = route.split("/");
+      const conceptId = new URLSearchParams(query).get("concept");
+      assert.equal(service, "review");
+      assert.equal(languageId, lesson.languageId);
+      assert.ok(collections.get(languageId).questions.some((question) => (!ownerId || question.lessonId === ownerId) && question.conceptId === conceptId), `${lesson.id}: ${href}`);
+    }
+    if (lesson.courseId !== "spring") continue;
+    assert.equal(lesson.answerHeading, "핵심 질문 답");
+    assert.equal((markdown.match(/^## 핵심 질문 답$/gm) ?? []).length, 1, lesson.id);
+    assert.ok(splitMarkdownSection(markdown, "학습 목표").section, lesson.id);
+    const directAnswer = splitMarkdownSection(markdown, lesson.answerHeading).section;
+    assert.ok(directAnswer, lesson.id);
+    const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
+    assert.ok(answer.includes(renderMarkdown(directAnswer, { preserveParagraphLineBreaks: true })), lesson.id);
+    assert.doesNotMatch(answer.split(">")[0], /\sopen(?:\s|$)/);
+    assert.ok(html.includes(`<h2 id="completion-title">${lesson.essentialQuestion}</h2>`), lesson.id);
+    assert.match(html, /data-toggle-complete aria-pressed="false"/);
+    const prerequisites = splitMarkdownSection(markdown, "먼저 확인할 개념").section;
+    const prerequisiteLinks = [...prerequisites.matchAll(/\]\(#\/learn\/([^/]+)\/([^#?)]+)\)/g)];
+    assert.ok(prerequisiteLinks.length > 0, lesson.id);
+    for (const [, courseId, slug] of prerequisiteLinks) {
+      const target = curriculum.lessons.find((candidate) => candidate.courseId === courseId && candidate.slug === slug);
+      assert.ok(target && !target.archivedFromCatalog, `${lesson.id}: ${courseId}/${slug}`);
+      if (courseId === "spring") assert.ok(target.order < lesson.order, `${lesson.id}: 선수는 앞선 단위여야 합니다.`);
+    }
+    const hero = html.match(/<header class="lesson-hero">([\s\S]*?)<\/header>/)?.[1] ?? "";
+    assert.ok(hero.includes(renderMarkdown(prerequisites, { preserveParagraphLineBreaks: true })), lesson.id);
   }
 });
 
@@ -519,7 +568,7 @@ test("기존 작성 형식 교안의 확인 문제와 면접 답변 예시가 �
     await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
   );
 
-  for (const lesson of curriculum.lessons.filter((item) => !item.source?.originalPath)) {
+  for (const lesson of curriculum.lessons.filter((item) => !item.source?.originalPath && !item.answerHeading)) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const confirmation = markdown.match(
       /\n## (?:최종 )?확인 문제\n([\s\S]*?)(?=\n## |$)/,

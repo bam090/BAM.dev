@@ -1,4 +1,4 @@
-# 검사 결과를 구분하고 수정하기
+# HTML 검증: 문법·의미·접근성 점검
 
 ## 학습 목표
 
@@ -10,7 +10,7 @@ Checker로 문법과 콘텐츠 모델을 확인하고 의미·대체 정보·키
 
 ## 먼저 확인할 개념
 
-[내용의 역할과 제목으로 문서 나누기](#/learn/html/wiki-semantic-structure), [링크와 버튼, 이동할 주소](#/learn/html/wiki-links-buttons), [이미지의 목적과 대체 텍스트](#/learn/html/wiki-image-alternatives), [행과 열의 관계를 나타내는 표](#/learn/html/wiki-tables), [신청 폼을 끝까지 읽고 조작하기](#/learn/html/wiki-form-flow)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
+[시맨틱 HTML: 내용의 역할과 제목 계층](#/learn/html/wiki-semantic-structure), [링크와 버튼, 이동할 주소](#/learn/html/wiki-links-buttons), [이미지의 목적과 대체 텍스트](#/learn/html/wiki-image-alternatives), [행과 열의 관계를 나타내는 표](#/learn/html/wiki-tables), [신청 폼을 끝까지 읽고 조작하기](#/learn/html/wiki-form-flow)의 관계를 알고 있으면 이 문서를 읽기 쉽습니다.
 
 ## 세 종류를 먼저 구분한다
 

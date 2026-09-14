@@ -62,13 +62,15 @@ function createRouteHarness(curriculumOverride = curriculum) {
   return { app, opened };
 }
 
-test("탐색 가능한 언어의 객관식 해시를 JavaScript로 되돌리지 않고 연다", async (t) => {
+test("HTML과 정적 제공 중인 Java의 객관식 해시는 해당 언어로 연다", async (t) => {
   const replacements = installWindow(t, "#/review/html");
-  const { app, opened } = createRouteHarness();
-
-  await app.openRoute();
-
-  assert.deepEqual(opened, [{ view: "review", languageId: "html" }]);
+  assert.equal(curriculum.languages.find((language) => language.id === "java")?.status, "available");
+  for (const languageId of ["html", "java"]) {
+    window.location.hash = `#/review/${languageId}`;
+    const { app, opened } = createRouteHarness();
+    await app.openRoute();
+    assert.deepEqual(opened, [{ view: "review", languageId }]);
+  }
   assert.deepEqual(replacements, []);
 });
 
@@ -80,21 +82,25 @@ test("교안별 객관식 해시의 세 번째 경로를 단원 선택으로 전
   assert.deepEqual(replacements, []);
 });
 
-test("HTML·CSS 정식 언어의 Code Quest 해시를 해당 언어로 연다", async (t) => {
+test("Code Quest 제공 언어인 JavaScript·HTML·CSS의 해시는 해당 과제로 연다", async (t) => {
   const replacements = installWindow(t, "#/quest/html/document-structure");
-  const { app, opened } = createRouteHarness();
-
-  await app.openRoute();
-
-  assert.deepEqual(opened, [
-    { view: "quest", languageId: "html", slug: "document-structure" },
-  ]);
+  for (const [languageId, slug] of [
+    ["javascript", "delivery-fee-policy"],
+    ["html", "document-structure"],
+    ["css", "learning-notice"],
+  ]) {
+    window.location.hash = `#/quest/${languageId}/${slug}`;
+    const { app, opened } = createRouteHarness();
+    await app.openRoute();
+    assert.deepEqual(opened, [{ view: "quest", languageId, slug }]);
+  }
   assert.deepEqual(replacements, []);
 });
 
-test("샘플 언어의 Code Quest 해시는 기본 JavaScript 교안으로 복귀한다", async (t) => {
+test("정적 학습이 available인 Java도 미제공 Code Quest 해시는 기본 JavaScript 교안으로 복귀한다", async (t) => {
   const replacements = installWindow(t, "#/quest/java/types-and-methods");
   const { app, opened } = createRouteHarness();
+  assert.equal(curriculum.languages.find((language) => language.id === "java")?.status, "available");
 
   await app.openRoute();
 
