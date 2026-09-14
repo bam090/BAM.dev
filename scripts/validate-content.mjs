@@ -23,6 +23,57 @@ const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*te
 const FORBIDDEN_RUNTIME_API_PATTERN =
   /\b(?:document|window|fetch|XMLHttpRequest|WebSocket|EventSource|navigator|location|localStorage|sessionStorage|indexedDB|caches|importScripts|setTimeout|setInterval|requestAnimationFrame|Date|performance|crypto|Intl)\b|Math\.random/;
 
+// origin/dev db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0에서 복원한 원문 보관본이다.
+const LEGACY_JAVA_ANSWER_EXEMPTIONS = new Map([
+  [
+    "java-02-control-flow-arrays",
+    {
+      contentFile: "content/lessons/java/operators-control-flow-and-arrays.md",
+      sha256: "9fb9d02d87121a971eed784e5e69d03bf65acc10fc85036ad42449e4b243d0ea",
+    },
+  ],
+  [
+    "java-03-classes-objects",
+    {
+      contentFile: "content/lessons/java/classes-objects-and-encapsulation.md",
+      sha256: "9c7527ae36b618c4cd6d7fec2816d8ddbd4c765633a6888b2073433b16b5a4ea",
+    },
+  ],
+  [
+    "java-04-collections-generics",
+    {
+      contentFile: "content/lessons/java/collections-generics-list-and-map.md",
+      sha256: "67c2b89b706ec739c20741e636890c08288cd6a5155bbef06f97cb636486e7a5",
+    },
+  ],
+  [
+    "java-05-exceptions-debugging",
+    {
+      contentFile: "content/lessons/java/exceptions-and-debugging.md",
+      sha256: "47207680c3574a0dd75ad88371f8503e505b0e01f8935d11ec17d6681f904ead",
+    },
+  ],
+  [
+    "java-06-review-practice",
+    {
+      contentFile: "content/lessons/java/review-problem-solving-and-testing.md",
+      sha256: "145bb45dd6967a046b56c919cce7769f8d27e3bc2e6f9e3bb98d7529b8530732",
+    },
+  ],
+]);
+
+export function isLegacyJavaArchiveWithoutInterviewAnswers(lesson, markdown) {
+  if (lesson?.archivedFromCatalog !== true || typeof markdown !== "string") {
+    return false;
+  }
+  const exemption = LEGACY_JAVA_ANSWER_EXEMPTIONS.get(lesson.id);
+  return Boolean(
+    exemption &&
+      lesson.contentFile === exemption.contentFile &&
+      createHash("sha256").update(markdown, "utf8").digest("hex") === exemption.sha256,
+  );
+}
+
 function isPlainRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -414,6 +465,7 @@ for (const lesson of curriculum.lessons) {
     const questionNumbers = confirmationMatch
       ? [...confirmationMatch[1].matchAll(/^(\d+)\.\s+.+$/gm)].map((match) => Number(match[1]))
       : [];
+    if (isLegacyJavaArchiveWithoutInterviewAnswers(lesson, markdown)) continue;
     const answerHeading = "\n## 면접 답변 예시\n";
     const answerSections = markdown.split(answerHeading);
     if (answerSections.length !== 2) {

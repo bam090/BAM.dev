@@ -62,3 +62,11 @@
 `[확정 결정]` 최종 명시적 병합 승인 전에는 merge와 Pages 설정 변경을 하지 않는다.
 
 `[현재 사실]` 기존 660 PASS는 재사용 근거이며, 이번 범위에서는 전체 build와 모바일 검증을 실행하지 않았다. 독립 `project_integrator`가 위 focused·데스크톱 검증 증거를 검토 중이다. 최종 통합 판정과 Git 결과는 인계 보고와 PR에서 실제로 확인한다.
+
+## CI 반환과 보관 원문 계약 (2026-09-14)
+
+`[현재 사실]` `6eef6d2a5c542dbe69acab0e6539b2842b6b250f`의 commit·push와 [PR #17](https://github.com/bam090/BAM.dev/pull/17) 갱신은 완료됐다. `CI / verify`는 [실행 34817776539](https://github.com/bam090/BAM.dev/actions/runs/34817776539/job/103892121982)와 [실행 34817772290](https://github.com/bam090/BAM.dev/actions/runs/34817772290/job/103892109497)에서 같은 `validate:content` 오류로 실패했다. `db1a5f4` 원본 Java 02~06 다섯 문서에는 `면접 답변 예시` 섹션이 없으며, 원문 교육 내용 변경은 승인 범위가 아니다.
+
+`[확정 결정]` scripts validator는 명시한 다섯 `id`·파일 경로·원문 SHA-256·`archivedFromCatalog=true`가 모두 일치한 보관 원문만 legacy 답변 섹션 형식 요구에서 면제한다. H1 길이·학습 목표·schema·ID·order·경로 검사는 유지하고, 활성 문서 전체·미등록 보관 문서·원문이 변조된 보관 문서에는 면제를 적용하지 않는다. 원문 바이트·메타데이터와 활성 분모 160은 유지한다.
+
+`[현재 사실]` validator 계약 수정은 진행 중이며 새 독립 테스트와 `test_engineer` 검증은 아직 수행하지 않았다. 기존 91/91 PASS는 앞선 호환·기록 범위의 실제 결과로만 유지한다. 최종 후속 검증과 Git 결과는 인계 보고와 PR에서 실제로 확인하며, merge와 Pages 설정 변경 보류는 유지한다.
