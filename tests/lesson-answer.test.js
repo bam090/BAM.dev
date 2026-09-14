@@ -616,15 +616,28 @@ test("기존 작성 형식 교안의 확인 문제와 면접 답변 예시가 �
   const curriculum = JSON.parse(
     await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
   );
+  const legacyJavaArchivePaths = new Map([
+    ["java-02-control-flow-arrays", "content/lessons/java/operators-control-flow-and-arrays.md"],
+    ["java-03-classes-objects", "content/lessons/java/classes-objects-and-encapsulation.md"],
+    ["java-04-collections-generics", "content/lessons/java/collections-generics-list-and-map.md"],
+    ["java-05-exceptions-debugging", "content/lessons/java/exceptions-and-debugging.md"],
+    ["java-06-review-practice", "content/lessons/java/review-problem-solving-and-testing.md"],
+  ]);
 
   for (const lesson of curriculum.lessons.filter((item) => !item.source?.originalPath && !item.answerHeading)) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const confirmation = markdown.match(
       /\n## (?:최종 )?확인 문제\n([\s\S]*?)(?=\n## |$)/,
     );
-    const answerSections = markdown.split("\n## 면접 답변 예시\n");
 
     assert.ok(confirmation, `${lesson.id}: 확인 문제 섹션이 필요합니다.`);
+    if (legacyJavaArchivePaths.has(lesson.id)) {
+      assert.equal(lesson.archivedFromCatalog, true, `${lesson.id}: 보관 원문이어야 합니다.`);
+      assert.equal(lesson.contentFile, legacyJavaArchivePaths.get(lesson.id), `${lesson.id}: 고정 원문 경로여야 합니다.`);
+      continue;
+    }
+
+    const answerSections = markdown.split("\n## 면접 답변 예시\n");
     assert.equal(answerSections.length, 2, `${lesson.id}: 답변 예시 섹션이 하나여야 합니다.`);
 
     const questionNumbers = [...confirmation[1].matchAll(/^(\d+)\.\s+.+$/gm)].map(

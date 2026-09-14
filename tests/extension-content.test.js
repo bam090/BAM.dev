@@ -111,7 +111,7 @@ test("Java 정적 학습은 32개 개념 문서와 64문항을 제공하고 기�
 
   assert.equal(language?.status, "available");
   assert.equal(curriculum.courses.find((course) => course.id === "java")?.status, "available");
-  assert.equal(lessons.length, 33);
+  assert.equal(lessons.length, 38);
   assert.equal(lessons[0].id, "java-01-types-methods");
   assert.equal(lessons[0].slug, "types-and-methods");
   assert.equal(lessons[0].archivedFromCatalog, true);

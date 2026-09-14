@@ -31,9 +31,9 @@ test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공�
 
 test("문서 목록은 활성 문서만 나열하고 보관 교안의 메타데이터와 깊은 URL은 남긴다", () => {
   const all = getLearningCatalogItems(options);
-  assert.equal(curriculum.lessons.length, 182);
+  assert.equal(curriculum.lessons.length, 187);
   assert.equal(all.length, 160);
-  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 22);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 27);
   for (const lesson of curriculum.lessons) {
     assert.equal(all.some((item) => item.href === `#/learn/${lesson.courseId}/${lesson.slug}`), !lesson.archivedFromCatalog, lesson.id);
   }
