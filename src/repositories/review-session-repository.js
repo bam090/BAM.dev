@@ -22,6 +22,30 @@ export function restoreReviewSession(saved, questions, scope) {
     if (sessionQuestions.some((question) => !question) || !Number.isInteger(saved.currentIndex) ||
         saved.currentIndex < 0 || saved.currentIndex >= sessionQuestions.length) throw new Error();
     const selectedOptionIds = new Map(saved.selectedOptionIds);
+    const storedFirstAttempts = Object.hasOwn(saved, "firstAttemptByQuestion")
+      ? saved.firstAttemptByQuestion
+      : [];
+    if (!Array.isArray(storedFirstAttempts)) throw new Error();
+    const firstAttemptByQuestion = new Map();
+    for (const entry of storedFirstAttempts) {
+      if (!Array.isArray(entry) || entry.length !== 2) throw new Error();
+      const [id, firstAttempt] = entry;
+      const question = sessionQuestions.find((item) => item.id === id);
+      if (
+        !question ||
+        firstAttemptByQuestion.has(id) ||
+        !firstAttempt ||
+        typeof firstAttempt !== "object" ||
+        Array.isArray(firstAttempt) ||
+        Reflect.ownKeys(firstAttempt).length !== 2 ||
+        !question.options.some((option) => option.id === firstAttempt.selectedOptionId) ||
+        firstAttempt.isCorrect !== false
+      ) throw new Error();
+      firstAttemptByQuestion.set(id, {
+        selectedOptionId: firstAttempt.selectedOptionId,
+        isCorrect: false,
+      });
+    }
     const gradedAnswers = new Map();
     if (!Array.isArray(saved.selectedOptionIds) || selectedOptionIds.size !== saved.selectedOptionIds.length ||
         !Array.isArray(saved.gradedQuestionIds) || new Set(saved.gradedQuestionIds).size !== saved.gradedQuestionIds.length) throw new Error();
@@ -43,7 +67,7 @@ export function restoreReviewSession(saved, questions, scope) {
       id: saved.id, mode: saved.mode, questions: sessionQuestions, currentIndex: saved.currentIndex,
       viewMode: saved.viewMode === "all" ? "all" : "single",
       gradingMode: saved.gradingMode === "batch" ? "batch" : "individual",
-      selectedOptionIds, gradedAnswers, screen: saved.screen,
+      selectedOptionIds, gradedAnswers, firstAttemptByQuestion, screen: saved.screen,
       summary: saved.screen === "result" ? summarizeQuiz(sessionQuestions, [...gradedAnswers.values()]) : null,
       recordAttempted: saved.recordAttempted === true || saved.screen === "result",
       persistenceStatus: saved.persistenceStatus ?? "saved",

@@ -986,7 +986,7 @@ export class BamLearningApp {
 
   saveReviewSession({ captureViewport = false } = {}) {
     const session = this.quizSession;
-    if (!this.reviewSessionRepository || this.currentView !== "review" || !session?.questions.length || this.reviewNeedsRestart) return;
+    if (!this.reviewSessionRepository || this.currentView !== "review" || !session?.questions.length || this.reviewNeedsRestart) return false;
     if (captureViewport) {
       const card = this.getQuizQuestionCard() ?? this.root.querySelector?.(".quiz-result-card");
       const active = document.activeElement;
@@ -1008,6 +1008,10 @@ export class BamLearningApp {
       viewMode: session.viewMode ?? "single", gradingMode: session.gradingMode ?? "individual",
       currentIndex: session.currentIndex, selectedOptionIds: [...session.selectedOptionIds],
       gradedQuestionIds: [...session.gradedAnswers.keys()], screen: session.screen,
+      firstAttemptByQuestion: [...(session.firstAttemptByQuestion ?? [])].map(([questionId, firstAttempt]) => [
+        questionId,
+        { selectedOptionId: firstAttempt.selectedOptionId, isCorrect: false },
+      ]),
       recordAttempted: session.recordAttempted, persistenceStatus: session.persistenceStatus,
       expandedQuestionIds: [...(session.expandedQuestionIds ?? [])],
       returnContext: session.returnContext ?? null, viewport: session.viewport ?? null,
@@ -1029,6 +1033,7 @@ export class BamLearningApp {
     const noticeMessage = this.root.querySelector?.("[data-review-save-message]");
     if (notice) notice.hidden = !this.reviewRestoreNotice;
     if (noticeMessage) noticeMessage.textContent = this.reviewRestoreNotice ?? "";
+    return this.reviewSaveStatus !== "failed";
   }
 
   restoreReviewViewport({ keepFocusVisible = false } = {}) {
@@ -1858,6 +1863,11 @@ export class BamLearningApp {
 
   handleQuizClick(event) {
     if (this.currentView !== "review") return false;
+    const questionRetryButton = event.target.closest("[data-quiz-question-retry]");
+    if (questionRetryButton) {
+      this.retryCurrentQuizQuestion(questionRetryButton);
+      return true;
+    }
     if (event.target.closest("[data-quiz-question-id]")) {
       if (!this.activateQuizQuestionForElement(event.target)) return true;
       this.saveReviewSession();
@@ -2036,6 +2046,66 @@ export class BamLearningApp {
     }
   }
 
+  retryCurrentQuizQuestion(element) {
+    const session = this.quizSession;
+    if (
+      !session ||
+      session.screen !== "question" ||
+      session.recordAttempted ||
+      session.completedAt
+    ) return false;
+    if (this.reviewStorageConflict) {
+      this.announce("다른 탭에서 풀이가 바뀌었습니다. 저장된 풀이를 다시 불러온 뒤 재도전해 주세요.");
+      return false;
+    }
+
+    const card = element?.closest?.("[data-quiz-question-id]");
+    const targetIndex = card
+      ? session.questions.findIndex((question) => question.id === card.dataset.quizQuestionId)
+      : session.currentIndex;
+    const question = session.questions[targetIndex];
+    const gradedAnswer = question ? session.gradedAnswers.get(question.id) : null;
+    if (!question || gradedAnswer?.isCorrect !== false) return false;
+
+    const previousIndex = session.currentIndex;
+    const hadFirstAttempt = session.firstAttemptByQuestion.has(question.id);
+    const previousFirstAttempt = session.firstAttemptByQuestion.get(question.id);
+    const hadSelection = session.selectedOptionIds.has(question.id);
+    const previousSelection = session.selectedOptionIds.get(question.id);
+    const hadExpandedFeedback = session.expandedQuestionIds.has(question.id);
+
+    session.currentIndex = targetIndex;
+    if (!hadFirstAttempt) {
+      session.firstAttemptByQuestion.set(question.id, {
+        selectedOptionId: gradedAnswer.selectedOptionId,
+        isCorrect: false,
+      });
+    }
+    session.selectedOptionIds.delete(question.id);
+    session.gradedAnswers.delete(question.id);
+    session.expandedQuestionIds.delete(question.id);
+
+    if (!this.saveReviewSession()) {
+      session.currentIndex = previousIndex;
+      if (hadFirstAttempt) session.firstAttemptByQuestion.set(question.id, previousFirstAttempt);
+      else session.firstAttemptByQuestion.delete(question.id);
+      if (hadSelection) session.selectedOptionIds.set(question.id, previousSelection);
+      else session.selectedOptionIds.delete(question.id);
+      session.gradedAnswers.set(question.id, gradedAnswer);
+      if (hadExpandedFeedback) session.expandedQuestionIds.add(question.id);
+      else session.expandedQuestionIds.delete(question.id);
+      this.renderQuiz();
+      this.focusQuizQuestion();
+      this.announce("재도전 상태를 저장하지 못해 이전 오답 상태를 유지합니다.");
+      return false;
+    }
+
+    this.renderQuiz();
+    this.focusQuizQuestion();
+    this.announce("이 문제를 다시 풀 수 있습니다. 답을 선택해 주세요.");
+    return true;
+  }
+
   showPreviousQuizQuestion() {
     if (!this.quizSession || this.quizSession.currentIndex === 0) return;
     this.quizSession.returnContext = null;
@@ -2096,12 +2166,16 @@ export class BamLearningApp {
     try {
       const progress = this.progressRepository.recordQuizAttempt({
         languageId: this.quizCollection.languageId,
-        answers: answers.map((answer) => ({
-          questionId: answer.questionId,
-          lessonId: answer.lessonId,
-          selectedOptionId: answer.selectedOptionId,
-          isCorrect: answer.isCorrect,
-        })),
+        answers: answers.map((answer) => {
+          const firstAttempt = session.firstAttemptByQuestion.get(answer.questionId);
+          return {
+            questionId: answer.questionId,
+            lessonId: answer.lessonId,
+            selectedOptionId: answer.selectedOptionId,
+            isCorrect: answer.isCorrect,
+            ...(firstAttempt ? { firstAttempt: { ...firstAttempt } } : {}),
+          };
+        }),
       });
       const persistence = this.progressRepository.getPersistenceStatus();
       session.persistenceStatus = persistence.isPersistent ? "saved" : "memory";
@@ -2148,6 +2222,7 @@ export class BamLearningApp {
       currentIndex: 0,
       selectedOptionIds: new Map(),
       gradedAnswers: new Map(),
+      firstAttemptByQuestion: new Map(),
       screen: questions.length ? "question" : "empty",
       summary: null,
       recordAttempted: false,
@@ -2229,6 +2304,11 @@ export class BamLearningApp {
     this.quizSession.summary = summarizeQuiz(questions, attempt.answers);
     this.quizSession.gradedAnswers = new Map(attempt.answers.map((answer) => [answer.questionId, answer]));
     this.quizSession.selectedOptionIds = new Map(attempt.answers.map((answer) => [answer.questionId, answer.selectedOptionId]));
+    this.quizSession.firstAttemptByQuestion = new Map(
+      attempt.answers
+        .filter((answer) => answer.firstAttempt)
+        .map((answer) => [answer.questionId, { ...answer.firstAttempt }]),
+    );
     this.quizSession.completedAt = attempt.completedAt;
     this.quizSession.recordAttempted = true;
     this.quizSession.persistenceStatus = this.progressRepository.getPersistenceStatus().isPersistent ? "saved" : "memory";
@@ -3430,6 +3510,7 @@ export class BamLearningApp {
               return {
                 prompt: item.prompt,
                 isCorrect: session.gradedAnswers.get(item.id)?.isCorrect === true,
+                firstAttempt: session.firstAttemptByQuestion.get(item.id) ?? null,
                 conceptId: item.conceptId,
                 lessonTitle: lesson?.title,
                 lessonHref: lesson ? buildLessonHash(lesson.courseId, lesson.slug) : null,
@@ -3448,6 +3529,7 @@ export class BamLearningApp {
             answeredCount: session.gradedAnswers.size,
             selectedOptionId: session.selectedOptionIds.get(question?.id) ?? null,
             gradedAnswer: session.gradedAnswers.get(question?.id) ?? null,
+            firstAttempt: session.firstAttemptByQuestion.get(question?.id) ?? null,
             recentAttempt: this.quizRecentAttempt,
             incorrectQuestionCount: this.quizIncorrectQuestionCount,
             sessionMode: session.mode,
@@ -3459,6 +3541,7 @@ export class BamLearningApp {
             otherFeedbackExpanded: session.expandedQuestionIds?.has(question?.id) ?? false,
             viewMode: session.viewMode ?? "single",
             gradingMode: session.gradingMode ?? "individual",
+            canRetryQuestions: !session.recordAttempted && !session.completedAt && !this.reviewStorageConflict,
             hasNextScope: Boolean(continuation.nextScope),
             nextScope: continuation.nextScope,
             questionStates: session.questions.map((item, currentIndex) => {
@@ -3467,6 +3550,7 @@ export class BamLearningApp {
                 question: item, currentIndex,
                 selectedOptionId: session.selectedOptionIds.get(item.id) ?? null,
                 gradedAnswer: session.gradedAnswers.get(item.id) ?? null,
+                firstAttempt: session.firstAttemptByQuestion.get(item.id) ?? null,
                 lessonHref: lesson ? buildLessonHash(lesson.courseId, lesson.slug) : null,
                 learningObjective: item.learningObjective ?? lesson?.objectives?.[0] ?? "",
                 relatedConceptTitle: this.reviewConcepts?.find((concept) => concept.id === item.conceptId && concept.lessonId === item.lessonId)?.title,
