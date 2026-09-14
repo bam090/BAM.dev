@@ -1825,6 +1825,10 @@ export class BamLearningApp {
       this.showRecentQuizResult();
       return true;
     }
+    if (event.target.closest("[data-quiz-continue]")) {
+      this.continueQuizToNextScope();
+      return true;
+    }
     if (this.quizSession?.screen !== "question") return false;
 
     if (event.target.closest("[data-quiz-check-all]")) {
@@ -1832,7 +1836,7 @@ export class BamLearningApp {
       return true;
     }
     if (event.target.closest("[data-quiz-finish]")) {
-      this.finishQuizSession();
+      this.finishQuizSession({ continueToNext: true });
       return true;
     }
     if (event.target.closest("[data-quiz-check]")) {
@@ -1976,10 +1980,10 @@ export class BamLearningApp {
       return;
     }
 
-    this.finishQuizSession();
+    this.finishQuizSession({ continueToNext: true });
   }
 
-  finishQuizSession() {
+  finishQuizSession({ continueToNext = false } = {}) {
     const session = this.quizSession;
     if (!session || session.screen !== "question" || session.recordAttempted) return;
     if (this.reviewStorageConflict) {
@@ -2025,6 +2029,7 @@ export class BamLearningApp {
       session.persistenceStatus = "failed";
     }
 
+    if (continueToNext && this.continueQuizToNextScope()) return;
     this.renderQuiz();
     this.focusQuizResult();
     this.announce(
@@ -2080,6 +2085,56 @@ export class BamLearningApp {
       (!this.quizLessonId || question.lessonId === this.quizLessonId) &&
       (!this.quizConceptId || question.conceptId === this.quizConceptId),
     );
+  }
+
+  getQuizContinuation() {
+    const unavailable = { nextScope: null, isLastScope: false };
+    if (!this.quizCollection || !this.curriculum?.courses?.length || !this.curriculum.categories?.length) return unavailable;
+    const questions = this.getScopedQuizQuestions();
+    const topics = new Set(questions.map((question) => {
+      const lesson = this.curriculum.lessons.find((item) => item.id === question.lessonId);
+      const course = this.curriculum.courses.find((item) => item.id === lesson?.courseId);
+      return course ? getCourseTopic(course) : null;
+    }));
+    if (topics.size !== 1 || topics.has(null)) return unavailable;
+
+    let lessonId = this.quizLessonId ?? null;
+    if (lessonId && this.quizConceptId) {
+      lessonId = getKeywordReviewScope(this.curriculum, this.quizCollection, this.reviewConcepts ?? [], lessonId, this.quizConceptId).lessonId;
+    }
+    const currentHref = buildKeywordReviewHash(this.quizCollection.languageId, lessonId, this.quizConceptId);
+    const items = getLearningCatalogItems({
+      curriculum: this.curriculum,
+      collections: new Map([[this.quizCollection.languageId, this.quizCollection]]),
+      concepts: this.reviewConcepts ?? [],
+      kind: "review",
+      topicId: [...topics][0],
+    });
+    const currentIndex = items.findIndex((item) => item.href === currentHref);
+    if (currentIndex < 0) return unavailable;
+    return {
+      nextScope: items[currentIndex + 1]?.count > 0 ? items[currentIndex + 1] : null,
+      isLastScope: currentIndex === items.length - 1,
+    };
+  }
+
+  continueQuizToNextScope() {
+    const session = this.quizSession;
+    if (this.currentView !== "review" || session?.screen !== "result" || !session.recordAttempted) return false;
+    if (this.reviewStorageConflict || session.persistenceStatus === "failed" || this.reviewSaveStatus === "failed") {
+      this.announce("저장 상태를 확인한 뒤 다시 시도해 주세요. 현재 결과는 그대로 유지합니다.");
+      return false;
+    }
+    const { nextScope } = this.getQuizContinuation();
+    if (!nextScope) return false;
+
+    this.saveReviewSession();
+    if (this.reviewStorageConflict || this.reviewSaveStatus === "failed") {
+      this.announce("풀이를 저장하지 못해 이동하지 않았습니다. 저장 안내를 확인해 주세요.");
+      return false;
+    }
+    window.location.hash = nextScope.href;
+    return true;
   }
 
   showRecentQuizResult() {
@@ -3264,6 +3319,7 @@ export class BamLearningApp {
     const selectedConcept = this.reviewConcepts?.find((item) => item.id === this.quizConceptId && (!selectedLesson || item.lessonId === selectedLesson.id));
     const reviewTitle = selectedConcept?.title ?? (selectedLesson ? `${selectedLesson.title} · 객관식 복습` : this.quizCollection.title);
     const lessonHref = selectedLesson ? buildLessonHash(selectedLesson.courseId, selectedLesson.slug) : firstLessonHref;
+    const continuation = this.getQuizContinuation();
     const scopeControls = renderQuizScopeControls({
       lessons: lessons.filter((lesson) => this.quizCollection.questions.some((question) => question.lessonId === lesson.id)).map((lesson) => ({
         ...lesson,
@@ -3286,6 +3342,8 @@ export class BamLearningApp {
             lessonHref,
             scopeControls,
             completedAt: session.completedAt,
+            ...continuation,
+            continuationBlocked: this.reviewStorageConflict || this.reviewSaveStatus === "failed" || session.persistenceStatus === "failed",
             questionResults: session.questions.map((item) => {
               const lesson = lessons.find((candidate) => candidate.id === item.lessonId);
               return {
@@ -3320,6 +3378,8 @@ export class BamLearningApp {
             otherFeedbackExpanded: session.expandedQuestionIds?.has(question?.id) ?? false,
             viewMode: session.viewMode ?? "single",
             gradingMode: session.gradingMode ?? "individual",
+            hasNextScope: Boolean(continuation.nextScope),
+            nextScope: continuation.nextScope,
             questionStates: session.questions.map((item, currentIndex) => {
               const lesson = lessons.find((candidate) => candidate.id === item.lessonId);
               return {

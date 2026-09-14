@@ -734,6 +734,20 @@ article.lesson-body > h3 {
   background: var(--color-border);
 }
 
+.lesson-illustration {
+  overflow: hidden;
+  margin: 22px 0 26px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.lesson-illustration img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
 .code-card {
   overflow: hidden;
   margin: 22px 0 26px;

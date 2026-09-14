@@ -7,7 +7,7 @@ category ──► course ──► lesson ──► Markdown
                   └──► language
 ```
 
-카테고리는 사이드바의 큰 학습 영역, 과정은 교안 순서와 URL의 단위, 언어는 예제·Quest·평가기의 실행 계약입니다. 예를 들어 알고리즘은 별도 `courseId`를 가지면서 JavaScript `languageId`를 사용할 수 있습니다.
+카테고리는 사이드바의 큰 학습 영역, 과정은 교안 순서와 URL의 단위, 언어는 예제·Quest·평가기의 실행 계약입니다. 현재 알고리즘은 별도 `courseId: algorithm`을 가지면서 `languageId: java`를 사용합니다.
 
 ## 카테고리
 
@@ -114,7 +114,7 @@ category ──► course ──► lesson ──► Markdown
 - 새 ID는 `js-concept-<key>`·`java-concept-<key>`, slug는 `wiki-<key>`, 파일은 각각 `content/lessons/javascript/`·`content/lessons/java/` 아래다. 기존 order를 유지하고 JS 8부터, Java 2부터 연속 추가한다. 새 단위의 `answerHeading`은 실제 `핵심 질문 답` 절을 가리킨다.
 - 기존 JS runtime은 ID·본문·활성을 유지하며 `answerHeading` 없이 기존 면접 답변 형식도 보존했다. 모든 기존 교안의 직접답 UI를 일괄 전환한 것으로 해석하지 않는다. 나머지 기존 JS·Java 교안에는 보관 표시만 추가한다. 기존 source·ID·slug·본문·완료·문항 소유 관계를 새 파생으로 덮어쓰지 않는다.
 - 원문은 `wiki/학습자료/밤데브 학습문서/03 JavaScript/`·`04 Java/` 아래 실제 상대 경로이며 `importMode: derived`·원본 전체 SHA와 재구성 구간을 기록한다. 기존 source 날짜를 새 검증 PASS로 쓰지 않고 원문 기록일·이번 확인/반입일을 구분한다. 원본 경로 안전 검사와 `copy` 해시 계약은 유지한다.
-- 공유 상세 문서는 **같은 `courseId`이거나**, 두 과정 모두 `categoryId: language`이고 같은 `languageId`일 때만 허용한다. 두 교안의 언어·concept 선언, 실제 문항의 `lessonId`·언어·concept, 실제 `heading`·발췌와 교안 존재 조건을 계속 검사한다. 알고리즘과 언어 과정 사이의 공유는 같은 JavaScript라도 허용하지 않는다.
+- 공유 상세 문서는 **같은 `courseId`이거나**, 두 과정 모두 `categoryId: language`이고 같은 `languageId`일 때만 허용한다. 두 교안의 언어·concept 선언, 실제 문항의 `lessonId`·언어·concept, 실제 `heading`·발췌와 교안 존재 조건을 계속 검사한다. 알고리즘과 언어 과정 사이의 공유는 같은 실행 언어라도 허용하지 않는다.
 - 목록/문서 CTA는 언어 내 해당 concept 문항 전부의 매핑이 같은 상세 문서·주제로 귀결될 때만 한 카드로 합치고 기존 v1 `lessonId: null` 언어+concept 선택을 사용한다. 조건이 성립하지 않으면 기존 소유별 묶음을 유지한다. 기존 소유 교안 URL·route 검증·문서 복귀 토큰 검사를 완화하지 않는다.
 - 기존 JS 27개·Java 1개 문항 객체는 그대로 두고 새 객체만 해당 언어 컬렉션에 추가한다. 기존 문항 ID·진도 키는 유지하지만 범위의 문항 집합 변경은 활성 세션의 콘텐츠 서명을 바꿀 수 있으며 기존 변경 감지·안내 계약을 따른다. 문항 객체 보존을 모든 범위의 세션 서명 불변으로 주장하지 않는다.
 - Java 언어·과정의 `status`는 현재 `available`이다. 이 값은 정적 학습문서·객관식 제공 상태이며 Java runner·코딩테스트·Spring·설치형 release 준비를 나타내지 않는다. 콘텐츠 검사는 Code Quest 필수 제공을 available인 JavaScript·HTML·CSS로 한정하고, 앱의 초기 Quest 로드·해시 진입·실제 열기도 같은 조건을 사용한다. 미제공 Java Quest는 기존 기본 JavaScript 교안으로 복귀한다. 별도 스키마 버전·저장 키·실행 의존성은 추가하지 않았다.
@@ -324,7 +324,7 @@ v1 프로젝트는 `index.html`과 `styles.css` 두 파일만 사용합니다. �
 
 `[제안]` Code Quest UI에 필요한 값은 현재 Quest와 curriculum 관계에서 읽기 전용으로 계산한다. 정확한 저장 여부와 UI 표시는 `DEC-QUEST-CATALOG-01`에서 정한다.
 
-- `courseId`: Quest의 `lessonId`가 속한 과정. 같은 `languageId`를 공유하는 JavaScript와 알고리즘 과정을 구분한다.
+- `courseId`: Quest의 `lessonId`가 속한 과정. 학습 순서·주제를 나타내는 과정과 예제·평가의 실행 언어를 구분한다.
 - `topicId`: 검증된 교안·개념 관계로 묶는 Code Quest 전용 학습 주제. 제목·문제 문구에서 추론하지 않는다.
 - `displayOrder`: Code Quest 과정·주제 안의 화면 표시·직접 이동 번호. 기존 `order`는 보존한다.
 

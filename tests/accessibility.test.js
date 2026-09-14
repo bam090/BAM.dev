@@ -345,7 +345,7 @@ test("정상 채점은 결과 영역 초점만 사용하고 오류만 announcer�
 
 test("객관식 저장은 세션당 한 번만 시도하고 비영속 상태를 구분한다", async () => {
   const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = appSource.indexOf("  finishQuizSession() {");
+  const start = appSource.indexOf("  finishQuizSession(");
   const end = appSource.indexOf("\n  retryQuiz(mode) {", start);
   assert.ok(start >= 0 && end > start);
 

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
+import { resolveLessonRoute } from "../src/core/navigation.js";
 import { LocalStorageProgressRepository, MemoryStorage, PROGRESS_STORAGE_KEY } from "../src/repositories/progress-repository.js";
 import { renderMarkdown, splitMarkdownSection } from "../src/ui/markdown.js";
 
@@ -462,6 +463,54 @@ test("알고리즘 과정 교안에서는 평가 기능 링크를 표시하지 �
   assert.doesNotMatch(html, /class="review-nav"/);
   assert.doesNotMatch(html, /class="quest-nav"/);
   assert.doesNotMatch(html, /class="coding-test-nav"/);
+});
+
+test("분리한 알고리즘 기초 문서는 질문·접힌 직접답·이전다음을 보존하고 Java 해시 완료를 분리한다", async () => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  const storage = new MemoryStorage();
+  const repository = new LocalStorageProgressRepository(storage);
+  repository.setLessonCompleted("js-10-stack-queue");
+  repository.setLessonCompleted("js-09-hash-map-set");
+  const saved = storage.getItem(PROGRESS_STORAGE_KEY);
+  assert.equal(resolveLessonRoute(curriculum, "#/learn/algorithm/stack-and-queue").id, "js-10-stack-queue");
+  assert.equal(resolveLessonRoute(curriculum, "#/learn/algorithm/hash-map-set").id, "algo-hash-map-set");
+  assert.equal(resolveLessonRoute(curriculum, "#/learn/javascript/hash-map-set").id, "js-09-hash-map-set");
+  const expected = [
+    ["algo-list-conditions", ["dictionary"]],
+    ["algo-dictionary", ["list-and-conditions", "stack-and-queue"]],
+    ["js-10-stack-queue", ["dictionary", "hash-map-set"]],
+    ["algo-hash-map-set", ["stack-and-queue", "heap-and-greedy"]],
+  ];
+
+  for (const [id, adjacentSlugs] of expected) {
+    const lesson = curriculum.lessons.find((candidate) => candidate.id === id);
+    assert.ok(lesson, id);
+    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+    const app = createLessonApp(false, "algorithm", { progressRepository: repository });
+    Object.assign(app, {
+      curriculum, currentLesson: lesson, currentMarkdown: markdown,
+      renderPaginationLink: BamLearningApp.prototype.renderPaginationLink,
+    });
+    app.renderLesson();
+    const html = app.root.innerHTML;
+    const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
+    const pagination = html.match(/<nav class="lesson-pagination"[\s\S]*?<\/nav>/)?.[0] ?? "";
+    const directAnswer = splitMarkdownSection(markdown, "핵심 질문 답").section;
+    assert.equal(lesson.answerHeading, "핵심 질문 답", id);
+    assert.ok(directAnswer, `${id}: 문서 범위에 맞는 직접답이 필요합니다.`);
+    assert.ok(html.includes(`<h2 id="completion-title">${lesson.essentialQuestion}</h2>`), id);
+    assert.ok(answer.includes(renderMarkdown(directAnswer, { preserveParagraphLineBreaks: true })), id);
+    assert.doesNotMatch(answer.split(">")[0], /\sopen(?:\s|$)/);
+    assert.doesNotMatch(html, /면접 답변 예시/);
+    assert.doesNotMatch(html, /class="(?:review|quest|coding-test)-nav"/);
+    assert.deepEqual(
+      [...pagination.matchAll(/href="([^"]+)"/g)].map((match) => match[1]),
+      adjacentSlugs.map((slug) => `#/learn/algorithm/${slug}`), id,
+    );
+    assert.ok(html.includes(`data-toggle-complete aria-pressed="${id === "js-10-stack-queue"}"`), id);
+    assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved, `${id}: 열람으로 완료 기록을 바꾸지 않습니다.`);
+  }
+  assert.deepEqual(new LocalStorageProgressRepository(storage).getProgress().completedLessonIds, ["js-10-stack-queue", "js-09-hash-map-set"]);
 });
 
 test("답변 열람은 저장하지 않고 완료·해제는 현재 펼침과 초점을 보존하며 재진입은 접힌다", (t) => {

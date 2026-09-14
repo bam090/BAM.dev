@@ -8,6 +8,7 @@ export function escapeHtml(value) {
 }
 
 const INLINE_CODE_PATTERN = /(?<!`)(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)/gu;
+const LESSON_ILLUSTRATION_PATTERN = /^\s*!\[([^\]\n]*)\]\((content\/assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.png)\)\s*$/;
 
 function normalizeInlineCode(code) {
   return code.startsWith(" ") && code.endsWith(" ") && code.trim()
@@ -401,6 +402,7 @@ function isBlockStart(lines, index) {
   return (
     /^#{1,6}\s+/.test(line) ||
     /^```/.test(line) ||
+    LESSON_ILLUSTRATION_PATTERN.test(line) ||
     /^>\s?/.test(line) ||
     /^\s*[-*+]\s+/.test(line) ||
     /^\s*\d+\.\s+/.test(line) ||
@@ -548,6 +550,15 @@ export function renderMarkdown(
       output.push(
         `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
       );
+      continue;
+    }
+
+    const illustration = line.match(LESSON_ILLUSTRATION_PATTERN);
+    if (illustration) {
+      output.push(
+        `<figure class="lesson-illustration"><img src="${escapeHtml(illustration[2])}" alt="${escapeHtml(illustration[1])}" loading="lazy" decoding="async"></figure>`,
+      );
+      index += 1;
       continue;
     }
 

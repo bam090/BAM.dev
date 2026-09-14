@@ -81,12 +81,12 @@
     {
       "id": "algorithm",
       "categoryId": "algorithm",
-      "languageId": "javascript",
+      "languageId": "java",
       "name": "알고리즘",
       "shortName": "ALGO",
       "status": "available",
-      "accent": "javascript",
-      "description": "해시부터 그래프와 동적 계획법까지 문제 해결 원리를 익힙니다."
+      "accent": "java",
+      "description": "Java 25를 기준으로 기본 자료구조부터 그래프와 동적 계획법까지 문제 해결 원리를 익힙니다."
     },
     {
       "id": "spring",
@@ -430,9 +430,9 @@
     },
     {
       "id": "js-08-implementation-simulation",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 10,
+      "order": 12,
       "slug": "implementation-and-string-simulation",
       "title": "구현과 문자열 시뮬레이션",
       "summary": "문제의 규칙을 상태와 변화 순서로 나누어 코드로 정확하게 옮깁니다.",
@@ -451,14 +451,15 @@
       "contentFile": "content/lessons/algorithm/implementation-and-string-simulation.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-20"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "js-09-hash-map-set",
       "languageId": "javascript",
-      "courseId": "algorithm",
-      "order": 2,
+      "courseId": "javascript",
+      "order": 40,
       "slug": "hash-map-set",
       "title": "해시와 Map·Set",
       "summary": "키로 값을 찾고 중복을 관리하는 Map과 Set의 사용 기준을 익힙니다.",
@@ -475,52 +476,141 @@
         "js.map-collection",
         "js.set-collection"
       ],
-      "contentFile": "content/lessons/algorithm/hash-map-set.md",
+      "contentFile": "content/lessons/javascript/hash-map-set-reference.md",
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-08-23"
+      },
+      "archivedFromCatalog": true
+    },
+    {
+      "id": "algo-list-conditions",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "list-and-conditions",
+      "title": "리스트와 조건문: 여러 값에서 조건에 맞는 값 찾기",
+      "summary": "`List`는 값의 순서를 유지하고, 반복문은 각 값을 읽으며, 조건문은 그 값을 처리할지 고릅니다.",
+      "essentialQuestion": "여러 점수에서 조건에 맞는 값만 처리하려면 목록·반복·조건의 역할을 어떻게 나누어야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`List<Integer>`와 `ArrayList`로 여러 점수를 저장하고 위치와 개수를 확인할 수 있습니다.",
+        "`for`로 값을 차례대로 읽고 `if`로 조건에 맞는 값만 처리할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.list",
+        "algo.condition"
+      ],
+      "contentFile": "content/lessons/algorithm/list-and-conditions.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-14",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/01 배열(Array)과 List.md",
+        "sha256": "9f595cd43ca83bc6445f101f238fbc31848f79739843c0879df6c13bffe5c9ad",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "algo-dictionary",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "dictionary",
+      "title": "딕셔너리: 키로 값 저장하고 찾기",
+      "summary": "딕셔너리는 키에 값을 연결하는 구조이며, Java에서는 `Map`을 구현한 객체로 저장·조회하고 키의 존재를 확인합니다.",
+      "essentialQuestion": "키로 값을 저장하고 조회할 때 키가 없는 경우와 값이 null인 경우를 어떻게 구분할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`Map`과 `HashMap`의 역할을 구분하고 `put()`과 `get()`으로 키에 연결된 값을 저장·조회할 수 있습니다.",
+        "`containsKey()`로 키가 없는 경우와 값이 `null`로 저장된 경우를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 8,
+      "conceptIds": [
+        "algo.dictionary"
+      ],
+      "contentFile": "content/lessons/algorithm/dictionary.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-14",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/03 해시(Hash)와 Map·Set.md",
+        "sha256": "db4763b9f6a854f4ac78ec2f1967d1957144fce7e591269302b8cdba6eba1aea",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
       }
     },
     {
       "id": "js-10-stack-queue",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 1,
+      "order": 3,
       "slug": "stack-and-queue",
-      "title": "리스트·조건문·딕셔너리·스택과 큐",
-      "summary": "알고리즘 풀이에 사용하는 기본 도구와 값을 꺼내는 순서를 구분합니다.",
-      "essentialQuestion": "여러 값을 저장하고 조건에 따라 알맞은 순서로 처리하려면 어떤 도구가 필요할까요?",
+      "title": "스택과 큐: 값을 꺼내는 순서",
+      "summary": "스택은 마지막에 넣은 값을, 큐는 먼저 넣은 값을 꺼내며, `ArrayDeque`에 적용하는 메서드 조합으로 그 순서를 지킵니다.",
+      "essentialQuestion": "마지막에 넣은 값과 먼저 넣은 값 중 무엇을 꺼내야 하며, Java 객체로 그 순서와 빈 상태를 어떻게 다룰까요?",
+      "answerHeading": "핵심 질문 답",
       "objectives": [
-        "리스트와 딕셔너리가 각각 어떤 데이터를 저장하는지 설명할 수 있습니다.",
-        "조건문으로 자료구조의 상태에 따라 처리 흐름을 나눌 수 있습니다.",
-        "스택의 LIFO와 큐의 FIFO 순서를 구분할 수 있습니다.",
-        "배열로 스택과 머리 인덱스를 사용하는 큐를 구현할 수 있습니다."
+        "스택의 LIFO와 큐의 FIFO 순서를 구분하고 다음 처리 대상에 맞게 선택할 수 있습니다.",
+        "`Deque`와 `ArrayDeque`로 스택·큐를 만들고 넣기·확인·꺼내기·빈 상태를 구분할 수 있습니다."
       ],
-      "estimatedMinutes": 50,
+      "estimatedMinutes": 25,
       "conceptIds": [
-        "algo.list",
-        "algo.condition",
-        "algo.dictionary",
         "algo.stack",
         "algo.queue"
       ],
       "contentFile": "content/lessons/algorithm/stack-and-queue.md",
       "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-08-23"
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-14",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/02 스택·큐(Stack - Queue).md",
+        "sha256": "e0b40b77a32ee9c8c1ba884d7b57dde0d5b7e097b8975db6ad27ef8d228cbc24",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
+      }
+    },
+    {
+      "id": "algo-hash-map-set",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 4,
+      "slug": "hash-map-set",
+      "title": "해시와 Map·Set",
+      "summary": "해시는 찾을 후보를 좁히고 동등성 비교로 같은 값을 확인하며, `Map`은 키별 정보, `Set`은 중복 없는 원소를 보관합니다.",
+      "essentialQuestion": "키별 횟수와 중복 여부를 함께 다룰 때 해시·동등성·Map·Set은 각각 무엇을 맡을까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "해시와 동등성 비교가 후보를 좁히고 같은 키를 구분하는 과정을 설명할 수 있습니다.",
+        "횟수를 저장하는 `Map`과 존재 여부를 저장하는 `Set`을 조합할 수 있습니다.",
+        "`HashMap`·`HashSet`의 순회 순서와 평균 비용에 대한 보장 범위를 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 20,
+      "conceptIds": [
+        "algo.hashing",
+        "algo.map-collection",
+        "algo.set-collection"
+      ],
+      "contentFile": "content/lessons/algorithm/hash-map-set.md",
+      "source": {
+        "kind": "user-authored",
+        "verifiedAt": "2026-09-14",
+        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/03 해시(Hash)와 Map·Set.md",
+        "sha256": "db4763b9f6a854f4ac78ec2f1967d1957144fce7e591269302b8cdba6eba1aea",
+        "importedAt": "2026-09-14",
+        "importMode": "derived"
       }
     },
     {
       "id": "js-11-sorting-window",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 4,
+      "order": 6,
       "slug": "sorting-two-pointers-sliding-window",
       "title": "정렬·투 포인터·슬라이딩 윈도우",
-      "summary": "데이터에 순서를 만든 뒤 두 위치와 연속 구간을 이동하며 탐색량을 줄입니다.",
+      "summary": "값의 순서로 버릴 범위를 판단하고, 연속 구간은 빠지는 값과 들어오는 값만 반영해 탐색량을 줄입니다.",
       "essentialQuestion": "모든 조합을 다시 확인하지 않고 필요한 값과 연속 구간을 찾으려면 어떻게 할까요?",
       "objectives": [
-        "숫자 정렬에서 비교 함수가 필요한 이유를 설명할 수 있습니다.",
+        "Java의 숫자 기본 정렬과 비교자가 필요한 정렬을 구분할 수 있습니다.",
         "투 포인터의 두 위치가 어떤 조건으로 이동하는지 추적할 수 있습니다.",
         "슬라이딩 윈도우의 구간 합을 이전 값에서 갱신할 수 있습니다.",
         "정렬 여부와 연속 구간 조건을 문제에서 먼저 확인할 수 있습니다."
@@ -534,41 +624,43 @@
       "contentFile": "content/lessons/algorithm/sorting-two-pointers-sliding-window.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-20"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "js-12-brute-force-backtracking",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 5,
+      "order": 7,
       "slug": "brute-force-backtracking-recursion",
       "title": "완전 탐색·백트래킹·재귀",
-      "summary": "가능한 선택을 빠짐없이 만들고 불가능한 경로는 일찍 되돌아옵니다.",
+      "summary": "후보를 빠짐없이 만드는 구조를 먼저 정하고, 종료 조건·상태 복원·안전한 가지치기로 재귀 탐색을 관리합니다.",
       "essentialQuestion": "모든 후보를 빠뜨리지 않으면서 불필요한 탐색을 줄이려면 어떻게 할까요?",
       "objectives": [
         "완전 탐색이 가능한 후보를 모두 확인하는 방식임을 설명할 수 있습니다.",
-        "재귀 함수의 종료 조건과 더 작은 다음 문제를 작성할 수 있습니다.",
+        "재귀 메서드의 종료 조건과 더 작은 다음 문제를 작성할 수 있습니다.",
         "선택, 재귀 호출, 선택 취소로 백트래킹 상태를 복원할 수 있습니다.",
         "정답을 버리지 않는 조건에서만 가지치기를 적용할 수 있습니다."
       ],
       "estimatedMinutes": 65,
       "conceptIds": [
         "algo.brute-force",
-        "js.recursion",
+        "algo.recursion",
         "algo.backtracking"
       ],
       "contentFile": "content/lessons/algorithm/brute-force-backtracking-recursion.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-20"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "js-13-bfs-dfs",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 8,
+      "order": 10,
       "slug": "bfs-dfs-graph-grid",
       "title": "BFS·DFS와 그래프·격자 탐색",
       "summary": "연결 관계를 그래프로 표현하고 너비 우선과 깊이 우선으로 방문합니다.",
@@ -589,17 +681,18 @@
       "contentFile": "content/lessons/algorithm/bfs-dfs-graph-grid.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-20"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "js-14-heap-greedy",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 3,
+      "order": 5,
       "slug": "heap-and-greedy",
       "title": "힙과 그리디",
-      "summary": "우선순위가 가장 높은 값을 관리하고 현재 선택을 확정할 수 있는 조건을 구분합니다.",
+      "summary": "힙은 우선하는 값을 위에 유지하고, 그리디는 현재 선택을 확정해도 전체 답을 잃지 않는 근거가 있을 때 사용합니다.",
       "essentialQuestion": "가장 작은 값을 반복해서 꺼내거나 현재 최선의 선택을 확정하려면 무엇을 확인해야 할까요?",
       "objectives": [
         "최소 힙의 부모와 자식 사이 순서 규칙을 설명할 수 있습니다.",
@@ -616,21 +709,22 @@
       "contentFile": "content/lessons/algorithm/heap-and-greedy.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-20"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "js-15-binary-search-dp",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 7,
+      "order": 9,
       "slug": "binary-search-and-dynamic-programming",
       "title": "이분 탐색과 동적 계획법 1",
-      "summary": "단조로운 탐색 범위를 절반씩 줄이고 반복되는 부분 문제의 답을 저장합니다.",
+      "summary": "이분 탐색은 답이 있을 경계를 좁히고, 동적 계획법은 뜻이 정해진 작은 상태의 답을 저장해 반복 계산을 줄입니다.",
       "essentialQuestion": "탐색 범위와 반복 계산을 줄이려면 어떤 상태와 규칙을 저장해야 할까요?",
       "objectives": [
         "이분 탐색이 적용되는 정렬·단조 조건을 확인할 수 있습니다.",
-        "반열린 구간의 left, mid, right 변화를 추적할 수 있습니다.",
+        "반열린 구간의 left, middle, right 변화를 추적할 수 있습니다.",
         "DP의 상태, 점화식, 초기값과 계산 순서를 설명할 수 있습니다.",
         "메모이제이션과 바텀업 방식의 공통 목적을 설명할 수 있습니다."
       ],
@@ -642,18 +736,19 @@
       "contentFile": "content/lessons/algorithm/binary-search-and-dynamic-programming.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-20"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "algo-06-number-theory-geometry",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 6,
+      "order": 8,
       "slug": "number-theory-and-geometry",
       "title": "정수론과 기하학",
-      "summary": "정수의 나눗셈 관계와 좌표의 방향을 계산으로 판단합니다.",
-      "essentialQuestion": "정수와 좌표 사이의 관계를 반복 탐색 없이 어떻게 계산할까요?",
+      "summary": "나머지로 정수의 공약수 관계를 줄여 가고, 같은 기준점에서 만든 두 벡터의 외적으로 세 점의 방향을 판단합니다.",
+      "essentialQuestion": "정수의 공약수와 세 점의 방향을 어떤 관계와 입력 조건으로 계산하나요?",
       "objectives": [
         "약수와 배수의 관계를 나머지로 설명할 수 있습니다.",
         "유클리드 알고리즘으로 두 양의 정수의 최대공약수를 구할 수 있습니다.",
@@ -668,14 +763,15 @@
       "contentFile": "content/lessons/algorithm/number-theory-and-geometry.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-23"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "algo-09-tree",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 9,
+      "order": 11,
       "slug": "tree-basics",
       "title": "트리",
       "summary": "계층 구조의 용어와 깊이 우선·레벨 순회 흐름을 익힙니다.",
@@ -694,14 +790,15 @@
       "contentFile": "content/lessons/algorithm/tree-basics.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-23"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "algo-11-dynamic-programming-advanced",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 11,
+      "order": 13,
       "slug": "dynamic-programming-advanced",
       "title": "동적 계획법 2",
       "summary": "여러 정보가 필요한 상태를 표로 만들고 메모리 절약과 선택 복원까지 확장합니다.",
@@ -719,14 +816,15 @@
       "contentFile": "content/lessons/algorithm/dynamic-programming-advanced.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-23"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "algo-12-dijkstra",
-      "languageId": "javascript",
+      "languageId": "java",
       "courseId": "algorithm",
-      "order": 12,
+      "order": 14,
       "slug": "weighted-graphs-dijkstra",
       "title": "가중 그래프와 다익스트라",
       "summary": "음수가 아닌 가중 그래프에서 우선순위 큐로 최소 경로 비용을 구합니다.",
@@ -746,8 +844,9 @@
       "contentFile": "content/lessons/algorithm/weighted-graphs-dijkstra.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-08-23"
-      }
+        "verifiedAt": "2026-09-14"
+      },
+      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "html-01-document-structure",

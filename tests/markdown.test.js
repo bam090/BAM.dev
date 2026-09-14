@@ -51,6 +51,32 @@ test("원시 HTML을 실행 가능한 마크업으로 통과시키지 않는다"
   assert.equal(escapeHtml('a & <b> "c"'), "a &amp; &lt;b&gt; &quot;c&quot;");
 });
 
+test("교안의 로컬 PNG는 문단과 분리하고 대체 텍스트를 안전하게 표시한다", () => {
+  const result = renderMarkdown('앞 문단\n![순서 <값> & "다음"](content/assets/algorithm/stack-lifo.png)\n뒤 문단');
+  assert.equal((result.match(/<img\b/g) ?? []).length, 1);
+  assert.match(result, /src="content\/assets\/algorithm\/stack-lifo\.png"/);
+  assert.match(result, /alt="순서 &lt;값&gt; &amp; &quot;다음&quot;"/);
+  assert.match(result, /<p>앞 문단<\/p>\s*<figure\b/);
+  assert.match(result, /<\/figure>\s*<p>뒤 문단<\/p>/);
+  assert.doesNotMatch(result, /<값>/);
+});
+
+test("교안 이미지의 외부·절대·우회 경로와 코드 안 이미지 문법을 실행하지 않는다", () => {
+  for (const source of [
+    "https://example.com/image.png", "//example.com/image.png", "data:image/png;base64,AAAA",
+    "/content/assets/image.png", "/Users/private/image.png", "content/assets/../private.png",
+    "content/assets/%2e%2e/private.png", "content/assets/%252e%252e/private.png",
+    "content/assets/algorithm\\image.png", "content/assets/algorithm%5cimage.png",
+    "content/assets/image.png?download=1", "content/assets/image.png#fragment", "content/assets/image.svg",
+  ]) {
+    assert.doesNotMatch(renderMarkdown(`![그림](${source})`), /<img\b/, source);
+  }
+  const source = "![스택](content/assets/algorithm/stack-lifo.png)";
+  const result = renderMarkdown(`\`\`\`markdown\n${source}\n\`\`\``);
+  assert.doesNotMatch(result, /<img\b/);
+  assert.equal(originalCodeFrom(result), source);
+});
+
 test("함수 원문의 백틱 문자 설명과 이어지는 템플릿 변수는 각각 별도 코드로 읽힌다", () => {
   const source = "백틱 `` ` ``으로 감싼 문자열 안의 `${name}`은 `name` 값을 그 자리에 넣는다.";
   const expected = "백틱 <code>`</code>으로 감싼 문자열 안의 <code>${name}</code>은 <code>name</code> 값을 그 자리에 넣는다.";

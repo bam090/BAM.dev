@@ -142,7 +142,7 @@ function renderQuestionHeader({
       <div class="eyebrow">
         <span>${escapeHtml(languageName)}</span>
         <span aria-hidden="true">·</span>
-        <span>${sessionMode === "incorrect" ? "오답 다시 풀기" : "전체 복습"}</span>
+        <span>${sessionMode === "incorrect" ? "오답 다시 풀기" : "선택한 범위 복습"}</span>
       </div>
       <h1>${escapeHtml(title)}</h1>
       ${renderRecentProgress(recentAttempt, incorrectQuestionCount)}
@@ -240,7 +240,7 @@ function renderGradedSummary(question, gradedAnswer) {
 function renderQuizQuestionCard({
   languageId, languageName, question, currentIndex, total, answeredCount,
   selectedOptionId, gradedAnswer, lessonHref, learningObjective,
-  relatedConceptTitle, otherFeedbackExpanded = false, viewMode, gradingMode,
+  relatedConceptTitle, otherFeedbackExpanded = false, viewMode, gradingMode, hasNextScope, nextScope,
 }) {
   const questionId = question?.id ?? "missing";
   const safeId = escapeHtml(questionId);
@@ -253,7 +253,9 @@ function renderQuizQuestionCard({
     ? !isLastQuestion || allGraded
     : isGraded && (!isLastQuestion || allGraded);
   const nextHelp = canMoveNext
-    ? gradingMode === "batch" && !isGraded
+    ? isLastQuestion
+      ? getCompletedScopeMessage(hasNextScope, nextScope)
+      : gradingMode === "batch" && !isGraded
       ? "다른 문제의 답도 고른 뒤 함께 채점할 수 있습니다."
       : "채점을 완료했습니다. 다음 단계로 이동할 수 있습니다."
     : isLastQuestion && !allGraded
@@ -276,12 +278,18 @@ function renderQuizQuestionCard({
         <div class="quiz-actions${viewMode === "all" ? " quiz-actions--individual" : ""}${gradingMode === "batch" ? " quiz-actions--batch" : ""}">
           ${viewMode === "single" ? `<button class="button button--secondary" type="button" data-quiz-previous${currentIndex === 0 ? " disabled" : ""}>이전 문제</button>` : ""}
           ${gradingMode === "individual" ? `<button class="button button--primary" type="button" data-quiz-check${!hasSelection || isGraded ? " disabled" : ""}>${isGraded ? "채점 완료" : "정답 확인"}</button>` : ""}
-          ${viewMode === "single" ? `<button class="button button--secondary${canMoveNext ? "" : " is-disabled"}" type="button" data-quiz-next aria-disabled="${String(!canMoveNext)}"${canMoveNext ? "" : ` aria-describedby="quiz-next-help-${safeId}"`}>${isLastQuestion ? "결과 보기" : "다음 문제"}</button>` : ""}
+          ${viewMode === "single" ? `<button class="button button--secondary${canMoveNext ? "" : " is-disabled"}" type="button" data-quiz-next aria-disabled="${String(!canMoveNext)}"${canMoveNext ? "" : ` aria-describedby="quiz-next-help-${safeId}"`}>${isLastQuestion && !hasNextScope ? "결과 보기" : "다음 문제"}</button>` : ""}
         </div>
         ${viewMode === "single" ? `<p class="quiz-next-help${canMoveNext ? " is-ready" : ""}" id="quiz-next-help-${safeId}">${nextHelp}</p>` : ""}
       </form>
     </section>
   `;
+}
+
+function getCompletedScopeMessage(hasNextScope, nextScope) {
+  return hasNextScope
+    ? `이 문제 묶음의 채점을 완료했습니다. 다음 문제를 누르면 바로 이어집니다.${nextScope ? ` 다음 묶음: ${escapeHtml(nextScope.title)} · ${Math.max(0, safeInteger(nextScope.count))}문항.` : ""}`
+    : "이 문제 묶음의 채점을 완료했습니다. 결과를 확인하고 다른 문제를 선택할 수 있습니다.";
 }
 
 function renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount }) {
@@ -308,6 +316,8 @@ export function renderQuizQuestionView({
   lessonHref = null, lessonTitle = "학습 문서", learningObjective = "",
   relatedConceptTitle = null, otherFeedbackExpanded = false,
   viewMode = "single", gradingMode = "individual", questionStates = null,
+  hasNextScope = false,
+  nextScope = null,
 } = {}) {
   const safeTotal = Math.max(0, safeInteger(total));
   const safeIndex = Math.min(Math.max(0, safeInteger(currentIndex)), Math.max(0, safeTotal - 1));
@@ -322,9 +332,9 @@ export function renderQuizQuestionView({
         ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, sessionMode, viewMode })}
         ${renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount })}
         <div class="quiz-question-list">
-          ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode })).join("")}
+          ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope })).join("")}
         </div>
-        ${viewMode === "all" ? `<div class="quiz-list-result">${gradingMode === "batch" ? `<button class="button button--primary" id="quiz-check-all-end" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status-end" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항</p>` : ""}<button class="button button--primary" type="button" data-quiz-finish${answeredCount === safeTotal ? "" : " disabled"}>결과 보기</button><p>모든 문제를 채점하면 결과를 확인할 수 있습니다.</p></div>` : ""}
+        ${viewMode === "all" ? `<div class="quiz-list-result">${gradingMode === "batch" ? `<button class="button button--primary" id="quiz-check-all-end" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status-end" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항</p>` : ""}<button class="button button--primary" type="button" data-quiz-finish${answeredCount === safeTotal ? "" : " disabled"}>${hasNextScope ? "다음 문제" : "결과 보기"}</button><p>${safeTotal > 0 && answeredCount === safeTotal ? getCompletedScopeMessage(hasNextScope, nextScope) : "모든 문제를 채점한 뒤 이어갈 수 있습니다."}</p></div>` : ""}
       </div>
     </main>
   `;
@@ -339,6 +349,9 @@ export function renderQuizResultView({
   scopeControls = "",
   questionResults = [],
   completedAt = null,
+  nextScope = null,
+  isLastScope = false,
+  continuationBlocked = false,
 } = {}) {
   const correct = Math.max(0, safeInteger(summary?.correct));
   const total = Math.max(0, safeInteger(summary?.total));
@@ -377,8 +390,10 @@ export function renderQuizResultView({
           <p>이 정답률은 객관식 복습 기록이며, 독립적인 구현 능력이나 완전한 숙련을 뜻하지 않습니다.</p>
           ${questionResults.length ? `<ol class="quiz-result-items">${questionResults.map((result) => `<li><strong>${result.isCorrect ? "정답" : "오답"}</strong> ${renderInlineCodeText(result.prompt)}${renderLessonReference(result)}</li>`).join("")}</ol>` : ""}
           <p class="quiz-persistence-status${persistenceStatus === "saved" ? "" : " is-warning"}" role="status">${persistenceMessage}</p>
+          ${nextScope ? `<p id="quiz-next-scope-description">다음 키워드: <strong>${escapeHtml(nextScope.title)}</strong> · ${Math.max(0, safeInteger(nextScope.count))}문항</p>` : `<p>${isLastScope ? "이 주제의 마지막 문제 묶음입니다. 다른 키워드는 문제 목록에서 선택해 주세요." : "다른 키워드도 문제 목록에서 골라 풀 수 있습니다."}</p>`}
           <div class="quiz-result-actions">
-            <button class="button button--primary" type="button" data-quiz-retry="${hasIncorrect ? "incorrect" : "all"}">${hasIncorrect ? "오답 다시 풀기" : "전체 다시 풀기"}</button>
+            ${nextScope ? `<button class="button button--primary" type="button" data-quiz-continue aria-describedby="quiz-next-scope-description"${continuationBlocked ? " disabled" : ""}>다음 키워드 풀기</button>` : ""}
+            <button class="button button--${nextScope ? "secondary" : "primary"}" type="button" data-quiz-retry="${hasIncorrect ? "incorrect" : "all"}">${hasIncorrect ? "오답 다시 풀기" : "전체 다시 풀기"}</button>
             <a class="button button--secondary" href="#/review">다른 문제 찾기</a>
           </div>
         </section>

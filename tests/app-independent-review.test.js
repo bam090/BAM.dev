@@ -644,8 +644,7 @@ test("전부 보기의 비연속 선택은 해당 카드만 바꾸고 전체 채
   assert.equal(app.quizSession.gradedAnswers.size, 3);
   assert.equal(app.quizSession.screen, "question", "마지막 채점 자체는 완료 기록이 아니다.");
   assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
-  app.handleQuizClick(click("[data-quiz-finish]"));
-  app.handleQuizClick(click("[data-quiz-finish]"));
+  app.finishQuizSession();
   app.finishQuizSession();
   assert.equal(app.quizSession.screen, "result");
   assert.equal(app.quizSession.summary.correct, 2);
@@ -1269,5 +1268,155 @@ test("보관 교안의 완료와 깊은 URL은 유지하고 새 문서의 답 �
     assert.match(app.root.innerHTML, /답변 예시 확인하기/);
     assert.doesNotMatch(app.root.innerHTML, /data-review-return/);
     assert.deepEqual(errors, []);
+  }
+});
+
+// 기대 URL·문항 ID는 승인 계약과 html.json 원문에서 고정한다.
+const htmlFirstKeyword = "#/review/html/html-01-document-structure?concept=html.semantics";
+const htmlNextKeyword = "#/review/html/html-01-document-structure?concept=html.dom-tree";
+
+test("다음 문제는 HTML 채점 화면에서 결과 경유 없이 한 번 기록하고 새 문제로 이동한다", async (t) => {
+  browser(t);
+  const cases = [
+    [htmlFirstKeyword, "quiz-html-semantic-main", "c", true, true, "single", htmlNextKeyword, "quiz-html-dom-nesting"],
+    [htmlFirstKeyword, "quiz-html-semantic-main", "a", false, false, "single", htmlNextKeyword, "quiz-html-dom-nesting"],
+    [htmlNextKeyword, "quiz-html-dom-nesting", "b", true, true, "all", "#/review/html/html-02-text-links?concept=html.text-semantics", "quiz-html-strong-em-meaning"],
+  ];
+  for (const [hash, questionId, optionId, correct, persistent, viewMode, nextHash, nextQuestionId] of cases) {
+    window.location.hash = hash;
+    const storage = new MemoryStorage();
+    storage.isPersistent = () => persistent;
+    const { app, errors } = harness(storage);
+    await app.openRoute();
+    app.setQuizViewMode(viewMode);
+    assert.equal(app.quizSession.questions.length, 1);
+    assert.equal(app.getCurrentQuizQuestion().id, questionId);
+    assert.match(app.root.innerHTML, /선택한 범위 복습/);
+    const action = viewMode === "single" ? "[data-quiz-next]" : "[data-quiz-finish]";
+    app.handleQuizClick(click(action));
+    assert.equal(window.location.hash, hash, "미채점 상태에서 다음 범위로 이동하지 않는다.");
+    choose(app, optionId);
+    app.gradeCurrentQuizQuestion();
+    assert.equal(app.quizSession.gradedAnswers.get(questionId).isCorrect, correct);
+    assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
+    assert.match(app.root.innerHTML, /다음 문제/);
+    assert.doesNotMatch(app.root.innerHTML, /결과 보기에서 다음 키워드로 이어갈 수 있습니다/);
+    let resultRenders = 0;
+    let resultFocuses = 0;
+    const renderQuiz = app.renderQuiz.bind(app);
+    app.renderQuiz = () => { if (app.quizSession.screen === "result") resultRenders += 1; renderQuiz(); };
+    app.focusQuizResult = () => { resultFocuses += 1; };
+    app.handleQuizClick(click(action));
+    assert.equal(window.location.hash, nextHash, "같은 문제 화면의 다음 버튼 한 번으로 정확한 다음 묶음에 진입한다.");
+    assert.equal(app.quizSession.recordAttempted, true);
+    assert.equal(app.quizSession.persistenceStatus, persistent ? "saved" : "memory");
+    assert.equal(resultRenders, 0, "성공 이동 전에 중간 결과 DOM을 렌더링하지 않는다.");
+    assert.equal(resultFocuses, 0, "성공 이동 전에 결과 제목으로 초점을 옮기지 않는다.");
+    assert.doesNotMatch(app.root.innerHTML, /class="quiz-result-card"/);
+    const attempt = app.progressRepository.getProgress().quizAttempts[0];
+    assert.equal(attempt.answers[0].questionId, questionId);
+    assert.equal(attempt.answers[0].isCorrect, correct);
+    app.handleQuizClick(click(action));
+    assert.deepEqual(app.progressRepository.getProgress().quizAttempts, [attempt], "hashchange 전 중복 클릭도 완료를 다시 기록하지 않는다.");
+    await app.openRoute();
+    assert.equal(app.getCurrentQuizQuestion().id, nextQuestionId);
+    assert.equal(app.quizSession.screen, "question");
+    assert.equal(app.quizSession.recordAttempted, false);
+    assert.equal(app.quizSession.gradedAnswers.size, 0);
+    assert.equal(resultRenders, 0);
+    assert.equal(resultFocuses, 0);
+    if (!persistent) assert.match(app.root.innerHTML, /현재 탭에만 저장됩니다/);
+    app.handleQuizClick(click("[data-quiz-next]"));
+    assert.equal(window.location.hash, nextHash, "새 문제의 채점 전에는 다시 이동하지 않는다.");
+    choose(app, "b");
+    const nextSessionId = app.quizSession.id;
+    const resumed = harness(storage);
+    await resumed.app.openRoute();
+    assert.equal(resumed.app.quizSession.id, nextSessionId);
+    assert.equal(resumed.app.quizSession.selectedOptionIds.get(nextQuestionId), "b");
+    assert.equal(resumed.app.quizSession.gradedAnswers.size, 0);
+    assert.deepEqual(resumed.app.progressRepository.getProgress().quizAttempts, [attempt]);
+    assert.deepEqual([...errors, ...resumed.errors], []);
+  }
+
+  const lastHash = "#/review/html/html-05-review-practice?concept=html.accessibility-audit";
+  window.location.hash = lastHash;
+  const { app, errors } = harness();
+  await app.openRoute();
+  choose(app, "d");
+  app.gradeCurrentQuizQuestion();
+  assert.match(app.root.innerHTML, /data-quiz-next[^>]*>결과 보기/);
+  app.handleQuizClick(click("[data-quiz-next]"));
+  assert.equal(window.location.hash, lastHash);
+  assert.equal(app.quizSession.screen, "result");
+  assert.match(app.root.innerHTML, /class="quiz-result-card"/);
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 1);
+  assert.deepEqual(errors, []);
+});
+
+test("같은 화면의 다음 문제는 저장 실패·다른 탭 충돌에서 이동하지 않고 현재 풀이를 보존한다", async (t) => {
+  browser(t);
+  for (const failure of ["progress", "session", "conflict"]) {
+    window.location.hash = htmlFirstKeyword;
+    const { app, storage, errors } = harness();
+    await app.openRoute();
+    choose(app, "c");
+    app.gradeCurrentQuizQuestion();
+    const answers = [...app.quizSession.gradedAnswers];
+    const originalSetItem = storage.setItem.bind(storage);
+    if (failure !== "conflict") storage.setItem = (key, value) => {
+      if (key === (failure === "progress" ? PROGRESS_STORAGE_KEY : REVIEW_SESSION_STORAGE_KEY)) throw new Error("저장 실패");
+      originalSetItem(key, value);
+    };
+    let otherTabRaw = null;
+    if (failure === "conflict") {
+      const otherTab = harness(storage);
+      await otherTab.app.openRoute();
+      otherTab.app.handleQuizClick(click("[data-quiz-feedback-toggle]"));
+      otherTabRaw = storage.getItem(REVIEW_SESSION_STORAGE_KEY);
+      assert.deepEqual(otherTab.errors, []);
+    }
+    app.handleQuizClick(click("[data-quiz-next]"));
+    assert.equal(window.location.hash, htmlFirstKeyword, failure);
+    assert.deepEqual([...app.quizSession.gradedAnswers], answers, failure);
+    assert.equal(app.progressRepository.getProgress().quizAttempts.length, failure === "session" ? 1 : 0, failure);
+    if (failure === "conflict") {
+      assert.equal(app.quizSession.screen, "question");
+      assert.equal(app.reviewStorageConflict, true);
+      assert.equal(storage.getItem(REVIEW_SESSION_STORAGE_KEY), otherTabRaw);
+    } else {
+      assert.equal(app.quizSession.screen, "result", failure);
+      assert.match(app.root.innerHTML, /class="quiz-result-card"/);
+      assert.match(app.root.innerHTML, /data-quiz-continue[^>]* disabled/);
+      if (failure === "progress") assert.equal(app.quizSession.persistenceStatus, "failed");
+      else assert.equal(app.reviewSaveStatus, "failed");
+    }
+    assert.deepEqual(errors, []);
+  }
+});
+
+test("다음 키워드 후보는 공유 카드 정규화와 Java·Spring 주제 경계 및 마지막 fallback을 지킨다", async (t) => {
+  browser(t);
+  // curriculum의 기존 카드 순서와 원문 concept 소유 관계로 고정한 기대값이다.
+  const cases = [
+    ["#/review/java/java-01-types-methods?concept=java.methods", "#/review/java/java-concept-runtime?concept=java.runtime", "java", false],
+    ["#/review/java?concept=java.methods", "#/review/java/java-concept-runtime?concept=java.runtime", "java", false],
+    ["#/review/java/spring-ioc-di?concept=spring.ioc-di", "#/review/java/spring-bean-registration?concept=spring.bean-registration", "spring", false],
+    ["#/review/java/java-concept-test-tools?concept=java.test-tools", null, null, true],
+    ["#/review/html/html-05-review-practice?concept=html.accessibility-audit", null, null, true],
+    ["#/review/html/html-01-document-structure", null, null, false],
+    ["#/review/java", null, null, false],
+  ];
+  for (const [hash, nextHref, topicId, isLastScope] of cases) {
+    window.location.hash = hash;
+    const { app, errors } = harness();
+    await app.openRoute();
+    const continuation = app.getQuizContinuation();
+    assert.equal(continuation.nextScope?.href ?? null, nextHref, hash);
+    assert.equal(continuation.nextScope?.topicId ?? null, topicId, hash);
+    assert.equal(continuation.isLastScope, isLastScope, hash);
+    if (continuation.nextScope) assert.ok(continuation.nextScope.count > 0, hash);
+    assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
+    assert.deepEqual(errors, [], hash);
   }
 });

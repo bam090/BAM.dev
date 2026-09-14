@@ -31,10 +31,16 @@ test("과정 조회와 실행 언어별 평가 조회를 분리한다", () => {
   const algorithmLessons = getLessonsForCourse(curriculum, algorithm.id);
   const javascriptAssessmentLessons = getLessonsForLanguage(curriculum, "javascript");
 
-  assert.equal(algorithm.languageId, "javascript");
-  assert.ok(algorithmLessons.every((lesson) => lesson.courseId === "algorithm"));
+  assert.equal(algorithm.languageId, "java");
+  assert.equal(algorithmLessons.length, 14);
+  assert.ok(algorithmLessons.every((lesson) => lesson.courseId === "algorithm" && lesson.languageId === "java"));
   assert.ok(javascriptAssessmentLessons.length > algorithmLessons.length);
   assert.ok(javascriptAssessmentLessons.every((lesson) => lesson.languageId === "javascript"));
+  const archivedHash = javascriptAssessmentLessons.find((lesson) => lesson.id === "js-09-hash-map-set");
+  assert.equal(archivedHash.courseId, "javascript");
+  assert.equal(archivedHash.order, 40);
+  assert.equal(archivedHash.archivedFromCatalog, true);
+  assert.deepEqual(archivedHash.conceptIds, ["algo.hashing", "js.map-collection", "js.set-collection"]);
 });
 
 test("탐색 가능한 과정의 교안은 과정별로 1부터 순서대로 제공된다", () => {

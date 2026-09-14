@@ -71,6 +71,8 @@ React·TypeScript·CodeMirror 구성요소 코드와 다크·보라색 외형을
 
 ## 알고리즘 과정 확장
 
+아래는 2026-08-20·2026-08-23에 JavaScript 과정으로 처음 작성한 당시의 출처·검증 이력입니다.
+
 - 새 프로젝트 작성본: `content/lessons/algorithm/`의 알고리즘 교안(현재 수량은 프로젝트 [`README.md`](../README.md) 참조)
 - 범위: 스택·큐, 해시, 힙·그리디, 정렬·투 포인터·슬라이딩 윈도우, 완전 탐색·백트래킹·재귀, 정수론·기하학, 이분 탐색·동적 계획법 1, BFS·DFS·그래프·격자, 트리, 구현·문자열 시뮬레이션, 동적 계획법 2, 가중 그래프·다익스트라
 - 원칙: 외부 문제의 문구·예제·답안을 복제하지 않고 작은 입력과 실행 흐름을 프로젝트에서 새로 작성
@@ -78,9 +80,20 @@ React·TypeScript·CodeMirror 구성요소 코드와 다크·보라색 외형을
 
 JavaScript API 동작은 [ECMAScript 명세](https://tc39.es/ecma262/)와 [MDN JavaScript 참고서](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference)를 확인했습니다.
 자료구조와 알고리즘의 정의·적용 조건·복잡도는 [MIT OpenCourseWare 6.006 강의 자료](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/lecture-notes/)를 중심으로 검증했습니다.
-알고리즘 교안은 별도 `algorithm` 과정에서 기존 JavaScript 실행 언어를 사용하며, 각 문서의 `개념 연결`에서 선행·현재·후속 conceptId를 안내합니다. `tests/algorithm-lessons.test.js`는 현재 과정의 연결과 모든 JavaScript 예제를 독립 실행 문맥에서 검증합니다.
+당시 알고리즘 교안은 별도 `algorithm` 과정에서 JavaScript를 사용했고, 각 문서의 `개념 연결`에서 선행·현재·후속 conceptId를 안내했습니다. 당시 `tests/algorithm-lessons.test.js`는 과정의 연결과 JavaScript 예제를 독립 실행 문맥에서 검증했습니다.
+
+2026-09-14에는 [알고리즘 Java 전환과 기초 문서 분리](designs/lesson-review.md#알고리즘-java-전환과-기초-문서-분리)에 따라 활성 교안 14개를 Java 기준으로 전환했습니다. 밤위키 Java 원문 3개에서 기초 교안 4개를 파생하고, 나머지 기존 제품 교안 10개를 Java로 변환했습니다. 기존 `js-09-hash-map-set`의 JavaScript 본문은 연결된 JavaScript Code Quest 4개를 위해 보관 교안으로 유지합니다. 현재 `tests/algorithm-lessons.test.js`의 검사는 Java 메타데이터·선수 개념·직접답 등 정적 계약을 확인합니다. 실제 Java 컴파일·실행 결과는 별도의 변경 범위 검증 기록으로 구분하며, 이 출처 기록만으로 실행 통과를 주장하지 않습니다.
 
 2026-08-23에는 `js-09-hash-map-set`의 적용 연습으로 JavaScript Code Quest 4개를 기존 컬렉션 뒤에 추가했습니다. 단계는 `Set` 존재 조회, `Map` 값 조회, 순회 중 빈도 갱신, 중복 수량 소비로 구분했습니다. 기존 교안의 단어·태그 빈도 및 단순 중복 판별, 기존 코딩테스트의 목표 단어 카운트·고정 카테고리 누적·좌표 방문 문제와 다른 입력·처리·결과 계약을 사용하며, 외부 문제의 문구·예시·테스트를 복사하지 않았습니다.
+
+### 승인된 스택·큐 시각화
+
+2026-09-14 bam이 직접 작성한 아래 두 PNG를 각 개념의 설명 뒤, 코드 예제 앞에 사용하는 것을 승인했습니다. Obsidian 원본은 변경하지 않고 바이트 그대로 `content/assets/algorithm/`에 복사했습니다. 표의 SHA-256은 원본과 제품 복사본이 같습니다. 다른 Obsidian 시각 자료의 사용 승인을 포함하지 않습니다.
+
+| 그림 | Obsidian Vault 내 원본 경로 | 제품 경로 | SHA-256 |
+| --- | --- | --- | --- |
+| 스택 LIFO | `첨부파일/이미지/Pasted image 20260825005654.png` | `content/assets/algorithm/stack-lifo.png` | `8b16ca5628ab364a5ab8b4a728d6204f1d6796a9aa71b7008f225ba9912ab056` |
+| 큐 FIFO | `첨부파일/이미지/Pasted image 20260825123743.png` | `content/assets/algorithm/queue-fifo.png` | `b3bdf4791af30b10310ab2dbe425ed89049b2de9c831d7b2f5e0cc085fca95fe` |
 
 ## 문서 중심 개발 체계 참고
 

@@ -28,7 +28,7 @@ test("기존 6개 과정과 별도 Spring 과정을 표시하고 CS 준비 중 �
     ["#/learn/javascript/javascript-and-runtime", "JavaScript", "정식 과정"],
     ["#/learn/html/document-structure-and-semantics", "HTML", "정식 과정"],
     ["#/learn/css/css-rules-selectors-values", "CSS", "정식 과정"],
-    ["#/learn/algorithm/stack-and-queue", "알고리즘", "정식 과정"],
+    ["#/learn/algorithm/list-and-conditions", "알고리즘", "정식 과정"],
     ["#/learn/java/types-and-methods", "Java", "정식 과정"],
     ["#/learn/spring/framework-boot", "Spring · Spring Boot", "정식 과정"],
   ];

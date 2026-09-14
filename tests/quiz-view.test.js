@@ -279,16 +279,19 @@ test("하나씩 전체 채점 화면은 답을 모으기 위한 다음 이동을
   assert.doesNotMatch(html, /class="quiz-option-feedback"|data-quiz-grade-summary/);
 });
 
-test("마지막 문항은 채점 후 결과 보기 동작을 제공한다", () => {
-  const html = renderQuestion({
-    currentIndex: 13,
-    selectedOptionId: "b",
-    gradedAnswer,
-    answeredCount: 14,
-  });
-  assert.match(html, /문제 <strong>14\/14<\/strong>/);
-  assert.match(html, /aria-valuenow="100"/);
-  assert.match(html, /data-quiz-next aria-disabled="false">결과 보기/);
+test("마지막 문항은 다음 후보가 있으면 바로 다음 문제를, 없으면 결과 보기를 제공한다", () => {
+  for (const viewMode of ["single", "all"]) {
+    for (const hasNextScope of [true, false]) {
+      const html = renderQuestion({ currentIndex: 0, total: 1, selectedOptionId: "b", gradedAnswer, answeredCount: 1, viewMode, hasNextScope });
+      assert.match(html, /aria-valuenow="100"/);
+      if (viewMode === "single") assert.match(html, /문제 <strong>1\/1<\/strong>/);
+      const action = viewMode === "single" ? "data-quiz-next" : "data-quiz-finish";
+      assert.match(html, new RegExp(`${action}[^>]*>${hasNextScope ? "다음 문제" : "결과 보기"}</button>`));
+      assert.match(html, /이 문제 묶음의 채점을 완료했습니다/);
+      assert.doesNotMatch(html, /결과 보기에서 다음 키워드로 이어갈 수 있습니다/);
+      assert.doesNotMatch(html, /data-quiz-continue/);
+    }
+  }
 });
 
 test("결과 화면은 점수·정답률·오답 수와 오답 재도전을 표시한다", () => {
@@ -397,4 +400,32 @@ test("저장 결과에는 문항별 정오·근거와 저장 당시 날짜 및 �
   assert.doesNotMatch(html, /관련 개념: js.functions/);
   assert.match(html, /독립적인 구현 능력이나 완전한 숙련을 뜻하지 않습니다/);
   assert.doesNotMatch(html, /<img /);
+});
+
+test("다음 키워드 결과 동작은 실제 묶음명·문항 수와 저장 차단 상태를 제공한다", () => {
+  const summary = { correct: 0, total: 1, percent: 0, incorrectQuestionIds: [question.id] };
+  const nextScope = { title: '문서 구조와 <HTML> "의미"', count: 1 };
+  for (const continuationBlocked of [false, true]) {
+    const html = renderQuizResultView({ summary, nextScope, continuationBlocked });
+    const button = html.match(/<button[^>]*data-quiz-continue[^>]*>/)?.[0];
+    assert.ok(button);
+    assert.match(button, /class="button button--primary"/);
+    assert.match(button, /type="button"/);
+    assert.match(button, /aria-describedby="quiz-next-scope-description"/);
+    assert.equal(/ disabled/.test(button), continuationBlocked);
+    assert.match(html, /id="quiz-next-scope-description">다음 키워드: <strong>문서 구조와 &lt;HTML&gt; &quot;의미&quot;<\/strong> · 1문항/);
+    assert.match(html, />다음 키워드 풀기<\/button>/);
+    assert.match(html, /data-quiz-retry="incorrect">오답 다시 풀기/);
+    assert.match(html, /href="#\/review">다른 문제 찾기/);
+    assert.doesNotMatch(html, /<HTML>/);
+  }
+});
+
+test("다음 카드가 없는 결과는 마지막 범위와 대응 불명 범위를 구분한다", () => {
+  for (const isLastScope of [true, false]) {
+    const html = renderQuizResultView({ isLastScope });
+    assert.doesNotMatch(html, /data-quiz-continue|quiz-next-scope-description/);
+    assert.equal(html.includes("이 주제의 마지막 문제 묶음입니다"), isLastScope);
+    assert.match(html, /href="#\/review">다른 문제 찾기/);
+  }
 });

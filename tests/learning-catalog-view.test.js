@@ -31,7 +31,9 @@ test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공�
 
 test("문서 목록은 활성 문서만 나열하고 보관 교안의 메타데이터와 깊은 URL은 남긴다", () => {
   const all = getLearningCatalogItems(options);
-  assert.equal(all.length, 158);
+  assert.equal(curriculum.lessons.length, 182);
+  assert.equal(all.length, 160);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 22);
   for (const lesson of curriculum.lessons) {
     assert.equal(all.some((item) => item.href === `#/learn/${lesson.courseId}/${lesson.slug}`), !lesson.archivedFromCatalog, lesson.id);
   }
@@ -72,8 +74,10 @@ test("JavaScript 주제는 활성 개념 문서와 runtime을 보여 주고 보�
   assert.ok(javascript.some((item) => item.href === "#/learn/javascript/javascript-and-runtime"));
   assert.ok(javascript.every((item) => !item.href.includes("/algorithm/")));
   const algorithm = getLearningCatalogItems({ ...options, topicId: "algorithm" });
-  assert.equal(algorithm.length, curriculum.lessons.filter((lesson) => lesson.courseId === "algorithm").length);
+  assert.equal(algorithm.length, 14);
+  assert.ok(curriculum.lessons.filter((lesson) => lesson.courseId === "algorithm").every((lesson) => lesson.languageId === "java"));
   assert.ok(algorithm.every((item) => item.href.startsWith("#/learn/algorithm/")));
+  assert.ok(getLearningCatalogItems({ ...options, topicId: "java" }).every((item) => !item.href.includes("/algorithm/")));
   const javascriptQuestions = getLearningCatalogItems({ ...options, kind: "review", topicId: "javascript" });
   assert.equal(javascriptQuestions.reduce((sum, item) => sum + item.count, 0), collections.get("javascript").questions.length);
   assert.equal(getLearningCatalogItems({ ...options, kind: "review", topicId: "algorithm" }).length, 0);
