@@ -16,8 +16,9 @@ export function buildLessonHash(courseId, slug) {
   return `#/learn/${encodeURIComponent(courseId)}/${encodeURIComponent(slug)}`;
 }
 
-export function buildReviewHash(languageId) {
-  return `#/review/${encodeURIComponent(languageId)}`;
+export function buildReviewHash(languageId, lessonId = null) {
+  const lessonPath = lessonId ? `/${encodeURIComponent(lessonId)}` : "";
+  return `#/review/${encodeURIComponent(languageId)}${lessonPath}`;
 }
 
 export function buildQuestHash(languageId, slug) {
@@ -45,7 +46,7 @@ export function buildMyPageHash() {
 }
 
 export function parseLessonHash(hash) {
-  const cleanHash = String(hash ?? "").replace(/^#/, "");
+  const cleanHash = String(hash ?? "").split("?")[0].replace(/^#/, "");
   const match = cleanHash.match(/^\/learn\/([^/]+)\/([^/]+)\/?$/);
   if (!match) return null;
 
@@ -60,12 +61,15 @@ export function parseLessonHash(hash) {
 }
 
 export function parseReviewHash(hash) {
-  const cleanHash = String(hash ?? "").replace(/^#/, "");
-  const match = cleanHash.match(/^\/review\/([^/]+)\/?$/);
+  const cleanHash = String(hash ?? "").split("?")[0].replace(/^#/, "");
+  const match = cleanHash.match(/^\/review\/([^/]+)(?:\/([^/]+))?\/?$/);
   if (!match) return null;
 
   try {
-    return { languageId: decodeURIComponent(match[1]) };
+    return {
+      languageId: decodeURIComponent(match[1]),
+      ...(match[2] ? { lessonId: decodeURIComponent(match[2]) } : {}),
+    };
   } catch {
     return null;
   }
@@ -122,7 +126,7 @@ export function parseWebProjectHash(hash) {
 }
 
 export function parseMyPageHash(hash) {
-  const cleanHash = String(hash ?? "").replace(/^#/, "");
+  const cleanHash = String(hash ?? "").split("?")[0].replace(/^#/, "");
   return /^\/my\/?$/.test(cleanHash) ? { kind: "my-page" } : null;
 }
 
@@ -140,9 +144,6 @@ export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
       )
       .map((course) => course.id),
   );
-  const navigableLessons = curriculum.lessons
-    .filter((lesson) => navigableCourseIds.has(lesson.courseId))
-    .sort((left, right) => left.order - right.order);
   const parsed = parseLessonHash(hash);
   const routedLesson = parsed
     ? curriculum.lessons.find(
@@ -175,8 +176,11 @@ export function resolveLessonRoute(curriculum, hash, preferredLessonId = null) {
   if (preferredLesson) return preferredLesson;
 
   return (
-    navigableLessons.find((lesson) => lesson.courseId === DEFAULT_COURSE_ID) ??
-    navigableLessons[0] ??
+    curriculum.lessons.find(
+      (lesson) =>
+        navigableCourseIds.has(lesson.courseId) && lesson.courseId === DEFAULT_COURSE_ID,
+    ) ??
+    curriculum.lessons.find((lesson) => navigableCourseIds.has(lesson.courseId)) ??
     null
   );
 }

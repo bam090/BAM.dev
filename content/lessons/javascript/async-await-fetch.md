@@ -9,27 +9,13 @@
 
 ## 왜 필요한가
 
-서버 응답, 타이머, 파일 읽기처럼 결과가 즉시 준비되지 않는 작업을 기다리는 동안 애플리케이션 전체를 멈출 수는 없습니다. 비동기 코드는 **나중에 도착할 결과를 어떻게 이어서 처리할지** 표현합니다.
+서버 응답이나 타이머의 결과는 바로 준비되지 않을 수 있습니다.
+비동기 코드는 다른 일을 멈추지 않으면서 **나중에 도착할 결과를 이어서 처리하는 방법**입니다.
 
-## 비유: 음식 주문표
+## 동기와 비동기
 
-> **비유**  
-> 음식을 주문하면 즉시 음식 대신 주문표를 받습니다. 주문표는 아직 조리 중인지, 완성됐는지, 실패했는지를 나중에 알려줍니다. Promise는 미래의 결과를 나타내는 주문표와 비슷합니다.
-
-정확히는 Promise는 비동기 작업의 최종 완료 또는 실패와 그 결과 값을 나타내는 객체입니다. `await`는 주문이 끝날 때까지 프로그램 전체를 멈추는 것이 아니라, 현재 `async` 함수의 나머지 실행을 잠시 미룹니다.
-
-## 정확한 설명
-
-### 동기와 비동기
-
-동기 코드는 앞의 작업이 끝난 뒤 다음 문장을 실행합니다.
-
-```javascript
-console.log("A");
-console.log("B");
-```
-
-비동기 작업은 시작한 뒤 결과가 준비되었을 때 처리할 함수를 등록할 수 있습니다.
+**동기** 코드는 앞 문장이 끝난 뒤 다음 문장을 실행합니다.
+**비동기** 작업은 결과를 기다리는 동안 다른 코드를 계속 실행할 수 있습니다.
 
 ```javascript
 console.log("시작");
@@ -41,209 +27,142 @@ setTimeout(() => {
 console.log("끝");
 ```
 
-일반적인 출력 순서는 `시작 → 끝 → 타이머 완료`입니다. `0`밀리초는 콜백을 현재 실행 중인 코드보다 먼저 즉시 실행하라는 뜻이 아니라, 타이머 조건이 충족된 뒤 실행 대기열에 들어갈 수 있음을 뜻합니다.
+일반적인 출력 순서는 `시작 → 끝 → 타이머 완료`입니다.
+`0`밀리초여도 현재 실행 중인 코드보다 먼저 실행하라는 뜻은 아닙니다.
 
-### Promise의 상태
+## Promise
 
-Promise는 다음 상태를 가집니다.
+**Promise**는 나중에 성공하거나 실패할 작업의 결과를 나타내는 객체입니다.
 
 ```text
 pending(대기)
-├─ fulfilled(이행): 결과 값 준비
-└─ rejected(거부): 오류 이유 준비
+├─ fulfilled(이행): 성공 값이 준비됨
+└─ rejected(거부): 실패 이유가 준비됨
 ```
 
-한 번 이행되거나 거부된 Promise의 최종 상태는 다시 바뀌지 않습니다.
+Promise는 처음 이행되거나 거부되면 그 최종 상태가 다시 바뀌지 않습니다.
 
 ```javascript
-const promise = new Promise((resolve, reject) => {
-  const success = true;
-
-  if (success) {
-    resolve("작업 성공");
-  } else {
-    reject(new Error("작업 실패"));
-  }
+const ticket = new Promise((resolve, reject) => {
+  resolve("완료");
+  reject(new Error("실패"));
 });
+
+ticket
+  .then((value) => console.log(value))
+  .catch((error) => console.error(error.message));
+
+// "완료"만 출력
 ```
+
+- `resolve(value)`는 Promise를 이행시키고 값을 `then()`으로 보냅니다.
+- `reject(reason)`는 Promise를 거부시키고 이유를 `catch()`로 보냅니다.
+- `new Error("메시지")`는 오류 객체를 만들고, `error.message`로 그 설명을 읽습니다.
 
 ### Promise 체이닝
 
-```javascript
-promise
-  .then((result) => {
-    console.log(result);
-    return "다음 값";
-  })
-  .then((value) => {
-    console.log(value);
-  })
-  .catch((error) => {
-    console.error(error.message);
-  })
-  .finally(() => {
-    console.log("작업 종료");
-  });
-```
+`then()`을 이어 쓰면 앞 단계의 결과를 다음 단계로 전달할 수 있습니다.
+이를 **체이닝**이라고 합니다.
 
-- `then()`은 앞 Promise의 성공 값을 받아 처리합니다.
-- `then()`의 반환값은 다음 체인의 성공 값이 됩니다.
-- 처리 중 `throw`된 오류나 거부는 가까운 `catch()`로 전달됩니다.
-- `catch()`에서 값을 반환하면 오류를 처리한 뒤 성공 흐름으로 체이닝을 이어갈 수 있습니다.
-- `finally()`는 성공과 실패 여부에 관계없이 정리 작업을 실행하며, 결과 값을 변환하기 위한 용도로 사용하지 않습니다.
-
-`then()`의 콜백 매개변수는 한 개지만 그 한 값이 배열일 수 있습니다.
+`Promise.resolve(10)`은 값 `10`으로 이미 이행된 Promise를 만들어 흐름을 연습할 때 사용할 수 있습니다.
 
 ```javascript
-Promise.all([Promise.resolve(10), Promise.resolve(20)])
-  .then(([first, second]) => {
-    console.log(first + second); // 30
-  });
+Promise.resolve(10)
+  .then((number) => number * 2)
+  .then((number) => console.log(number)) // 20
+  .catch((error) => console.error(error.message));
 ```
 
-`Promise.all()`은 전달받은 이터러블의 모든 작업이 이행되면 결과 배열로 이행하고, 하나라도 거부되면 그 이유로 거부됩니다.
+- 일반 값을 반환하면 다음 `then()`이 그 값을 받습니다.
+- Promise를 반환하면 그 작업이 끝난 뒤 다음 단계가 실행됩니다.
+- 오류를 던지거나 Promise가 거부되면 `catch()`로 이동합니다.
 
-### `async`와 `await`
+## `async`와 `await`
 
-`async` 함수는 호출할 때 항상 Promise를 반환합니다.
+`async`를 붙인 함수는 항상 Promise를 반환합니다.
 
 ```javascript
 async function getNumber() {
   return 10;
 }
 
-getNumber().then((number) => console.log(number));
+getNumber().then((number) => console.log(number)); // 10
 ```
 
-`await`는 Promise가 처리될 때까지 현재 `async` 함수의 뒤쪽 실행을 미루고, 이행 값으로 계속 진행합니다.
+`await`는 Promise의 결과가 준비될 때까지 **현재 `async` 함수의 나머지 실행**을 미룹니다.
+프로그램 전체를 멈추는 것은 아닙니다.
 
 ```javascript
 async function printNumber() {
   const number = await Promise.resolve(10);
   console.log(number);
 }
+
+printNumber();
 ```
 
-거부된 Promise를 `await`하면 예외가 발생한 것처럼 처리되므로 `try...catch`를 사용할 수 있습니다.
+거부된 Promise를 `await`하면 오류처럼 처리되므로 `try...catch`로 다룰 수 있습니다.
 
-```javascript
-async function run() {
-  try {
-    const result = await Promise.resolve("완료");
-    console.log(result);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    console.log("종료");
-  }
-}
-```
+`try` 블록에서 코드를 실행하다 오류가 발생하면 나머지를 건너뛰고 `catch` 블록에서 그 오류를 처리합니다.
+`throw`는 그 자리에서 오류를 발생시켜 `catch`로 보냅니다.
 
-### 독립적인 작업을 함께 시작하기
+## 독립 작업과 의존 작업
 
-서로 결과에 의존하지 않는 작업은 먼저 함께 시작하고 `Promise.all()`로 기다릴 수 있습니다.
+두 작업에 서로의 결과가 필요 없다면 Promise를 먼저 만들고 `Promise.all()`로 함께 기다릴 수 있습니다.
 
 ```javascript
 async function loadSummary() {
   const profileTask = Promise.resolve({ nickname: "bam" });
-  const progressTask = Promise.resolve({ completedLessonCount: 5 });
+  const progressTask = Promise.resolve({ completed: 5 });
 
-  const [profile, progress] = await Promise.all([
+  const results = await Promise.all([
     profileTask,
     progressTask,
   ]);
 
-  return { profile, progress };
+  const profile = results[0];
+  const progress = results[1];
+  return { profile: profile, progress: progress };
 }
 ```
 
-두 번째 작업에 첫 번째 결과가 필요하다면 순차적으로 `await`해야 합니다. 무조건 병렬 처리하는 것이 정답은 아닙니다.
-
-### `fetch()`의 흐름
-
-`fetch()`는 HTTP 요청을 시작하고 `Response`로 이행하는 Promise를 반환합니다.
-
-아래 예제는 저장소에 포함된 `content/fixtures/javascript/todos.json`을 요청합니다. `npm run dev`로 BAM.dev를 실행하면 인터넷이나 외부 API 없이 연습할 수 있고, 빌드 결과에도 같은 fixture가 포함됩니다. HTML 파일을 `file://`로 직접 여는 대신 로컬 개발 서버 주소에서 실행합니다.
+반대로 주문 목록을 구할 때 `user.id`가 필요하다면 사용자 데이터를 먼저 받아야 합니다.
+다음 예제는 외부 서버 없이 그 실행 순서를 확인할 수 있습니다.
 
 ```javascript
-const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
-
-async function getTodos() {
-  const response = await fetch(TODO_FIXTURE_URL);
-
-  if (!response.ok) {
-    throw new Error(`HTTP 오류: ${response.status}`);
-  }
-
-  const todos = await response.json();
-  return todos;
+async function getUser() {
+  return { id: "user-1" };
 }
+
+async function getOrders(userId) {
+  return [{ id: "order-1", userId: userId }];
+}
+
+async function loadOrders() {
+  const user = await getUser();
+  const orders = await getOrders(user.id);
+  return orders;
+}
+
+loadOrders().then((orders) => console.log(orders));
 ```
 
-중요한 점은 서버가 `404`나 `500` 같은 HTTP 오류 상태를 보내도 `fetch()` Promise가 보통 자동으로 거부되지 않는다는 것입니다. 네트워크 요청 자체의 실패와 HTTP 오류 응답은 다르므로 `response.ok` 또는 `response.status`를 확인해야 합니다.
+두 번째 작업이 첫 번째 결과에 의존하므로 이 경우에는 순서대로 기다립니다.
+실제 `fetch()`를 사용한다면 먼저 받은 `Response`에 `await response.json()`을 적용해 사용자 데이터를 얻은 뒤 `user.id`로 두 번째 요청을 만듭니다.
 
-`response.json()`도 응답 본문을 읽고 JSON을 해석하는 비동기 작업이므로 Promise를 반환합니다.
+## `fetch()`의 흐름
 
-### Promise 체이닝으로 같은 요청 작성하기
+**HTTP**는 브라우저와 서버가 데이터를 주고받을 때 사용하는 규칙입니다.
+`fetch()`는 HTTP 요청을 시작하고 응답 정보를 담은 `Response` 객체로 이행하는 Promise를 반환합니다.
 
-```javascript
-const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
+요청 자체를 완료하지 못한 네트워크 실패에서는 Promise가 거부될 수 있습니다.
+반면 서버가 `404`나 `500`을 보냈다는 이유만으로는 보통 거부되지 않고 `Response`를 받으므로 `response.ok`를 확인해야 합니다.
 
-function getTodos() {
-  return fetch(TODO_FIXTURE_URL)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP 오류: ${response.status}`);
-      }
-
-      return response.json();
-    })
-    .then((todos) => todos)
-    .catch((error) => {
-      console.error(error.message);
-      throw error;
-    });
-}
-```
-
-`response.json()`을 `return`해야 다음 `then()`이 JSON 변환 완료 후의 데이터를 받습니다.
+이 교안은 저장소의 `./content/fixtures/javascript/todos.json`을 사용합니다.
+`npm run dev`로 BAM.dev를 실행하면 인터넷이나 외부 API 없이 연습할 수 있습니다.
+HTML 파일을 `file://`로 직접 열지 말고 로컬 개발 서버 주소에서 실행합니다.
 
 ## 실행 흐름
-
-```javascript
-const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
-
-async function getCompletedTodoTitles() {
-  try {
-    const response = await fetch(TODO_FIXTURE_URL);
-
-    if (!response.ok) {
-      throw new Error(`HTTP 오류: ${response.status}`);
-    }
-
-    const todos = await response.json();
-
-    todos
-      .filter((todo) => todo.completed)
-      .forEach((todo) => {
-        console.log(`Completed Todo: ${todo.title}`);
-      });
-  } catch (error) {
-    console.error(error.message);
-  }
-}
-```
-
-1. `async` 함수를 호출하면 Promise가 반환됩니다.
-2. `fetch()`가 요청을 시작하고 `await`에서 함수의 나머지 실행이 잠시 미뤄집니다.
-3. 응답이 오면 `response.ok`를 확인합니다.
-4. 오류 상태이면 `throw`하고 `catch`로 이동합니다.
-5. 성공 상태이면 `response.json()`의 완료를 기다립니다.
-6. 배열에서 완료된 할 일만 `filter()`로 선택합니다.
-7. `forEach()`로 제목을 하나씩 출력합니다.
-8. 어느 단계에서든 잡을 수 있는 오류가 발생하면 `catch`가 처리합니다.
-
-## 최소 코드
 
 ```javascript
 const TODO_FIXTURE_URL = "./content/fixtures/javascript/todos.json";
@@ -266,69 +185,100 @@ async function loadTodos() {
 loadTodos();
 ```
 
+1. `loadTodos()`를 호출하면 Promise가 반환됩니다.
+2. `fetch()`가 요청을 시작하고 함수의 나머지 실행이 잠시 미뤄집니다.
+3. 응답을 받으면 `response.ok`를 확인합니다.
+4. HTTP 오류 상태이면 오류를 만들어 `catch`로 이동합니다.
+5. 성공 상태이면 `response.json()`을 기다린 뒤 항목 수를 출력합니다.
+6. 요청이나 변환 중 오류가 발생하면 `catch`가 처리합니다.
+
+## 최소 코드
+
+```javascript
+async function getMessage() {
+  return "완료";
+}
+
+getMessage().then((message) => console.log(message)); // "완료"
+```
+
 ## 흔한 실수
 
-### 1. `Promise.all()`에 배열을 전달하지 않기
+### 1. `response.json()`을 기다리지 않기
+
+`async` 함수 안에서 `const data = await response.json();`처럼 기다립니다.
+`response.json()`은 즉시 최종 객체를 주는 함수가 아니라 Promise를 반환합니다.
+
+### 2. `response.ok`를 확인하지 않기
+
+`fetch()`가 이행됐다는 사실만으로 HTTP 상태가 성공이라는 뜻은 아닙니다.
+
+### 3. 체이닝에서 Promise를 반환하지 않기
 
 ```javascript
-await Promise.all([promiseA, promiseB]); // 올바른 기본 형태
-```
-
-`Promise.all(promiseA, promiseB)`처럼 여러 인수를 직접 전달하는 메서드가 아닙니다.
-
-### 2. `response.json()`의 Promise를 기다리지 않기
-
-```javascript
-const data = await response.json();
-```
-
-`response.json()`은 즉시 최종 객체를 반환하는 동기 함수가 아닙니다.
-
-### 3. `response.ok`를 검사하지 않기
-
-`fetch()`가 이행됐다는 사실만으로 HTTP 요청이 성공 상태라는 뜻은 아닙니다.
-
-### 4. 체이닝에서 값을 반환하지 않기
-
-```javascript
-fetch(url)
-  .then((response) => {
-    return response.json();
-  })
-  .then((data) => console.log(data));
+function loadData(url) {
+  return fetch(url)
+    .then((response) => response.json())
+    .then((data) => console.log(data));
+}
 ```
 
 첫 `then()`이 JSON Promise를 반환해야 다음 단계가 변환 결과를 기다립니다.
 
-### 5. `resolve()` 뒤의 `reject()`도 실행 결과를 바꾼다고 생각하기
+### 4. 처음 확정된 Promise 상태가 다시 바뀐다고 생각하기
 
-Promise는 처음 이행 또는 거부된 상태로 확정됩니다. 두 함수를 차례로 호출하는 코드는 의미가 없고, 조건에 따라 하나만 호출해야 합니다.
+먼저 `resolve()`된 Promise를 뒤의 `reject()`가 거부 상태로 바꾸지는 못합니다.
 
-### 6. `catch` 문법을 콜백처럼 쓰기
+### 5. 의존하는 요청을 동시에 시작하기
 
-```javascript
-try {
-  // 작업
-} catch (error) {
-  console.error(error);
-}
-```
+두 번째 요청 주소에 첫 번째 결과가 필요하면 첫 결과를 받은 뒤 두 번째 요청을 시작해야 합니다.
+독립적인 작업일 때만 함께 기다리는 방식을 고려합니다.
 
-`catch { (error) => { ... } }` 형태가 아닙니다.
+## 확인 포인트
 
-### 7. `return` 뒤에 코드를 작성하기
-
-함수에서 `return`이 실행되면 그 아래 문장은 실행되지 않습니다. 출력이나 화면 반영이 필요하다면 `return`보다 먼저 하거나 호출한 곳에서 반환값을 처리합니다.
-
-### 8. 독립 요청을 무조건 순차 실행하기
-
-두 요청이 서로 의존하지 않으면 `Promise.all()`로 함께 시작할 수 있습니다. 다만 하나라도 실패하면 전체가 거부되는 특성도 함께 고려해야 합니다.
+1. `async` 함수의 호출 결과를 Promise로 다루고 있나요?
+2. 필요한 Promise 앞에 `await`를 사용했나요?
+3. `fetch()` 뒤에 `response.ok`를 확인했나요?
+4. `Response`와 `response.json()`으로 얻는 데이터를 구분했나요?
+5. 두 작업이 독립적인지, 앞 결과에 의존하는지 확인했나요?
 
 ## 확인 문제
 
-1. Promise의 세 가지 상태를 설명해 보세요.
-2. `async` 함수가 일반 값을 `return`하면 호출한 곳에서는 무엇을 받나요?
-3. `await`가 프로그램 전체를 멈추는 것이 아니라는 뜻을 설명해 보세요.
-4. `fetch()`가 받은 HTTP 404 응답을 직접 검사해야 하는 이유는 무엇인가요?
-5. `response.json()` 앞에 `await`가 필요한 이유는 무엇인가요?
-6. 두 독립 요청을 `Promise.all()`로 처리할 때 얻는 장점과 주의점을 하나씩 적어 보세요.
+1. Promise의 세 상태와 한 번 확정된 뒤의 특징을 설명해 보세요.
+2. `await`가 프로그램 전체를 멈추지 않는다는 말은 무슨 뜻인가요?
+3. 서버가 HTTP 404를 보내도 `response.ok`를 직접 확인해야 하는 이유는 무엇인가요?
+4. 두 비동기 작업을 `Promise.all()`로 함께 기다릴 때와 순서대로 기다릴 때의 차이는 무엇인가요?
+
+## 공식 자료
+
+- [MDN: Promise 사용하기](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises)
+- [MDN: async 함수](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
+- [MDN: setTimeout()](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)
+- [MDN: Fetch API 사용하기](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
+- [WHATWG Fetch Standard](https://fetch.spec.whatwg.org/)
+
+공식 자료 확인일: 2026-08-18
+
+## 면접 답변 예시
+
+먼저 자신의 말로 답한 뒤, 면접관에게 설명하듯 아래 예시와 비교해 보세요.
+
+### 답변 1
+
+Promise는 대기 중, 이행됨, 거부됨의 세 상태를 가집니다.
+한 번 이행되거나 거부되어 확정되면 이후의 처리로 상태나 결과가 바뀌지 않습니다.
+
+### 답변 2
+
+`await`는 Promise의 결과가 준비될 때까지 현재 `async` 함수의 나머지 실행을 미룹니다.
+그러는 동안에도 프로그램의 다른 코드는 계속 실행될 수 있으므로 프로그램 전체를 멈추는 것은 아닙니다.
+
+### 답변 3
+
+`fetch()`는 서버가 HTTP 404나 500을 보내더라도 응답을 받았다면 보통 `Response`로 이행합니다.
+따라서 `response.ok`를 확인해 성공 범위의 상태인지 직접 판단해야 합니다.
+
+### 답변 4
+
+서로 독립적인 작업은 함께 시작한 뒤 `Promise.all()`로 결과를 기다릴 수 있습니다.
+두 번째 작업에 첫 번째 결과가 필요하면 첫 결과를 받은 뒤 두 번째 작업을 시작해 순서대로 기다려야 합니다.

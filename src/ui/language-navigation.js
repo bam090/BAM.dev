@@ -70,11 +70,12 @@ export function renderLanguageNavigation({
   currentLanguageId,
   currentCourseId = null,
 }) {
+  const selectedCourseId =
+    currentCourseId ??
+    (curriculum?.courses ?? []).find((course) => course.languageId === currentLanguageId)?.id ??
+    null;
   return renderCourseNavigation({
     curriculum,
-    currentCourseId:
-      currentCourseId ??
-      (curriculum?.courses ?? []).find((course) => course.id === currentLanguageId)?.id ??
-      null,
+    currentCourseId: selectedCourseId,
   });
 }

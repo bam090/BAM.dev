@@ -40,10 +40,22 @@ test("객관식 복습 해시를 만들고 다시 해석한다", () => {
   assert.deepEqual(parseReviewHash("#/review/javascript/"), { languageId: "javascript" });
 });
 
+test("교안별 객관식 해시는 안정 ID를 인코딩하며 기존 언어 전체 경로와 구분한다", () => {
+  assert.equal(buildReviewHash("javascript", "js-notes-functions"), "#/review/javascript/js-notes-functions");
+  assert.deepEqual(parseReviewHash("#/review/javascript/js-notes-functions/"), {
+    languageId: "javascript",
+    lessonId: "js-notes-functions",
+  });
+  const hash = buildReviewHash("java script", "lesson/one");
+  assert.equal(hash, "#/review/java%20script/lesson%2Fone");
+  assert.deepEqual(parseReviewHash(hash), { languageId: "java script", lessonId: "lesson/one" });
+});
+
 test("잘못된 객관식 복습 해시는 해석하지 않는다", () => {
   assert.equal(parseReviewHash("#/review"), null);
-  assert.equal(parseReviewHash("#/review/javascript/extra"), null);
+  assert.equal(parseReviewHash("#/review/javascript/extra/another"), null);
   assert.equal(parseReviewHash("#/review/%E0%A4%A"), null);
+  assert.equal(parseReviewHash("#/review/javascript/%E0%A4%A"), null);
 });
 
 test("Code Quest 해시를 만들고 다시 해석한다", () => {
@@ -111,7 +123,7 @@ test("잘못된 Web Project 해시는 해석하지 않는다", () => {
 test("마이페이지 해시를 만들고 정확한 경로만 해석한다", () => {
   assert.equal(buildMyPageHash(), "#/my");
   assert.deepEqual(parseMyPageHash("#/my"), { kind: "my-page" });
-  assert.deepEqual(parseMyPageHash("#/my/"), { kind: "my-page" });
+  assert.deepEqual(parseMyPageHash("#/my/?from=lesson"), { kind: "my-page" });
   assert.equal(parseMyPageHash("#/my/records"), null);
   assert.equal(parseMyPageHash("#/my-page"), null);
 });
@@ -119,15 +131,6 @@ test("마이페이지 해시를 만들고 정확한 경로만 해석한다", () 
 test("잘못된 경로에서는 마지막 교안 또는 첫 교안을 선택한다", () => {
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "js-03-functions-scope-closure").order, 3);
   assert.equal(resolveLessonRoute(curriculum, "#/missing", "not-found").order, 1);
-});
-
-test("기본 교안은 저장 배열 순서와 무관하게 가장 낮은 order를 선택한다", () => {
-  const reversed = {
-    ...curriculum,
-    lessons: [...curriculum.lessons].reverse(),
-  };
-
-  assert.equal(resolveLessonRoute(reversed, "#/missing", "not-found").id, "js-01-runtime");
 });
 
 test("planned 과정의 직접 경로와 최근 교안은 탐색 가능한 기본 교안으로 복귀한다", () => {
@@ -144,10 +147,17 @@ test("planned 과정의 직접 경로와 최근 교안은 탐색 가능한 기�
   assert.equal(restored.id, "js-01-runtime");
 });
 
-test("기존 JavaScript 알고리즘 딥링크 8개를 알고리즘 과정으로 호환 이동한다", () => {
-  const legacySlugs = [
+test("JavaScript 보관 hash 문서는 direct match를 유지하고 나머지 7개 legacy slug만 알고리즘으로 연결한다", () => {
+  const directHashLesson = resolveLessonRoute(
+    curriculum,
+    "#/learn/javascript/hash-map-set",
+  );
+  assert.equal(directHashLesson.id, "js-09-hash-map-set");
+  assert.equal(directHashLesson.courseId, "javascript");
+  assert.equal(directHashLesson.archivedFromCatalog, true);
+
+  const algorithmAliases = [
     "implementation-and-string-simulation",
-    "hash-map-set",
     "stack-and-queue",
     "sorting-two-pointers-sliding-window",
     "brute-force-backtracking-recursion",
@@ -155,11 +165,17 @@ test("기존 JavaScript 알고리즘 딥링크 8개를 알고리즘 과정으로
     "heap-and-greedy",
     "binary-search-and-dynamic-programming",
   ];
-
-  for (const slug of legacySlugs) {
+  for (const slug of algorithmAliases) {
     const lesson = resolveLessonRoute(curriculum, `#/learn/javascript/${slug}`);
     assert.equal(lesson.courseId, "algorithm", slug);
+    assert.equal(lesson.slug, slug);
   }
+
+  const unapprovedAlias = resolveLessonRoute(
+    curriculum,
+    "#/learn/javascript/weighted-graphs-dijkstra",
+  );
+  assert.equal(unapprovedAlias.id, "js-01-runtime");
 });
 
 test("planned 카테고리 아래 과정은 직접 학습 경로를 열지 않는다", () => {

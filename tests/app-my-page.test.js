@@ -1,358 +1,42 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
-import { createWebProjectSubmission } from "../src/core/web-project.js";
-import { scoreWebProject } from "../src/grading/web-project-scoring.js";
 import { MemoryStorage } from "../src/repositories/browser-storage.js";
-import { LocalStorageProgressRepository } from "../src/repositories/progress-repository.js";
-import { LocalStorageWebProjectRepository } from "../src/repositories/web-project-repository.js";
+import {
+  LocalStorageProgressRepository,
+  PROGRESS_STORAGE_KEY,
+} from "../src/repositories/progress-repository.js";
 
-async function readJson(path) {
-  return JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
-}
+const minimumCurriculum = {
+  categories: [{ id: "language", status: "available" }],
+  languages: [
+    { id: "javascript", name: "JavaScript", shortName: "JS", accent: "javascript", status: "available" },
+  ],
+  courses: [
+    { id: "javascript", categoryId: "language", languageId: "javascript", name: "JavaScript", shortName: "JS", accent: "javascript", status: "available" },
+  ],
+  lessons: [
+    { id: "js-current", courseId: "javascript", languageId: "javascript", slug: "current", title: "현재 문서" },
+  ],
+};
 
-const curriculum = await readJson("../content/curriculum.json");
-const javascriptQuiz = await readJson("../content/quizzes/javascript.json");
-const webProjectCollection = await readJson("../content/web-projects/index.json");
-const codeQuestCollections = new Map(
-  await Promise.all(
-    ["javascript", "html", "css", "java"].map(async (languageId) => [
-      languageId,
-      await readJson(`../content/quests/${languageId}.json`),
-    ]),
-  ),
-);
-const codingTestCollections = new Map(
-  await Promise.all(
-    ["javascript", "java"].map(async (languageId) => [
-      languageId,
-      await readJson(`../content/coding-tests/${languageId}.json`),
-    ]),
-  ),
-);
-const totalQuestCount = [...codeQuestCollections.values()].reduce(
-  (total, collection) => total + collection.quests.length,
-  0,
-);
-const javascriptQuestCount = codeQuestCollections.get("javascript").quests.length;
-const totalCodingTestCount = [...codingTestCollections.values()].reduce(
-  (total, collection) => total + collection.problems.length,
-  0,
-);
-
-test("마이페이지 본문과 셸은 비언어·준비 중 과정의 최근 기록을 언어 진도에 섞지 않는다", () => {
-  const root = { innerHTML: "" };
-  const algorithmLesson = curriculum.lessons.find(
-    (lesson) => lesson.courseId === "algorithm",
-  );
-  const progress = {
-    completedLessonIds: ["js-01-runtime"],
-    lastLessonId: algorithmLesson.id,
-    quizAttempts: [],
-    incorrectQuestionIds: [],
-    questAttempts: [],
-    completedQuestIds: [],
-    completedQuestRevisions: [],
-    codingTestSubmissions: [],
-    completedCodingTestProblems: [],
-  };
-  const app = Object.create(BamLearningApp.prototype);
-  Object.assign(app, {
-    root,
-    curriculum,
-    codeQuestCollections,
-    codeQuestCollection: codeQuestCollections.get("javascript"),
-    codingTestCollections,
-    codingTestCollection: codingTestCollections.get("javascript"),
-    webProjectCollection,
-    menuOpen: false,
-    progressRepository: {
-      getProgress: () => progress,
-      getPersistenceStatus: () => ({ isPersistent: true }),
-    },
-    webProjectRepository: {
-      getState: () => ({ drafts: [], submissions: [] }),
-      listSubmissions: () => [],
-      getPersistenceStatus: () => ({ isPersistent: true }),
-    },
-    syncMenuState() {},
-  });
-
-  app.renderMyPage();
-
-  assert.equal((root.innerHTML.match(/class="app-shell"/g) ?? []).length, 1);
-  assert.match(root.innerHTML, /id="my-page-title">마이페이지/);
-  assert.match(
-    root.innerHTML,
-    /class="my-page-nav-link is-current" href="#\/my" aria-current="page"/,
-  );
-  assert.match(root.innerHTML, /JavaScript 교안 진도/);
-  assert.match(
-    root.innerHTML,
-    /class="course-heading"[\s\S]*?<strong>JavaScript<\/strong>/,
-  );
-  const lessonNavigation =
-    root.innerHTML.match(/<nav class="lesson-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
-  assert.equal((lessonNavigation.match(/class="lesson-link/g) ?? []).length, 7);
-  assert.doesNotMatch(lessonNavigation, /#\/learn\/algorithm\//);
-  assert.match(root.innerHTML, /이 브라우저에 저장 중/);
-
-  const plannedCurriculum = structuredClone(curriculum);
-  const htmlCourse = plannedCurriculum.courses.find(
-    (course) => course.id === "html",
-  );
-  const htmlLesson = plannedCurriculum.lessons.find(
-    (lesson) => lesson.courseId === htmlCourse.id,
-  );
-  htmlCourse.status = "planned";
-  progress.completedLessonIds = [htmlLesson.id];
-  progress.lastLessonId = htmlLesson.id;
-  app.curriculum = plannedCurriculum;
-
-  app.renderMyPage();
-
-  const languageProgress =
-    root.innerHTML.match(/<ul class="my-page-language-list">[\s\S]*?<\/ul>/)?.[0] ??
-    "";
-  const plannedLessonNavigation =
-    root.innerHTML.match(/<nav class="lesson-nav"[\s\S]*?<\/nav>/)?.[0] ?? "";
-  assert.doesNotMatch(languageProgress, /<strong>HTML<\/strong>/);
-  assert.match(
-    root.innerHTML,
-    /<dt>완료한 교안<\/dt><dd>0<span>\//,
-  );
-  assert.match(
-    root.innerHTML,
-    /class="button button--primary my-page-continue" href="#\/learn\/javascript\/javascript-and-runtime"/,
-  );
-  assert.match(
-    root.innerHTML,
-    /class="course-heading"[\s\S]*?<strong>JavaScript<\/strong>/,
-  );
-  assert.equal(
-    (plannedLessonNavigation.match(/class="lesson-link/g) ?? []).length,
-    7,
-  );
-  assert.doesNotMatch(plannedLessonNavigation, /#\/learn\/html\//);
-});
-
-test("마이페이지 본문과 앱 셸은 같은 현재 Quest 리비전 완료 판정을 쓴다", () => {
-  const root = { innerHTML: "" };
-  const quest = codeQuestCollections.get("javascript").quests[0];
-  const mismatchedQuestRevision = quest.revision === 1 ? 2 : 1;
-  const progress = {
-    completedLessonIds: [],
-    lastLessonId: "js-01-runtime",
-    quizAttempts: [],
-    incorrectQuestionIds: [],
-    questAttempts: [
-      {
-        questId: quest.id,
-        questRevision: quest.revision,
-        languageId: "javascript",
-        outcome: "wrong_answer",
-        passed: 0,
-        total: quest.publicTests.length,
-      },
-    ],
-    completedQuestIds: [quest.id],
-    completedQuestRevisions: [
-      {
-        questId: quest.id,
-        questRevision: mismatchedQuestRevision,
-        completedAt: "2026-08-22T12:00:00.000Z",
-      },
-    ],
-    codingTestSubmissions: [],
-    completedCodingTestProblems: [],
-  };
-  const app = Object.create(BamLearningApp.prototype);
-  Object.assign(app, {
-    root,
-    curriculum,
-    codeQuestCollections,
-    codeQuestCollection: codeQuestCollections.get("javascript"),
-    codingTestCollections,
-    codingTestCollection: codingTestCollections.get("javascript"),
-    webProjectCollection,
-    menuOpen: false,
-    progressRepository: {
-      getProgress: () => progress,
-      getPersistenceStatus: () => ({ isPersistent: true }),
-    },
-    webProjectRepository: {
-      getState: () => ({ drafts: [], submissions: [] }),
-      listSubmissions: () => [],
-      getPersistenceStatus: () => ({ isPersistent: true }),
-    },
-    syncMenuState() {},
-  });
-
-  app.renderMyPage();
-
-  assert.ok(
-    root.innerHTML.includes(`완료한 Quest</dt><dd>0<span>/${totalQuestCount}</span>`),
-  );
-  assert.ok(
-    root.innerHTML.includes(`Code Quest</strong><small>0/${javascriptQuestCount} 완료`),
-  );
-  assert.ok(root.innerHTML.includes(quest.title));
-});
-
-test("저장소 읽기에 실패해도 마이페이지는 임시 저장 경고와 빈 기록으로 열린다", () => {
-  const root = { innerHTML: "" };
-  const app = Object.create(BamLearningApp.prototype);
-  Object.assign(app, {
-    root,
-    curriculum,
-    codeQuestCollections,
-    codeQuestCollection: codeQuestCollections.get("javascript"),
-    codingTestCollections,
-    codingTestCollection: codingTestCollections.get("javascript"),
-    webProjectCollection,
-    menuOpen: false,
-    progressRepository: {
-      getProgress() {
-        throw new Error("blocked");
-      },
-    },
-    webProjectRepository: {
-      getState() {
-        throw new Error("blocked");
-      },
-      listSubmissions: () => [],
-    },
-    syncMenuState() {},
-  });
-
-  app.renderMyPage();
-
-  assert.match(root.innerHTML, /현재 탭에만 임시 저장 중/);
-  assert.match(root.innerHTML, /아직 저장된 풀이 또는 제출 기록이 없습니다/);
-});
-
-test("실제 로컬 저장소 API로 기록한 진도와 제출을 마이페이지에서 읽는다", () => {
-  const storage = new MemoryStorage();
-  const now = () => new Date("2026-08-23T12:00:00.000Z");
-  const progressRepository = new LocalStorageProgressRepository(storage, now);
-  const webProjectRepository = new LocalStorageWebProjectRepository(storage, now);
-  const quest = codeQuestCollections.get("javascript").quests[0];
-  const problem = codingTestCollections.get("javascript").problems[0];
-  const project = webProjectCollection.projects[0];
-  const question = javascriptQuiz.questions[0];
-
-  progressRepository.setLessonCompleted("js-01-runtime");
-  progressRepository.recordQuizAttempt({
-    languageId: "javascript",
-    answers: [
-      {
-        questionId: question.id,
-        lessonId: question.lessonId,
-        selectedOptionId: "a",
-        isCorrect: false,
-      },
-    ],
-  });
-  progressRepository.recordQuestAttempt({
-    questId: quest.id,
-    questRevision: quest.revision,
-    languageId: "javascript",
-    outcome: "wrong_answer",
-    passed: 0,
-    total: quest.publicTests.length,
-  });
-  progressRepository.recordCodingTestSubmission({
-    problemId: problem.id,
-    problemRevision: problem.revision,
-    languageId: "javascript",
-    outcome: "passed",
-    passed: problem.publicTests.length,
-    total: problem.publicTests.length,
-  });
-
-  const manualAssessments = project.manualCriteria.map((criterion) => ({
-    criterionId: criterion.id,
-    status: "pending",
-    levelId: null,
-  }));
-  const submission = createWebProjectSubmission(
-    webProjectCollection,
-    project,
-    {
-      submissionId: "submission-my-page-integration",
-      submittedAt: "2026-08-23T12:00:00.000Z",
-      files: project.files.map((file) => ({
-        path: file.path,
-        source: file.starterSource,
-      })),
-      manualAssessments,
-    },
-  );
-  const report = scoreWebProject(project, {
-    automaticResults: project.automaticCriteria.map((criterion) => ({
-      criterionId: criterion.id,
-      outcome: "passed",
-    })),
-    manualAssessments,
-  });
-  webProjectRepository.recordSubmission(submission, report);
-
-  const root = { innerHTML: "" };
-  const app = Object.create(BamLearningApp.prototype);
-  Object.assign(app, {
-    root,
-    curriculum,
-    codeQuestCollections,
-    codeQuestCollection: codeQuestCollections.get("javascript"),
-    codingTestCollections,
-    codingTestCollection: codingTestCollections.get("javascript"),
-    webProjectCollection,
-    menuOpen: false,
-    progressRepository,
-    webProjectRepository,
-    syncMenuState() {},
-  });
-
-  app.renderMyPage();
-
-  assert.match(root.innerHTML, /저장된 오답 1개/);
-  assert.ok(root.innerHTML.includes(quest.title));
-  assert.ok(
-    root.innerHTML.includes(`푼 코딩테스트</dt><dd>1<span>/${totalCodingTestCount}`),
-  );
-  assert.match(root.innerHTML, /Web Project 제출<\/dt><dd>1<span>건/);
-  assert.match(root.innerHTML, /제출 평가 미완료/);
-});
-
-test("마이페이지 라우트 이동은 포커스 가능한 본문으로 초점을 옮긴다", (t) => {
+function installBrowserGlobals(t, hash = "#/my") {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
   const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
-  let focused = false;
-  const main = {
-    focus() {
-      focused = true;
-    },
-  };
   Object.defineProperty(globalThis, "window", {
     configurable: true,
     value: {
-      location: { hash: "#/my" },
+      location: { hash },
       history: { replaceState() {} },
+      scrollTo() {},
       requestAnimationFrame(callback) {
         callback();
       },
-      scrollTo() {},
     },
   });
   Object.defineProperty(globalThis, "document", {
     configurable: true,
-    value: {
-      title: "",
-      querySelector(selector) {
-        return selector === "#lesson-content" ? main : null;
-      },
-    },
+    value: { title: "" },
   });
   t.after(() => {
     if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
@@ -360,24 +44,145 @@ test("마이페이지 라우트 이동은 포커스 가능한 본문으로 초�
     if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
     else delete globalThis.document;
   });
+}
 
+test("#/my는 lesson fallback 전에 MyPage route로 연다", async (t) => {
+  installBrowserGlobals(t);
+  let opened = 0;
   const app = Object.create(BamLearningApp.prototype);
   Object.assign(app, {
-    hasRenderedView: true,
-    enterView() {},
-    renderMyPage() {},
+    curriculum: minimumCurriculum,
+    currentView: "lesson",
+    leaveCurrentView() {},
+    async openMyPageRoute() {
+      await Promise.resolve();
+      opened += 1;
+    },
+    openLessonRoute() {
+      assert.fail("#/my를 교안 fallback으로 열면 안 됩니다.");
+    },
   });
 
-  app.openMyPageRoute();
+  await app.openRoute();
 
-  assert.equal(focused, true);
-  assert.equal(document.title, "마이페이지 · BAM.dev");
+  assert.equal(opened, 1);
 });
 
-test("마이페이지 언어별 학습 링크는 실제 44px 터치 타깃을 만든다", async () => {
-  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
-  const languageLinkRule = css.match(/\.my-page-language-item a\s*\{([^}]*)\}/)?.[1] ?? "";
+test("MyPage 진입은 catalog 준비를 기다리고 stale sequence에서는 최종 기록 화면을 덮어쓰지 않는다", async (t) => {
+  installBrowserGlobals(t);
+  const createApp = ({ becomeStale = false } = {}) => {
+    const calls = [];
+    const app = Object.create(BamLearningApp.prototype);
+    Object.assign(app, {
+      root: { innerHTML: "" },
+      renderSequence: 4,
+      enterView() {
+        calls.push("enter");
+        return 4;
+      },
+      renderServiceShell: ({ mainContent }) => mainContent,
+      syncMenuState() {
+        calls.push("sync");
+      },
+      async loadSidebarCatalog() {
+        calls.push("load-start");
+        await Promise.resolve();
+        calls.push("load-end");
+        if (becomeStale) this.renderSequence = 5;
+      },
+      renderMyPage() {
+        calls.push("render");
+      },
+      finishServiceNavigation() {
+        calls.push("finish");
+      },
+    });
+    return { app, calls };
+  };
 
-  assert.match(languageLinkRule, /display:\s*inline-flex/);
-  assert.match(languageLinkRule, /min-height:\s*44px/);
+  const current = createApp();
+  await current.app.openMyPageRoute();
+  assert.deepEqual(current.calls, [
+    "enter",
+    "sync",
+    "load-start",
+    "load-end",
+    "render",
+    "finish",
+  ]);
+  assert.equal(document.title, "마이페이지 · BAM.dev");
+
+  document.title = "다른 화면";
+  const stale = createApp({ becomeStale: true });
+  await stale.app.openMyPageRoute();
+  assert.deepEqual(stale.calls, ["enter", "sync", "load-start", "load-end"]);
+  assert.equal(document.title, "다른 화면");
+});
+
+test("MyPage 조회는 저장된 progress를 쓰지 않고 현재 화면을 렌더링한다", () => {
+  const storage = new MemoryStorage();
+  const repository = new LocalStorageProgressRepository(
+    storage,
+    () => new Date("2026-08-23T12:00:00.000Z"),
+  );
+  repository.setLessonCompleted("js-current", true);
+  const before = storage.getItem(PROGRESS_STORAGE_KEY);
+  const root = { innerHTML: "" };
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    root,
+    curriculum: minimumCurriculum,
+    quizCollections: new Map(),
+    codeQuestCollections: new Map(),
+    codingTestCollection: null,
+    webProjectCollection: null,
+    progressRepository: repository,
+    webProjectRepository: {
+      getState: () => ({ drafts: [], submissions: [] }),
+      getPersistenceStatus: () => ({ isPersistent: false }),
+    },
+    renderServiceShell: ({ mainContent }) => `<div data-test-shell>${mainContent}</div>`,
+    syncMenuState() {},
+  });
+
+  app.renderMyPage();
+
+  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), before);
+  assert.match(root.innerHTML, /data-test-shell/);
+  assert.match(root.innerHTML, /마이페이지/);
+  assert.match(root.innerHTML, /완료한 교안<\/dt><dd>1<span>\/1<\/span>/);
+});
+
+test("공유 저장소 읽기 실패는 메모리 저장 상태로 오인하지 않고 화면을 유지한다", () => {
+  const root = { innerHTML: "" };
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    root,
+    curriculum: minimumCurriculum,
+    quizCollections: new Map(),
+    codeQuestCollections: new Map(),
+    codingTestCollection: null,
+    webProjectCollection: null,
+    progressRepository: {
+      getProgress() {
+        throw new Error("read blocked");
+      },
+      getPersistenceStatus: () => ({ isPersistent: true }),
+    },
+    webProjectRepository: {
+      getState() {
+        throw new Error("read blocked");
+      },
+      getPersistenceStatus: () => ({ isPersistent: true }),
+    },
+    renderServiceShell: ({ mainContent }) => `<div data-test-shell>${mainContent}</div>`,
+    syncMenuState() {},
+  });
+
+  assert.doesNotThrow(() => app.renderMyPage());
+
+  assert.match(root.innerHTML, /마이페이지/);
+  assert.match(root.innerHTML, /기록을 읽지 못|불러오지 못/);
+  assert.doesNotMatch(root.innerHTML, /현재 탭에만 임시 저장 중/);
+  assert.match(root.innerHTML, /확인 불가/);
 });

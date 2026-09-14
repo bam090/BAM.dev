@@ -7,14 +7,22 @@ export function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+const INLINE_CODE_PATTERN = /(?<!`)(`+)(?!`)([^\n]+?)(?<!`)\1(?!`)/gu;
+const LESSON_ILLUSTRATION_PATTERN = /^\s*!\[([^\]\n]*)\]\((content\/assets\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.png)\)\s*$/;
+
+function normalizeInlineCode(code) {
+  return code.startsWith(" ") && code.endsWith(" ") && code.trim()
+    ? code.slice(1, -1)
+    : code;
+}
+
 export function renderInlineCodeText(value) {
   const text = String(value ?? "");
-  const pattern = /`([^`\n]+)`/gu;
   let output = "";
   let cursor = 0;
-  for (const match of text.matchAll(pattern)) {
+  for (const match of text.matchAll(INLINE_CODE_PATTERN)) {
     output += escapeHtml(text.slice(cursor, match.index));
-    output += `<code>${escapeHtml(match[1])}</code>`;
+    output += `<code>${escapeHtml(normalizeInlineCode(match[2]))}</code>`;
     cursor = match.index + match[0].length;
   }
   return output + escapeHtml(text.slice(cursor));
@@ -362,7 +370,9 @@ function renderInline(rawText) {
   };
 
   let text = String(rawText);
-  text = text.replace(/`([^`]+)`/g, (_, code) => reserve(`<code>${escapeHtml(code)}</code>`));
+  text = text.replace(INLINE_CODE_PATTERN, (_, delimiter, code) =>
+    reserve(`<code>${escapeHtml(normalizeInlineCode(code))}</code>`),
+  );
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, label, href) => {
     const safeUrl = safeHref(href);
     const isExternal = /^https:\/\//i.test(safeUrl);
@@ -378,7 +388,7 @@ function renderInline(rawText) {
   return text.replace(/\u0000(\d+)\u0000/g, (_, index) => tokens[Number(index)]);
 }
 
-function headingId(text) {
+export function headingId(text) {
   return String(text)
     .toLocaleLowerCase("ko")
     .replace(/`/g, "")
@@ -392,6 +402,7 @@ function isBlockStart(lines, index) {
   return (
     /^#{1,6}\s+/.test(line) ||
     /^```/.test(line) ||
+    LESSON_ILLUSTRATION_PATTERN.test(line) ||
     /^>\s?/.test(line) ||
     /^\s*[-*+]\s+/.test(line) ||
     /^\s*\d+\.\s+/.test(line) ||
@@ -446,7 +457,71 @@ function splitTableRow(line) {
   return cells;
 }
 
-export function renderMarkdown(markdown, { skipFirstHeading = false } = {}) {
+function findMarkdownSectionEnd(lines, start) {
+  let index = start;
+  let inCode = false;
+  while (index < lines.length) {
+    const line = lines[index];
+    if (inCode) {
+      if (/^```\s*$/.test(line)) inCode = false;
+    } else if (/^```[\w-]*\s*$/.test(line)) {
+      inCode = true;
+    } else if (/^#{1,2}\s+/.test(line)) {
+      break;
+    }
+    index += 1;
+  }
+  return index;
+}
+
+export function splitMarkdownSection(markdown, title) {
+  const source = String(markdown);
+  const lines = source.replaceAll("\r\n", "\n").split("\n");
+  let start = findMarkdownSectionEnd(lines, 0);
+  while (start < lines.length) {
+    const end = findMarkdownSectionEnd(lines, start + 1);
+    if (lines[start].trimEnd() === `## ${title}`) {
+      if (!lines.slice(start + 1, end).join("\n").trim()) break;
+      return {
+        body: [...lines.slice(0, start), ...lines.slice(end)].join("\n"),
+        section: lines.slice(start, end).join("\n").trimEnd(),
+      };
+    }
+    start = end;
+  }
+  return { body: source, section: "" };
+}
+
+// Move only the opening overview; later headings and headings inside code stay put.
+export function splitLessonOverview(markdown) {
+  const lines = String(markdown).replaceAll("\r\n", "\n").split("\n");
+  let index = 0;
+  while (index < lines.length && !lines[index].trim()) index += 1;
+  if (/^#\s+/.test(lines[index] ?? "")) index += 1;
+  while (index < lines.length && !lines[index].trim()) index += 1;
+  const overviewStart = index;
+  const overview = { objectives: "", summary: "" };
+  for (let section = 0; section < 2; section += 1) {
+    const heading = lines[index]?.trimEnd();
+    const key = heading === "## 학습 목표" ? "objectives" : heading === "## 한줄 요약" ? "summary" : null;
+    if (!key || overview[key]) break;
+    const contentStart = index + 1;
+    const end = findMarkdownSectionEnd(lines, contentStart);
+    const content = lines.slice(contentStart, end).join("\n").trim();
+    if (!content) break;
+    overview[key] = content;
+    index = end;
+  }
+  return {
+    ...overview,
+    body: index === overviewStart ? String(markdown) : [...lines.slice(0, overviewStart), ...lines.slice(index)].join("\n"),
+  };
+}
+
+export function renderMarkdown(
+  markdown,
+  { skipFirstHeading = false, preserveParagraphLineBreaks = false } = {},
+) {
   const lines = String(markdown).replaceAll("\r\n", "\n").split("\n");
   const output = [];
   let index = 0;
@@ -475,6 +550,15 @@ export function renderMarkdown(markdown, { skipFirstHeading = false } = {}) {
       output.push(
         `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
       );
+      continue;
+    }
+
+    const illustration = line.match(LESSON_ILLUSTRATION_PATTERN);
+    if (illustration) {
+      output.push(
+        `<figure class="lesson-illustration"><img src="${escapeHtml(illustration[2])}" alt="${escapeHtml(illustration[1])}" loading="lazy" decoding="async"></figure>`,
+      );
+      index += 1;
       continue;
     }
 
@@ -554,7 +638,9 @@ export function renderMarkdown(markdown, { skipFirstHeading = false } = {}) {
       paragraph.push(lines[index].trim());
       index += 1;
     }
-    output.push(`<p>${renderInline(paragraph.join(" "))}</p>`);
+    output.push(
+      `<p>${paragraph.map(renderInline).join(preserveParagraphLineBreaks ? "<br>" : " ")}</p>`,
+    );
   }
 
   return output.join("\n");

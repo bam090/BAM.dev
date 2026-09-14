@@ -1,0 +1,72 @@
+# 확정된 학습 서비스 변경의 GitHub 게시
+
+작업 ID는 `GITHUB-PUBLICATION-20260913`이다. bam의 2026-09-13 “깃헙에 올리자 지금 변경되고 확정된부분들” 요청에 따라 검증된 로컬 제품·콘텐츠·운영 문서를 별도 브랜치에 게시하고 기존 `dev`와의 차이를 Draft PR로 보여 준다. 새 기능·교안 작성이나 기존 원격 기능의 폐기 승인은 아니다. 운영 문서 변경과 Git 게시 준비는 [개발 절차](../development-workflow.md), 게시 권한은 [`DEC-GIT-01`](../roadmap.md#bam-결정-대기-목록)을 따른다.
+
+## 기준선과 범위
+
+`[현재 사실]` 게시 시작 시 원본 로컬은 첫 커밋 전 `codex/js-foundation`이며 원격 설정이 없었다. 이 로컬 상태를 기존 GitHub 이력이 없다는 뜻으로 해석하지 않는다.
+
+| 확인 대상 | 2026-09-13 조사 결과 |
+| --- | --- |
+| 기존 원격 | 공개 [bam090/BAM.dev](https://github.com/bam090/BAM.dev), 기본 브랜치 `dev`, 게시 권한 확인 |
+| 원격 `dev` | `db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0` |
+| 원격 `main` | `7b2055478c381e098dd99da528d24f0e43582575`, 파일 0개의 초기 기준선 |
+| 기존 PR | 1~16의 `MERGED` 상태 확인. 이번 작업의 병합 이력이 아님 |
+| 검증된 로컬 | 앞선 [HTML 통합 작업](2026-09-13-html-concept-lessons.md)의 소스 manifest 211파일과 게시 시작 스냅샷이 일치 |
+| 초기 파일 대조 | 원격 190·로컬 211: 동일 61·공유 경로 차이 97·로컬에만 53·원격에만 32 |
+| 격리된 Git 작업 | 기존 원격을 복제한 `/private/tmp/bam-github-publish-20260913`의 `codex/approved-learning-updates`에 초기 211파일 복사. 아직 새 commit·push·PR 없음 |
+
+초기 비교에서 원격에만 Java 교안·Quest·코딩테스트·로컬 grader, My Page와 관련 테스트·문서가 있었다. **이번 브랜치는 검증된 로컬 스냅샷을 보관하므로 원격 전용 32파일은 PR diff에 삭제로 표시된다. 기존 `dev`와 원격 이력에는 그대로 남으며, 이 표시는 기능 폐기 승인이나 통합 완료가 아니다.** 공통 97파일의 차이도 공개된 diff에서 확인하고 실제 통합은 별도로 판단한다. 초기 근거는 임시 보고 `/private/tmp/bam-github-discovery.json`, `/private/tmp/bam-github-tree-comparison.json`, `/private/tmp/bam-github-snapshot-preparation.json`이다. 저장소·브랜치·과거 PR의 실제 API 자료는 각각 `/private/tmp/bam-github-repository.json`, `/private/tmp/bam-github-branches.json`, `/private/tmp/bam-github-pr-history.json`이다.
+
+게시 재료는 앞선 작업에서 검증한 로컬 소스·제품 파생 콘텐츠·확정 및 미결정을 구분한 설계 문서와 이번 최소 운영 문서다. 밤위키 원본·개인 비공개 기록·공개 금지 디자인 자산·로컬 설정·`.git`·`dist`·의존성 캐시·임시 검증 로그는 게시 파일에 포함하지 않는다. 현재 UI·HTML 학습 문서·문제 왕복 등 검증 범위는 앞선 각 작업 카드를 유지하며, 과목 전체 정비·설치 앱·Java runner 구현 완료를 새로 주장하지 않는다.
+
+## 역할과 게시 순서
+
+| 역할 | 소유 경로·책임 |
+| --- | --- |
+| 총괄 `/root` | 읽기 전용. 원격·로컬·각 보고의 실제 근거 대조, 게시 후보 범위와 단계 판정 |
+| 운영 문서 `/root/github_publish_docs` | `docs/roadmap.md`, `docs/development-workflow.md`, `docs/README.md`, 이 카드만 작성. 제품·콘텐츠·테스트·Git 쓰기 금지 |
+| 독립 문서·게시 범위 검토 `/root/github_publication_review` | 읽기 전용. 최종 4문서 diff·링크·앵커·규칙·게시 범위와 PR 설명 확인. 전체 gate와 Git 쓰기 금지 |
+| Git `/root/github_publish` | 격리 사본의 기존 원격 이력·feature 관리와 승인 범위 복사. 게시 검증 PASS 뒤 한국어 commit·push·`dev` 대상 Draft PR, 실제 식별자 인계 |
+| 독립 통합 `/root/html_integrator` | 읽기 전용. 문서 링크·규칙·스냅샷 diff·이력·보존과 앞선 검증 증거 확인, 안전한 스냅샷 복제본에서 이번 게시 묶음의 전체 `npm run check` 1회 및 필요한 smoke. 원격 기능 결합 검증을 수행한 것으로 해석하지 않음 |
+
+운영 문서 diff 동결·독립 확인 후 Git 담당에게 순차 인계한다. 원본 작업 파일을 덮어쓰지 않으며 `main`과 기존 `dev` 이력을 보존한다. commit·push·Draft PR은 스냅샷의 게시 검증 PASS 뒤 수행하고 merge하지 않는다. 게시 뒤 원본 로컬의 파일 tree가 게시 commit과 같을 때만 Git 담당이 원격·참조·index를 연결할 수 있으며, 아직 수행한 성과는 아니다. 향후 원격 기능과 통합하려면 별도 범위·작성·검증 판단이 필요하다.
+
+## 게시 시작 시점의 검증·인계 기록
+
+| 항목 | 현재 근거·판정 |
+| --- | --- |
+| 앞선 로컬 제품 검증 | HTML 통합 PASS: `npm run check` 618/618·정적 빌드, 산출물 106개의 SHA·HTTP 확인. `/private/tmp/bam-html-integration-report.json`. 원격 결합 후보의 PASS를 대신하지 않음 |
+| 원격·스냅샷 대조 | 원격 기준선·로컬 211파일 일치 확인. 스냅샷 별도 게시·기존 `dev` 보존·원격 전용 32파일 미포함을 Draft PR에 명시하는 범위 고정 |
+| 이번 문서·스냅샷 게시 검증 | 미실행. 최종 문서 diff·스냅샷 범위를 고정한 뒤 독립 통합 수행 |
+| 새 commit·push·PR·CI | 미실행. 수행 뒤 실제 SHA·PR·CI 결과를 인계하며 성공을 미리 기록하지 않음 |
+
+완료 기준은 승인된 스냅샷만 게시하고 원본 로컬·밤위키·기존 원격 이력을 보존하며, 실제 Draft PR과 CI 결과를 확인하는 것이다. 원격 기능의 결합과 M0 전체 완료는 이 게시만으로 주장하지 않는다. 이번 문서 정정은 실행 동작·사용자 데이터·접근성·모바일·오프라인 계약을 바꾸지 않는다. 앞선 UI 증거를 재사용할 때는 제품 파일의 동일성을 확인한다. 임시 보고와 로컬 gate는 GitHub CI 실행이나 배포 완료 증거가 아니다. 이 표는 게시 시작 시점의 인계 기록으로 유지하고, 이후 실제 commit·PR·CI 식별자와 결과는 PR 및 Git 담당의 인계 결과에 기록한다.
+
+## 후속 통합 준비 (2026-09-14)
+
+`[현재 사실]` 위 게시 시작 시점의 기록은 보존한다. 현재 PR #17의 CI·게시 완료 기록과 병합 승인은 별개이며, 병합은 보류 상태다. `/private/tmp/bam-integration-readiness/inventory.json`의 고정 tree 대조는 `449dbfef35ea762ef87d672b8747f6f8aed48c27` ↔ `db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0`, 330 경로(A 199/M 99/D 32)다.
+
+`[확정 결정]` 통합 전에 해결할 복원 대상은 다음 다섯 가지다.
+
+1. `bam.dev.progress.v1`의 revision 기록 유실을 복원한다.
+2. 삭제된 `#/my` 내 학습 기록 화면과 유틸리티 진입을 복원한다.
+3. legacy algorithm 별칭 7개와 직접 JavaScript hash·보관 URL 우선 처리를 복원한다.
+4. BrowserStorage가 정상 primary-key 열거를 기준으로 하며, 다른 탭의 키 삭제 뒤 stale cache를 제외하도록 복원한다.
+5. 원 `dev`의 Java 02~06 정적 원문 5개와 공식 출처를 원문 바이트·ID·slug 그대로 archived 복원한다. schema의 과정 내 연속 order를 위해 보관 문서 내부 order는 기존 활성 최대 33 뒤의 34~38로 두고, 원래 old order 2~6은 출처에 보관한다. 활성 order와 분모 160은 유지한다.
+
+`[현재 사실]` MyPage·progress·storage·navigation은 각 담당의 구현 보고 뒤 독립 content/doc 검증에서 문서 단어 반환을 해소해 최종 PASS했다. 독립 `test_engineer`는 선택한 8개 test 파일을 한 번 실행해 91/91 PASS(fail·cancel 0)를 확인했고, localhost `42873` 격리 desktop에서 `#/my` 키보드 진입→활성 0/160·과정 링크→보관 문서 1개 상세 키보드 진입→`java/types-and-methods` 정확 재진입과 console warn/error 0을 확인했다. progress 무쓰기·memory/read-error·Spring 재도전도 선택 검사에서 PASS했다. 이 기록은 최종 통합 PASS·병합·새 commit·배포를 뜻하지 않는다.
+
+`[확정 결정]` Java Docker·HTTP·시스템 JDK 실행기는 현재 확정 실행 정책과 맞지 않으므로 재활성화하지 않는다. Git 원본 SHA 보관, Java 학습·문서·객관식 및 현재 원문 보관 연결은 유지한다. 이 범위는 콘텐츠 삭제 정책의 승인을 만들지 않는다.
+
+`[확정 결정]` 최종 명시적 병합 승인 전에는 merge와 Pages 설정 변경을 하지 않는다.
+
+`[현재 사실]` 기존 660 PASS는 재사용 근거이며, 이번 범위에서는 전체 build와 모바일 검증을 실행하지 않았다. 독립 `project_integrator`가 위 focused·데스크톱 검증 증거를 검토 중이다. 최종 통합 판정과 Git 결과는 인계 보고와 PR에서 실제로 확인한다.
+
+## CI 반환과 보관 원문 계약 (2026-09-14)
+
+`[현재 사실]` `6eef6d2a5c542dbe69acab0e6539b2842b6b250f`의 commit·push와 [PR #17](https://github.com/bam090/BAM.dev/pull/17) 갱신은 완료됐다. `CI / verify`는 [실행 34817776539](https://github.com/bam090/BAM.dev/actions/runs/34817776539/job/103892121982)와 [실행 34817772290](https://github.com/bam090/BAM.dev/actions/runs/34817772290/job/103892109497)에서 같은 `validate:content` 오류로 실패했다. `db1a5f4` 원본 Java 02~06 다섯 문서에는 `면접 답변 예시` 섹션이 없으며, 원문 교육 내용 변경은 승인 범위가 아니다.
+
+`[확정 결정]` scripts validator는 명시한 다섯 `id`·파일 경로·원문 SHA-256·`archivedFromCatalog=true`가 모두 일치한 보관 원문만 legacy 답변 섹션 형식 요구에서 면제한다. H1 길이·학습 목표·schema·ID·order·경로 검사는 유지하고, 활성 문서 전체·미등록 보관 문서·원문이 변조된 보관 문서에는 면제를 적용하지 않는다. 원문 바이트·메타데이터와 활성 분모 160은 유지한다.
+
+`[현재 사실]` validator 계약 수정은 진행 중이며 새 독립 테스트와 `test_engineer` 검증은 아직 수행하지 않았다. 기존 91/91 PASS는 앞선 호환·기록 범위의 실제 결과로만 유지한다. 최종 후속 검증과 Git 결과는 인계 보고와 PR에서 실제로 확인하며, merge와 Pages 설정 변경 보류는 유지한다.

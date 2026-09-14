@@ -350,4 +350,273 @@ export const codeQuestSolutionFixtures = {
       edge: ["tasks-all-completed", "tasks-ignore-completed-priority"],
     },
   },
+  "quest-javascript-registered-code-check": {
+    referenceSource: `function markRegisteredCodes(registeredCodes, scannedCodes) {
+  const registered = new Set();
+  const results = [];
+
+  for (const code of registeredCodes) {
+    registered.add(code);
+  }
+
+  for (const code of scannedCodes) {
+    const isRegistered = registered.has(code);
+    results.push(isRegistered);
+  }
+
+  return results;
+}`,
+    expectedComplexity: {
+      time: "O(r + s) expected",
+      space: "O(r + s)",
+    },
+    verificationCases: [
+      {
+        id: "verify-registered-exact-code",
+        args: [["gate-1"], ["gate-10", "gate-1"]],
+        expected: [false, true],
+      },
+      {
+        id: "verify-registered-last-match",
+        args: [["gate-a", "gate-z"], ["gate-x", "gate-z"]],
+        expected: [false, true],
+      },
+      {
+        id: "verify-registered-maximum-lengths",
+        args: [
+          Array.from({ length: 30 }, (_, index) => `gate-${index + 1}`),
+          Array.from({ length: 30 }, (_, index) =>
+            index % 2 === 0 ? `gate-${index + 1}` : `missing-${index + 1}`,
+          ),
+        ],
+        expected: Array.from({ length: 30 }, (_, index) => index % 2 === 0),
+      },
+    ],
+    representativeWrongSolutions: [
+      {
+        id: "registered-scan-set-as-reference",
+        source: `function markRegisteredCodes(registeredCodes, scannedCodes) {
+  const registered = new Set(scannedCodes);
+  return registeredCodes.map((code) => registered.has(code));
+}`,
+        expectedFailingPublicTestIds: [
+          "hash-registered-no-reference",
+          "hash-registered-no-scans",
+          "hash-registered-mixed",
+          "hash-registered-repeated-scan",
+        ],
+      },
+    ],
+    boundaryCoverage: {
+      normal: ["hash-registered-mixed"],
+      minimum: ["hash-registered-both-empty", "hash-registered-no-reference"],
+      maximum: ["verify-registered-maximum-lengths"],
+      edge: ["hash-registered-repeated-scan", "verify-registered-exact-code"],
+    },
+  },
+  "quest-javascript-locker-lookup": {
+    referenceSource: `function resolveLockerNumbers(assignments, studentIds) {
+  const lockerByStudent = new Map();
+  const results = [];
+
+  for (const assignment of assignments) {
+    lockerByStudent.set(assignment.studentId, assignment.lockerNumber);
+  }
+
+  for (const studentId of studentIds) {
+    if (lockerByStudent.has(studentId)) {
+      results.push(lockerByStudent.get(studentId));
+    } else {
+      results.push(null);
+    }
+  }
+
+  return results;
+}`,
+    expectedComplexity: {
+      time: "O(a + q) expected",
+      space: "O(a + q)",
+    },
+    verificationCases: [
+      {
+        id: "verify-locker-maximum-number",
+        args: [[{ studentId: "student-max", lockerNumber: 999 }], ["student-max"]],
+        expected: [999],
+      },
+      {
+        id: "verify-locker-last-assignment-and-missing",
+        args: [[
+          { studentId: "student-a", lockerNumber: 41 },
+          { studentId: "student-z", lockerNumber: 82 },
+        ], ["student-z", "student-x"]],
+        expected: [82, null],
+      },
+      {
+        id: "verify-locker-maximum-lengths",
+        args: [
+          Array.from({ length: 30 }, (_, index) => ({
+            studentId: `student-${index + 1}`,
+            lockerNumber: index,
+          })),
+          Array.from({ length: 30 }, (_, index) => `student-${30 - index}`),
+        ],
+        expected: Array.from({ length: 30 }, (_, index) => 29 - index),
+      },
+    ],
+    representativeWrongSolutions: [
+      {
+        id: "locker-falsy-value-as-missing",
+        source: `function resolveLockerNumbers(assignments, studentIds) {
+  const lockerByStudent = new Map();
+  for (const assignment of assignments) {
+    lockerByStudent.set(assignment.studentId, assignment.lockerNumber);
+  }
+  return studentIds.map((studentId) => lockerByStudent.get(studentId) || null);
+}`,
+        expectedFailingPublicTestIds: ["hash-locker-zero-number"],
+      },
+    ],
+    boundaryCoverage: {
+      normal: ["hash-locker-mixed", "hash-locker-query-order"],
+      minimum: ["hash-locker-both-empty", "hash-locker-zero-number"],
+      maximum: ["verify-locker-maximum-number", "verify-locker-maximum-lengths"],
+      edge: ["hash-locker-no-assignments", "hash-locker-repeated-query"],
+    },
+  },
+  "quest-javascript-first-code-at-count": {
+    referenceSource: `function findFirstCodeAtCount(codes, requiredCount) {
+  const counts = new Map();
+
+  for (const code of codes) {
+    const previousCount = counts.has(code) ? counts.get(code) : 0;
+    const nextCount = previousCount + 1;
+    counts.set(code, nextCount);
+
+    if (nextCount === requiredCount) {
+      return code;
+    }
+  }
+
+  return null;
+}`,
+    expectedComplexity: {
+      time: "O(n) expected",
+      space: "O(u), u = distinct codes",
+    },
+    verificationCases: [
+      {
+        id: "verify-count-maximum-length-last-reach",
+        args: [[
+          ...Array.from({ length: 49 }, (_, index) => `unique-${index + 1}`),
+          "unique-1",
+        ], 2],
+        expected: "unique-1",
+      },
+      {
+        id: "verify-count-maximum-required-count",
+        args: [Array.from({ length: 50 }, () => "same-code"), 50],
+        expected: "same-code",
+      },
+      {
+        id: "verify-count-interleaved-second-code-wins",
+        args: [["code-a", "code-b", "code-c", "code-b", "code-a"], 2],
+        expected: "code-b",
+      },
+    ],
+    representativeWrongSolutions: [
+      {
+        id: "count-after-full-scan",
+        source: `function findFirstCodeAtCount(codes, requiredCount) {
+  const counts = new Map();
+  for (const code of codes) {
+    counts.set(code, (counts.get(code) || 0) + 1);
+  }
+  for (const code of codes) {
+    if (counts.get(code) >= requiredCount) {
+      return code;
+    }
+  }
+  return null;
+}`,
+        expectedFailingPublicTestIds: ["hash-count-arrival-order"],
+      },
+    ],
+    boundaryCoverage: {
+      normal: ["hash-count-repeated-first", "verify-count-interleaved-second-code-wins"],
+      minimum: ["hash-count-empty", "hash-count-threshold-one"],
+      maximum: [
+        "verify-count-maximum-length-last-reach",
+        "verify-count-maximum-required-count",
+      ],
+      edge: ["hash-count-no-reach", "hash-count-last-position", "hash-count-arrival-order"],
+    },
+  },
+  "quest-javascript-unfilled-requests": {
+    referenceSource: `function findUnfilledRequests(availableCodes, requestedCodes) {
+  const remainingByCode = new Map();
+  const unfilled = [];
+
+  for (const code of availableCodes) {
+    const previousCount = remainingByCode.has(code) ? remainingByCode.get(code) : 0;
+    remainingByCode.set(code, previousCount + 1);
+  }
+
+  for (const code of requestedCodes) {
+    const remaining = remainingByCode.has(code) ? remainingByCode.get(code) : 0;
+    if (remaining > 0) {
+      remainingByCode.set(code, remaining - 1);
+      continue;
+    }
+    unfilled.push(code);
+  }
+
+  return unfilled;
+}`,
+    expectedComplexity: {
+      time: "O(a + r) expected",
+      space: "O(u + r), u = distinct available codes",
+    },
+    verificationCases: [
+      {
+        id: "verify-unfilled-repeated-shortages",
+        args: [["code-a", "code-b"], ["code-a", "code-c", "code-b", "code-c"]],
+        expected: ["code-c", "code-c"],
+      },
+      {
+        id: "verify-unfilled-maximum-requests",
+        args: [
+          Array.from({ length: 25 }, () => "pass"),
+          Array.from({ length: 50 }, () => "pass"),
+        ],
+        expected: Array.from({ length: 25 }, () => "pass"),
+      },
+      {
+        id: "verify-unfilled-maximum-stock-without-requests",
+        args: [Array.from({ length: 50 }, (_, index) => `stock-${index + 1}`), []],
+        expected: [],
+      },
+    ],
+    representativeWrongSolutions: [
+      {
+        id: "unfilled-presence-without-quantity",
+        source: `function findUnfilledRequests(availableCodes, requestedCodes) {
+  const available = new Set(availableCodes);
+  return requestedCodes.filter((code) => !available.has(code));
+}`,
+        expectedFailingPublicTestIds: [
+          "hash-unfilled-one-short",
+          "hash-unfilled-mixed-order",
+        ],
+      },
+    ],
+    boundaryCoverage: {
+      normal: ["hash-unfilled-mixed-order", "hash-unfilled-extra-stock"],
+      minimum: ["hash-unfilled-both-empty", "hash-unfilled-no-stock"],
+      maximum: [
+        "verify-unfilled-maximum-requests",
+        "verify-unfilled-maximum-stock-without-requests",
+      ],
+      edge: ["hash-unfilled-exact-duplicates", "hash-unfilled-one-short"],
+    },
+  },
 };

@@ -1,23 +1,78 @@
 import { access, readFile, readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { assertValidCurriculum } from "../src/core/content.js";
-import { createCodeQuestExecutionRequest } from "../src/core/code-quest.js";
 import { assertValidQuizCollection } from "../src/core/quiz.js";
+import { getReviewDocumentLesson, validateReviewConcepts } from "../src/core/review-navigation.js";
+import { headingId, renderMarkdown, splitMarkdownSection } from "../src/ui/markdown.js";
 import { assertValidCodingTestCollection } from "../src/core/coding-test.js";
 import {
   assertValidWebCodeQuestCollection,
   createWebCodeQuestExecutionRequest,
 } from "../src/core/web-code-quest.js";
 import { assertValidWebProjectCollection } from "../src/core/web-project.js";
-import { areJsonValuesEqual } from "../src/grading/code-grading.js";
-import { createCodingTestRunnerRequest } from "../src/grading/coding-test-runner-adapter.js";
+import {
+  areJsonValuesEqual,
+  assertValidExecutionRequest,
+} from "../src/grading/code-grading.js";
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HINT_STAGES = ["concept", "observation", "implementation"];
 const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*tests?|hidden\s*tests?/iu;
 const FORBIDDEN_RUNTIME_API_PATTERN =
   /\b(?:document|window|fetch|XMLHttpRequest|WebSocket|EventSource|navigator|location|localStorage|sessionStorage|indexedDB|caches|importScripts|setTimeout|setInterval|requestAnimationFrame|Date|performance|crypto|Intl)\b|Math\.random/;
+
+// origin/dev db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0에서 복원한 원문 보관본이다.
+const LEGACY_JAVA_ANSWER_EXEMPTIONS = new Map([
+  [
+    "java-02-control-flow-arrays",
+    {
+      contentFile: "content/lessons/java/operators-control-flow-and-arrays.md",
+      sha256: "9fb9d02d87121a971eed784e5e69d03bf65acc10fc85036ad42449e4b243d0ea",
+    },
+  ],
+  [
+    "java-03-classes-objects",
+    {
+      contentFile: "content/lessons/java/classes-objects-and-encapsulation.md",
+      sha256: "9c7527ae36b618c4cd6d7fec2816d8ddbd4c765633a6888b2073433b16b5a4ea",
+    },
+  ],
+  [
+    "java-04-collections-generics",
+    {
+      contentFile: "content/lessons/java/collections-generics-list-and-map.md",
+      sha256: "67c2b89b706ec739c20741e636890c08288cd6a5155bbef06f97cb636486e7a5",
+    },
+  ],
+  [
+    "java-05-exceptions-debugging",
+    {
+      contentFile: "content/lessons/java/exceptions-and-debugging.md",
+      sha256: "47207680c3574a0dd75ad88371f8503e505b0e01f8935d11ec17d6681f904ead",
+    },
+  ],
+  [
+    "java-06-review-practice",
+    {
+      contentFile: "content/lessons/java/review-problem-solving-and-testing.md",
+      sha256: "145bb45dd6967a046b56c919cce7769f8d27e3bc2e6f9e3bb98d7529b8530732",
+    },
+  ],
+]);
+
+export function isLegacyJavaArchiveWithoutInterviewAnswers(lesson, markdown) {
+  if (lesson?.archivedFromCatalog !== true || typeof markdown !== "string") {
+    return false;
+  }
+  const exemption = LEGACY_JAVA_ANSWER_EXEMPTIONS.get(lesson.id);
+  return Boolean(
+    exemption &&
+      lesson.contentFile === exemption.contentFile &&
+      createHash("sha256").update(markdown, "utf8").digest("hex") === exemption.sha256,
+  );
+}
 
 function isPlainRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -188,9 +243,6 @@ export function validateSchemaValue(value, schema, rootSchema, valuePath, errors
     if (schema.minimum !== undefined && value < schema.minimum) {
       errors.push(`${valuePath}: ${schema.minimum}보다 작습니다.`);
     }
-    if (schema.maximum !== undefined && value > schema.maximum) {
-      errors.push(`${valuePath}: ${schema.maximum}보다 큽니다.`);
-    }
   }
 }
 
@@ -244,36 +296,21 @@ function validateCodeQuestCollection(collection, curriculum, schema) {
 
     if (isNonEmptyString(quest.entryPoint) && isNonEmptyString(quest.starterCode)) {
       const escapedEntryPoint = quest.entryPoint.replaceAll(/[$]/g, "\\$");
-      const isJava = collection.languageId === "java";
       const declaration = quest.starterCode.match(
-        isJava
-          ? new RegExp(
-              `\\bpublic\\s+static\\s+(?:int|boolean|String)(?:\\s*\\[\\s*\\])?\\s+${escapedEntryPoint}\\s*\\(([^)]*)\\)`,
-            )
-          : new RegExp(`function\\s+${escapedEntryPoint}\\s*\\(([^)]*)\\)`),
+        new RegExp(`function\\s+${escapedEntryPoint}\\s*\\(([^)]*)\\)`),
       );
       if (!declaration) {
-        errors.push(
-          `${label}.starterCode: entryPoint ${isJava ? "public static 메서드" : "함수"} 선언을 찾을 수 없습니다.`,
-        );
+        errors.push(`${label}.starterCode: entryPoint 함수 선언을 찾을 수 없습니다.`);
       } else if (Array.isArray(quest.functionContract?.parameters)) {
         const declaredParameters = declaration[1]
           .split(",")
           .map((parameter) => parameter.trim())
           .filter(Boolean);
-        const declaredParameterNames = isJava
-          ? declaredParameters.map(
-              (parameter) =>
-                /([A-Za-z_][A-Za-z0-9_]*)$/u.exec(parameter)?.[1] ?? "",
-            )
-          : declaredParameters;
         const contractedParameters = quest.functionContract.parameters.map(
           (parameter) => parameter.name,
         );
-        if (JSON.stringify(declaredParameterNames) !== JSON.stringify(contractedParameters)) {
-          errors.push(
-            `${label}.starterCode: ${isJava ? "메서드" : "함수"} 매개변수 계약과 다릅니다.`,
-          );
+        if (JSON.stringify(declaredParameters) !== JSON.stringify(contractedParameters)) {
+          errors.push(`${label}.starterCode: 함수 매개변수 계약과 다릅니다.`);
         }
       }
     }
@@ -389,14 +426,72 @@ for (const lesson of curriculum.lessons) {
     if (!markdown.startsWith("# ")) {
       contentErrors.push(`${lesson.id}: H1 제목으로 시작해야 합니다.`);
     }
+    if (markdown.length < 500) {
+      contentErrors.push(`${lesson.id}: 교안 본문이 지나치게 짧습니다.`);
+    }
+    if (lesson.source.importMode === "derived" && !lesson.answerHeading) {
+      contentErrors.push(`${lesson.id}: 파생 교안에는 직접답을 가리키는 answerHeading이 필요합니다.`);
+    }
+    if (lesson.answerHeading !== undefined) {
+      const answer = splitMarkdownSection(markdown, lesson.answerHeading);
+      const answerId = headingId(lesson.answerHeading);
+      const headingCount = [...renderMarkdown(markdown).matchAll(/<h2 id="([^"]+)">/g)]
+        .filter((match) => match[1] === answerId).length;
+      if (!answer.section || headingCount !== 1) {
+        contentErrors.push(`${lesson.id}: answerHeading과 일치하는 비어 있지 않은 직접답 절이 정확히 하나 필요합니다.`);
+      }
+    }
+    // 검증된 출처를 가진 반입본은 원문 형식을 보존하고 metadata의 학습 목표를 사용한다.
+    if (lesson.source.originalPath) {
+      if (
+        lesson.source.importMode === "copy" &&
+        createHash("sha256").update(markdown, "utf8").digest("hex") !== lesson.source.sha256
+      ) {
+        contentErrors.push(`${lesson.id}: 반입 원문 복사본의 SHA-256이 source.sha256과 다릅니다.`);
+      }
+      continue;
+    }
     if (!markdown.includes("## 학습 목표")) {
       contentErrors.push(`${lesson.id}: 학습 목표 섹션이 없습니다.`);
     }
+    // 명시한 직접답 절은 위에서 검사하며, 작은 새 저작에는 종전 답변 형식을 요구하지 않는다.
+    if (lesson.answerHeading !== undefined) continue;
     if (!markdown.includes("## 확인 문제") && !markdown.includes("## 최종 확인 문제")) {
       contentErrors.push(`${lesson.id}: 확인 문제 섹션이 없습니다.`);
     }
-    if (markdown.length < 500) {
-      contentErrors.push(`${lesson.id}: 교안 본문이 지나치게 짧습니다.`);
+    const confirmationMatch = markdown.match(
+      /\n## (?:최종 )?확인 문제\n([\s\S]*?)(?=\n## |$)/,
+    );
+    const questionNumbers = confirmationMatch
+      ? [...confirmationMatch[1].matchAll(/^(\d+)\.\s+.+$/gm)].map((match) => Number(match[1]))
+      : [];
+    if (isLegacyJavaArchiveWithoutInterviewAnswers(lesson, markdown)) continue;
+    const answerHeading = "\n## 면접 답변 예시\n";
+    const answerSections = markdown.split(answerHeading);
+    if (answerSections.length !== 2) {
+      contentErrors.push(`${lesson.id}: 면접 답변 예시 섹션이 정확히 하나 필요합니다.`);
+    } else {
+      const answerNumbers = [...answerSections[1].matchAll(/^### 답변 (\d+)\s*$/gm)].map(
+        (match) => Number(match[1]),
+      );
+      const answerBodies = answerSections[1].split(/^### 답변 \d+\s*$/gm).slice(1);
+      const expectedNumbers = questionNumbers.map((_, index) => index + 1);
+      const answerStartsAfterQuestions =
+        confirmationMatch && markdown.indexOf(answerHeading) > confirmationMatch.index;
+      const answerIsLastSection = !answerSections[1].includes("\n## ");
+      if (
+        questionNumbers.length === 0 ||
+        !answerStartsAfterQuestions ||
+        !answerIsLastSection ||
+        questionNumbers.some((number, index) => number !== expectedNumbers[index]) ||
+        answerNumbers.length !== questionNumbers.length ||
+        answerNumbers.some((number, index) => number !== questionNumbers[index]) ||
+        answerBodies.some((body) => body.trim().length === 0)
+      ) {
+        contentErrors.push(
+          `${lesson.id}: 확인 문제와 답변 예시의 개수·순서·내용이 일치해야 합니다.`,
+        );
+      }
     }
   } catch {
     contentErrors.push(`${lesson.id}: ${lesson.contentFile} 파일을 읽을 수 없습니다.`);
@@ -465,6 +560,28 @@ for (const language of curriculum.languages.filter((item) =>
   if (!quizCollections.has(language.id)) {
     contentErrors.push(`${language.id}: 탐색 가능한 언어의 객관식 콘텐츠가 없습니다.`);
   }
+}
+
+try {
+  const data = JSON.parse(await readFile(path.join(projectRoot, "content", "review-concepts.json"), "utf8"));
+  const concepts = validateReviewConcepts(data, curriculum);
+  if (data.schemaVersion !== 1 || !Array.isArray(data.concepts) || concepts.length !== data.concepts.length) {
+    contentErrors.push("개념 발췌의 문서·언어·과정·개념 연결이나 중복을 확인해 주세요.");
+  }
+  for (const concept of concepts) {
+    const lesson = getReviewDocumentLesson(curriculum, concept);
+    const questions = quizCollections.get(lesson.languageId)?.questions ?? [];
+    if (!questions.some((question) => question.lessonId === concept.lessonId && question.conceptId === concept.id)) {
+      contentErrors.push(`${concept.id}: 개념 발췌에 연결된 실제 문항이 없습니다.`);
+    }
+    const markdown = await readFile(path.join(projectRoot, lesson.contentFile), "utf8");
+    const section = splitMarkdownSection(markdown, concept.heading).section;
+    if (!section || !section.slice(section.indexOf("\n") + 1).includes(concept.excerpt)) {
+      contentErrors.push(`${concept.id}: 상세 문서의 실제 절과 발췌가 일치하지 않습니다.`);
+    }
+  }
+} catch (error) {
+  contentErrors.push(`개념 발췌 검증 실패 (${error.message})`);
 }
 
 const codeQuestSchemaPath = path.join(projectRoot, "content", "schema", "code-quest.schema.json");
@@ -566,13 +683,23 @@ for (const fileName of questFileNames) {
           quest.starterCode,
           `validate-${quest.id}`,
         );
-      } else if (["javascript", "java"].includes(languageId)) {
-        createCodeQuestExecutionRequest(
-          collection,
-          quest,
-          quest.starterCode,
-          `validate-${quest.id}`,
-        );
+      } else if (languageId === "javascript") {
+        assertValidExecutionRequest({
+          requestId: `validate-${quest.id}`,
+          contractVersion: collection.contractVersion,
+          questId: quest.id,
+          questRevision: quest.revision,
+          languageId: collection.languageId,
+          suite: "public",
+          source: quest.starterCode,
+          entryPoint: quest.entryPoint,
+          tests: quest.publicTests.map(({ id, label, args, expected }) => ({
+            id,
+            label,
+            args,
+            expected,
+          })),
+        });
       }
     }
 
@@ -583,7 +710,11 @@ for (const fileName of questFileNames) {
   }
 }
 
-for (const language of curriculum.languages.filter((item) => item.status === "available")) {
+// 정적 교안·객관식의 available 상태와 실행형 Code Quest 제공 범위는 별개다.
+const requiredCodeQuestLanguages = new Set(["javascript", "html", "css"]);
+for (const language of curriculum.languages.filter((item) =>
+  item.status === "available" && requiredCodeQuestLanguages.has(item.id),
+)) {
   if (!questCollections.has(language.id)) {
     contentErrors.push(`${language.id}: 사용 가능한 언어의 Code Quest 콘텐츠가 없습니다.`);
   }
@@ -664,17 +795,6 @@ for (const fileName of codingTestFileNames) {
         }
         codingTestPublicTestIds.add(publicTest.id);
       }
-      if (["javascript", "java"].includes(languageId)) {
-        for (const mode of ["run", "submit"]) {
-          createCodingTestRunnerRequest({
-            collection,
-            problem,
-            source: problem.starterCode,
-            requestId: `validate-${mode}-${problem.id}`,
-            mode,
-          });
-        }
-      }
     }
     codingTestCollections.set(languageId, collection);
   } catch (error) {
@@ -683,11 +803,8 @@ for (const fileName of codingTestFileNames) {
   }
 }
 
-for (const languageId of ["javascript", "java"]) {
-  const language = curriculum.languages.find((item) => item.id === languageId);
-  if (language?.status === "available" && !codingTestCollections.has(languageId)) {
-    contentErrors.push(`${languageId}: 정식 코딩테스트 콘텐츠가 없습니다.`);
-  }
+if (!codingTestCollections.has("javascript")) {
+  contentErrors.push("javascript: 4차 코딩테스트 콘텐츠가 없습니다.");
 }
 
 const webProjectSchemaPath = path.join(

@@ -1,4 +1,4 @@
-# 08. BFS·DFS와 그래프·격자 탐색
+# BFS·DFS와 그래프·격자 탐색
 
 ## 학습 목표
 
@@ -7,274 +7,226 @@
 - DFS가 스택이나 재귀로 한 경로를 깊게 탐색하는 흐름을 추적할 수 있습니다.
 - 격자를 그래프로 보고 방문 표시와 경계 검사를 적용할 수 있습니다.
 
-## 왜 필요한가
+## 한줄 요약
 
-친구 관계, 도로, 웹 페이지 연결처럼 대상 사이의 연결을 따라가야 하는 문제가 많습니다.
-미로와 게임 지도도 각 칸에서 이웃 칸으로 이동한다고 보면 같은 방식으로 다룰 수 있습니다.
-BFS와 DFS를 익히면 연결된 곳을 빠짐없이 찾고 목적에 맞는 탐색 순서를 선택할 수 있습니다.
+연결된 대상을 인접 리스트나 격자로 표현하고, BFS는 가까운 곳부터, DFS는 한 경로를 깊게 따라가며 방문합니다.
+
+## 먼저 확인할 개념
+
+[스택과 큐](#/learn/algorithm/stack-and-queue)의 처리 순서와 [재귀](#/learn/algorithm/brute-force-backtracking-recursion)의 호출·복귀를 먼저 확인하세요.
+Java 배열 생성과 인덱스가 낯설다면 [배열의 원소와 경계](#/learn/java/wiki-arrays)를 읽어 보세요.
 
 ## 개념 연결
 
-- 선행: `algo.stack`, `algo.queue`, `js.set-collection`
+- 선행: `algo.stack`, `algo.queue`, `algo.recursion`, `java.arrays`
 - 이 단원: `algo.graph-representation`, `algo.bfs`, `algo.dfs`, `algo.grid-traversal`
-- 후속: `algo.tree`, `algo.tree-traversal`, `algo.heap`, `algo.dijkstra`
+- 후속: `algo.tree`, `algo.tree-traversal`, `algo.simulation`, `algo.dijkstra`
 
-## 그래프와 인접 리스트
+## 연결 관계를 저장하기
 
-**그래프**는 대상인 **정점**과 정점 사이의 연결인 **간선**으로 이루어진 구조입니다.
-각 정점에서 바로 갈 수 있는 이웃을 배열로 저장한 표현을 **인접 리스트**라고 합니다.
+친구 관계, 도로와 웹 페이지처럼 연결을 따라가는 문제에서는 **정점**이 대상이고 **간선**이 연결입니다.
+각 정점에서 바로 갈 수 있는 이웃을 모아 저장한 것이 **인접 리스트**입니다.
 
-```javascript
-const graph = [
-  [1, 2],
-  [0, 3],
-  [0, 3],
-  [1, 2],
-];
+예제의 정점 번호는 `0`부터 `3`까지입니다.
+`int[][] graph = {{1, 2}, {0, 3}, {0, 3}, {1, 2}}`에서 `graph[0]`은 정점 `0`의 이웃 `1`, `2`입니다.
+각 행의 길이는 정점마다 달라도 됩니다.
 
-console.log(graph[0]); // [1, 2]
-console.log(graph[3]); // [1, 2]
-```
+양방향 간선이라면 양쪽 정점의 목록에 서로를 넣습니다.
+방향 그래프라면 이동 가능한 방향만 저장합니다.
+번호를 배열 인덱스로 쓰므로 시작점과 모든 이웃 번호는 `0` 이상 `graph.length` 미만이어야 합니다.
 
-이 그래프에서 정점 `0`은 정점 `1`, `2`와 연결되어 있습니다.
-양방향 간선은 양쪽 정점의 이웃 목록에 서로를 모두 넣습니다.
-한 방향으로만 이동할 수 있는 방향 그래프라면 반대 방향 연결을 자동으로 넣지 않습니다.
+**먼저 관찰해 보세요.** `0`에서 출발해 `1`과 `2`가 모두 `3`을 발견한다면 `3`을 두 번 처리하지 않으려면 무엇을 기록해야 할까요?
 
-## BFS
+## BFS: 가까운 정점부터 확인하기
 
-**BFS**는 너비 우선 탐색을 뜻하며 시작점에서 가까운 정점부터 차례로 탐색합니다.
-먼저 넣은 값을 먼저 꺼내는 큐를 사용하면 발견한 순서대로 정점을 처리할 수 있습니다.
+BFS는 큐로 먼저 발견한 정점부터 처리하는 **너비 우선 탐색**입니다.
+Java에서는 `Deque<Integer> queue = new ArrayDeque<>()`로 큐를 만들고 `offerLast()`로 뒤에 넣고 `removeFirst()`로 앞에서 꺼냅니다.
+`removeFirst()`는 빈 큐에서 예외가 나므로 반복 조건에서 `isEmpty()`를 확인합니다.
 
-## 최소 예제
+`distance`를 `Arrays.fill(distance, -1)`로 채워 아직 발견하지 않은 정점을 구분합니다.
+시작점은 거리 `0`이고, 새로운 이웃은 **큐에 넣기 전에** 현재 거리보다 `1` 큰 값을 기록합니다.
+이미 거리가 있으면 다른 경로에서 다시 발견해도 넣지 않습니다.
 
-```javascript
-const graph = [
-  [1, 2],
-  [0, 3],
-  [0, 3],
-  [1, 2],
-];
+모든 간선 비용이 같을 때 이렇게 얻은 거리는 최소 간선 수입니다.
+간선마다 비용이 다르면 일반 BFS로 최소 비용을 보장할 수 없습니다.
 
-function bfs(adjacencyList, start) {
-  const distance = Array(adjacencyList.length).fill(-1);
-  const order = [];
-  const queue = [start];
-  let head = 0;
-  distance[start] = 0;
+## DFS: 한 경로를 깊게 따라가기
 
-  while (head < queue.length) {
-    const current = queue[head];
-    head += 1;
-    order.push(current);
+DFS는 한 이웃의 탐색을 끝낸 뒤 돌아와 다음 이웃을 확인하는 **깊이 우선 탐색**입니다.
+아래 예제는 재귀 호출 스택을 사용합니다.
+정점의 재귀 호출에 들어오자마자 방문을 표시하고, 아직 방문하지 않은 이웃으로만 재귀 호출합니다.
 
-    for (const next of adjacencyList[current]) {
-      if (distance[next] !== -1) continue;
+이웃이 저장된 순서대로 `0 → 1 → 3 → 2`를 방문합니다.
+이웃 목록의 순서가 달라지면 방문 순서도 달라질 수 있고, DFS가 구한 경로가 최단 경로인 것은 아닙니다.
+매우 깊은 그래프에서는 재귀 호출이 `StackOverflowError`를 일으킬 수 있으므로 직접 스택을 관리하는 반복 구현을 고려합니다.
+반복 구현에서도 재귀와 같은 순회가 필요하다면 다음에 확인할 이웃 위치까지 관리해야 합니다.
 
-      distance[next] = distance[current] + 1;
-      queue.push(next);
+## 격자도 그래프로 보기
+
+격자의 통과 가능한 칸을 정점으로, 상하좌우 이동을 간선으로 보면 같은 BFS를 적용할 수 있습니다.
+예제에서 `S`는 시작점, `G`는 목표점, `#`은 벽이며 한 번의 이동 비용은 `1`입니다.
+
+새 좌표를 계산한 뒤에는 **행·열 범위 → 벽 → 방문 여부** 순서로 검사합니다.
+범위를 확인하기 전에 `grid[nextRow][nextColumn]`을 읽으면 배열 범위를 벗어날 수 있습니다.
+
+거리 표는 `new int[rows][columns]`로 만들고 각 행을 따로 `-1`로 채웁니다.
+같은 행 배열을 여러 행에 대입하면 한 칸을 바꿨을 때 다른 행도 함께 바뀌므로 피합니다.
+
+## Java 예제: 방문 순서와 최소 이동 횟수
+
+다음은 정식 Java 25 예제입니다.
+그래프는 하나 이상의 정점과 유효한 이웃 번호를 가지며, 격자는 한 칸 이상의 직사각형이고 시작 칸 `(0, 0)`은 벽이 아니라고 가정합니다.
+`BfsResult`는 방문 순서와 거리 배열을 함께 돌려주기 위한 작은 결과 객체입니다.
+
+```java
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.List;
+
+public class GraphTraversalExample {
+    static final class BfsResult {
+        final List<Integer> order;
+        final int[] distance;
+
+        BfsResult(List<Integer> order, int[] distance) {
+            this.order = order;
+            this.distance = distance;
+        }
     }
-  }
 
-  return { order, distance };
-}
+    static BfsResult bfs(int[][] graph, int start) {
+        int[] distance = new int[graph.length];
+        Arrays.fill(distance, -1);
+        List<Integer> order = new ArrayList<>();
+        Deque<Integer> queue = new ArrayDeque<>();
+        distance[start] = 0;
+        queue.offerLast(start);
 
-const result = bfs(graph, 0);
-console.log(result.order); // [0, 1, 2, 3]
-console.log(result.distance); // [0, 1, 1, 2]
-```
-
-`distance`가 `-1`이면 아직 발견하지 않은 정점입니다.
-정점을 큐에 넣을 때 거리를 기록해 같은 정점이 큐에 여러 번 들어가지 않게 합니다.
-배열 앞을 계속 제거하지 않고 `head` 인덱스를 옮겨 큐를 처리합니다.
-
-## 실행 흐름
-
-1. 시작점 `0`의 거리를 `0`으로 기록하고 큐에 넣습니다.
-2. 정점 `0`을 처리하며 이웃 `1`, `2`의 거리를 `1`로 기록하고 큐에 넣습니다.
-3. 정점 `1`을 처리하며 아직 발견하지 않은 정점 `3`의 거리를 `2`로 기록합니다.
-4. 정점 `2`를 처리할 때 정점 `3`은 이미 발견되었으므로 다시 넣지 않습니다.
-5. 정점 `3`까지 처리하면 탐색 순서는 `[0, 1, 2, 3]`이 됩니다.
-
-가중치가 없는 그래프에서 BFS가 기록한 거리는 시작점부터 지나야 하는 최소 간선 수입니다.
-간선마다 비용이 다른 가중 그래프의 최단 거리를 일반 BFS가 보장하지는 않습니다.
-
-## DFS
-
-**DFS**는 깊이 우선 탐색을 뜻하며 한 경로를 가능한 깊게 따라간 뒤 돌아와 다른 경로를 탐색합니다.
-다음 예제는 재귀 깊이에 의존하지 않도록 배열을 스택으로 사용합니다.
-재귀로 작성해도 한 이웃의 탐색을 끝낸 뒤 이전 호출로 돌아오므로 같은 깊이 우선 흐름을 만들 수 있습니다.
-
-```javascript
-const graph = [
-  [1, 2],
-  [0, 3],
-  [0, 3],
-  [1, 2],
-];
-
-function dfs(adjacencyList, start) {
-  const visited = Array(adjacencyList.length).fill(false);
-  const order = [];
-  const stack = [start];
-  visited[start] = true;
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-    order.push(current);
-
-    for (let index = adjacencyList[current].length - 1; index >= 0; index -= 1) {
-      const next = adjacencyList[current][index];
-
-      if (visited[next]) continue;
-
-      visited[next] = true;
-      stack.push(next);
+        while (!queue.isEmpty()) {
+            int current = queue.removeFirst();
+            order.add(current);
+            for (int next : graph[current]) {
+                if (distance[next] != -1) continue;
+                distance[next] = distance[current] + 1;
+                queue.offerLast(next);
+            }
+        }
+        return new BfsResult(order, distance);
     }
-  }
 
-  return order;
+    static void visitDepthFirst(int[][] graph, int current,
+                                boolean[] visited, List<Integer> order) {
+        visited[current] = true;
+        order.add(current);
+        for (int next : graph[current]) {
+            if (!visited[next]) {
+                visitDepthFirst(graph, next, visited, order);
+            }
+        }
+    }
+
+    static List<Integer> dfs(int[][] graph, int start) {
+        List<Integer> order = new ArrayList<>();
+        visitDepthFirst(graph, start, new boolean[graph.length], order);
+        return order;
+    }
+
+    static int[][] gridDistances(char[][] grid) {
+        int rows = grid.length;
+        int columns = grid[0].length;
+        int[][] distance = new int[rows][columns];
+        for (int[] row : distance) Arrays.fill(row, -1);
+        int[][] directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+        Deque<int[]> queue = new ArrayDeque<>();
+        distance[0][0] = 0;
+        queue.offerLast(new int[] {0, 0});
+
+        while (!queue.isEmpty()) {
+            int[] current = queue.removeFirst();
+            int row = current[0];
+            int column = current[1];
+            for (int[] direction : directions) {
+                int nextRow = row + direction[0];
+                int nextColumn = column + direction[1];
+                if (nextRow < 0 || nextRow >= rows
+                        || nextColumn < 0 || nextColumn >= columns) continue;
+                if (grid[nextRow][nextColumn] == '#') continue;
+                if (distance[nextRow][nextColumn] != -1) continue;
+                distance[nextRow][nextColumn] = distance[row][column] + 1;
+                queue.offerLast(new int[] {nextRow, nextColumn});
+            }
+        }
+        return distance;
+    }
+
+    public static void main(String[] args) {
+        int[][] graph = {{1, 2}, {0, 3}, {0, 3}, {1, 2}};
+        BfsResult result = bfs(graph, 0);
+        System.out.println(result.order);
+        System.out.println(Arrays.toString(result.distance));
+        System.out.println(dfs(graph, 0));
+
+        char[][] grid = {"S..#".toCharArray(), ".#..".toCharArray(),
+                         "...G".toCharArray()};
+        System.out.println(gridDistances(grid)[2][3]);
+    }
 }
-
-console.log(dfs(graph, 0)); // [0, 1, 3, 2]
 ```
 
-스택은 마지막에 넣은 정점을 먼저 꺼내므로 한 경로를 깊게 탐색합니다.
-이웃을 역순으로 넣은 것은 작은 번호를 먼저 방문하는 예시 순서를 만들기 위해서입니다.
-이웃 저장 순서가 바뀌면 BFS와 DFS의 방문 순서도 달라질 수 있지만 올바른 탐색일 수 있습니다.
-DFS는 시작점에서 각 정점까지의 최단 거리를 보장하지 않습니다.
+예상 출력:
 
-## 격자 탐색
-
-**격자**는 행과 열로 이루어진 칸의 모음입니다.
-통과할 수 있는 칸을 정점으로 보고 서로 이동할 수 있는 이웃 칸을 간선으로 보면 격자도 그래프입니다.
-
-다음 예제에서 `#`은 지나갈 수 없는 벽이고 나머지 칸은 상하좌우로 이동할 수 있습니다.
-이 예제의 격자는 한 행 이상이고 모든 행의 길이가 같다고 가정합니다.
-
-```javascript
-const grid = [
-  "S..#",
-  ".#..",
-  "...G",
-];
-const directions = [
-  [-1, 0],
-  [1, 0],
-  [0, -1],
-  [0, 1],
-];
-const rows = grid.length;
-const columns = grid[0].length;
-const distance = Array.from(
-  { length: rows },
-  () => Array(columns).fill(-1),
-);
-const queue = [[0, 0]];
-let head = 0;
-distance[0][0] = 0;
-
-while (head < queue.length) {
-  const [row, column] = queue[head];
-  head += 1;
-
-  for (const [rowChange, columnChange] of directions) {
-    const nextRow = row + rowChange;
-    const nextColumn = column + columnChange;
-    const isOutside =
-      nextRow < 0 ||
-      nextRow >= rows ||
-      nextColumn < 0 ||
-      nextColumn >= columns;
-
-    if (isOutside) continue;
-    if (grid[nextRow][nextColumn] === "#") continue;
-    if (distance[nextRow][nextColumn] !== -1) continue;
-
-    distance[nextRow][nextColumn] = distance[row][column] + 1;
-    queue.push([nextRow, nextColumn]);
-  }
-}
-
-console.log(distance[2][3]); // 5
+```text
+[0, 1, 2, 3]
+[0, 1, 1, 2]
+[0, 1, 3, 2]
+5
 ```
 
-새 좌표로 격자 값을 읽기 전에 먼저 행과 열의 범위를 확인합니다.
-방문하지 않은 통과 가능한 칸만 큐에 넣습니다.
-모든 이동 비용이 한 칸으로 같으므로 BFS로 구한 `5`는 시작점에서 목표점까지의 최소 이동 횟수입니다.
+## 실행 흐름에서 확인할 지점
 
-인접 리스트를 사용하는 BFS와 DFS는 각 정점과 간선을 한정된 횟수만 확인하므로 O(V + E)입니다.
-`V`는 정점 수, `E`는 간선 수이며 두 수가 늘어나는 만큼 작업량도 함께 늘어난다는 뜻입니다.
-격자에서는 통과 가능한 칸의 수와 각 칸에서 확인하는 방향 수를 기준으로 실행량을 생각할 수 있습니다.
+1. BFS는 `0`의 거리를 `0`으로 기록하고 큐에 넣습니다.
+2. `0`의 이웃 `1`, `2`는 거리 `1`이 됩니다.
+3. `1`에서 `3`을 발견하면 거리 `2`를 기록합니다. 이후 `2`에서 같은 `3`을 만나도 다시 넣지 않습니다.
+4. DFS는 `0`의 첫 이웃 `1`, 그 이웃 `3`, 아직 방문하지 않은 `2`로 내려갑니다.
+5. 격자에서는 `(0, 0) → (1, 0) → (2, 0) → (2, 1) → (2, 2) → (2, 3)`이 다섯 번의 이동으로 목표에 도착하는 경로 중 하나입니다.
 
-## 흔한 실수
+한 시작점에서 닿을 수 없는 정점이나 칸의 거리는 `-1`로 남습니다.
+그래프 전체가 여러 덩어리라면 한 번의 탐색으로 모든 덩어리를 방문하지 않습니다.
 
-### 1. 양방향 간선의 반대쪽 연결을 빠뜨리기
+인접 리스트 BFS와 DFS는 각 정점과 간선을 한정된 횟수 확인하므로 시간은 `O(V + E)`입니다.
+방문·거리·대기 공간은 `O(V)`이고, 재귀 DFS의 호출 공간도 최악에는 `O(V)`입니다.
+상하좌우 격자는 각 칸의 방향 수가 고정되어 시간과 거리 표 공간이 `O(rows × columns)`입니다.
 
-정점 `a`와 `b`가 양방향으로 연결되었다면 `a`의 목록에 `b`를, `b`의 목록에 `a`를 모두 넣습니다.
+## 흔한 실수와 직접 확인하기
 
-### 2. 방문 표시를 늦게 하기
+- BFS에서 꺼낸 뒤 방문을 표시하면 같은 정점이 큐에 중복으로 들어갈 수 있습니다. 넣는 시점을 확인하세요.
+- DFS에 거리 배열만 붙인다고 최단 거리가 보장되지는 않습니다. 어떤 순서로 방문했는지 먼저 확인하세요.
+- 양방향 간선을 한쪽만 저장하면 다른 쪽에서 돌아오는 연결이 사라집니다.
+- 격자 바깥을 읽거나 같은 행 배열을 공유하지 않았는지 확인하세요.
 
-BFS는 큐에 넣을 때 방문 또는 거리를 기록해야 같은 정점의 중복 삽입을 막을 수 있습니다.
+시작점 하나만 있는 그래프, 닿을 수 없는 정점, 목표로 가는 길이 막힌 격자를 손으로 추적해 보세요.
+BFS에서 처음 기록한 거리가 최소 간선 수인 이유와 DFS가 다른 방문 순서를 만드는 이유를 자신의 말로 설명해 보세요.
 
-### 3. BFS가 모든 최단 경로를 해결한다고 생각하기
+## 이어서 학습하기
 
-일반 BFS의 최단 거리 보장은 모든 간선의 이동 비용이 같은 그래프에 한정됩니다.
-
-### 4. DFS 방문 순서가 항상 같다고 생각하기
-
-여러 이웃 중 어느 정점을 먼저 넣는지에 따라 방문 순서는 달라질 수 있습니다.
-
-### 5. 격자 범위를 확인하기 전에 칸을 읽기
-
-새 행과 열이 범위 안인지 확인한 뒤 `grid[nextRow][nextColumn]`을 읽습니다.
-
-### 6. 같은 배열로 모든 거리 행을 채우기
-
-`Array(rows).fill(Array(columns).fill(-1))`은 모든 행이 같은 배열을 가리킵니다.
-`Array.from()`의 콜백으로 각 행을 따로 만들어야 합니다.
-
-## 확인 포인트
-
-1. 그래프가 방향 그래프인지 양방향 그래프인지 구분했나요?
-2. 시작점을 큐나 스택에 넣을 때 방문 상태를 기록했나요?
-3. 최단 거리가 필요하다면 간선의 비용이 모두 같은지 확인했나요?
-4. 격자에서 범위, 벽, 방문 여부를 순서대로 확인했나요?
-
-## 확인 문제
-
-1. 인접 리스트는 그래프의 연결을 어떤 형태로 저장하나요?
-2. BFS가 가중치 없는 그래프에서 최소 간선 수를 찾을 수 있는 이유는 무엇인가요?
-3. BFS와 DFS가 같은 그래프에서 다른 방문 순서를 만들 수 있는 이유는 무엇인가요?
-4. 격자 탐색에서 새 좌표의 범위를 먼저 확인해야 하는 이유는 무엇인가요?
+[트리](#/learn/algorithm/tree-basics)에서 부모·자식 구조를 순회하며 BFS와 DFS의 차이를 다시 확인하세요.
+이동 비용이 서로 다르다면 뒤의 [가중 그래프와 다익스트라](#/learn/algorithm/weighted-graphs-dijkstra)로 이어집니다.
 
 ## 공식 자료
 
-- [MIT OpenCourseWare: Breadth-First Search](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec9/)
-- [MIT OpenCourseWare: Depth-First Search](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/resources/mit6_006s20_lec10/)
-- [MDN: Array.from()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from)
+- [Princeton Algorithms: Undirected Graphs](https://algs4.cs.princeton.edu/41graph/)
+- [Java 25: ArrayDeque](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/ArrayDeque.html)
+- [Java 25: Arrays.fill](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Arrays.html)
+- [Java 언어 명세 25: 배열](https://docs.oracle.com/javase/specs/jls/se25/html/jls-10.html)
 
-공식 자료 확인일: 2026-08-20
+공식 자료 확인일: 2026-09-14. 기존 BAM.dev 예제의 연결 관계와 관찰 목표를 유지하고 Java로 설명·예제를 재구성했습니다.
 
-## 면접 답변 예시
+## 핵심 질문 답
 
-먼저 자신의 말로 답한 뒤, 면접관에게 설명하듯 아래 예시와 비교해 보세요.
-
-### 답변 1
-
-인접 리스트는 각 정점마다 바로 연결된 이웃 정점의 목록을 저장합니다.
-양방향 그래프라면 한 간선을 양쪽 정점의 목록에 모두 기록합니다.
-
-### 답변 2
-
-BFS는 시작점에서 간선 수가 같은 정점들을 같은 단계에서 처리합니다.
-그래서 가중치가 없는 그래프에서 정점을 처음 발견했을 때의 단계가 시작점부터의 최소 간선 수입니다.
-
-### 답변 3
-
-BFS는 큐로 가까운 정점부터 처리하고 DFS는 스택으로 한 경로를 깊게 처리합니다.
-또한 이웃이 저장된 순서에 따라서도 실제 방문 순서가 달라질 수 있습니다.
-
-### 답변 4
-
-범위를 벗어난 행이나 열로 격자를 읽으면 존재하지 않는 위치에 접근하게 됩니다.
-따라서 좌표가 유효한지 확인한 뒤 벽과 방문 여부를 검사해야 합니다.
+서로 연결된 정점이나 격자 칸은 이웃 관계와 방문 상태를 함께 저장해 탐색합니다.
+인접 리스트는 각 정점의 이웃을 저장하고, 격자는 유효한 상하좌우 칸을 이웃으로 봅니다.
+BFS는 큐에 넣을 때 방문·거리를 기록하며 가까운 정점부터 처리하고, DFS는 방문을 기록한 뒤 한 이웃의 탐색을 끝내고 다음 이웃으로 넘어갑니다.
+이미 방문한 곳은 다시 탐색하지 않으며 격자 값은 범위를 먼저 확인한 뒤 읽습니다.
+일반 BFS의 최단 거리 보장은 모든 이동 비용이 같을 때만 성립하고, 한 시작점으로는 연결되지 않은 곳까지 방문하지 못합니다.

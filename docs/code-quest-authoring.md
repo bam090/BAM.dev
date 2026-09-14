@@ -1,44 +1,67 @@
 # Code Quest 작성 계약
 
-Code Quest는 교안의 개념을 학습자가 언어의 실제 작성 단위로 직접 구현하도록 돕는 콘텐츠입니다. JavaScript 학습자는 작은 순수 함수를, Java 학습자는 `public class Solution`의 정적 메서드를, HTML 학습자는 마크업을, CSS 학습자는 스타일시트를 작성합니다. Java 소스를 JavaScript로 흉내 내거나 HTML·CSS 소스를 JavaScript 함수 문자열로 감싸지 않습니다.
+Code Quest는 교안의 개념을 학습자가 언어의 실제 작성 단위로 직접 구현하며 경험을 쌓도록 돕는 콘텐츠다. HTML은 마크업, CSS는 스타일시트, JavaScript는 함수 또는 기능 코드, 알고리즘은 선택한 실행 언어의 풀이 코드를 작성한다. 읽기만 하거나 선택지만 고르는 활동은 완료로 세지 않는다.
 
-문제 설명, 시작 소스, 단계별 힌트와 브라우저에 전달되는 공개 테스트는 `content/quests/<languageId>.json`에 둡니다. 기준 답안과 대표 오답은 빌드 대상이 아닌 `tests/fixtures/`에 둡니다. 브라우저에 전달되는 문제·assertion·기대값은 개발자 도구에서 확인할 수 있으므로 모든 언어에서 공개 테스트라고 부릅니다.
+학습자 정보 구조와 진도는 [`designs/code-quest.md`](designs/code-quest.md), 코딩테스트 제품은 [`designs/coding-test.md`](designs/coding-test.md), 새 경험 판정은 [`learning-content-design.md`](learning-content-design.md), 현재 필드는 [`content-schema.md`](content-schema.md#code-quest-컬렉션)가 정본이다.
+
+## 코딩테스트와의 분리
+
+`[확정 결정]` [`DEC-QUEST-SEPARATE-01`](roadmap.md#2026-08-29-확정-제품-결정)에 따라 Code Quest와 코딩테스트를 서로 변환하거나 기초·심화 경로로 합치지 않는다.
+
+- Code Quest는 `content/quests/<languageId>.json`과 해당 Code Quest schema를 사용한다.
+- 코딩테스트는 `content/coding-tests/<languageId>.json`과 [`코딩테스트 스키마·작성 형식`](content-schema.md#코딩테스트-컬렉션), [`코딩테스트 제품 설계`](designs/coding-test.md)를 사용한다.
+- 두 기능은 `lessonId`·`conceptIds`로 같은 교안과 연결할 수 있지만 ID·order·route·초안·결과·완료율은 분리한다.
+- Code Quest의 `difficulty`는 이 컬렉션 안의 메타데이터이며 코딩테스트와의 제품 단계가 아니다.
+- `practiceLevel`, `sourceKind`와 교차 기능 통합 카탈로그 필드를 만들지 않는다.
+
+## 문제를 쓰기 전 필수 설계
+
+새 문제는 경험 카드와 함께 다음 정보를 고정한다.
+
+```text
+courseId / languageId:
+lessonId / conceptIds:
+학습 주제와 Quest 순서:
+선수 교안·Quest:
+새 A/E/C/T 또는 필요한 반복 근거:
+학습자가 발견할 단서:
+starter가 제공하는 범위:
+힌트 공개 정책:
+공개 사례와 경계:
+완료 판정:
+기준답안·독립 사례·대표오답:
+키보드·모바일 편집·결과 흐름:
+```
+
+`courseId`는 학습 과정, `languageId`는 작성·평가 계약을 정한다. 현재 JSON에 없는 `courseId`·주제 표시값은 구현된 필드처럼 콘텐츠에 임의 추가하지 않고 작업 카드와 [`designs/code-quest.md`](designs/code-quest.md)의 표시 모델에 먼저 기록한다.
+
+콘텐츠 유형이나 `difficulty`만으로 새 학습 경험을 증명하지 않는다. 새 A, 새 E, 의미 있는 C, 새 T 확인 기회 또는 필요한 반복의 구체적 차이가 없으면 문제를 추가하지 않는다.
 
 ## 컬렉션과 안정적인 연결
 
-컬렉션은 다음 값을 가집니다.
+`[현재 사실]` 문제 설명, 시작 소스, 단계별 힌트와 학습자 평가에 사용하는 공개 테스트는 `content/quests/<languageId>.json`에 있다. 기준답안·독립 사례·대표오답은 빌드 대상이 아닌 `tests/fixtures/`에 둔다.
 
-| 필드 | 의미 |
-| --- | --- |
-| `schemaVersion` | 콘텐츠 스키마 버전. 현재 값은 `1` |
-| `contractVersion` | 채점 요청 계약 버전. 현재 값은 `1` |
-| `languageId` | 파일명과 커리큘럼 언어 ID에 연결되는 값 |
-| `evaluationKind` | HTML은 `html-dom-v1`, CSS는 `css-style-v1`. JavaScript·Java 함수 컬렉션은 생략하고 `languageId`로 구분 |
-| `title` | 컬렉션의 화면 제목 |
-| `quests` | 해당 언어의 Quest 배열 |
+컬렉션은 `schemaVersion`, `contractVersion`, `languageId`, 선택적인 `evaluationKind`, 화면 제목과 `quests` 배열을 가진다. 각 Quest는 다음 계약을 지킨다.
 
-각 Quest의 `id`와 `slug`는 소문자, 숫자, 하이픈만 사용하고 한 번 배포한 뒤 의미를 바꾸지 않습니다. `id`는 `quest-<languageId>-...` 네임스페이스를 사용합니다. 문제나 공개 테스트의 의미가 달라지면 같은 ID에서 `revision`을 올려 이전 실행 결과와 구분합니다. `order`는 언어 컬렉션 안에서 1부터 빈틈없이 이어집니다.
+- `id`: `quest-<languageId>-...` 네임스페이스의 변경하지 않는 전역 ID
+- `slug`: 언어 안의 고유 URL 문자열
+- `revision`: 문제·공개 평가 의미가 바뀔 때 올리는 양의 정수
+- `order`: 현재 언어 컬렉션 안에서 1부터 이어지는 순서
+- `lessonId`, `conceptIds`: 같은 언어의 실제 교안과 선언 개념 연결
+- `difficulty`, `estimatedMinutes`, `title`, `summary`, `instructions`, `starterCode`
+- `failureExplanations`: 공개 테스트 ID별로 정답 대신 다시 관찰할 지점
+- `hints`: `concept → observation → implementation` 순서의 3~5단계 힌트
+- `commonMistakes`: 전체 정답을 노출하지 않는 대표 오개념
 
-`lessonId`는 같은 언어의 교안을 가리키고, 모든 `conceptIds`는 그 교안이 선언한 개념 ID 안에서 선택합니다. `difficulty`, `estimatedMinutes`, `title`, `summary`, `instructions`, `starterCode`를 제공하고 다음 학습 지원 필드를 함께 작성합니다.
+한 번 배포한 ID를 일괄 개명하거나 이전 진도를 새 revision에 조용히 귀속하지 않는다. `order`와 표시 순서를 분리할 필요가 생기면 `DEC-QUEST-CATALOG-01`을 먼저 결정한다.
 
-- `failureExplanations`: 공개 테스트 ID별로 정답 대신 다시 관찰할 지점을 설명합니다.
-- `hints`: `concept` → `observation` → `implementation` 순서를 지키는 3~5단계 힌트입니다.
-- `commonMistakes`: 전체 정답을 노출하지 않는 대표 오개념입니다.
+## JavaScript 함수 Quest
 
-## JavaScript 함수 계약
+JavaScript Quest는 `functionContract`, `entryPoint`, 인수·기대값을 가진 `examples`와 `publicTests`를 사용한다. 시작 코드는 `entryPoint`와 같은 이름의 함수를 선언하고 매개변수 이름·순서는 함수 계약에 맞춘다.
 
-JavaScript Quest는 다음 필드를 추가합니다.
+입력과 반환은 유한한 숫자를 포함하는 순환 없는 JSON 호환 값이어야 한다. 한 경로의 컨테이너 깊이는 루트 0 기준 512단계, 테스트별 입력·기대값·실제 반환은 UTF-8 compact JSON 16 KiB 이하다. 함수는 strict FunctionBody로 검사·실행하며 공개 테스트마다 새 Worker에서 호출한다.
 
-- `functionContract`: 매개변수, 반환값, 입력 범위, 예상 시간·공간 복잡도
-- `entryPoint`: 채점기가 호출할 함수 이름
-- `examples`: 인수·기대값·설명이 있는 예시 1~3개
-- `publicTests`: `id`, `label`, `args`, `expected`로 구성된 공개 테스트 3~6개
-
-입력과 반환은 순환 없는 JSON 호환 값이어야 합니다. `undefined`, `NaN`, `Infinity`, `BigInt`, 함수, `Date`, `Map`, `Set`, 비어 있는 항목이 있는 배열은 함수 입출력 계약에 사용하지 않습니다. 한 경로의 컨테이너는 루트를 깊이 0으로 세어 총 512단계까지만 허용하고 513단계부터 거부합니다. 테스트별 `args`, `expected`, 실제 반환값은 각각 UTF-8 compact JSON 기준 16 KiB 이하여야 합니다. 같은 객체를 여러 위치에서 참조하는 alias/DAG는 JSON으로 펼쳐질 각 위치의 바이트를 모두 합산하며 순환 참조는 허용하지 않습니다.
-
-시작 코드는 `entryPoint`와 같은 이름의 함수를 선언하며, 매개변수 이름과 순서는 `functionContract.parameters`에 맞춥니다. 소스는 strict FunctionBody로 실행되고 실행 전 strict Script 문법 검사도 통과해야 하므로 최상위 `return`은 `syntax_error`입니다. 공개 테스트마다 새 Worker에서 함수를 호출하고 반환값을 비교합니다.
-
-JavaScript 공개 테스트 DTO는 다음 네 필드만 사용합니다.
+공개 테스트 DTO는 다음 네 필드만 사용한다.
 
 ```json
 {
@@ -49,83 +72,51 @@ JavaScript 공개 테스트 DTO는 다음 네 필드만 사용합니다.
 }
 ```
 
-각 테스트의 `args` 항목 수와 순서는 `functionContract.parameters`와 같아야 합니다. 정상값뿐 아니라 최솟값, 최댓값, 조건 경계와 빈 배열 같은 예외적인 경계를 포함합니다.
+정상값뿐 아니라 최소·최대, 빈 값, 조건 경계와 대표 오답을 구분하는 사례를 포함한다.
 
-## Java 정적 메서드 계약
+## HTML 직접 마크업 Quest
 
-Java Quest도 `functionContract`, `entryPoint`, `examples`, `publicTests`를 사용하지만 `starterCode`와 학습자 답안은 Java 파일 전체입니다. 패키지 선언이 없는 `public class Solution` 안에 문제에서 지정한 `public static` 메서드를 두며, 매개변수 이름·순서·타입과 반환 타입은 `functionContract`에 정확히 맞춥니다.
+HTML 컬렉션은 `evaluationKind: "html-dom-v1"`을 사용한다. 학습자는 함수가 아니라 HTML source를 작성하고 `requirements`, 실제 마크업 예시와 공개 assertion을 확인한다.
 
-현재 실행 DTO가 허용하는 타입은 `int`, `boolean`, `String`, `int[]`, `String[]`입니다. 각 공개 테스트의 `args`와 `expected`도 해당 Java 타입으로 변환 가능한 값이어야 합니다. Java 소스는 `javac -proc:none -encoding UTF-8 --release 21`로 컴파일하고, 화면에 공개된 테스트만 고정된 Java 21 Docker 환경의 서로 분리된 실행에서 호출합니다. 브라우저가 임의 테스트를 추가하거나 Java 실행 결과를 추측하지 않습니다.
+지원 assertion은 `doctype-present`, `selector-exists`, `selector-count`, `attribute-equals`, `text-includes`, `nonblank-attribute-count`, `direct-child-text-equals`다. doctype은 source 첫 선언과 파서 결과를 함께 확인하고, 나머지는 BAM.dev 주 문서에 연결하지 않은 inert template DOM에서 관찰한다. HTML 파서의 오류 복구 때문에 assertion 통과를 포괄적인 문법·접근성 검증이라고 표현하지 않는다.
 
-Java 채점기는 same-origin `/api/java/execute` 경계를 사용합니다. 로컬 Docker daemon과 문서에 고정한 이미지가 준비되지 않았거나 컴파일·실행·정리가 안전하게 완료되지 않으면 무격리 host JDK로 전환하지 않고 `engine_error`로 중단합니다. 네트워크·파일시스템·권한·CPU·메모리·프로세스·시간·출력 제한과 금지 API 범위, 남는 보안 한계는 [ADR 0005](decisions/0005-local-java-grader.md)를 따릅니다.
+## CSS 직접 스타일시트 Quest
 
-## HTML 직접 마크업 계약
+CSS 컬렉션은 `evaluationKind: "css-style-v1"`을 사용한다. 학습자는 함수가 아니라 CSS source를 작성하고 콘텐츠가 제공한 최대 32 KiB `fixtureHtml`에 적용한다. fixture는 학습자가 바꾸거나 실행 요청에서 교체할 수 없다.
 
-HTML 컬렉션은 `evaluationKind: "html-dom-v1"`을 사용합니다. Quest는 `requirements` 문자열 배열과 실제 마크업·설명으로 된 `examples`를 제공하며, `starterCode`와 학습자 답안도 HTML 자체입니다. 함수 선언, `entryPoint`, 인수·반환값은 없습니다.
-
-지원하는 공개 assertion은 다음과 같습니다.
-
-| `kind` | 검사 내용 |
-| --- | --- |
-| `doctype-present` | source 첫 선언이 정확한 HTML5 doctype이고 파서 결과에 공개·시스템 식별자가 없는지 확인 |
-| `selector-exists` | inert DOM에서 선택자와 일치하는 요소가 하나 이상인지 확인 |
-| `selector-count` | 일치하는 요소의 개수 확인 |
-| `attribute-equals` | 첫 일치 요소의 속성 문자열 확인 |
-| `text-includes` | 첫 일치 요소의 정규화한 텍스트에 문구가 포함되는지 확인 |
-| `nonblank-attribute-count` | 선택자와 일치하는 요소 중 지정 속성을 trim했을 때 비어 있지 않은 요소 수 확인 |
-| `direct-child-text-equals` | 컨테이너의 지정 순번 직접 자식 안에 있는 단 하나의 직접 텍스트 요소가 기대 문구와 정확히 같은지 확인 |
-
-doctype 이외의 검사는 학습자 HTML을 BAM.dev 주 문서에 넣지 않고 `<template>`의 inert `DocumentFragment`에서 수행합니다. `direct-child-text-equals`는 `selector`, `childSelector`, 0부터 시작하는 `childIndex`, `textSelector`, `expected`를 사용하며 `hidden` 또는 `aria-hidden="true"` 경로와 그 숨김 자손의 텍스트를 제외합니다. HTML 파서는 오류 복구를 하므로 “문법적으로 완벽하다”를 포괄적으로 판정한다고 표현하지 않고, 문제에 선언한 관찰 가능한 구조만 평가합니다. `<script>`를 비롯한 위험 source는 파싱 전에 거부하며 학습자 스크립트를 실행하지 않습니다.
-
-## CSS 직접 스타일시트 계약
-
-CSS 컬렉션은 `evaluationKind: "css-style-v1"`을 사용합니다. Quest는 `requirements`, 실제 스타일시트·설명으로 된 `examples`, 고정 `fixtureHtml`을 제공합니다. `starterCode`와 학습자 답안은 CSS 자체이고 JavaScript 함수로 감싸지 않습니다.
-
-`fixtureHtml`은 문제가 승인한 최대 32 KiB의 정적 마크업입니다. 콘텐츠·실행 요청 검증에서 위험 요소와 리소스 속성을 거부하고, 실행 요청을 만들 때 컬렉션의 정식 fixture만 복사하므로 학습자가 교체할 수 없습니다.
-
-지원하는 공개 assertion은 다음과 같습니다.
-
-| `kind` | 검사 내용 |
-| --- | --- |
-| `rule-declaration` | CSSOM에서 정확한 선택자의 선언 속성·값 확인 |
-| `media-rule-declaration` | 정규화한 `@media` 조건 안의 선택자 선언 확인 |
-| `computed-style` | 고정 fixture에 스타일을 적용한 뒤 최종 계산 스타일 확인 |
-| `computed-focus-style` | 대상의 실제 `:focus-visible` 상태에서 최종 계산 스타일 확인 |
-| `computed-grid-column-count` | 지정한 viewport 너비에서 선택자의 최종 Grid 열 개수 확인 |
-
-선언·미디어 조건 검사는 constructed `CSSStyleSheet`에서 수행합니다. `rule-declaration`은 최상위의 정확히 같은 선택자 규칙들 사이에서 `!important`와 source order를 적용한 최종 선언을 확인하지만, 서로 다른 specificity·상속을 포함한 전체 캐스케이드 승자는 추론하지 않습니다. `media-rule-declaration`은 최상위의 정확히 같은 미디어 조건과 그 직접 자식 규칙에서 같은 방식으로 확인합니다. 따라서 `@supports` 같은 다른 조건부 그룹 안에 중첩된 `@media`는 승인하지 않습니다. 우선순위·상속까지 적용된 최종 결과가 목표라면 `computed-style`을 사용합니다. 계산 스타일 검사는 매번 새 sandbox iframe을 만들고 고정 fixture와 학습자 `<style>`만 넣은 뒤 결과를 읽고 iframe을 제거합니다. `computed-focus-style`은 먼저 키보드 입력 요소의 초점을 이용해 대상의 실제 `:focus-visible` 상태를 활성화하고 같은 계산 스타일 경계를 사용합니다. iframe에는 스크립트 권한이 없고 `default-src 'none'; style-src 'unsafe-inline'` CSP가 적용됩니다. 브라우저가 CSS 값을 정규화할 수 있으므로 평가기는 같은 브라우저의 CSSOM·계산 스타일 정규화를 거친 값과 비교합니다.
-
-`computed-grid-column-count`는 `kind`, `selector`, `viewportWidth`, `expected`만 사용합니다. `viewportWidth`는 320~1920 정수, `expected`는 1~12 정수입니다. 평가기는 해당 너비의 sandbox iframe에서 `display`가 `grid` 또는 `inline-grid`인지 확인하고 최종 `grid-template-columns`의 실제 트랙 수를 반환합니다. 따라서 `repeat(2, 1fr)`와 `1fr 1fr`처럼 같은 열 수를 만드는 문법을 동등하게 보고, 앞 선언을 뒤 선언이 덮어쓴 경우에도 최종 화면 동작을 기준으로 판정합니다. 선택자가 없으면 `null`, Grid 컨테이너가 아니거나 계산된 트랙이 없으면 `0`이 실제값이 됩니다.
+지원 assertion은 `rule-declaration`, `media-rule-declaration`, `computed-style`, `computed-focus-style`, `computed-grid-column-count`다. 선언 검사는 CSSOM, 최종 계산값은 script 권한 없는 one-shot sandbox iframe에서 읽고 매번 제거한다. 브라우저 정규화 차이가 있으므로 기대값도 같은 CSSOM·계산 스타일 경계를 사용한다.
 
 ## Web source preflight
 
-HTML·CSS 시작 코드, 작성 예시, 기준 답안, 대표 오답, CSS fixture와 학습자 제출은 평가 전에 같은 보수적 preflight를 통과해야 합니다. 학습자 source 최대 크기는 UTF-8 20 KiB이고 한 요청의 공개 테스트는 최대 20개입니다.
+HTML·CSS starter, 예시, 기준답안, 대표오답, fixture와 학습자 source는 같은 보수적 preflight를 통과한다. 학습자 source는 UTF-8 20 KiB, 한 실행의 공개 테스트는 최대 20개다.
 
-- HTML: null 문자, 브라우저가 다르게 복구할 수 있는 비정상·미종료 주석, `script`·`iframe`·`object`·`embed`, 기준 URL이나 외부 문서를 가져오는 `base`·`link`, 문자 참조 우회를 포함한 meta refresh, `on*` 이벤트 속성, `src`·`srcset`·`poster`·`data`·`action`·`formaction`·`ping`, 외부 URL·`@import`·`url()`을 거부합니다. `href`와 `xlink:href`는 같은 문서의 `#fragment`만 허용합니다.
-- CSS: null 문자, `@import`, `url()`, 외부 URL, `expression`, `behavior`, `-moz-binding`을 거부합니다.
+- HTML은 실행 요소, 이벤트 속성, meta refresh, 외부 요청·탐색 속성, 비정상 주석과 null 문자를 거부한다. 링크는 같은 문서의 `#fragment`만 허용한다.
+- CSS는 null 문자, `@import`, `url()`, 외부 URL과 레거시 실행 구문을 거부한다.
 
-preflight와 iframe CSP는 위험한 입력과 외부 요청을 줄이는 로컬 학습용 경계이며 완전한 sanitizer나 권한 판단용 보안 샌드박스가 아닙니다. 복잡한 CSS의 자원 사용과 브라우저별 CSS 구현 차이는 남습니다. 자세한 결정과 한계는 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)을 따릅니다.
+이 경계는 위험한 입력과 외부 요청을 줄이는 로컬 학습용 방어이며 완전한 sanitizer나 악성 코드 격리가 아니다. 상세 계약은 [ADR 0003](decisions/0003-inert-web-code-quest-evaluation.md)을 따른다.
 
-## 실행 요청과 결과
+## 공개 평가와 결과
 
-공통 실행 요청은 안정적인 `requestId`, `contractVersion`, `questId`, `questRevision`, `languageId`, `suite: "public"`, 학습자 `source`와 공개 테스트를 가집니다. Java 요청은 정식 `functionContract`에서 만든 `parameterTypes`와 `returnType`을 추가합니다. HTML·CSS 요청은 명시적인 `evaluationKind`를 추가하고 HTML은 `fixtureHtml: null`, CSS는 승인된 `fixtureHtml`을 사용합니다. 요청은 허용 필드만 사본으로 만든 뒤 재검증·동결하고, 원본 객체를 평가 중 다시 읽지 않습니다.
+`[확정 결정]` [`DEC-PUBLIC-EVALUATION-01`](roadmap.md#2026-08-29-확정-제품-결정)에 따라 Quest 완료에 영향을 주는 문제·assertion·입력·기대 동작은 모두 설치본에 포함하고 확인 가능하게 한다. 원격 서버가 추가 사례를 실행하거나 결과를 보정하지 않는다.
 
-`CodeQuestRunnerRouter`는 JavaScript 함수 요청을 Worker runner로, Java 요청을 same-origin API를 사용하는 Java runner로, HTML·CSS 요청을 Web runner로 전달합니다. 세 runner는 테스트별 상태와 기대값·실제값을 공통 report 형태로 반환하되, 실행 환경에 맞지 않는 제한을 동일하다고 표현하지 않습니다. HTML·CSS는 학습자 코드를 실행하지 않으며 Java는 브라우저 Worker가 아니라 로컬 Docker에서 컴파일·실행됩니다.
+실행 요청은 안정 실행 ID, 계약 버전, Quest ID·revision, 언어, `suite: "public"`, 학습자 source와 공개 테스트를 가진다. 허용 필드만 복제·재검증·동결하고 원본 객체를 평가 중 다시 읽지 않는다. 결과는 테스트별 `passed`, `wrong_answer`, `syntax_error`, `runtime_error`, `timeout`, `output_limit`, `cancelled`, `engine_error`, `not_run` 중 해당 상태와 기대값·실제값을 제공한다.
+
+브라우저나 설치 앱에 전달된 데이터는 사용자가 확인·변조할 수 있으므로 결과는 로컬 자기학습 피드백이다. 공인 점수·인증·부정행위 방지 또는 서버 검증 결과라고 표현하지 않는다.
 
 ## 독립 검증
 
-fixture 파일은 Quest마다 다음 자료를 보관합니다.
+개발 fixture는 Quest마다 다음을 보관한다.
 
-- 모든 공개 테스트를 통과하는 기준 답안
-- 정상적으로 파싱되지만 지정된 공개 테스트에서 실패하는 대표 오답
-- 대표 오답이 실패해야 하는 공개 테스트 ID 목록
+- 모든 공개 테스트를 통과하는 기준답안
+- 공개 사례와 중복되지 않는 콘텐츠 검증용 독립 사례
+- 정상 실행되지만 지정된 공개 테스트에서 실패하는 대표오답과 실패 ID
 
-현재 `tests/fixtures/code-quest-solutions.js`에는 JavaScript 기준 풀이 5개와 기존 독립 사례·대표 오답이 있습니다. `html-code-quest-solutions.js`에는 기준 마크업 5개와 대표 오답 5개, `css-code-quest-solutions.js`에는 기준 스타일시트 4개와 대표 오답 10개가 있습니다. `java-code-quest-solutions.js`에는 Java 기준 풀이 5개, 공개 테스트와 겹치지 않는 독립 사례 6개, 대표 오답 5개가 있습니다. 이 fixture는 빌드 결과에 포함하지 않습니다.
+독립 사례와 대표오답은 문제·평가기의 품질을 검증할 뿐 학습자 source에 실행하거나 완료 결과에 사용하지 않는다. 따라서 비공개 채점 사례가 아니며 설치본에 포함하지 않는다.
 
-자동 검증은 컬렉션 스키마와 런타임 계약, ID·slug·order, 교안·개념 연결, 공개 테스트와 실패 설명의 1:1 관계, 힌트 단계, preflight, 기준 답안 통과, 대표 오답의 지정 실패를 확인합니다. Java fixture는 `javac --release 21`로 기준 풀이·starter·대표 오답을 실제 컴파일하고 공개·독립 사례의 반환값을 실행해 비교합니다. 특정 요소·선택자·클래스 내부 구조나 점근 복잡도처럼 현재 출력 assertion으로 직접 관찰하지 않는 요구는 합격 조건으로 달성했다고 표현하지 않고 비채점 자기점검으로 분리합니다.
+자동 검증은 JSON Schema와 런타임 계약, ID·slug·order, 교안·개념 연결, 공개 테스트와 실패 설명의 1:1 관계, 힌트 순서, preflight, 기준답안 통과와 대표오답의 지정 실패를 확인한다. 특정 요소·메서드 사용이나 포괄적 접근성처럼 assertion으로 관찰하지 않는 요구는 자동 합격으로 과장하지 않고 비채점 자기점검으로 분리한다.
 
 ```bash
 npm run check
 ```
 
-새 문제를 추가할 때는 교안 실습, 확인 문제, 객관식 컬렉션과 입력·처리 규칙·결과 형태를 함께 비교하고 중복 감사 결과를 검토 기록에 남깁니다.
+새 문제는 교안 실습, 확인 문제, 객관식, 기존 Code Quest, 별도 코딩테스트와 웹과제의 입력·판단·결과·지원 수준을 비교하고 중복 감사 근거를 남긴다. 작성자와 분리된 `content_validator`, `test_engineer`, `project_integrator`가 순서대로 PASS해야 한다.

@@ -10,7 +10,8 @@
 
 ## 레이아웃 도구를 고르는 순서
 
-추가 CSS가 없는 문서는 정상 흐름으로 읽힙니다. 레이아웃을 시작할 때 모든 요소를 좌표로 옮기기보다 다음 순서로 요구사항을 나누세요.
+추가 CSS가 없는 문서는 정상 흐름으로 읽힙니다.
+레이아웃을 시작할 때 모든 요소를 좌표로 옮기기보다 다음 순서로 요구사항을 나누세요.
 
 1. HTML 순서만으로 내용을 이해할 수 있게 만듭니다.
 2. 메뉴나 버튼 묶음처럼 한 방향 정렬이 필요하면 Flexbox를 검토합니다.
@@ -29,7 +30,8 @@
 }
 ```
 
-초기값입니다. 정상 흐름에 따라 배치되고 `top`, `right`, `bottom`, `left` 같은 inset 속성으로 이동하지 않습니다.
+초기값입니다.
+정상 흐름에 따라 배치되고 `top`, `right`, `bottom`, `left` 같은 inset 속성으로 이동하지 않습니다.
 
 ### relative
 
@@ -39,7 +41,8 @@
 }
 ```
 
-`relative`인 요소는 정상 흐름에서 원래 자리를 유지합니다. inset으로 보이는 위치를 조금 옮길 수도 있지만, 실무에서는 절대 배치 자식의 위치 기준을 만드는 용도로 자주 사용합니다.
+`relative`인 요소는 정상 흐름에서 원래 자리를 유지합니다.
+inset으로 보이는 위치를 조금 옮길 수도 있지만, 실무에서는 절대 배치 자식의 위치 기준을 만드는 용도로 자주 사용합니다.
 
 ### absolute
 
@@ -62,7 +65,9 @@
 }
 ```
 
-`absolute` 요소는 정상 흐름에서 빠져 원래 자리를 남기지 않습니다. 위치 기준은 보통 `position: static`이 아닌 가장 가까운 조상에서 찾습니다. 카드에 `relative`를 주지 않으면 배지가 의도하지 않은 먼 조상을 기준으로 놓일 수 있습니다.
+`absolute` 요소는 정상 흐름에서 빠져 원래 자리를 남기지 않습니다.
+위치 기준은 보통 `position: static`이 아닌 가장 가까운 조상에서 찾습니다.
+카드에 `relative`를 주지 않으면 배지가 의도하지 않은 먼 조상을 기준으로 놓일 수 있습니다.
 
 ### fixed와 sticky
 
@@ -82,7 +87,9 @@
 - `fixed`는 일반적으로 뷰포트를 기준으로 고정되고 정상 흐름에서 빠집니다.
 - `sticky`는 평소 정상 흐름에 참여하다가 스크롤 경계에 닿으면 스크롤 컨테이너 안에서 붙습니다.
 
-`sticky`에는 `top: 0` 같은 임계 위치가 필요합니다. 조상의 `overflow`와 실제 스크롤 영역도 동작에 영향을 줍니다. `fixed`도 변형된 조상 등 포함 블록 조건에 따라 기준이 달라질 수 있으므로 개발자 도구에서 확인하세요.
+`sticky`에는 `top: 0` 같은 임계 위치가 필요합니다.
+조상의 `overflow`와 실제 스크롤 영역도 동작에 영향을 줍니다.
+`fixed`도 변형된 조상 등 포함 블록 조건에 따라 기준이 달라질 수 있으므로 개발자 도구에서 확인하세요.
 
 ## 겹침과 stacking context
 
@@ -93,7 +100,8 @@
 }
 ```
 
-`z-index` 숫자가 페이지 전체에서 단순 비교된다고 생각하면 문제를 놓칠 수 있습니다. 요소는 각자의 **stacking context** 안에서 쌓이고, `position`, `transform`, `opacity` 등의 조건이 새 stacking context를 만들 수 있습니다.
+`z-index` 숫자가 페이지 전체에서 단순 비교된다고 생각하면 문제를 놓칠 수 있습니다.
+요소는 각자의 **stacking context** 안에서 쌓이고, `position`, `transform`, `opacity` 등의 조건이 새 stacking context를 만들 수 있습니다.
 
 겹침이 예상과 다를 때는 큰 숫자를 먼저 넣지 말고 다음을 확인하세요.
 
@@ -138,7 +146,8 @@
 - `align-items`: 한 줄의 교차축에서 item을 정렬합니다.
 - `gap`: item 사이 간격을 부모가 관리합니다.
 
-`justify-content`를 무조건 가로 정렬로 외우면 column에서 틀립니다. 먼저 `flex-direction`으로 주축을 찾으세요.
+`justify-content`를 무조건 가로 정렬로 외우면 column에서 틀립니다.
+먼저 `flex-direction`으로 주축을 찾으세요.
 
 ### 줄바꿈과 item 크기
 
@@ -154,7 +163,9 @@
 }
 ```
 
-공간이 부족할 때 `flex-wrap: wrap`은 item을 다음 줄로 보낼 수 있게 합니다. `flex` 단축 속성은 늘어남, 줄어듦, 기본 크기를 함께 표현합니다. 긴 콘텐츠가 줄어들지 않아 넘친다면 item의 자동 최소 크기와 `min-width`도 확인하세요.
+공간이 부족할 때 `flex-wrap: wrap`은 item을 다음 줄로 보낼 수 있게 합니다.
+`flex` 단축 속성은 늘어남, 줄어듦, 기본 크기를 함께 표현합니다.
+긴 콘텐츠가 줄어들지 않아 넘친다면 item의 자동 최소 크기와 `min-width`도 확인하세요.
 
 ## Grid: 행과 열을 함께 설계하기
 
@@ -195,7 +206,8 @@ Grid는 가로 열과 세로 행이라는 두 축을 함께 제어합니다.
 }
 ```
 
-각 열은 최대한 16rem의 최소 크기를 원하지만, 컨테이너가 더 좁으면 `min(100%, 16rem)` 덕분에 부모 너비 안으로 줄어들 수 있습니다. 공간이 넓어지면 브라우저가 들어갈 수 있는 열 수를 늘립니다.
+각 열은 최대한 16rem의 최소 크기를 원하지만, 컨테이너가 더 좁으면 `min(100%, 16rem)` 덕분에 부모 너비 안으로 줄어들 수 있습니다.
+공간이 넓어지면 브라우저가 들어갈 수 있는 열 수를 늘립니다.
 
 특정 item을 모든 열에 걸치게 할 수도 있습니다.
 
@@ -216,11 +228,13 @@ Grid는 가로 열과 세로 행이라는 두 축을 함께 제어합니다.
 | 화면 모서리에 도움 버튼 고정 | fixed | 콘텐츠를 가리거나 키보드 초점을 방해하지 않는가? |
 | 스크롤 중 제목을 영역 안에 유지 | sticky | 임계 inset과 스크롤 컨테이너가 있는가? |
 
-Flexbox와 Grid는 경쟁 도구가 아닙니다. 바깥 카드 목록은 Grid, 카드 내부 버튼 행은 Flexbox처럼 함께 사용할 수 있습니다.
+Flexbox와 Grid는 경쟁 도구가 아닙니다.
+바깥 카드 목록은 Grid, 카드 내부 버튼 행은 Flexbox처럼 함께 사용할 수 있습니다.
 
 ## 시각 순서와 읽는 순서
 
-Flexbox의 `order`나 Grid 배치로 보이는 순서를 바꿔도 DOM 순서와 키보드 초점 순서가 자동으로 같은 모양으로 바뀌지 않습니다. 중요한 읽기·작업 순서는 HTML에서 먼저 올바르게 정하고, CSS 재배치는 의미와 조작 순서를 어긋나게 하지 않는 범위에서 사용하세요.
+Flexbox의 `order`나 Grid 배치로 보이는 순서를 바꿔도 DOM 순서와 키보드 초점 순서가 자동으로 같은 모양으로 바뀌지 않습니다.
+중요한 읽기·작업 순서는 HTML에서 먼저 올바르게 정하고, CSS 재배치는 의미와 조작 순서를 어긋나게 하지 않는 범위에서 사용하세요.
 
 ## 최소 실습
 
@@ -251,7 +265,8 @@ Flexbox의 `order`나 Grid 배치로 보이는 순서를 바꿔도 DOM 순서와
 }
 ```
 
-개발자 도구의 Flexbox·Grid overlay를 켜고 주축, track, gap을 확인하세요. 카드 제목을 길게 바꾸고 화면을 좁혀도 배지와 버튼이 내용을 가리지 않는지 관찰합니다.
+개발자 도구의 Flexbox·Grid overlay를 켜고 주축, track, gap을 확인하세요.
+카드 제목을 길게 바꾸고 화면을 좁혀도 배지와 버튼이 내용을 가리지 않는지 관찰합니다.
 
 ## 흔한 실수
 
@@ -275,5 +290,38 @@ Flexbox의 `order`나 Grid 배치로 보이는 순서를 바꿔도 DOM 순서와
 ## 공식 출처
 
 - [W3C CSS Positioned Layout Module Level 3](https://www.w3.org/TR/css-position-3/)
+- [W3C CSS Flexible Box Layout Module Level 1](https://www.w3.org/TR/css-flexbox-1/)
+- [W3C CSS Grid Layout Module Level 2](https://www.w3.org/TR/css-grid-2/)
 - [W3C CSS Display Module Level 3 — Reordering and accessibility](https://www.w3.org/TR/css-display-3/#order-accessibility)
 - [MDN — Introduction to CSS layout](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/CSS_layout/Introduction)
+
+## 면접 답변 예시
+
+아래 답변은 확인 문제에 면접관에게 설명하듯 답한 예시입니다.
+
+### 답변 1
+
+`relative`는 정상 흐름에서 원래 자리를 유지합니다.
+`absolute`는 정상 흐름에서 빠지므로 원래 자리를 남기지 않습니다.
+
+### 답변 2
+
+배지의 위치 기준을 카드로 만들려면 카드에 `position: relative`를 지정할 수 있습니다.
+
+### 답변 3
+
+`flex-direction: column`에서 주축은 세로이므로 `justify-content`는 세로 방향의 남는 공간을 분배합니다.
+
+### 답변 4
+
+flex item은 flex 컨테이너의 직접 자식입니다.
+손자 요소까지 자동으로 flex item이 되지는 않습니다.
+
+### 답변 5
+
+카드 목록처럼 행과 열을 함께 설계하려면 두 축을 다루는 Grid를 먼저 검토합니다.
+
+### 답변 6
+
+CSS로 보이는 순서를 바꾸어도 DOM 읽기 순서와 키보드 초점 순서는 자동으로 같게 바뀌지 않습니다.
+따라서 시각적인 순서와 읽기·조작 순서가 어긋나지 않는지 확인해야 합니다.

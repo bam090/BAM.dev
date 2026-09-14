@@ -6,6 +6,7 @@ const QUESTION_FIELDS = new Set([
   "lessonId",
   "conceptId",
   "difficulty",
+  "learningObjective",
   "prompt",
   "code",
   "options",
@@ -95,6 +96,12 @@ export function validateQuizCollection(collection, curriculum) {
     }
     if (!isNonEmptyString(question.prompt)) {
       errors.push(`${label}.prompt가 필요합니다.`);
+    }
+    if (
+      (question.learningObjective !== undefined || lesson?.source?.originalPath) &&
+      !isNonEmptyString(question.learningObjective)
+    ) {
+      errors.push(`${label}.learningObjective는 비어 있지 않은 학습 목표여야 합니다.`);
     }
     if (question.code !== undefined && !isNonEmptyString(question.code)) {
       errors.push(`${label}.code는 비어 있지 않은 문자열이어야 합니다.`);

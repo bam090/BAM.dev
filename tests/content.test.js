@@ -9,6 +9,7 @@ import { promisify } from "node:util";
 import { runInNewContext } from "node:vm";
 import {
   assertValidCurriculum,
+  getCourse,
   getLessonsForCourse,
   getLessonsForLanguage,
   validateCurriculum,
@@ -25,42 +26,55 @@ test("커리큘럼 메타데이터가 유효하다", () => {
   assert.equal(assertValidCurriculum(curriculum), curriculum);
 });
 
-test("JavaScript 교안은 1부터 7까지 순서대로 제공된다", () => {
-  const lessons = getLessonsForCourse(curriculum, "javascript");
-  assert.equal(lessons.length, 7);
-  assert.deepEqual(
-    lessons.map((lesson) => lesson.order),
-    [1, 2, 3, 4, 5, 6, 7],
-  );
-  assert.ok(lessons.every((lesson) => lesson.objectives.length === 4));
+test("과정 조회와 실행 언어별 평가 조회를 분리한다", () => {
+  const algorithm = getCourse(curriculum, "algorithm");
+  const algorithmLessons = getLessonsForCourse(curriculum, algorithm.id);
+  const javascriptAssessmentLessons = getLessonsForLanguage(curriculum, "javascript");
+
+  assert.equal(algorithm.languageId, "java");
+  assert.equal(algorithmLessons.length, 14);
+  assert.ok(algorithmLessons.every((lesson) => lesson.courseId === "algorithm" && lesson.languageId === "java"));
+  assert.ok(javascriptAssessmentLessons.length > algorithmLessons.length);
+  assert.ok(javascriptAssessmentLessons.every((lesson) => lesson.languageId === "javascript"));
+  const archivedHash = javascriptAssessmentLessons.find((lesson) => lesson.id === "js-09-hash-map-set");
+  assert.equal(archivedHash.courseId, "javascript");
+  assert.equal(archivedHash.order, 40);
+  assert.equal(archivedHash.archivedFromCatalog, true);
+  assert.deepEqual(archivedHash.conceptIds, ["algo.hashing", "js.map-collection", "js.set-collection"]);
 });
 
-test("교안 공식 자료 섹션은 직접 외부 링크를 2~3개만 제공한다", async () => {
-  const officialHeadings = new Set([
-    "공식 자료",
-    "공식 근거 자료",
-    "공식 출처",
-    "공식·권위 자료",
-  ]);
+test("Java 활성 32개는 그대로 두고 기존 교안 6개를 안정 ID와 연속 후순위 order로 보관한다", () => {
+  const javaLessons = getLessonsForCourse(curriculum, "java");
+  const activeLessons = javaLessons.filter((lesson) => lesson.archivedFromCatalog !== true);
+  const archivedLessons = javaLessons.filter((lesson) => lesson.archivedFromCatalog === true);
 
-  for (const lesson of curriculum.lessons) {
-    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
-    const h2Headings = [...markdown.matchAll(/^## (.+)$/gm)];
+  assert.equal(activeLessons.length, 32);
+  assert.deepEqual(
+    activeLessons.map((lesson) => lesson.order),
+    Array.from({ length: 32 }, (_, index) => index + 2),
+  );
+  assert.deepEqual(
+    archivedLessons.map(({ id, order, slug }) => ({ id, order, slug })),
+    [
+      { id: "java-01-types-methods", order: 1, slug: "types-and-methods" },
+      { id: "java-02-control-flow-arrays", order: 34, slug: "operators-control-flow-and-arrays" },
+      { id: "java-03-classes-objects", order: 35, slug: "classes-objects-and-encapsulation" },
+      { id: "java-04-collections-generics", order: 36, slug: "collections-generics-list-and-map" },
+      { id: "java-05-exceptions-debugging", order: 37, slug: "exceptions-and-debugging" },
+      { id: "java-06-review-practice", order: 38, slug: "review-problem-solving-and-testing" },
+    ],
+  );
+});
 
-    for (const [index, headingMatch] of h2Headings.entries()) {
-      const heading = headingMatch[1];
-      if (!officialHeadings.has(heading)) continue;
-
-      const sectionStart = headingMatch.index + headingMatch[0].length;
-      const sectionEnd = h2Headings[index + 1]?.index ?? markdown.length;
-      const section = markdown.slice(sectionStart, sectionEnd);
-      const linkCount = [...section.matchAll(/^- \[[^\]\r\n]+\]\(https:\/\/\S+\)$/gm)].length;
-
-      assert.ok(
-        linkCount >= 2 && linkCount <= 3,
-        `${lesson.id} / ${heading}: 공식 외부 링크 실제 ${linkCount}개`,
-      );
-    }
+test("탐색 가능한 과정의 교안은 과정별로 1부터 순서대로 제공된다", () => {
+  for (const course of curriculum.courses.filter((item) => item.status !== "planned")) {
+    const lessons = getLessonsForCourse(curriculum, course.id);
+    assert.ok(lessons.length > 0, `${course.id}: 교안이 필요합니다.`);
+    assert.deepEqual(
+      lessons.map((lesson) => lesson.order),
+      Array.from({ length: lessons.length }, (_, index) => index + 1),
+    );
+    assert.ok(lessons.every((lesson) => lesson.objectives.length > 0));
   }
 });
 
@@ -73,12 +87,93 @@ test("중복 교안 ID와 끊어진 순서를 거부한다", () => {
   assert.ok(errors.some((error) => error.includes("order는 1부터 연속")));
 });
 
-test("빈 언어와 교안 컬렉션을 런타임과 스키마 검증에서 거부한다", async (t) => {
+test("원문 반입 출처는 상대경로·전체 해시·실제 날짜·반입 방식을 함께 요구한다", () => {
+  const imported = structuredClone(curriculum);
+  imported.lessons[0].source = {
+    ...imported.lessons[0].source,
+    originalPath: "profile/경험/학습/Web 기초/JavaScript/02 함수.md",
+    sha256: "a".repeat(64),
+    importedAt: "2026-09-09",
+    importMode: "copy",
+  };
+  assert.deepEqual(validateCurriculum(imported), []);
+
+  for (const [field, value] of [
+    ["originalPath", "/Users/private/lesson.md"],
+    ["originalPath", "profile/../private.md"],
+    ["originalPath", "profile/./lesson.md"],
+    ["originalPath", "profile/lesson\n.md"],
+    ["sha256", "A".repeat(64)],
+    ["sha256", "abc"],
+    ["importedAt", "2026-02-30"],
+    ["importMode", "automatic"],
+  ]) {
+    const invalid = structuredClone(imported);
+    invalid.lessons[0].source[field] = value;
+    assert.ok(validateCurriculum(invalid).some((error) => error.includes(`source.${field}`)), `${field}: ${value}`);
+  }
+
+  for (const field of ["originalPath", "sha256", "importedAt", "importMode"]) {
+    const invalid = structuredClone(imported);
+    delete invalid.lessons[0].source[field];
+    assert.ok(validateCurriculum(invalid).some((error) => error.includes("모두 필요")), field);
+  }
+});
+
+test("파생 교안은 승인된 위키 상대 경로와 명시한 답 절을 사용하고 보관 표시는 boolean이다", () => {
+  const derived = structuredClone(curriculum);
+  Object.assign(derived.lessons[0], {
+    archivedFromCatalog: false,
+    answerHeading: "핵심 질문 답",
+    source: {
+      ...derived.lessons[0].source,
+      originalPath: "wiki/학습자료/밤데브 학습문서/01 HTML/01 문서 구조와 의미.md",
+      sha256: "a".repeat(64), importedAt: "2026-09-13", importMode: "derived",
+    },
+  });
+  assert.deepEqual(validateCurriculum(derived), []);
+  for (const value of [
+    "wiki/개인 기록/비공개.md", "wiki/학습자료/밤데브 학습문서/../비공개.md",
+    "wiki/학습자료/밤데브 학습문서//문서.md", "wiki/학습자료/밤데브 학습문서/문서\\원문.md",
+    "wiki/학습자료/밤데브 학습문서/문서\n.md",
+  ]) {
+    const invalid = structuredClone(derived);
+    invalid.lessons[0].source.originalPath = value;
+    assert.ok(validateCurriculum(invalid).some((error) => error.includes("source.originalPath")), value);
+  }
+  for (const [field, value] of [["archivedFromCatalog", "true"], ["answerHeading", " "], ["answerHeading", 1]]) {
+    const invalid = structuredClone(derived);
+    invalid.lessons[0][field] = value;
+    assert.ok(validateCurriculum(invalid).some((error) => error.includes(field)), field);
+  }
+});
+
+test("파생 교안의 답 절이 없으면 검증 명령이 다른 답변으로 대체하지 않고 거부한다", async (t) => {
+  const fixtureDirectory = await mkdtemp(path.join(tmpdir(), "bam-derived-answer-"));
+  t.after(() => rm(fixtureDirectory, { recursive: true, force: true }));
+  const validatorPath = fileURLToPath(new URL("../scripts/validate-content.mjs", import.meta.url));
+  for (const answerHeading of [undefined, "존재하지 않는 답 절"]) {
+    const invalid = structuredClone(curriculum);
+    const lesson = invalid.lessons.find((item) => item.source?.importMode === "derived");
+    assert.ok(lesson, "명시적 직접답을 제공하는 파생 교안이 필요합니다.");
+    if (answerHeading === undefined) delete lesson.answerHeading;
+    else lesson.answerHeading = answerHeading;
+    const fixturePath = path.join(fixtureDirectory, answerHeading === undefined ? "missing.json" : "wrong.json");
+    await writeFile(fixturePath, JSON.stringify(invalid), "utf8");
+    await assert.rejects(execFileAsync(process.execPath, [validatorPath, "--curriculum", fixturePath]), (error) => {
+      assert.match(error.stderr, /answerHeading/);
+      assert.ok(error.stderr.includes(lesson.id));
+      return true;
+    });
+  }
+});
+
+test("빈 taxonomy와 교안 컬렉션을 런타임과 스키마 검증에서 거부한다", async (t) => {
   const fixtureDirectory = await mkdtemp(path.join(tmpdir(), "bam-empty-curriculum-"));
   t.after(() => rm(fixtureDirectory, { recursive: true, force: true }));
   const validatorPath = fileURLToPath(new URL("../scripts/validate-content.mjs", import.meta.url));
 
-  for (const field of ["languages", "lessons"]) {
+  for (const field of ["categories", "languages", "courses", "lessons"]) {
     const invalid = structuredClone(curriculum);
     invalid[field] = [];
 
@@ -122,6 +217,25 @@ test("콘텐츠 검증 명령은 수동 검증에 없는 커리큘럼 스키마 
       return true;
     },
   );
+});
+
+test("원문 복사 해시가 다르면 콘텐츠 검증 명령이 반입본을 거부한다", async (t) => {
+  const invalid = structuredClone(curriculum);
+  const importedLesson = invalid.lessons.find((lesson) => lesson.source?.importMode === "copy");
+  assert.ok(importedLesson, "검증할 반입 복사본이 필요합니다.");
+  importedLesson.source.sha256 = "0".repeat(64);
+  assert.deepEqual(validateCurriculum(invalid), [], "해시 문자열 형식만으로 본문 일치를 주장할 수 없습니다.");
+
+  const fixtureDirectory = await mkdtemp(path.join(tmpdir(), "bam-import-hash-"));
+  t.after(() => rm(fixtureDirectory, { recursive: true, force: true }));
+  const fixturePath = path.join(fixtureDirectory, "curriculum.json");
+  await writeFile(fixturePath, JSON.stringify(invalid), "utf8");
+  const validatorPath = fileURLToPath(new URL("../scripts/validate-content.mjs", import.meta.url));
+  await assert.rejects(execFileAsync(process.execPath, [validatorPath, "--curriculum", fixturePath]), (error) => {
+    assert.match(error.stderr, /반입 원문 복사본의 SHA-256/);
+    assert.ok(error.stderr.includes(importedLesson.id));
+    return true;
+  });
 });
 
 test("DOM 본 교안과 종합 실습은 같은 키보드 접근 가능 목록 흐름을 제공한다", async () => {

@@ -21,10 +21,19 @@ const curriculum = JSON.parse(
 const quizzes = JSON.parse(
   await readFile(new URL("../content/quizzes/javascript.json", import.meta.url), "utf8"),
 );
+const codingTests = JSON.parse(
+  await readFile(new URL("../content/coding-tests/javascript.json", import.meta.url), "utf8"),
+);
 
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HINT_STAGES = ["concept", "observation", "implementation"];
 const BOUNDARY_KINDS = ["normal", "minimum", "maximum", "edge"];
+const HASH_QUEST_IDS = [
+  "quest-javascript-registered-code-check",
+  "quest-javascript-locker-lookup",
+  "quest-javascript-first-code-at-count",
+  "quest-javascript-unfilled-requests",
+];
 const FORBIDDEN_RUNTIME_API_PATTERN =
   /\b(?:document|window|fetch|XMLHttpRequest|WebSocket|EventSource|navigator|location|localStorage|sessionStorage|indexedDB|caches|importScripts|setTimeout|setInterval|requestAnimationFrame|Date|performance|crypto|Intl)\b|Math\.random/;
 const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*tests?|hidden\s*tests?/iu;
@@ -241,7 +250,7 @@ test("파일명·Quest ID·slug·revision·order가 안정적이고 전역 중�
   assert.equal(fileLanguageId, collection.languageId);
   assert.equal(collection.schemaVersion, 1);
   assert.equal(collection.contractVersion, 1);
-  assert.ok(collection.quests.length >= 4 && collection.quests.length <= 6);
+  assert.ok(collection.quests.length >= 4);
   assertUnique(questIds, "Quest ID가 중복됩니다.");
   assertUnique(slugs, "Quest slug가 중복됩니다.");
   assertUnique(publicTestIds, "공개 테스트 ID가 다른 Quest와 중복됩니다.");
@@ -272,6 +281,52 @@ test("모든 Quest의 lessonId와 conceptIds가 같은 언어의 교안에 연�
         `${quest.id}: ${conceptId}가 연결 교안에 속하지 않습니다.`,
       );
     }
+  }
+});
+
+test("해시 Quest는 존재→값→횟수→수량 소비로 이어지고 시작 코드 도움을 줄여 간다", () => {
+  const hashQuests = HASH_QUEST_IDS.map((questId) =>
+    collection.quests.find((quest) => quest.id === questId),
+  );
+  assert.ok(hashQuests.every(Boolean), "네 단계의 해시 Quest가 모두 필요합니다.");
+  assert.deepEqual(hashQuests.map((quest) => quest.order), [6, 7, 8, 9]);
+  assert.deepEqual(
+    hashQuests.map((quest) => quest.entryPoint),
+    [
+      "markRegisteredCodes",
+      "resolveLockerNumbers",
+      "findFirstCodeAtCount",
+      "findUnfilledRequests",
+    ],
+  );
+  assert.deepEqual(
+    hashQuests.map((quest) => quest.conceptIds),
+    [
+      ["algo.hashing", "js.set-collection"],
+      ["algo.hashing", "js.map-collection"],
+      ["algo.hashing", "js.map-collection"],
+      ["algo.hashing", "js.map-collection"],
+    ],
+  );
+
+  for (const [index, quest] of hashQuests.entries()) {
+    assert.equal(quest.lessonId, "js-09-hash-map-set");
+    assert.match(quest.title, new RegExp(`^해시 ${index + 1}단계:`));
+  }
+  assert.match(hashQuests[0].summary, /조회 기준값/);
+  for (const quest of hashQuests.slice(1)) assert.match(quest.summary, /key/);
+
+  for (const quest of hashQuests) {
+    assert.match(quest.instructions, /코드를 작성하기 전에/);
+    assert.match(quest.instructions, /`key`/);
+    assert.match(quest.instructions, /`value`/);
+  }
+  assert.match(hashQuests[0].starterCode, /new\s+Set\s*\(/);
+  assert.match(hashQuests[1].starterCode, /new\s+Map\s*\(/);
+  for (const quest of hashQuests.slice(2)) {
+    assert.doesNotMatch(quest.starterCode, /new\s+(?:Map|Set)\s*\(/);
+    assert.match(quest.starterCode, /\bkey\b/);
+    assert.match(quest.starterCode, /\bvalue\b/);
   }
 });
 
@@ -510,6 +565,41 @@ test("기준 풀이는 공개 테스트와 추가 독립 검증 사례를 모두
   }
 });
 
+test("해시 기준 풀이는 같은 입력에서 결정적이며 전달받은 입력을 바꾸지 않는다", async () => {
+  for (const questId of HASH_QUEST_IDS) {
+    const quest = collection.quests.find((item) => item.id === questId);
+    assert.ok(quest, `${questId}: Quest가 필요합니다.`);
+    const fixture = codeQuestSolutionFixtures[quest.id];
+    assert.ok(fixture, `${quest.id}: 풀이 fixture가 필요합니다.`);
+    const wrapperEntryPoint = "verifyHashQuestReference";
+    const source = `${fixture.referenceSource}
+function ${wrapperEntryPoint}(args) {
+  const value = ${quest.entryPoint}(...args);
+  return { args, value };
+}`;
+
+    for (const testCase of [...quest.publicTests, ...fixture.verificationCases]) {
+      const originalArgs = structuredClone(testCase.args);
+      const wrappedCase = { args: [structuredClone(testCase.args)] };
+      const first = await executeCase(source, wrapperEntryPoint, wrappedCase);
+      const second = await executeCase(source, wrapperEntryPoint, wrappedCase);
+
+      assert.equal(first.outcome, "completed", `${quest.id}/${testCase.id}: 첫 실행 실패`);
+      assert.equal(second.outcome, "completed", `${quest.id}/${testCase.id}: 두 번째 실행 실패`);
+      assert.deepEqual(first.value.args, originalArgs, `${quest.id}/${testCase.id}: 입력 변경`);
+      assert.deepEqual(second.value.args, originalArgs, `${quest.id}/${testCase.id}: 입력 변경`);
+      assert.ok(
+        areJsonValuesEqual(first.value.value, testCase.expected),
+        `${quest.id}/${testCase.id}: 기준 풀이 결과 불일치`,
+      );
+      assert.ok(
+        areJsonValuesEqual(first.value, second.value),
+        `${quest.id}/${testCase.id}: 같은 입력의 실행 결과가 달라졌습니다.`,
+      );
+    }
+  }
+});
+
 test("각 대표 오답은 정상 실행되지만 선언한 공개 테스트에서 정확히 실패한다", async () => {
   for (const quest of collection.quests) {
     const fixture = codeQuestSolutionFixtures[quest.id];
@@ -556,7 +646,7 @@ test("문제·테스트·풀이가 결정적 순수 함수 범위를 벗어나�
   }
 });
 
-test("새 Quest끼리 또는 기존 교안 구현 함수·퀴즈 문구와 직접 중복되지 않는다", async () => {
+test("새 Quest끼리 또는 기존 교안·퀴즈·코딩테스트와 직접 중복되지 않는다", async () => {
   const normalizedTitles = collection.quests.map((quest) => normalizeText(quest.title));
   const normalizedSummaries = collection.quests.map((quest) => normalizeText(quest.summary));
   const normalizedInstructions = collection.quests.map((quest) => normalizeText(quest.instructions));
@@ -568,6 +658,37 @@ test("새 Quest끼리 또는 기존 교안 구현 함수·퀴즈 문구와 직�
   for (const quest of collection.quests) {
     assert.ok(!quizPrompts.has(normalizeText(quest.title)));
     assert.ok(!quizPrompts.has(normalizeText(quest.instructions)));
+  }
+
+  const codingTestTitles = new Set(
+    codingTests.problems.map((problem) => normalizeText(problem.title)),
+  );
+  const codingTestDescriptions = new Set(
+    codingTests.problems.flatMap((problem) => [
+      normalizeText(problem.summary),
+      normalizeText(problem.description),
+    ]),
+  );
+  const codingTestEntryPoints = new Set(
+    codingTests.problems.map((problem) => normalizeText(problem.entryPoint)),
+  );
+  for (const quest of collection.quests.filter((item) => HASH_QUEST_IDS.includes(item.id))) {
+    assert.ok(
+      !codingTestTitles.has(normalizeText(quest.title)),
+      `${quest.id}: 기존 코딩테스트 제목과 중복됩니다.`,
+    );
+    assert.ok(
+      !codingTestDescriptions.has(normalizeText(quest.summary)),
+      `${quest.id}: 기존 코딩테스트 요약·설명과 중복됩니다.`,
+    );
+    assert.ok(
+      !codingTestDescriptions.has(normalizeText(quest.instructions)),
+      `${quest.id}: 기존 코딩테스트 설명과 중복됩니다.`,
+    );
+    assert.ok(
+      !codingTestEntryPoints.has(normalizeText(quest.entryPoint)),
+      `${quest.id}: 기존 코딩테스트 entryPoint와 중복됩니다.`,
+    );
   }
 
   const lessonSources = await Promise.all(

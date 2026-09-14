@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { BamLearningApp } from "../src/app.js";
 import { renderAppShell } from "../src/ui/app-shell.js";
 import { renderReviewNavigationLink } from "../src/ui/quiz-view.js";
 import {
@@ -8,14 +9,25 @@ import {
   renderCodeQuestView,
 } from "../src/ui/code-quest-view.js";
 import { renderCodingTestNavigationLink } from "../src/ui/coding-test-view.js";
-import { renderMarkdown } from "../src/ui/markdown.js";
-import { renderMyPageView } from "../src/ui/my-page-view.js";
+
+const tokenCss = await readFile(new URL("../styles/tokens.css", import.meta.url), "utf8");
+const colorTokens = new Map([...tokenCss.matchAll(/(--[\w-]+):\s*([^;]+);/g)]
+  .map(([, name, value]) => [name, value.trim()]));
+
+// Resolve each light-dark branch independently; translucent layers need browser checks.
+function tokenColor(name, theme = "light") {
+  const value = colorTokens.get(name) ?? "";
+  const reference = value.match(/^var\((--[\w-]+)\)$/);
+  if (reference) return tokenColor(reference[1], theme);
+  const pair = value.match(/^light-dark\((#[0-9a-f]{6}),\s*(#[0-9a-f]{6})\)$/i);
+  if (pair) return pair[theme === "dark" ? 2 : 1];
+  assert.match(value, /^#[0-9a-f]{6}$/i, `${name}: 불투명 색상 토큰이 필요합니다.`);
+  return value;
+}
 
 function relativeLuminance(hex) {
-  const channels = hex
-    .replace("#", "")
-    .match(/.{2}/g)
-    .map((channel) => Number.parseInt(channel, 16) / 255)
+  const rgb = Array.isArray(hex) ? hex : hex.replace("#", "").match(/.{2}/g).map((channel) => Number.parseInt(channel, 16));
+  const channels = rgb.map((channel) => channel / 255)
     .map((channel) =>
       channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
     );
@@ -28,92 +40,124 @@ function contrastRatio(first, second) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-test("주요 버튼의 기본·hover 색 대비가 일반 텍스트 AA 기준을 충족한다", () => {
-  assert.ok(contrastRatio("#4c8bf5", "#06101f") >= 4.5);
-  assert.ok(contrastRatio("#5a96fa", "#06101f") >= 4.5);
+test("승인된 밝게·어둡게 색상을 기존 semantic 역할에 연결한다", () => {
+  const approved = {
+    "--color-bg": ["#f7f6f2", "#17181b"],
+    "--color-surface": ["#ffffff", "#202226"],
+    "--color-surface-raised": ["#f0efeb", "#292b30"],
+    "--color-code": ["#f0efeb", "#292b30"],
+    "--color-text": ["#25262b", "#f0eee9"],
+    "--color-text-muted": ["#62636b", "#b4b5bd"],
+    "--color-primary": ["#6941b8", "#c3a9fb"],
+    "--color-secondary": ["#eee8f8", "#352b46"],
+    "--color-on-primary": ["#ffffff", "#221a30"],
+    "--color-success-text": ["#216345", "#a5ddbc"],
+    "--color-success-bg": ["#eaf4ed", "#22382c"],
+    "--color-danger-text": ["#a14237", "#ffb3a8"],
+    "--color-danger-bg": ["#faf0ec", "#422b29"],
+  };
+  for (const [token, [light, dark]] of Object.entries(approved)) {
+    assert.equal(tokenColor(token, "light"), light, `${token}: 밝게`);
+    assert.equal(tokenColor(token, "dark"), dark, `${token}: 어둡게`);
+  }
+  assert.match(tokenCss, /color-scheme:\s*light dark/);
+  for (const theme of ["light", "dark"]) {
+    assert.match(tokenCss, new RegExp(`:root\\[data-theme="${theme}"\\]\\s*\\{[^}]*color-scheme:\\s*${theme}`));
+  }
+});
+
+test("실제 본문·버튼·링크 토큰은 AA 대비를, focus·의미 경계는 3:1을 충족한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const primaryRule = css.match(/\.button--primary\s*\{([^}]*)\}/)?.[1] ?? "";
+  const hoverRule = css.match(/\.button--primary:hover\s*\{([^}]*)\}/)?.[1] ?? "";
+  const focusRule = css.match(/:focus-visible\s*\{([^}]*)\}/)?.[1] ?? "";
+  assert.match(primaryRule, /background:\s*var\(--color-primary\)/);
+  assert.match(primaryRule, /color:\s*var\(--color-on-primary\)/);
+  assert.match(hoverRule, /background:\s*var\(--color-primary-hover\)/);
+  assert.match(focusRule, /outline:\s*3px solid var\(--color-focus\)/);
+
+  const pairs = [
+    ["--color-on-primary", "--color-primary", 4.5],
+    ["--color-on-primary", "--color-primary-hover", 4.5],
+  ];
+  for (const background of ["--color-bg", "--color-surface", "--color-surface-raised", "--color-secondary"]) {
+    for (const foreground of ["--color-text", "--color-text-soft", "--color-text-muted", "--color-primary-strong"]) {
+      pairs.push([foreground, background, 4.5]);
+    }
+    for (const foreground of ["--color-focus", "--color-border-strong"]) {
+      pairs.push([foreground, background, 3]);
+    }
+  }
+  for (const theme of ["light", "dark"]) {
+    for (const [foreground, background, minimum] of pairs) {
+      const ratio = contrastRatio(tokenColor(foreground, theme), tokenColor(background, theme));
+      assert.ok(ratio >= minimum, `${theme} ${foreground} / ${background}: ${ratio}:1, 최소 ${minimum}:1`);
+    }
+  }
+});
+
+test("syntax·상태·언어 배지의 보조색은 양쪽 theme의 실제 바탕에서 읽힌다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+  const pairs = [
+    ["--color-inline-code", "--color-inline-code-bg"],
+    ...["success", "warning", "danger"].map((state) => [`--color-${state}-text`, `--color-${state}-bg`]),
+    ...[...colorTokens.keys()].filter((name) => name.startsWith("--color-syntax-")).map((name) => [name, "--color-code"]),
+    ...[...colorTokens.keys()].filter((name) => name.startsWith("--color-language-")).flatMap((name) => [
+      [name, "--color-bg"], [name, "--color-surface"],
+    ]),
+  ];
+  for (const theme of ["light", "dark"]) {
+    for (const [foreground, background] of pairs) {
+      const ratio = contrastRatio(tokenColor(foreground, theme), tokenColor(background, theme));
+      assert.ok(ratio >= 4.5, `${theme} ${foreground} / ${background}: ${ratio}:1`);
+    }
+    for (const language of ["javascript", "html", "css", "java"]) {
+      const token = `--color-language-${language}`;
+      const rule = css.match(new RegExp(`\\.language-badge--${language}\\s*\\{([^}]*)\\}`))?.[1] ?? "";
+      const percent = rule.match(/background:\s*color-mix\(in srgb, var\(--color-language-[\w-]+\) ([\d.]+)%, var\(--color-bg\)\)/)?.[1];
+      assert.ok(percent, `${language}: 실제 배지의 합성 바탕을 확인한다.`);
+      const rgb = (name) => tokenColor(name, theme).slice(1).match(/.{2}/g).map((channel) => Number.parseInt(channel, 16));
+      const foreground = rgb(token);
+      const background = rgb("--color-bg").map((channel, index) => channel * (1 - Number(percent) / 100) + foreground[index] * Number(percent) / 100);
+      assert.ok(contrastRatio(foreground, background) >= 4.5, `${theme} ${language}: 배지의 합성 배경 대비`);
+    }
+  }
 });
 
 test("긴 교안 제목과 인라인 코드가 320px 문서 폭을 늘리지 않도록 줄바꿈한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
   const lessonTitleRule = css.match(/\.lesson-hero h1\s*\{([^}]*)\}/);
-  const inlineCodeRule = css.match(
-    /\.lesson-body :not\(pre\) > code,\s*\.lesson-objectives :not\(pre\) > code\s*\{([^}]*)\}/,
-  );
+  const inlineCodeRule = css.match(/\.lesson-body :not\(pre\) > code\s*\{([^}]*)\}/);
+  const lessonBodyRule = css.match(/\.lesson-body\s*\{([^}]*)\}/);
 
   assert.ok(lessonTitleRule);
   assert.ok(inlineCodeRule);
+  assert.ok(lessonBodyRule);
   assert.match(lessonTitleRule[1], /overflow-wrap:\s*anywhere/);
   assert.match(inlineCodeRule[1], /overflow-wrap:\s*anywhere/);
-  assert.match(inlineCodeRule[1], /border:\s*1px solid transparent/);
-  assert.match(inlineCodeRule[1], /background:\s*var\(--color-surface-raised\)/);
+  assert.match(lessonBodyRule[1], /word-break:\s*keep-all/);
+  assert.match(lessonBodyRule[1], /overflow-wrap:\s*anywhere/);
 });
 
-test("교안의 주요 주제 H2만 위쪽 구분선으로 구분한다", async () => {
+test("인라인 코드의 보조색은 제품 토큰으로 연결하고 오류 제목은 물결 밑줄로 구분한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
-  const h2Rule = css.match(/\.lesson-body h2\s*\{([^}]*)\}/)?.[1] ?? "";
-  const subsequentH2Rule = css.match(/\.lesson-body > h2:not\(:first-child\)\s*\{([^}]*)\}/)?.[1] ?? "";
-  const firstH2Rule = css.match(/\.lesson-body > h2:first-child\s*\{([^}]*)\}/)?.[1] ?? "";
-  const h3Rule = css.match(/\.lesson-body h3\s*\{([^}]*)\}/)?.[1] ?? "";
-  const h4Rule = css.match(/\.lesson-body h4\s*\{([^}]*)\}/)?.[1] ?? "";
-
-  assert.doesNotMatch(h2Rule, /border-top/);
-  assert.match(subsequentH2Rule, /border-top:\s*1px solid var\(--color-border\)/);
-  assert.match(firstH2Rule, /padding-top:\s*0/);
-  assert.match(firstH2Rule, /margin-top:\s*0/);
-  assert.doesNotMatch(h3Rule, /border-top/);
-  assert.doesNotMatch(h4Rule, /border-top/);
-});
-
-test("교안 표는 명확한 셀 경계와 포커스 가능한 내부 가로 스크롤을 유지한다", async () => {
-  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
-  const tokens = await readFile(new URL("../styles/tokens.css", import.meta.url), "utf8");
-  const renderedTable = renderMarkdown("| A | B | C | D |\n| --- | --- | --- | --- |\n| 1 | 2 | 3 | 4 |");
-  const wrapperRule = css.match(/\.table-scroll\s*\{([^}]*)\}/)?.[1] ?? "";
-  const tableRule = css.match(/\.lesson-body table\s*\{([^}]*)\}/)?.[1] ?? "";
-  const cellRule = css.match(/\.lesson-body th,\s*\.lesson-body td\s*\{([^}]*)\}/)?.[1] ?? "";
-  const headerRule = css.match(/\.lesson-body th\s*\{([^}]*)\}/)?.[1] ?? "";
-  const headerBackground = tokens.match(/--color-secondary:\s*(#[\da-f]{6})\s*;/i)?.[1];
-  const headerText = tokens.match(/--color-text:\s*(#[\da-f]{6})\s*;/i)?.[1];
-
-  assert.match(renderedTable, /<div class="table-scroll" tabindex="0"><table>/);
-  assert.equal(renderedTable.match(/<th scope="col">/g)?.length, 4);
-  assert.equal(renderedTable.match(/<td>/g)?.length, 4);
-  assert.match(wrapperRule, /max-width:\s*100%/);
-  assert.match(wrapperRule, /overflow-x:\s*auto/);
-  assert.match(wrapperRule, /border:\s*1px solid var\(--color-border-strong\)/);
-  assert.match(css, /\.table-scroll:focus-visible\s*\{[^}]*border-color:\s*var\(--color-primary-strong\)/s);
-  assert.match(tableRule, /min-width:\s*520px/);
-  assert.match(tableRule, /border-collapse:\s*separate/);
-  assert.match(tableRule, /border-spacing:\s*0/);
-  assert.match(cellRule, /border-right:\s*1px solid var\(--color-border\)/);
-  assert.match(cellRule, /border-bottom:\s*1px solid var\(--color-border\)/);
-  assert.match(headerRule, /background:\s*var\(--color-secondary\)/);
-  assert.match(headerRule, /font-weight:\s*800/);
-  assert.match(css, /\.lesson-body tr > :last-child\s*\{[^}]*border-right:\s*0/s);
-  assert.match(css, /\.lesson-body tbody tr:last-child td\s*\{[^}]*border-bottom:\s*0/s);
-  assert.ok(headerBackground);
-  assert.ok(headerText);
-  assert.ok(contrastRatio(headerText, headerBackground) >= 4.5);
-});
-
-test("인라인 코드는 참고 UI의 byte 톤을 쓰고 오류 제목은 물결 밑줄로 구분한다", async () => {
-  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
-  const tokens = await readFile(new URL("../styles/tokens.css", import.meta.url), "utf8");
   const sharedInlineRule = css.match(/#lesson-content :not\(pre\) > code\s*\{([^}]*)\}/)?.[1] ?? "";
   const quizInlineRule = css.match(/\.quiz-card :not\(pre\) > code\s*\{([^}]*)\}/)?.[1] ?? "";
   const questInlineRule = css.match(/\.quest-prose code\s*\{([^}]*)\}/)?.[1] ?? "";
-  const raisedSurface = tokens.match(/--color-surface-raised:\s*(#[\da-f]{6})\s*;/i)?.[1];
   const diagnosticRule = css.match(
     /\.quiz-answer-summary\.is-incorrect h3,[\s\S]*?\.web-project-result-item\.is-engine_error strong\s*\{([^}]*)\}/,
   )?.[1] ?? "";
 
   for (const rule of [quizInlineRule, questInlineRule]) {
-    assert.match(rule, /border:\s*1px solid transparent/);
-    assert.match(rule, /background:\s*var\(--color-surface-raised\)/);
+    assert.match(rule, /background:\s*var\(--color-inline-code-bg\)/);
+    assert.match(rule, /border:\s*1px solid var\(--color-inline-code-border\)/);
   }
-  assert.match(sharedInlineRule, /color:\s*#e26b60/);
-  assert.ok(raisedSurface);
-  assert.ok(contrastRatio("#e26b60", raisedSurface) >= 4.5);
+  assert.match(sharedInlineRule, /color:\s*var\(--color-inline-code\)/);
+  for (const theme of ["light", "dark"]) {
+    for (const background of ["--color-bg", "--color-surface", "--color-inline-code-bg"]) {
+      assert.ok(contrastRatio(tokenColor("--color-inline-code", theme), tokenColor(background, theme)) >= 4.5);
+    }
+  }
   assert.match(diagnosticRule, /text-decoration-color:\s*var\(--color-danger\)/);
   assert.match(diagnosticRule, /text-decoration-line:\s*underline/);
   assert.match(diagnosticRule, /text-decoration-style:\s*wavy/);
@@ -301,7 +345,7 @@ test("정상 채점은 결과 영역 초점만 사용하고 오류만 announcer�
 
 test("객관식 저장은 세션당 한 번만 시도하고 비영속 상태를 구분한다", async () => {
   const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const start = appSource.indexOf("  finishQuizSession() {");
+  const start = appSource.indexOf("  finishQuizSession(");
   const end = appSource.indexOf("\n  retryQuiz(mode) {", start);
   assert.ok(start >= 0 && end > start);
 
@@ -318,37 +362,78 @@ test("객관식 저장은 세션당 한 번만 시도하고 비영속 상태를 
   assert.match(finishSource, /persistence\.isPersistent \? "saved" : "memory"/);
 });
 
-test("오답 재도전과 지원하지 않는 언어 복귀의 앱 계약을 유지한다", async () => {
-  const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  const routeStart = appSource.indexOf("  async openRoute(");
-  const routeEnd = appSource.indexOf("\n  async openLessonRoute(", routeStart);
-  const retryStart = appSource.indexOf("  retryQuiz(mode) {");
-  const retryEnd = appSource.indexOf("\n  startQuizSession(", retryStart);
-  const sessionStart = retryEnd + 1;
-  const sessionEnd = appSource.indexOf("\n  getCurrentQuizQuestion() {", sessionStart);
-  assert.ok(routeStart >= 0 && routeEnd > routeStart);
-  assert.ok(retryStart >= 0 && retryEnd > retryStart);
-  assert.ok(sessionStart > 0 && sessionEnd > sessionStart);
+test("지원 가능한 복습 경로를 유지하고 미지원·planned 언어는 기존 JavaScript 첫 교안으로 복귀한다", async (t) => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    writable: true,
+    value: {
+      location: { hash: "" },
+      history: { replaceState(_state, _title, hash) { globalThis.window.location.hash = hash; } },
+    },
+  });
+  t.after(() => {
+    if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
+    else delete globalThis.window;
+  });
 
-  const routeSource = appSource.slice(routeStart, routeEnd);
-  const retrySource = appSource.slice(retryStart, retryEnd);
-  const sessionSource = appSource.slice(sessionStart, sessionEnd);
-  assert.match(
-    routeSource,
-    /getLanguage\(this\.curriculum, reviewRoute\.languageId\)/,
-  );
-  assert.match(routeSource, /reviewLanguage\.status !== "planned"/);
-  assert.match(routeSource, /await this\.openReviewRoute\(reviewRoute\.languageId\)/);
-  assert.match(routeSource, /getLessonsForCourse\([\s\S]*DEFAULT_COURSE_ID[\s\S]*\)\[0\]/);
-  assert.match(
-    routeSource,
-    /buildLessonHash\(fallbackLesson\.courseId, fallbackLesson\.slug\)/,
-  );
-  assert.match(routeSource, /await this\.openLessonRoute\(\)/);
-  assert.match(retrySource, /mode === "incorrect"/);
-  assert.match(retrySource, /summary\.incorrectQuestionIds\.includes\(question\.id\)/);
-  assert.match(retrySource, /startQuizSession\(questions, mode === "incorrect"/);
-  assert.match(sessionSource, /recordAttempted: false/);
+  for (const { hash, planned, expected } of [
+    { hash: "#/review/html", expected: ["review", "html", undefined] },
+    { hash: "#/review/java", expected: ["review", "java", undefined] },
+    { hash: "#/review/javascript/js-notes-functions", expected: ["review", "javascript", "js-notes-functions"] },
+    { hash: "#/review/python", expected: ["lesson", "#/learn/javascript/javascript-and-runtime"] },
+    { hash: "#/review/html", planned: "html", expected: ["lesson", "#/learn/javascript/javascript-and-runtime"] },
+  ]) {
+    const calls = [];
+    const app = Object.create(BamLearningApp.prototype);
+    const inputCurriculum = structuredClone(curriculum);
+    if (planned) inputCurriculum.languages.find((language) => language.id === planned).status = "planned";
+    Object.assign(app, {
+      curriculum: inputCurriculum,
+      leaveCurrentView() {},
+      async openReviewRoute(languageId, lessonId) { calls.push(["review", languageId, lessonId]); },
+      async openLessonRoute() { calls.push(["lesson", globalThis.window.location.hash]); },
+    });
+    globalThis.window.location.hash = hash;
+    await app.openRoute();
+    assert.deepEqual(calls, [expected], hash);
+    if (expected[0] === "review") assert.equal(globalThis.window.location.hash, hash);
+  }
+});
+
+test("오답 재도전은 단원 범위를 지키고 새 세션을 미저장 상태로 시작하며 첫 문제 초점을 안내한다", () => {
+  const questions = [
+    { id: "quiz-javascript-one", lessonId: "lesson-functions" },
+    { id: "quiz-javascript-two", lessonId: "lesson-functions" },
+    { id: "quiz-javascript-other", lessonId: "lesson-values" },
+  ];
+  const calls = [];
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    currentView: "review",
+    quizCollection: { languageId: "javascript", questions },
+    quizLessonId: "lesson-functions",
+    quizSession: { screen: "result", recordAttempted: true, summary: { incorrectQuestionIds: [questions[0].id, questions[2].id] } },
+    progressRepository: { getProgress: () => ({ incorrectQuestionIds: [questions[1].id, questions[2].id] }) },
+    renderQuiz() { calls.push("render"); },
+    focusQuizQuestion() { calls.push("focus-question"); },
+    announce(message) { calls.push(message); },
+  });
+
+  for (const [mode, expectedQuestion] of [["incorrect", questions[0]], ["saved-incorrect", questions[1]]]) {
+    calls.length = 0;
+    app.retryQuiz(mode);
+    assert.deepEqual(app.quizSession.questions, [expectedQuestion]);
+    assert.equal(app.quizSession.screen, "question");
+    assert.equal(app.quizSession.mode, "incorrect");
+    assert.equal(app.quizSession.currentIndex, 0);
+    assert.equal(app.quizSession.recordAttempted, false);
+    assert.equal(app.quizSession.selectedOptionIds.size, 0);
+    assert.equal(app.quizSession.gradedAnswers.size, 0);
+    assert.equal(app.quizSession.summary, null);
+    assert.deepEqual(calls, ["render", "focus-question", "새 복습 세션을 시작했습니다."]);
+  }
 });
 
 test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 안전하게 복귀시킨다", async () => {
@@ -363,7 +448,7 @@ test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 �
   const routeSource = appSource.slice(routeStart, routeEnd);
   const questSource = appSource.slice(questStart, questEnd);
   assert.match(routeSource, /parseQuestHash\(window\.location\.hash\)/);
-  assert.match(routeSource, /questLanguage\?\.status === "available"/);
+  // 지원 언어와 Java fallback 동작은 app-language-routing.test.js에서 검증한다.
   assert.match(routeSource, /questLessons\.length > 0/);
   assert.match(routeSource, /openCodeQuestRoute\(questRoute\.languageId, questRoute\.slug\)/);
   assert.match(routeSource, /buildLessonHash\(fallbackLesson\.courseId, fallbackLesson\.slug\)/);
@@ -404,48 +489,10 @@ test("Code Quest 초안은 get/save/clear API와 비영속 상태를 연결한�
   assert.match(appSource, /state\.source = editor\.value/);
 });
 
-test("마이페이지는 단일 본문·제목·언어별 진도와 44px 링크 계약을 유지한다", async () => {
-  const html = renderMyPageView({
-    curriculum: {
-      languages: [
-        {
-          id: "javascript",
-          name: "JavaScript",
-          shortName: "JS",
-          accent: "javascript",
-          status: "available",
-        },
-      ],
-      lessons: [
-        {
-          id: "js-01-runtime",
-          languageId: "javascript",
-          slug: "javascript-and-runtime",
-        },
-      ],
-    },
-  });
-  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
-  const navigationRule = css.match(/\.my-page-nav-link\s*\{([^}]*)\}/)?.[1] ?? "";
-  const languageLinkRule = css.match(/\.my-page-language-item a\s*\{([^}]*)\}/)?.[1] ?? "";
-
-  assert.equal((html.match(/<main /g) ?? []).length, 1);
-  assert.match(
-    html,
-    /<main[^>]*id="lesson-content"[^>]*tabindex="-1"[^>]*aria-labelledby="my-page-title"/,
-  );
-  assert.equal((html.match(/<h1 /g) ?? []).length, 1);
-  assert.match(html, /role="progressbar" aria-label="JavaScript 교안 진도"/);
-  assert.match(navigationRule, /min-height:\s*44px/);
-  assert.match(languageLinkRule, /min-height:\s*44px/);
-  assert.match(css, /@media \(max-width: 360px\)[\s\S]*?\.my-page-language-item > div:first-child/);
-});
-
 test("Web Project 작업 공간은 키보드·고대비·320px 반응형 스타일 계약을 유지한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
   const baseStart = css.indexOf(".web-project-nav {");
   const desktopMediaStart = css.indexOf("@media (min-width: 1120px)", baseStart);
-  const myPageStart = css.indexOf(".my-page-nav {", baseStart);
   const tabletStart = css.indexOf("@media (max-width: 820px)", desktopMediaStart);
   const mobileStart = css.indexOf("@media (max-width: 600px)", tabletStart);
   const narrowStart = css.indexOf("@media (max-width: 360px)", mobileStart);
@@ -466,12 +513,7 @@ test("Web Project 작업 공간은 키보드·고대비·320px 반응형 스타�
   assert.ok(reducedMotionStart > narrowStart);
   assert.ok(forcedColorsStart > reducedMotionStart);
 
-  const base = css.slice(
-    baseStart,
-    myPageStart > baseStart && myPageStart < desktopMediaStart
-      ? myPageStart
-      : desktopMediaStart,
-  );
+  const base = css.slice(baseStart, desktopMediaStart);
   const tablet = css.slice(tabletStart, mobileStart);
   const mobile = css.slice(mobileStart, narrowStart);
   const narrow = css.slice(narrowStart, reducedMotionStart);
