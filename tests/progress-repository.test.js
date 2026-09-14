@@ -263,6 +263,51 @@ test("객관식 결과와 오답 재도전 대상을 저장한다", () => {
   assert.equal(progress.quizAttempts[0].score, 1);
   assert.equal(progress.quizAttempts[0].total, 2);
   assert.deepEqual(progress.incorrectQuestionIds, ["quiz-javascript-test-001"]);
+  assert.equal(Object.hasOwn(progress.quizAttempts[0].answers[0], "firstAttempt"), false);
+});
+
+test("완료 기록은 첫 오답을 선택 필드로 보존하고 점수·현재 오답은 최종 답으로 계산한다", () => {
+  const storage = new MemoryStorage();
+  const repository = new LocalStorageProgressRepository(storage, fixedClock);
+  repository.recordQuizAttempt({
+    languageId: "javascript",
+    answers: [
+      {
+        questionId: "quiz-javascript-retried-correct",
+        lessonId: "js-01-runtime",
+        selectedOptionId: "a",
+        isCorrect: true,
+        firstAttempt: { selectedOptionId: "b", isCorrect: false },
+      },
+      {
+        questionId: "quiz-javascript-current-wrong",
+        lessonId: "js-01-runtime",
+        selectedOptionId: "c",
+        isCorrect: false,
+      },
+    ],
+  });
+
+  const progress = new LocalStorageProgressRepository(storage, fixedClock).getProgress();
+  assert.equal(progress.quizAttempts[0].score, 1);
+  assert.equal(progress.quizAttempts[0].total, 2);
+  assert.deepEqual(progress.incorrectQuestionIds, ["quiz-javascript-current-wrong"]);
+  assert.deepEqual(progress.quizAttempts[0].answers[0], {
+    questionId: "quiz-javascript-retried-correct",
+    lessonId: "js-01-runtime",
+    selectedOptionId: "a",
+    isCorrect: true,
+    firstAttempt: { selectedOptionId: "b", isCorrect: false },
+  });
+
+  const damaged = JSON.parse(storage.getItem(PROGRESS_STORAGE_KEY));
+  damaged.quizAttempts[0].answers[0].firstAttempt.extra = true;
+  storage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(damaged));
+  assert.deepEqual(
+    new LocalStorageProgressRepository(storage, fixedClock).getProgress().quizAttempts,
+    [],
+    "잘못된 첫 응답 추가 필드는 완료 기록 손상 정책에 따라 시도 전체를 버린다.",
+  );
 });
 
 test("다시 맞힌 문제는 오답 재도전 대상에서 제거한다", () => {
@@ -336,6 +381,22 @@ test("객관식 시도에서 중복 문제와 잘못된 답안 형식을 거부�
       }),
     /답안 형식/,
   );
+  for (const firstAttempt of [
+    { selectedOptionId: "b", isCorrect: true },
+    { selectedOptionId: "z", isCorrect: false },
+    { selectedOptionId: "b" },
+    { selectedOptionId: "b", isCorrect: false, extra: true },
+    null,
+  ]) {
+    assert.throws(
+      () => repository.recordQuizAttempt({
+        languageId: "javascript",
+        answers: [{ ...duplicatedAnswer, firstAttempt }],
+      }),
+      /답안 형식/,
+      JSON.stringify(firstAttempt),
+    );
+  }
 });
 
 test("같은 시각에 보관 한도보다 많이 저장해도 시도 ID가 중복되지 않는다", () => {

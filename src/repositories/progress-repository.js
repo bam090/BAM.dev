@@ -644,7 +644,21 @@ function isStoredQuizAnswer(answer) {
     isQuizQuestionId(answer.questionId) &&
     isStableId(answer.lessonId) &&
     OPTION_ID_PATTERN.test(answer.selectedOptionId) &&
-    typeof answer.isCorrect === "boolean"
+    typeof answer.isCorrect === "boolean" &&
+    (!Object.hasOwn(answer, "firstAttempt") || isStoredQuizFirstAttempt(answer.firstAttempt))
+  );
+}
+
+function isStoredQuizFirstAttempt(firstAttempt) {
+  return (
+    firstAttempt &&
+    typeof firstAttempt === "object" &&
+    !Array.isArray(firstAttempt) &&
+    Reflect.ownKeys(firstAttempt).length === 2 &&
+    Object.hasOwn(firstAttempt, "selectedOptionId") &&
+    Object.hasOwn(firstAttempt, "isCorrect") &&
+    OPTION_ID_PATTERN.test(firstAttempt.selectedOptionId) &&
+    firstAttempt.isCorrect === false
   );
 }
 
@@ -681,12 +695,19 @@ function normalizeQuizAttemptInput(attempt) {
     if (!isStoredQuizAnswer(answer)) {
       throw new TypeError("객관식 답안 형식이 올바르지 않습니다.");
     }
-    return {
+    const normalized = {
       questionId: answer.questionId,
       lessonId: answer.lessonId,
       selectedOptionId: answer.selectedOptionId,
       isCorrect: answer.isCorrect,
     };
+    if (Object.hasOwn(answer, "firstAttempt")) {
+      normalized.firstAttempt = {
+        selectedOptionId: answer.firstAttempt.selectedOptionId,
+        isCorrect: false,
+      };
+    }
+    return normalized;
   });
 
   if (new Set(answers.map((answer) => answer.questionId)).size !== answers.length) {

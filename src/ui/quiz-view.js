@@ -237,10 +237,16 @@ function renderGradedSummary(question, gradedAnswer) {
   `;
 }
 
+function renderRetryOutcome(firstAttempt, gradedAnswer) {
+  if (firstAttempt?.isCorrect !== false || !gradedAnswer) return "";
+  return `<p class="quiz-learning-objective"><strong>이번 풀이</strong> 첫 응답 오답 · 재도전 ${gradedAnswer.isCorrect ? "정답" : "오답"}</p>`;
+}
+
 function renderQuizQuestionCard({
   languageId, languageName, question, currentIndex, total, answeredCount,
   selectedOptionId, gradedAnswer, lessonHref, learningObjective,
-  relatedConceptTitle, otherFeedbackExpanded = false, viewMode, gradingMode, hasNextScope, nextScope,
+  relatedConceptTitle, otherFeedbackExpanded = false, firstAttempt = null,
+  viewMode, gradingMode, hasNextScope, nextScope, canRetry = true,
 }) {
   const questionId = question?.id ?? "missing";
   const safeId = escapeHtml(questionId);
@@ -248,6 +254,7 @@ function renderQuizQuestionCard({
   const difficulty = DIFFICULTY_LABELS[question?.difficulty] ?? "복습";
   const hasSelection = question?.options?.some((option) => option.id === selectedOptionId) ?? false;
   const isGraded = Boolean(gradedAnswer);
+  const canRetryIncorrect = canRetry && gradedAnswer?.isCorrect === false;
   const allGraded = answeredCount === total;
   const canMoveNext = gradingMode === "batch"
     ? !isLastQuestion || allGraded
@@ -273,11 +280,13 @@ function renderQuizQuestionCard({
           ${(question?.options ?? []).map((option, index) => renderOption(option, index, selectedOptionId, gradedAnswer, otherFeedbackExpanded, questionId)).join("")}
         </fieldset>
         ${renderGradedSummary(question, gradedAnswer)}
+        ${renderRetryOutcome(firstAttempt, gradedAnswer)}
         ${gradedAnswer ? `<button class="text-button" id="quiz-feedback-toggle-${safeId}" type="button" data-quiz-feedback-toggle aria-expanded="${otherFeedbackExpanded}">${otherFeedbackExpanded ? "다른 보기 해설 접기" : "다른 보기 해설 펼치기"}</button>` : ""}
         ${lessonHref ? `<p class="quiz-lesson-reference"><button class="button button--secondary" id="quiz-related-concept-${safeId}" type="button" data-related-concept aria-haspopup="dialog">관련 개념${relatedConceptTitle ? `: ${renderInlineCodeText(relatedConceptTitle)}` : " 확인"}</button></p>` : ""}
         <div class="quiz-actions${viewMode === "all" ? " quiz-actions--individual" : ""}${gradingMode === "batch" ? " quiz-actions--batch" : ""}">
           ${viewMode === "single" ? `<button class="button button--secondary" type="button" data-quiz-previous${currentIndex === 0 ? " disabled" : ""}>이전 문제</button>` : ""}
-          ${gradingMode === "individual" ? `<button class="button button--primary" type="button" data-quiz-check${!hasSelection || isGraded ? " disabled" : ""}>${isGraded ? "채점 완료" : "정답 확인"}</button>` : ""}
+          ${gradingMode === "individual" && !canRetryIncorrect ? `<button class="button button--primary" type="button" data-quiz-check${!hasSelection || isGraded ? " disabled" : ""}>${isGraded ? "채점 완료" : "정답 확인"}</button>` : ""}
+          ${canRetryIncorrect ? `<button class="button button--primary" id="quiz-question-retry-${safeId}" type="button" data-quiz-question-retry>이 문제 다시 풀기</button>` : ""}
           ${viewMode === "single" ? `<button class="button button--secondary${canMoveNext ? "" : " is-disabled"}" type="button" data-quiz-next aria-disabled="${String(!canMoveNext)}"${canMoveNext ? "" : ` aria-describedby="quiz-next-help-${safeId}"`}>${isLastQuestion && !hasNextScope ? "결과 보기" : "다음 문제"}</button>` : ""}
         </div>
         ${viewMode === "single" ? `<p class="quiz-next-help${canMoveNext ? " is-ready" : ""}" id="quiz-next-help-${safeId}">${nextHelp}</p>` : ""}
@@ -316,12 +325,13 @@ export function renderQuizQuestionView({
   lessonHref = null, lessonTitle = "학습 문서", learningObjective = "",
   relatedConceptTitle = null, otherFeedbackExpanded = false,
   viewMode = "single", gradingMode = "individual", questionStates = null,
+  firstAttempt = null, canRetryQuestions = true,
   hasNextScope = false,
   nextScope = null,
 } = {}) {
   const safeTotal = Math.max(0, safeInteger(total));
   const safeIndex = Math.min(Math.max(0, safeInteger(currentIndex)), Math.max(0, safeTotal - 1));
-  const states = questionStates ?? [{ question, currentIndex: safeIndex, selectedOptionId, gradedAnswer, lessonHref, lessonTitle, learningObjective, relatedConceptTitle, otherFeedbackExpanded }];
+  const states = questionStates ?? [{ question, currentIndex: safeIndex, selectedOptionId, gradedAnswer, lessonHref, lessonTitle, learningObjective, relatedConceptTitle, otherFeedbackExpanded, firstAttempt }];
   const visibleStates = viewMode === "all" ? states : states.filter((state) => state.currentIndex === safeIndex);
   const pendingCount = states.filter((state) => state.selectedOptionId && !state.gradedAnswer).length;
   const unansweredCount = safeTotal - states.filter((state) => state.selectedOptionId).length;
@@ -332,7 +342,7 @@ export function renderQuizQuestionView({
         ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, sessionMode, viewMode })}
         ${renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount })}
         <div class="quiz-question-list">
-          ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope })).join("")}
+          ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope, canRetry: state.canRetry ?? canRetryQuestions })).join("")}
         </div>
         ${viewMode === "all" ? `<div class="quiz-list-result">${gradingMode === "batch" ? `<button class="button button--primary" id="quiz-check-all-end" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status-end" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항</p>` : ""}<button class="button button--primary" type="button" data-quiz-finish${answeredCount === safeTotal ? "" : " disabled"}>${hasNextScope ? "다음 문제" : "결과 보기"}</button><p>${safeTotal > 0 && answeredCount === safeTotal ? getCompletedScopeMessage(hasNextScope, nextScope) : "모든 문제를 채점한 뒤 이어갈 수 있습니다."}</p></div>` : ""}
       </div>
@@ -388,7 +398,7 @@ export function renderQuizResultView({
             <div><dt>정답률</dt><dd>${percent}%</dd></div>
           </dl>
           <p>이 정답률은 객관식 복습 기록이며, 독립적인 구현 능력이나 완전한 숙련을 뜻하지 않습니다.</p>
-          ${questionResults.length ? `<ol class="quiz-result-items">${questionResults.map((result) => `<li><strong>${result.isCorrect ? "정답" : "오답"}</strong> ${renderInlineCodeText(result.prompt)}${renderLessonReference(result)}</li>`).join("")}</ol>` : ""}
+          ${questionResults.length ? `<ol class="quiz-result-items">${questionResults.map((result) => `<li><strong>${result.isCorrect ? "정답" : "오답"}</strong> ${renderInlineCodeText(result.prompt)}${renderRetryOutcome(result.firstAttempt, result)}${renderLessonReference(result)}</li>`).join("")}</ol>` : ""}
           <p class="quiz-persistence-status${persistenceStatus === "saved" ? "" : " is-warning"}" role="status">${persistenceMessage}</p>
           ${nextScope ? `<p id="quiz-next-scope-description">다음 키워드: <strong>${escapeHtml(nextScope.title)}</strong> · ${Math.max(0, safeInteger(nextScope.count))}문항</p>` : `<p>${isLastScope ? "이 주제의 마지막 문제 묶음입니다. 다른 키워드는 문제 목록에서 선택해 주세요." : "다른 키워드도 문제 목록에서 골라 풀 수 있습니다."}</p>`}
           <div class="quiz-result-actions">
