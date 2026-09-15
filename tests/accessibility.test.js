@@ -452,7 +452,9 @@ test("Code Quest 라우트는 잘못된 slug와 지원하지 않는 언어를 �
   assert.match(routeSource, /questLessons\.length > 0/);
   assert.match(routeSource, /openCodeQuestRoute\(questRoute\.languageId, questRoute\.slug\)/);
   assert.match(routeSource, /buildLessonHash\(fallbackLesson\.courseId, fallbackLesson\.slug\)/);
-  assert.match(questSource, /findCodeQuestBySlug\(collection, slug\) \?\? quests\[0\]/);
+  assert.match(questSource, /let quest = findCodeQuestBySlug\(collection, slug\)/);
+  assert.match(questSource, /if \(!quest\) \{/);
+  assert.match(questSource, /quest = quests\[0\] \?\? null/);
   assert.match(questSource, /buildQuestHash\(languageId, quest\.slug\)/);
   assert.match(questSource, /window\.history\.replaceState\(null, "", canonicalHash\)/);
 });
@@ -481,9 +483,11 @@ test("Code Quest 실행은 공통 실행 신호를 runner에 전달하고 정답
 
 test("Code Quest 초안은 get/save/clear API와 비영속 상태를 연결한다", async () => {
   const appSource = await readFile(new URL("../src/app.js", import.meta.url), "utf8");
-  assert.equal((appSource.match(/getQuestDraft\(/g) ?? []).length, 1);
+  assert.equal((appSource.match(/getQuestDraft\(/g) ?? []).length, 2);
   assert.equal((appSource.match(/saveQuestDraft\(/g) ?? []).length, 1);
   assert.equal((appSource.match(/clearQuestDraft\(/g) ?? []).length, 1);
+  assert.match(appSource, /getQuestDraft\(quest\.id\)/);
+  assert.match(appSource, /getQuestDraft\(problem\.legacyQuestId\)/);
   assert.match(appSource, /draft \? draft\.source : quest\.starterCode/);
   assert.match(appSource, /persistence\.isPersistent \? "saved" : "memory"/);
   assert.match(appSource, /state\.source = editor\.value/);
