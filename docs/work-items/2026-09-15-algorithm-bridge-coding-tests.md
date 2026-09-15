@@ -4,7 +4,7 @@
 
 `[확정 결정]` bam은 원본72를 코딩테스트로 정리하고 검증 후 커밋·푸시하도록 승인했다. 학습 콘텐츠 포함 기능 경로이며 [제품 설계](../designs/coding-test.md#algorithm-bridge-코딩테스트-전환)·[데이터 계약](../content-schema.md#algorithm-bridge-java-코딩테스트-draft-계약)을 구현 전에 기록했다. 기존32 Quest·JS CT6·원본·사용자 상태를 보존하고 신규69 Quest만 이동한다. 원본3은 별도 CT로 추가하며 준비Quest 링크를 유지한다.
 
-`[현재 사실]` Java72 등록·별도 schema·목록/상세·원문/typed 예시/힌트·작성저장·legacy69 URL/명시 초안 가져오기·related3·3중 실행 차단을 구현했다. 독립 콘텐츠 검토 PASS이며 독립 실행/화면·최종 통합·게시 판정은 대기다. 이전 전체Quest 카드의 PASS는 원문/동일 내용 검토 범위에만 재사용하고 새 ID·분류·원본3·schema·연결·URL·저장·실행 차단은 다시 확인한다. 로컬 Java Quest 후보의 존재와 이번 웹 게시 대상의 desktop 후보 제외를 구별한다. Java/JDK/desktop 실행·채점·패키징은 미실행이며 기존 Java 차단을 유지한다.
+`[현재 사실]` Java72 등록·별도 schema·목록/상세·원문/typed 예시/힌트·작성저장·legacy69 URL/명시 초안 가져오기·related3·3중 실행 차단을 구현했다. 독립 콘텐츠·관련 자동 검사·대표 데스크톱·문서·통합 PASS와 PR #22 Draft·원격 CI PASS를 인수했다. 정확한 대상·실패 이력·미병합 경계는 [최종 결과](#최종-독립-검증과-git-게시-결과)에 기록한다. Java/JDK/desktop 실행·채점·정식 설치 지원은 이번 웹 게시 범위 밖이며 Java 실행 BLOCKED를 유지한다.
 
 ## 출처와 학습 경험
 
@@ -143,6 +143,19 @@ CT ID는 아래 slot 소문자에 `coding-test-java-bridge-`를 붙인다. 준�
 | 70 | GRE-04 | legacy | L3 | greedy / simulation |
 | 71 | GRE-05 | legacy | L4 | greedy / simulation |
 | 72 | GRE-06 | legacy | L4 | greedy / simulation |
+
+## 최종 독립 검증과 Git 게시 결과
+
+`[현재 사실]` 2026-09-15 후속 receipt를 인수했다. 아래 결과는 해당 snapshot의 검증·원격 조회 기록이며 이후 PR 상태를 실시간 확인한 결과가 아니다. 위 단계별 대기·최초 실패 기록을 보존하고 이 절에서 완료한 범위를 구분한다.
+
+- 독립 test_engineer: 수정 후 관련 자동 검사 **130/130 PASS**. Chrome 1024/1440 light/dark 목록·상세·원문 다운로드·Java 작성/저장·키보드, JavaScript Worker 실행/제출·재진입, legacy URL과 두 탭의 최신 CT 초안 우선 보존 PASS. 기존 Quest 초안·시도·완료 불변과 Java 제출/완료 미생성을 확인했다. app SHA-256 `fe73734eed9fa35864e6f8846784d6919a7cde43c54ef8b6730177e98f4cefba`, UI receipt SHA-256 `8ec5ba4b104bd2050e42f221937b49c7695d66ef1f61696f037539bcc9431274`.
+- 독립 문서: 전체 Quest 카드 대체 표시·표 연결 반환 2건 수정 후 **PASS**. 당시 변경 문서의 링크 323개·등록/실행 구분·출처와 과거 증거 보존을 확인했다. receipt SHA-256 `ea47d8097f9b3e0f680401ceac729bed3128993ec6269dadd506f699503ebbc1`.
+- 독립 통합: 승인 브라우저 snapshot 42경로와 후속 테스트 2경로를 인수해 **PASS**. 원본과 게시본의 제품 hash 일치에 근거해 독립 증거를 재사용했다. 별도 미게시 desktop 후보·운영 변경 전체의 통합 PASS가 아니다.
+- 최초 게시 commit `ac2158958d5fb87923e01bd07ee6d69be0c4770b`의 원격 CI는 734/737 PASS·3FAIL이었다. 접근성·공통 셸 테스트의 낡은 정적 기대값/fixture를 실제 CT 분리 계약에 맞춰 정정했고 독립 기대값 감사·focused 20/20 PASS를 인수했다. 테스트 삭제·skip이나 제품 요구 완화는 없었다.
+- 후속 commit `90fae824f2129fcfe36686b4a2fcef9029a60c17`의 [push CI](https://github.com/bam090/BAM.dev/actions/runs/34926736557)와 [PR CI](https://github.com/bam090/BAM.dev/actions/runs/34926739883)는 모두 success. Node 22·Ubuntu의 `npm run check`에서 콘텐츠 검증·**737/737 PASS**·정적 빌드 완료를 확인했다.
+- [PR #22](https://github.com/bam090/BAM.dev/pull/22)는 최종 게시 receipt에서 OPEN·Draft, base `dev`, head 위 후속 commit이다. `dev`는 `3d2f4b90f834d2fe400de69d048f3bf133015645`를 유지했다. **병합·Pages 배포는 수행하지 않았다.**
+
+근거는 `/tmp/bridge-ct-desktop-receipt.md`, `/tmp/bridge-ct-publication-integration.md`, `/tmp/bridge-ct-ci-integration.md`, `/tmp/bridge-ct-publish-receipt.md`의 최종 인수 기록이다. 원본 작업 폴더의 `src`·`content`·`styles`가 게시 head와 같다는 후속 자료 조사에 따라 동일 제품 증거를 재사용했다. Java/JDK·실제 Java 컴파일/채점·desktop/설치·모바일·다른 OS는 이번 검증 PASS에 포함하지 않으며 Java 실행은 **BLOCKED**다.
 
 ## 브라우저 게시 작업본 준비
 

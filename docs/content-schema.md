@@ -278,7 +278,7 @@ JavaScript Quest는 `functionContract`, `entryPoint`, 인수·기대값을 가�
 
 ### Java 정적 메서드 Quest pilot
 
-`[확정 결정]` [DEC-JAVA-QUEST-RUNTIME-01](roadmap.md#2026-09-15-java-실행-지원-결정)의 첫 문제는 별도 `content/quests/java.json`·`content/schema/java-code-quest.schema.json` 계약을 사용한다. `[현재 사실]` 기존 pilot과 배열 3개를 보존하고 아래 전체 편입으로 등록했던 draft69는 코딩테스트로 이동했다. 등록/정적 검사는 통과했으나 실제 격리 실행은 실패해 Java capability가 고정 false다. 등록·작성 가능 상태와 실제 실행 지원을 구분하며 최신 등록/정적 검사 증거는 [전체 편입 카드](work-items/2026-09-15-algorithm-bridge-all-quests.md), 격리 실패·재개는 [런타임 카드](work-items/2026-09-15-java-code-quest-runtime.md)를 따른다. JavaScript의 실행 DTO나 Java schema PASS를 Java 실행 지원으로 간주하지 않는다.
+`[확정 결정]` [DEC-JAVA-QUEST-RUNTIME-01](roadmap.md#2026-09-15-java-실행-지원-결정)의 첫 문제는 별도 `content/quests/java.json`·`content/schema/java-code-quest.schema.json` 계약을 사용한다. `[현재 사실]` 기존 pilot과 배열 3개를 보존하고 아래 전체 편입으로 등록했던 draft69는 코딩테스트로 이동했다. 등록/정적 검사는 통과했으나 실제 격리 실행은 실패해 Java capability가 고정 false다. 등록·작성 가능 상태와 실제 실행 지원을 구분하며 최신 등록/정적 검사 증거는 [CT 전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md), 격리 실패·재개는 [런타임 카드](work-items/2026-09-15-java-code-quest-runtime.md)를 따른다. JavaScript의 실행 DTO나 Java schema PASS를 Java 실행 지원으로 간주하지 않는다.
 
 - 컬렉션: `schemaVersion: 1`, `contractVersion: 1`, `languageId: "java"`, `evaluationKind: "java-static-method-v1"`, title와 quests. 첫 pilot 한 개에서 아래 승인된 세 문제를 뒤에 추가했으며 기존 pilot 객체는 보존한다.
 - 첫 ID/slug/revision/order: `quest-java-total-price` / `total-price` / `1` / `1`. `lessonId: "java-concept-numeric-operations"`, `conceptIds: ["java.numeric-operations"]`로 실제 java 과정·교안에 연결한다.
@@ -313,7 +313,7 @@ Java 컬렉션의 콘텐츠 검증 가능 상태와 앱에서 실행 가능한 c
 
 `[대체됨]` 아래의 신규69 **Quest 등록 위치·ID·순서**는 [코딩테스트 전환 계약](#algorithm-bridge-java-코딩테스트-draft-계약)으로 대체한다. 타입·원본 공개 소스·지원 보존 규칙은 새 Java CT 데이터의 동일 내용에 재사용한다.
 
-`[확정 결정]` [전체 편입 제품 계약](designs/code-quest.md#algorithm-bridge-전체-문제-편입)에 따라 나머지 69개를 `content/quests/java.json`에 추가한다. 컬렉션의 `schemaVersion: 1`, `contractVersion: 1`, `evaluationKind: "java-static-method-v1"`를 유지하고 기존 네 객체는 완전히 보존한다. 위 배열 절의 네 exact signature 제한은 **실행 후보 네 문제**에 유지하며 신규 읽기·작성 데이터만 아래 분기로 확장한다. 새 실행 계약 버전이나 범용 Java 호출기는 만들지 않는다.
+`[대체됨]` 당시 [전체 편입 제품 계약](designs/code-quest.md#algorithm-bridge-전체-문제-편입)에 따라 나머지 69개를 `content/quests/java.json`에 추가한다. 컬렉션의 `schemaVersion: 1`, `contractVersion: 1`, `evaluationKind: "java-static-method-v1"`를 유지하고 기존 네 객체는 완전히 보존한다. 위 배열 절의 네 exact signature 제한은 **실행 후보 네 문제**에 유지하며 신규 읽기·작성 데이터만 아래 분기로 확장한다. 새 실행 계약 버전이나 범용 Java 호출기는 만들지 않는다.
 
 - 신규 문제는 `executionMode: "draft-only"`를 필수로 가지며 안정 slot 기반 ID/slug·revision 1·order 5~73을 쓴다. 공통 지문·함수 계약·`Solution.java`/`Solution` 시작 틀과 실제 교안·개념 연결을 유지한다. 기존 네 문제는 이 필드를 추가하거나 수정하지 않는다.
 - draft `conceptIds`는 실제 알고리즘 교안의 `algo.*`를 포함한 점 구분 ID를 허용한다. 원본 Problem에 없는 해답 정보를 만들지 않도록 draft의 `functionContract.complexity`는 선택 필드이며 기존 네 실행 후보에서는 필수 계약을 유지한다.
@@ -378,7 +378,7 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 - `relatedQuestId`는 준비3의 실제 기존 Quest만, `legacyQuestId`는 옮기는69의 옛 Quest ID만 선택적으로 기록한다. 두 필드는 동시에 사용하지 않고 전체 대응의 중복·누락과 실제 참조를 검증한다. prefix만으로 이동·초안 가져오기를 추정하지 않는다.
 - 난이도는 원본 지원 L1→beginner, L2/L3→intermediate, L4→advanced로 표시하되 이미 독립 검토한 원본별 난이도 대응이 다르면 원본 카드 근거와 함께 보존한다. 이는 필터용 난이도이며 지원 단계와 동일 개념이 아니다. 원본 L값은 tags/기존 metadata에 유지한다. type은 기존 필터의 array/object/sorting/search/simulation/string 중 선택한다: array·twopointer는 array, hash·set는 object, sorting은 sorting, tree·graph·backtracking은 search, stack·queue·simulation·dynamicprogramming·greedy는 simulation. 원본13주제는 tags로 보존해 넓은 유형 매핑에서 유실되지 않게 한다.
 
-`[현재 사실]` Java72 collection/schema와 Java 전용 validation을 구현했고 독립 콘텐츠 검토는 PASS다. 현재 난이도는 기존 승인 대응인 L1 beginner16·L2 beginner15·L3 intermediate24·L4 intermediate17을 유지한다. L지원 단계와 필터 난이도를 동일하게 해석하지 않는다. 실행/화면·통합은 전환 카드의 후속 판정을 따른다.
+`[현재 사실]` Java72 collection/schema와 Java 전용 validation을 구현했고 독립 콘텐츠 검토는 PASS다. 현재 난이도는 기존 승인 대응인 L1 beginner16·L2 beginner15·L3 intermediate24·L4 intermediate17을 유지한다. L지원 단계와 필터 난이도를 동일하게 해석하지 않는다. 관련 자동 검사·대표 UI·독립 문서·통합 및 PR #22 CI PASS와 미병합 경계는 [전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)를 따른다. Java 실제 실행은 BLOCKED다.
 
 Java 전용 validation은 이 정적 계약·실제 교안/개념·원본 대응을 확인한다. 다중 언어 컬렉션을 기존 CT 목록/상세에 전달하고 UI·handler·adapter의 Java 실행 차단을 독립 검사한다. 새 저장소나 실행 DTO·범용 Java 호출기는 만들지 않는다. 위 Java 문제 묶음 미승인 서술은 이 승인된 읽기/작성72에 적용하지 않으며 실행·채점 계약은 계속 별도다.
 
@@ -409,4 +409,4 @@ Quest의 기존 `id`, `revision`, `difficulty`, route와 진도는 보존한다.
 
 ### 외부 Git 웹과제
 
-외부 과제의 목표 메타데이터는 현재 Web Project JSON과 다른 도메인이다. `assignmentId`, track, 선수 교안·Quest, 저장소 URL, 검증한 starter·solution ref와 commit, brief 경로, 순서 있는 요구사항·검증 명령을 연결한다. 정확한 schemaVersion과 파일 경로는 과제 저장소·branch 결정 후 확정하며, 그 전에는 현재 `content/web-projects/index.json`을 외부 과제 manifest로 재해석하지 않는다. 목표 계약은 [`designs/web-assignments.md`](designs/web-assignments.md)가 담당한다.
+`[제안]` 외부 과제 데이터는 기존 인앱 Web Project와 다른 도메인이며 아직 구현되지 않았다. [밤위키 원본 활용 계약](designs/web-assignments.md#과제-메타데이터-계약)에 따라 선정한 과제의 안정 ID·revision·선수 연결, 원본 버전·시작 브랜치/commit·루트 README·허용 파일·AI 제공 범위·도구·공개 검증·전달/공개 범위를 최소 매핑한다. 중앙 저장소·일률 starter/solution ref를 필수 필드로 가정하지 않는다. 구체 schemaVersion·파일 경로는 원본별 연결 계약에서 확정하고 `content/web-projects/index.json`을 외부 manifest로 재해석하지 않는다.

@@ -1,6 +1,6 @@
 # ADR 0005: Java Code Quest의 번들 JDK와 로컬 프로세스 평가
 
-`[현재 사실]` 이 문서는 별도 미게시 로컬 작업의 Java/desktop 후보 설계와 격리 실패 이력이다. 아래 desktop 파일 경로·명령·해시는 당시 로컬 증거이며 이 브라우저 게시 작업본에 해당 소스·JDK·Electron·desktop 스크립트가 있다는 뜻이 아니다. 이 문서의 보존은 실행·설치 지원이나 실행 재개 승인이 아니다.
+`[현재 사실]` 이 문서는 별도 미게시 로컬 작업의 Java/desktop 후보 설계와 격리 실패 이력이다. 아래 desktop 파일 경로·명령·해시는 당시 로컬 증거이며 이 브라우저 게시 작업본에 해당 소스·JDK·Electron·desktop 스크립트가 있다는 뜻이 아니다. 이 문서의 보존은 실행·설치 지원이나 실행 재개 승인이 아니다. 정확한 artifact·격리 실패·실행 중지와 재개 계약은 아래 내용을 유지한다.
 
 - 상태: `[확정 결정]` 2026-09-15 Java 실행 지원 요청의 제한된 prototype 계약. **실제 격리 prototype은 FAIL / BLOCKED이고 Java 실행 지원은 미완료**다. 아래 실행 절은 비활성 후보 계약이며 검증된 기능 설명이 아니다.
 - 범위: macOS 14.8.3·Apple Silicon 검증 장비, 첫 Java Code Quest와 승인된 배열 3개의 비활성 실행 후보, 기존 정적 앱의 Electron shell. 제품 범위는 [`DEC-JAVA-QUEST-RUNTIME-01`](../roadmap.md#2026-09-15-java-실행-지원-결정)과 [배열 편입 계약](../content-schema.md#algorithm-bridge-java-배열-quest-편입), 실행·패키징 상태는 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md)를 따른다.

@@ -1,89 +1,54 @@
 # 외부 Git 웹과제 설계
 
-이 문서는 BAM.dev 웹과제의 학습 흐름, 별도 Git 저장소, 과제 폴더·참조·정답 비교 계약의 목표 설계 정본이다. 현재 앱 안의 HTML·CSS Web Project 계약은 [`../web-project-authoring.md`](../web-project-authoring.md)와 [ADR 0004](../decisions/0004-local-web-project-evaluation.md)에 남긴다. 결정 문구·이유·날짜의 정본은 [`DEC-WEB-ASSIGN-01`](../roadmap.md#2026-08-29-확정-제품-결정)과 [`DEC-SPRING-BOOT-01`](../roadmap.md#2026-09-04-확정-제품-결정)이고, 이 문서는 그 결정이 외부 과제 경계에 미치는 효과를 풀어 쓴다.
+이 문서는 밤위키에서 만든 웹과제를 BAM.dev에 연결하는 원본 활용·시작 상태·공개 검증 계약의 정본이다. [DEC-WEB-SOURCE-01](../roadmap.md#2026-09-15-웹과제-원본-활용-결정)을 적용하며 기존 [외부 Git 학습 방향](../roadmap.md#2026-08-29-확정-제품-결정)과 [Spring 실행 경계](../roadmap.md#2026-09-04-확정-제품-결정)를 유지한다. 현재 인앱 HTML·CSS Web Project는 [작성 계약](../web-project-authoring.md)과 [ADR 0004](../decisions/0004-local-web-project-evaluation.md)을 따른다.
 
 ## 결정 적용과 현재 차이
 
-- `DEC-WEB-ASSIGN-01` 적용: 학습자는 HTML·CSS·JavaScript·Java 실습 폴더를 내려받아 로컬 도구에서 요구사항을 구현하고, BAM.dev 안내에 따라 자신의 코드와 검증된 solution commit을 비교한다.
-- `DEC-SPRING-BOOT-01` 적용: 향후 Spring Boot의 실제 실행은 앱 본체나 Java 코딩테스트 runner가 아니라 별도 외부 Git 웹과제에서 시작한다. 연결 교안은 앱 안의 정적 콘텐츠다.
-- `[현재 사실]` 현재 BAM.dev Web Project는 앱 내부에서 HTML과 CSS 두 파일만 편집·평가하며 JavaScript를 허용하지 않는다.
-- `[현재 사실]` 외부 과제 저장소와 Java·Spring Boot 외부 과제는 아직 존재하지 않는다.
-- `[확인 필요]` 한 저장소인지 언어별 저장소인지, 정확한 branch·tag 구조, Java·Spring Boot 과제 계약과 기존 인앱 Web Project의 최종 처리 방식은 아직 확정되지 않았다.
+- `[확정 결정]` 밤위키에서 만든 과제를 원본으로 사용한다. 원본 운영의 정본은 밤위키 `schema/자동운영/웹과제-운영.md`이며 BAM은 그 운영·템플릿·예약 설정을 복제하거나 변경하지 않는다. 확인 출처와 범위는 [자료 기록](../reference-audit.md#밤위키-웹과제-원본-확인-2026-09-15)에 남긴다.
+- `[현재 사실]` 밤위키에는 별도 로컬 웹코딩 과제 후보가 있다. BAM에 반입된 외부 과제 manifest·연결·실행 검증은 아직 없다. 원본 존재를 BAM 제공 완료로 세지 않는다.
+- `[현재 사실]` BAM은 Spring 핵심·Boot·Security·JPA 정적 문서와 객관식을 제공한다. 실제 Spring 프로젝트 실행은 외부 과제 폴더에서 학습자가 시작·종료하며 앱 본체나 Java 코딩테스트 runner에 포함하지 않는다.
+- `[현재 사실]` 기존 인앱 Web Project는 HTML·CSS 두 파일 작성·미리보기·공개 검사·자가평가를 제공한다. 원본 활용 방식의 대체 흐름이 검증될 때까지 ID·주소·초안·제출 기록을 보존한다.
 
-기존 인앱 Web Project를 즉시 삭제하거나 완료된 새 흐름으로 표현하지 않는다. 새 외부 과제의 starter, 정답·검증과 복구 흐름이 실제로 준비될 때까지 현재 구현은 레거시 학습 경로로 유지한다.
-
-BAM.dev의 과제 안내·진도 화면은 [`visual-design.md`](visual-design.md)의 전역 색상·상태 계약을 따른다. 학습자가 만드는 HTML·CSS 결과물과 clone한 과제 UI에는 BAM.dev 팔레트를 강제하지 않는다.
+BAM 안내·진도 UI는 [전역 시각 계약](visual-design.md)을 따르되 학습자가 구현하는 과제 결과물에 BAM 팔레트를 강제하지 않는다.
 
 ## 학습자 흐름
 
+`[제안]` 아래는 아직 구현되지 않은 BAM 연결 흐름이다.
+
 ```text
-BAM.dev에서 선수 교안·Quest와 과제 목표 확인
-→ 저장소와 정확한 starter 참조 확인
-→ pinned starter·solution commit을 포함하도록 저장소 clone·fetch
-→ 자신의 work 브랜치 만들기
-→ 요구사항을 순서대로 구현·commit
-→ 공개 검증 명령과 수동 체크리스트 실행
-→ 자신의 결과를 먼저 설명
-→ solution 참조와 diff·commit 흐름 비교
-→ BAM.dev에서 로컬 완료·회고 기록
+BAM.dev에서 과제 목표·선수 개념 확인
+→ 원본 과제의 버전·시작 브랜치·고정 commit·AI 제공 범위 확인
+→ 승인된 로컬 과제 또는 별도로 공개된 묶음 확보
+→ 개념별 또는 종합 독립 시작점에서 같은 루트 README 읽기
+→ 사용자 풀이를 보존하며 목표 TODO 구현·기록
+→ 그 버전의 공개 로컬 검증과 수동 확인 수행
+→ 자신의 결과 설명·승인된 비교 자료 확인
+→ BAM.dev에서 별도 로컬 완료·회고 기록
 ```
 
-solution 참조는 시도 전에 자동 checkout하거나 화면에 전체 코드를 먼저 노출하지 않는다. 공개 저장소이므로 답안을 보려는 사용자를 기술적으로 막는다고 주장하지 않고, 학습 순서와 공개 정책으로 안내한다. archive는 Git 이력·branch·commit 비교를 제공하지 않으므로 기본 학습 흐름이 아니다. `DEC-WEB-OFFLINE-01`에서 archive 배포를 채택하면 폴더 복사·수동 비교만 제공하는 별도 비-Git 대체 흐름으로 표시한다.
+원격 공개·clone은 선택 과제의 전달 방식으로 확정됐을 때 안내한다. 이미 있는 로컬 과제에 원격 저장소 생성을 강제하지 않는다. 비교 자료의 존재·공개 범위도 원본별로 확인하며 미제공 정답이나 solution commit을 생성했다고 가정하지 않는다.
 
 ## 권장 최소 저장소 모델
 
-`[제안]` 서버·저장소 운영 부담을 줄이기 위해 먼저 하나의 별도 저장소 `bam-dev-assignments`에 네 트랙을 둔다. Java의 도구체인·릴리스 주기가 실제로 독립 운영을 요구할 때만 저장소 분리를 다시 판단한다.
+`[대체됨]` 하나의 `bam-dev-assignments` 중앙 저장소에 네 트랙과 일률적인 `starter/<track>/<id>`·`solution/<track>/<id>` 브랜치를 만든다는 과거 제안은 `DEC-WEB-SOURCE-01`의 원본 활용 방식으로 대체한다. 과거 제안대로 새 저장소나 브랜치를 만드는 것은 현재 gate가 아니다.
 
-```text
-bam-dev-assignments/
-├── README.md
-├── assignments.json
-├── html/<assignment-id>/
-├── css/<assignment-id>/
-├── javascript/<assignment-id>/
-└── java/<assignment-id>/
-```
-
-`[제안]` 중앙 저장소의 최소 참조는 다음과 같다.
-
-```text
-main                                  카탈로그·공통 사용법
-starter/<track>/<assignment-id>       보호하는 게시용 기초 뼈대 참조
-solution/<track>/<assignment-id>      보호하는 게시용 정답 참조
-```
-
-학습자는 starter에서 자신의 로컬 `work/<assignment-id>` 브랜치를 만들고 중앙 저장소에 직접 push하지 않는다. 원격 백업이나 공유가 필요하면 자신의 fork를 사용한다.
-
-`dev`를 starter와 학습자 통합 대상으로 동시에 쓰지 않는다. BAM.dev 본 저장소에서 `dev`는 통합 브랜치이고, starter에 구현 결과를 계속 합치면 더 이상 재현 가능한 기초 뼈대가 아니기 때문이다.
-
-요구사항별 중앙 branch를 모두 만들지 않는다. `brief.md`에 요구사항 순서를 기록하고 solution branch에는 요구사항별 작은 commit을 남긴다. branch와 tag 이름은 이동할 수 있으므로 배포 정본은 항상 commit SHA다. 중간 정답 이름이 꼭 필요할 때만 `solution/<track>/<assignment-id>/v<revision>/step-01` 같은 버전 tag를 만들고 해당 commit SHA도 manifest에 고정한다.
-
-이 branch 모델은 bam이 결정하기 전까지 생성 지시가 아닌 초안이다. 이번 문서 작업에서는 GitHub 저장소나 branch를 만들지 않는다.
+원본의 한 과제 프로젝트·한 Git 저장소와 개념별/종합 **독립 시작 브랜치**를 유지한다. 브랜치를 바꾸면 같은 루트 README가 해당 목표·TODO·기반 구현과 시작 방법을 설명한다. 시작 버전·commit과 AI가 제공한 범위는 고정하며 이동 가능한 branch 이름만으로 재현성을 주장하지 않는다. 원본과 학습자의 진행 중 풀이·과거 버전을 덮어쓰거나 과거 풀이를 새 starter/정답으로 재구성하지 않는다. 원격 연결·공개는 별도 승인된 범위만 사용한다.
 
 ## 과제 메타데이터 계약
 
-BAM.dev의 과제 안내와 외부 저장소는 안정 ID와 commit으로 연결한다.
+`[제안]` 외부 과제용 BAM 데이터는 아직 구현되지 않았다. 과제를 선정한 뒤 원본 필드와 다음 최소 정보를 매핑하고 [콘텐츠 스키마](../content-schema.md#외부-git-웹과제)에 확정한다. 기존 인앱 Web Project JSON에 외부 폴더를 곧바로 넣지 않는다.
 
-```text
-assignmentId / revision
-track / title / summary
-prerequisiteLessonIds / conceptIds / prerequisiteQuestIds
-newExperienceIds
-repoUrl
-starterRef / starterCommit
-solutionRef / solutionCommit
-briefPath
-requiredFiles / requiredTools
-orderedSteps[]: id / requirement / acceptance
-verificationCommands[]
-manualChecks[]
-solutionRevealPolicy
-estimatedMinutes
-```
+- BAM 안정 ID·revision, 제목·목표와 실제 선수 교안/개념 연결
+- 원본 과제 식별자·버전·전달 위치, 선택한 시작 브랜치·고정 commit·루트 README
+- 수정할 목표 TODO·기반 구현·허용 파일과 AI 제공 범위
+- 필요한 도구·버전·공개 검증 명령·수동 확인·오프라인 준비 조건
+- 별도로 승인된 비교 자료·공개 범위와 로컬 완료/회고 연결
 
-branch 이름만 저장하면 branch가 움직여 과제 내용이 달라질 수 있으므로, 배포된 과제는 검증한 commit SHA도 함께 고정한다. 과제 저장소의 starter·solution을 먼저 검증한 뒤 BAM.dev manifest가 그 commit을 가리키게 한다.
+원본에 없는 저장소 URL·solution branch·검증 결과를 채워 넣지 않는다. 사용자 풀이·비공개 기록·로컬 절대 경로를 제품의 공개 데이터에 그대로 노출하지 않는다.
 
 ## 트랙별 과제 계약
+
+다음은 선택한 원본의 학습 목표를 검토할 때 참고하는 기존 설계안이다. 네 트랙의 신규 과제를 따로 제작하거나 이미 완료했다고 선언하는 목록이 아니다. 실제 원본의 목표·지원 범위를 임의로 재작성하지 않는다.
 
 ### HTML
 
@@ -109,62 +74,49 @@ branch 이름만 저장하면 branch가 움직여 과제 내용이 달라질 수
 
 ### Java
 
-- `[확정 결정]` 뼈대 → 요구사항 구현 → 정답 비교라는 학습 흐름은 JavaScript와 같다.
+- `[확정 결정]` 원본이 제공하는 시작 상태와 요구사항에서 구현하고 공개된 근거로 결과를 설명한다. 정답 비교 자료는 그 과제의 승인된 범위에 한한다.
 - `[확인 필요]` 첫 Java 과제가 콘솔·도메인 로직과 메모리 저장소인지, 이후 Spring Boot 과제보다 어떤 순서로 제공할지 정해야 한다.
-- 서버 운영 부담과 현재 Java 샘플 상태를 고려한 권장 초안은 댓글·좋아요 도메인을 클래스·컬렉션·서비스와 테스트로 구현하고 원격 서버·DB 없이 실행하는 형태다.
-- JDK 25 도구체인의 정확한 제공 방식, 빌드 도구, 테스트 명령과 IDE 독립 실행 계약을 확정하기 전에는 Java 과제를 배포 완료로 표시하지 않는다.
+- `[제안]` 댓글·좋아요 도메인을 새로 제작한다는 과거 초안보다 선정한 밤위키 원본의 목표·파일·검증 계약을 먼저 확인한다.
+- 원본이 사용하는 JDK·빌드 도구·공개 검증과 오프라인 준비를 과제별로 확인한다. 확인된 외부 후보의 Java 21 안내는 BAM 앱의 Java 25 runner 계약 변경 승인이 아니며, 이 문서 작업에서 원본 버전을 수정하거나 호환 검증하지 않는다.
 
 ### Spring Boot
 
 - `[확정 결정]` 교안은 BAM.dev 앱 안의 정적 콘텐츠로 제공하고 실제 Spring Boot 프로젝트 실행은 외부 웹과제 폴더에서 시작한다. 앱 본체나 Java 코딩테스트 runner에 Spring Boot를 포함하지 않는다.
-- `[현재 사실]` Spring Boot 교안·Code Quest·과제 ID·저장소·starter·solution·빌드와 공개 검증은 아직 없다.
-- `[확인 필요]` MVP 포함 시점·정확한 교안 범위·Code Quest 여부는 `DEC-JAVA-01`, 과제 ID·저장소·starter/solution·빌드 도구·공개 테스트는 `DEC-WEB-REPO-01`, 의존성·버전·오프라인 cache는 `DEC-WEB-OFFLINE-01`에서 정한다.
+- `[현재 사실]` Spring 정적 교안·객관식은 제공한다. 밤위키의 외부 Spring 과제 후보와 별개로 BAM 과제 ID·고정 버전 연결·공개 검증은 아직 없다.
+- `[확인 필요]` 설치형 MVP의 차단 묶음·Code Quest 여부는 `DEC-JAVA-01`, 선정 원본의 BAM ID·시작 버전·전달/공개·빌드/검증 연결은 `DEC-WEB-REPO-01`, 의존성과 오프라인 준비는 `DEC-WEB-OFFLINE-01`에서 정한다.
 - 과제에 로컬 HTTP 실행이 필요해도 학습자가 외부 폴더에서 시작·종료하며 BAM.dev 앱의 상시 서버나 Java 코딩테스트 runner로 취급하지 않는다.
 
 ## BAM.dev 웹과제 페이지
 
-과제 페이지는 다음을 제공한다.
+`[제안]` 페이지는 선정 과제의 목표·선수 연결, 원본 버전·시작 상태·README, 허용 파일·AI 제공 범위, 실제 도구·공개 검증 명령과 필요한 사전 다운로드를 안내한다. 학습자가 먼저 구현·설명한 뒤 승인된 비교 자료를 확인하도록 한다. 원본 과제 화면을 새로 제작하거나 사용자 풀이를 자동 읽는 기능은 이번 방향에 포함하지 않는다.
 
-- 이 과제가 MVP 학습 흐름에서 필요한 이유와 새 A/E/C/T
-- 선수 교안·Code Quest·코딩테스트 중 실제 연결 대상과 현재 학습 위치
-- 필요한 Git·런타임 도구와 사전 확인 방법
-- 저장소 URL, 고정 starter·solution commit을 로컬에 확보하는 안전한 clone·fetch·switch 명령
-- 폴더·파일 구조와 수정 가능·금지 경로
-- 순서 있는 요구사항과 관찰 가능한 완료 조건
-- 실행할 공개 검증 명령과 수동 접근성·모바일 체크리스트
-- 정답을 보기 전 자기 설명·commit 안내
-- 고정 solution 참조와 commit별 비교 방법
-- 처음 clone·fetch에는 인터넷이 필요하며, 두 pinned commit의 로컬 존재를 확인한 뒤 구현·검증·정답 비교는 오프라인이라는 경계
-
-BAM.dev는 MVP에서 GitHub API로 branch를 조회하거나 사용자의 로컬 Git 상태를 자동 판정하지 않는다. 명령을 자동 실행하지 않고 복사 가능한 안내로 제공하며, 완료는 학습자의 로컬 체크와 회고로 기록한다.
+BAM.dev는 GitHub API로 브랜치나 사용자 로컬 Git 상태를 자동 판정하지 않는다. 외부 명령을 자동 실행하지 않고 과제별로 검증된 안내를 제공하며, 완료·회고는 기존 제품 진도와 구분해 설계한다. 아직 이 외부 연결용 화면·저장 필드가 구현됐다고 표시하지 않는다.
 
 ## 검증과 인계
 
-외부 과제는 두 저장소의 증거가 필요하다.
+외부 과제 연결은 원본과 BAM 양쪽의 증거가 필요하다.
 
-1. 과제 저장소: starter가 요구사항의 정답을 미리 포함하지 않는지, solution과 공개 검증이 통과하는지, 단계별 commit이 독립적인지 확인한다.
-2. BAM.dev 저장소: manifest의 ID·concept·URL·ref·commit·경로가 실제 과제 저장소와 일치하는지 확인한다.
+1. 원본: 선택한 버전·시작 commit·브랜치와 루트 README, 목표 TODO/기반 구현·AI 제공 범위·허용 파일을 확인한다. 공개 검증과 비교 자료가 실제 제공 범위에 일치하는지 독립 확인한다.
+2. BAM: 안정 ID·선수 개념·문서·전달 위치·commit·실행/오프라인 안내가 원본과 일치하는지 확인한다. 기존 과제·사용자 기록은 보존한다.
 
-콘텐츠 생성자는 자신의 starter·solution을 최종 승인할 수 없다. `content_validator`는 교육 목표·중복·정답 누출과 설명을, `test_engineer`는 실제 clone·checkout·검증 명령을, `project_integrator`는 두 저장소의 고정 참조와 문서·버전 정합성을 확인한다.
+`content_validator`는 교육 목표·지원·정답 누출과 설명을, `test_engineer`는 선정된 시작점에서 실제 공개 검증·오프라인 절차를, `project_integrator`는 원본과 BAM의 고정 참조·연결·독립 증거를 확인한다. 콘텐츠 작성자는 자신의 결과를 최종 승인하지 않는다. 원본을 실제 실행하거나 검증하지 않은 문서 조사 결과를 과제 PASS로 사용하지 않는다.
 
 ## 완료 조건
 
-- 새 폴더에서 문서만 따라 starter를 받을 수 있다.
-- starter에는 요구사항의 완성 코드가 없고 필요한 로컬 자산은 모두 들어 있다.
-- 네트워크를 끊기 전에 pinned starter·solution commit과 필요한 로컬 자산을 확보했음을 확인하며, 그 뒤 구현·검증·정답 비교가 오프라인에서 가능하다.
-- 요구사항마다 입력·상태·사용자 행동과 완료 조건이 관찰 가능하다.
-- solution은 모든 공개 검증을 통과하고 요구사항별 commit 또는 고정 중간 참조를 제공한다.
-- branch 이름뿐 아니라 검증한 commit이 BAM.dev에 고정된다.
-- 학습자의 work를 중앙 starter나 solution branch에 push하지 않는다.
-- HTML·CSS는 접근성과 모바일, JavaScript·Java는 상태·오류·데이터 경계를 포함한다.
+- 선택한 원본 버전·시작 commit에서 README만 따라 해당 목표로 시작할 수 있다.
+- 목표 TODO와 AI가 제공한 기반 구현이 구분되며 사용자 풀이·과거 버전이 보존된다.
+- 실제 공개 검증과 수동 확인이 관찰 가능한 요구사항에 대응하고 독립 검증을 통과한다.
+- 필요한 도구·자산·의존성과 사전 다운로드 이후 오프라인 경계가 확인된다.
+- BAM 안정 ID·선수 연결·시작점·안내·별도 완료/회고가 실제 원본과 일치한다.
+- 원격 공개·비교 자료는 허용된 범위만 제공하며 기존 인앱 Web Project를 자동 삭제하지 않는다.
 
 ## bam의 결정이 필요한 항목
 
-- 한 저장소에 네 트랙을 둘지 언어별 저장소로 나눌지
-- 권장 `starter/solution` 보호 branch + 고정 commit 모델을 채택할지, 중간 정답 version tag가 필요한지
-- 최초 GitHub 접속 없이 시작하도록 starter를 설치본에 포함할지
-- 현재 인앱 Web Project를 병행·이관·종료 중 어떻게 처리할지
-- Java·Spring Boot 과제의 포함 순서, ID, 저장소·starter/solution과 공개 검증
-- JDK 25 도구체인 제공 방식, Spring Boot 빌드 도구·의존성 버전과 오프라인 cache
+- 선택할 밤위키 과제와 고정 시작 버전·commit
+- BAM 안정 ID·선수 교안/개념 연결과 전달·공개 범위
+- 해당 과제의 실행 도구·공개 검증·비교 자료·오프라인 계약
+- 검증된 대체 흐름 이후 기존 인앱 Web Project의 병행·이관·종료 여부
+
+원본 선택과 연결을 정하기 전에는 신규 과제 생성·BAM 반입·제공 완료를 선언하지 않는다. SQL/ERD·Excalidraw/PNG·사용자 풀이 반입과 밤위키 자동운영 설정 변경은 이번 범위 밖이다.
 
 결정 ID와 구현 순서는 [`../roadmap.md`](../roadmap.md)가 담당한다.

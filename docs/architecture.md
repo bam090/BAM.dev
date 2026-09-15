@@ -49,6 +49,8 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 ## 목표 설치형 구조
 
+외부 과제는 [밤위키 원본 활용 계약](designs/web-assignments.md)에 따라 고정 시작 버전과 공개 검증을 확인한 뒤 연결한다. 현재 외부 과제 manifest·BAM 연결은 미구현이며 기존 인앱 Web Project의 데이터·진도와 구분한다.
+
 `[확정 결정]` [`DEC-DELIVERY-01`](roadmap.md#2026-08-29-확정-제품-결정), [`DEC-LOCAL-EVALUATION-01`·`DEC-JAVA-CODING-TEST-01`·`DEC-JAVA-RUNTIME-01`](roadmap.md#2026-09-02-확정-제품-결정), [`DEC-JAVA-VERSION-02`·`DEC-SPRING-BOOT-01`·`DEC-FRONTEND-01`·`DEC-JAVA-IMPLEMENTATION-01`](roadmap.md#2026-09-04-확정-제품-결정)에 따라 목표 배포물은 원격 API·DB·계정 없이 설치해 사용하는 로컬 프로그램이며 코딩테스트는 JavaScript와 Java를 지원한다. 목표 UI 소스는 HTML·CSS 기반의 React·TypeScript를 사용하고 JavaScript도 유지한다. 별도 제품 구성요소인 Java 코딩테스트 로컬 runner는 Java 25로 작성한다. 현재 정적 UI·콘텐츠·평가 도메인과 Worker를 전면 재작성하지 않고 작은 화면·경계부터 이관하며 설치 shell을 바깥 계층에 둔다.
 
 ```text
@@ -64,7 +66,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
     ├── Quest 상태 ──────► 로컬 사용자 데이터
     └── 코딩테스트 상태 ─► 로컬 사용자 데이터
 
-외부 Git 웹과제 ── 최초 clone/fetch ──► 사용자 실습 폴더·IDE
+밤위키 원본 웹과제 ── 승인된 시작 버전 확보 ──► 사용자 실습 폴더·IDE
                                       └──► 향후 Spring Boot 실제 실행 경계
 ```
 
@@ -90,7 +92,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 앱 shell은 `bam://app` 정적 자산 origin을 제공하고 HTTP 포트를 열지 않는다. Node·일반 IPC·파일 시스템을 renderer에 노출하지 않으며 renderer CSP와 기존 JavaScript Worker의 제한된 동적 컴파일 문맥을 분리한다. Java 없는 일반 브라우저는 기존 세 언어 평가를 계속 제공한다. capability가 없는 Java route는 실행 불가 안내를 제공하고 거짓 PASS·완료를 만들지 않는다.
 
-선택된 runtime·정확한 artifact·통신·compile/run protocol·sandbox·timeout/output/memory·cleanup·실제 부정 검증은 [ADR 0005](decisions/0005-java-quest-local-runtime.md), Java 데이터는 [콘텐츠 계약](content-schema.md#java-정적-메서드-quest-pilot), 장기 설치 목표는 [로컬 앱 설계](designs/local-application.md)가 정본이다. 별도 로컬 prototype의 설치 산출물·실패 이력은 위 ADR와 작업 카드에서 확인한다. Java 코딩테스트 UI·콘텐츠·완료율·Spring·React 이관·원격 서비스는 추가하지 않는다.
+선택된 runtime·정확한 artifact·통신·compile/run protocol·sandbox·timeout/output/memory·cleanup·실제 부정 검증은 [ADR 0005](decisions/0005-java-quest-local-runtime.md), Java 데이터는 [콘텐츠 계약](content-schema.md#java-정적-메서드-quest-pilot), 장기 설치 목표는 [로컬 앱 설계](designs/local-application.md)가 정본이다. 별도 로컬 prototype의 설치 산출물·실패 이력은 위 ADR와 작업 카드에서 확인한다. 이 첫 Quest prototype 범위에서는 Java 코딩테스트 UI·콘텐츠·완료율·Spring·React 이관·원격 서비스를 추가하지 않았다. 이후 승인된 [CT 작성용 전환](designs/coding-test.md#algorithm-bridge-코딩테스트-전환)은 별도 브라우저 범위다.
 
 ## Web Code Quest 안전 경계
 

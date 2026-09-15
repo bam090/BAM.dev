@@ -2,11 +2,11 @@
 
 ## 범위와 상태
 
-`[대체됨]` 이 카드의 전체69 Quest 등록 계약은 [Algorithm Bridge 코딩테스트 전환](2026-09-15-algorithm-bridge-coding-tests.md)으로 대체했다. 아래 Java73·전체101 수량과 등록/검증 PASS는 전환 전 당시 작업본의 이력이며 현재 수량이 아니다. 현재는 기존32 Quest를 보존하고 원본72를 별도 Java 코딩테스트로 제공한다. 아래 경험 카드·출처·검증 근거는 당시 대상에 대한 기록으로 보존하고 동일 내용 범위에서만 재사용한다.
+`[대체됨]` 이 카드의 전체69 Quest 등록 계약은 [Algorithm Bridge 코딩테스트 전환](2026-09-15-algorithm-bridge-coding-tests.md)으로 대체했다. 아래 Java73·전체101 수량과 등록/검증 PASS는 전환 전 당시 작업본의 이력이며 현재 수량이 아니다. 현재는 기존32 Quest를 보존하고 원본72를 별도 Java 코딩테스트로 제공한다. 아래 경험 카드·출처·검증 근거는 당시 대상에 대한 기록으로 보존하고 동일 내용 범위에서만 재사용한다. 신규 69개 경험 카드와 원본 229개 SHA-256은 영구 보존하며 현재 수량은 [README](../../README.md)에만 요약한다.
 
-`[확정 결정]` 2026-09-15 bam의 전체 적용 요청은 [대표 세 문제 편입](2026-09-15-algorithm-bridge-quests.md)의 수량 제한을 대체한다. 작업 유형은 학습 콘텐츠 포함 기능이다. 원본 72개 중 기존 3개와 Java pilot을 보존하고 신규 69개를 같은 Java 컬렉션에 draft-only로 추가한다. 교안·객관식·코딩테스트·curriculum·저장소·supervisor·Java 프로세스를 변경하지 않는다. 실행 재개·Git 게시·Electron·빌드·설치·지원 OS 확대는 범위 밖이다.
+`[대체됨]` 당시 2026-09-15 bam의 전체 적용 요청은 [대표 세 문제 편입](2026-09-15-algorithm-bridge-quests.md)의 수량 제한을 대체한다. 작업 유형은 학습 콘텐츠 포함 기능이다. 원본 72개 중 기존 3개와 Java pilot을 보존하고 신규 69개를 같은 Java 컬렉션에 draft-only로 추가한다. 교안·객관식·코딩테스트·curriculum·저장소·supervisor·Java 프로세스를 변경하지 않는다. 실행 재개·Git 게시·Electron·빌드·설치·지원 OS 확대는 범위 밖이다.
 
-`[현재 사실]` 신규 69개의 독립 콘텐츠 검토 PASS 뒤 실제 등록을 완료했다. 제품 계약·읽기/작성 UI를 반영했고 선정한 정적 검사와 등록 연결 검사는 PASS다. 독립 데스크톱 검증도 PASS이며 독립 문서 검토·최종 통합은 아직 판정하지 않았다. Java 실행은 기존 격리 실패로 BLOCKED이며 신규 draft 타입의 실행 계약도 승인하지 않았다. 정본은 [제품 흐름](../designs/code-quest.md#algorithm-bridge-전체-문제-편입)과 [draft 데이터 계약](../content-schema.md#algorithm-bridge-전체-편입의-draft-계약)이다.
+`[현재 사실]` 당시 신규 69개의 독립 콘텐츠 검토 PASS 뒤 실제 등록을 완료했다. 제품 계약·읽기/작성 UI를 반영했고 선정한 정적 검사와 등록 연결 검사는 PASS다. 독립 데스크톱 검증도 PASS이며 독립 문서 검토·최종 통합은 아직 판정하지 않았다. Java 실행은 기존 격리 실패로 BLOCKED이며 신규 draft 타입의 실행 계약도 승인하지 않았다. 정본은 [제품 흐름](../designs/code-quest.md#algorithm-bridge-전체-문제-편입)과 [draft 데이터 계약](../content-schema.md#algorithm-bridge-전체-편입의-draft-계약)이다.
 
 ## 출처와 보존 기준
 
@@ -14,7 +14,7 @@
 
 원본은 13주제 72문제이며 L1 16·L2 15·L3 24·L4 17이다. 주제별 수는 array 12, stack 5, queue 4, hash 6, tree 4, set 4, graph 6, backtracking 5, sorting 6, twopointer 4, simulation 6, dynamicprogramming 4, greedy 6이다. 기존 ARR-01·ARR-02·QUE-01의 ID·order·교안 연결은 유지한다. 신규 order 5~73은 원본 전체 순서와 같지 않으므로 대응표에 원본 slot을 명시한다.
 
-등록 검사에서 확인한 수량은 Java 73·전체 101·실행 가능 28이다. Java는 기존 런타임 차단 4개와 실행 미지원 draft 69개로 구분한다. 기존 32개 객체와 원본 229개 파일은 등록 담당의 보존 증거로 확인했다.
+당시 등록 검사에서 확인한 수량은 Java 73·전체 101·실행 가능 28이다. Java는 기존 런타임 차단 4개와 실행 미지원 draft 69개로 구분한다. 기존 32개 객체와 원본 229개 파일은 등록 담당의 보존 증거로 확인했다.
 
 ## 역할과 완료 조건
 
