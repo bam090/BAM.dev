@@ -1,6 +1,7 @@
 import { WEB_CODE_QUEST_EVALUATION_KINDS } from "../core/web-code-quest.js";
 
 const WEB_EVALUATION_KINDS = new Set(Object.values(WEB_CODE_QUEST_EVALUATION_KINDS));
+const JAVA_EVALUATION_KIND = "java-static-method-v1";
 
 function assertRunner(runner, label) {
   if (!runner || typeof runner.run !== "function") {
@@ -11,16 +12,24 @@ function assertRunner(runner, label) {
 
 /**
  * Keeps the JavaScript v1 request contract intact while routing explicit
- * HTML/CSS evaluation kinds to the direct-source web runner.
+ * HTML/CSS evaluation kinds to the direct-source web runner and the explicit
+ * Java kind to the local bridge adapter when it is installed.
  */
 export class CodeQuestRunnerRouter {
-  constructor({ javascriptRunner, webRunner } = {}) {
+  constructor({ javascriptRunner, webRunner, javaRunner = null } = {}) {
     this.javascriptRunner = assertRunner(javascriptRunner, "JavaScript Code Quest runner");
     this.webRunner = assertRunner(webRunner, "Web Code Quest runner");
+    this.javaRunner = javaRunner === null ? null : assertRunner(javaRunner, "Java Code Quest runner");
   }
 
   #runnerFor(request) {
     if (!request || typeof request !== "object") return null;
+    if (
+      request.languageId === "java" &&
+      request.evaluationKind === JAVA_EVALUATION_KIND
+    ) {
+      return this.javaRunner;
+    }
     if (WEB_EVALUATION_KINDS.has(request.evaluationKind)) return this.webRunner;
     if (
       request.languageId === "javascript" &&

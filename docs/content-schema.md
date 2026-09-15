@@ -117,7 +117,7 @@ category ──► course ──► lesson ──► Markdown
 - 공유 상세 문서는 **같은 `courseId`이거나**, 두 과정 모두 `categoryId: language`이고 같은 `languageId`일 때만 허용한다. 두 교안의 언어·concept 선언, 실제 문항의 `lessonId`·언어·concept, 실제 `heading`·발췌와 교안 존재 조건을 계속 검사한다. 알고리즘과 언어 과정 사이의 공유는 같은 실행 언어라도 허용하지 않는다.
 - 목록/문서 CTA는 언어 내 해당 concept 문항 전부의 매핑이 같은 상세 문서·주제로 귀결될 때만 한 카드로 합치고 기존 v1 `lessonId: null` 언어+concept 선택을 사용한다. 조건이 성립하지 않으면 기존 소유별 묶음을 유지한다. 기존 소유 교안 URL·route 검증·문서 복귀 토큰 검사를 완화하지 않는다.
 - 기존 JS 27개·Java 1개 문항 객체는 그대로 두고 새 객체만 해당 언어 컬렉션에 추가한다. 기존 문항 ID·진도 키는 유지하지만 범위의 문항 집합 변경은 활성 세션의 콘텐츠 서명을 바꿀 수 있으며 기존 변경 감지·안내 계약을 따른다. 문항 객체 보존을 모든 범위의 세션 서명 불변으로 주장하지 않는다.
-- Java 언어·과정의 `status`는 현재 `available`이다. 이 값은 정적 학습문서·객관식 제공 상태이며 Java runner·코딩테스트·Spring·설치형 release 준비를 나타내지 않는다. 콘텐츠 검사는 Code Quest 필수 제공을 available인 JavaScript·HTML·CSS로 한정하고, 앱의 초기 Quest 로드·해시 진입·실제 열기도 같은 조건을 사용한다. 미제공 Java Quest는 기존 기본 JavaScript 교안으로 복귀한다. 별도 스키마 버전·저장 키·실행 의존성은 추가하지 않았다.
+- Java 언어·과정의 `status`는 현재 `available`이다. 이 값은 정적 학습문서·객관식 제공 상태이며 Java runner·코딩테스트·Spring·설치형 release 준비를 나타내지 않는다. 초기 Quest 로드·해시 진입·실제 열기를 JavaScript·HTML·CSS로 한정하던 이전 정책은 [Java 배열 Quest 편입 계약](#algorithm-bridge-java-배열-quest-편입)으로 대체했다. 현재 등록된 Java Quest는 목록·상세에서 읽고 코드를 작성·저장할 수 있으며 실행·완료 판정만 capability로 차단한다. 이 정적 문서·객관식 전환 자체는 별도 스키마 버전·저장 키·실행 의존성을 추가하지 않았다.
 
 ### CSS 객관식과 Spring 정적 콘텐츠
 
@@ -276,6 +276,58 @@ category ──► course ──► lesson ──► Markdown
 
 JavaScript Quest는 `functionContract`, `entryPoint`, 인수·기대값을 가진 `examples`와 `publicTests`를 사용합니다. 각 예시와 공개 테스트의 `args` 개수는 함수 매개변수 개수와 같아야 합니다. JSON 입출력은 경로당 컨테이너 512단계와 테스트별 16 KiB 제한을 지킵니다. 학습자 함수는 테스트마다 새 Worker에서 호출되고 반환값을 기대값과 비교합니다.
 
+### Java 정적 메서드 Quest pilot
+
+`[확정 결정]` [DEC-JAVA-QUEST-RUNTIME-01](roadmap.md#2026-09-15-java-실행-지원-결정)의 첫 문제는 별도 `content/quests/java.json`·`content/schema/java-code-quest.schema.json` 계약을 사용한다. `[현재 사실]` 기존 pilot과 배열 3개를 보존하고 아래 전체 편입으로 등록했던 draft69는 코딩테스트로 이동했다. 등록/정적 검사는 통과했으나 실제 격리 실행은 실패해 Java capability가 고정 false다. 등록·작성 가능 상태와 실제 실행 지원을 구분하며 최신 등록/정적 검사 증거는 [CT 전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md), 격리 실패·재개는 [런타임 카드](work-items/2026-09-15-java-code-quest-runtime.md)를 따른다. JavaScript의 실행 DTO나 Java schema PASS를 Java 실행 지원으로 간주하지 않는다.
+
+- 컬렉션: `schemaVersion: 1`, `contractVersion: 1`, `languageId: "java"`, `evaluationKind: "java-static-method-v1"`, title와 quests. 첫 pilot 한 개에서 아래 승인된 세 문제를 뒤에 추가했으며 기존 pilot 객체는 보존한다.
+- 첫 ID/slug/revision/order: `quest-java-total-price` / `total-price` / `1` / `1`. `lessonId: "java-concept-numeric-operations"`, `conceptIds: ["java.numeric-operations"]`로 실제 java 과정·교안에 연결한다.
+- 기존 공통 title·summary·instructions·difficulty·estimatedMinutes·hints·failureExplanations·commonMistakes를 재사용한다. `functionContract.parameters`는 name/type/description을 가진 세 `int`, `returns.type`은 `long`; constraints·complexity는 기존 표시 구조를 쓴다. `entryPoint: "totalPrice"`, 추가 `javaContract: {sourceFile: "Solution.java", className: "Solution"}`을 정확한 필드로 검사한다.
+- starter는 `public class Solution`과 `public static long totalPrice(int price, int quantity, int shippingFee)`의 전체 소스다. UTF-8 최대 20 KiB. 클래스 선언은 제공하고 첫 작성 위치는 메서드 본문으로 안내한다. `public`/`static`·정확한 매개변수/반환 타입은 실제 Java 호출 계약이다.
+- examples/publicTests는 기존 args/expected 구조를 쓰되 args는 범위가 검증된 JSON 정수 3개, expected는 **정규 10진 long 문자열**이다. `L` 접미사·선행 `+`·불필요한 선행 0은 넣지 않는다. Java long 전체 범위의 검사는 BigInt 또는 동등한 정확한 정수 검사로 하고 number 변환으로 정밀도를 잃지 않는다. UI에는 이를 Java의 숫자 기대값으로 표시하며 String 반환 문제로 설명하지 않는다.
+- 공개 테스트는 최대 6개, 각 ID와 실패 설명은 1:1, 기준답안·대표오답·독립 사례는 개발 fixture에 둔다. learner 결과에는 bundle의 공개 테스트만 사용한다. renderer가 넘긴 tests/expected는 privileged 실행 요청에 포함하지 않는다. 실행·결과 DTO는 [ADR 0005](decisions/0005-java-quest-local-runtime.md)가 정본이다.
+
+Java 컬렉션의 콘텐츠 검증 가능 상태와 앱에서 실행 가능한 capability를 분리한다. 일반 브라우저에서 Java가 available 교안이라는 이유만으로 Quest를 실행하지 않으며 기존 세 언어 동작과 진도 키는 보존한다. 첫 pilot의 한 문제 제한·배열 이연은 아래 승인된 세 문제 확장에 한해 대체한다. String·일반 객체·코딩테스트 계약은 여전히 별도 범위다.
+
+### Algorithm Bridge Java 배열 Quest 편입
+
+`[확정 결정]` 2026-09-15 승인한 ARR-01·ARR-02·QUE-01을 Java 컬렉션 뒤에 추가한다. `schemaVersion: 1`, `contractVersion: 1`, `evaluationKind: "java-static-method-v1"`, 기존 pilot 객체와 `javaContract`의 고정 `Solution.java` / `Solution`을 보존하는 가산 확장이다. 아래 세 서명과 현재 pilot 서명만 허용하며 임의 JVM 타입·JSON 객체 호출기를 만들지 않는다. 등록·작성 가능 상태와 실행 가능 상태는 [제품 계약](designs/code-quest.md#algorithm-bridge-대표-세-문제-편입)을 따른다.
+
+| Quest ID / slug / order | public static 서명 | 연결 교안 / 개념 | 입력 조건 |
+| --- | --- | --- | --- |
+| `quest-java-bridge-arr-01` / `bridge-arr-01` / 2 | `int[] solve(int[] readings, int slotNumber, int correctedValue)` | `java-concept-arrays` / `java.arrays` | 길이 1..100, 원소·수정값 -1000..1000, 위치 1..길이 |
+| `quest-java-bridge-arr-02` / `bridge-arr-02` / 3 | `int solve(int[] values, int minimum, int maximum)` | `java-concept-control-flow` / `java.control-flow` | 길이 0..1000, 원소 -10000..10000, minimum ≤ maximum, 두 경계는 Java int 전체 범위 |
+| `quest-java-bridge-que-01` / `bridge-que-01` / 4 | `int[] solve(int[] order)` | `java-concept-deque` / `java.deque` | 길이 0..100000, 원소 -1000000..1000000 |
+
+- 새 `revision`은 1이다. 원본 package·class 배치를 단일 `Solution` 정적 메서드로 옮기되 문제의 값·경계·원본 보존·새 배열 계약을 유지한다. 원본 프로젝트 전체의 Java 26→25 호환 판정은 하지 않는다.
+- `functionContract.parameters[].type`은 이 서명의 `int` 또는 `int[]`이고 반환형은 `int` 또는 `int[]`이다. `args`의 각 값은 서명과 정확히 대응하는 signed int32 JSON 정수 또는 그 정수만 담은 1차원 배열이다. `null`, 소수, 중첩 배열, 범위 초과, 길이 초과를 거부한다. 원본의 문제별 더 좁은 입력 조건도 검증한다.
+- `expected`는 반환형 `int`이면 int32 JSON 정수, `int[]`이면 최대 100000개 int32의 리터럴 배열이다. 기존 pilot `long`은 정규 10진 문자열을 유지하고 JS number로 바꾸지 않는다. 공개 최대 길이 사례도 실제 배열로 담으며 수열 생성기나 범용 데이터 descriptor는 추가하지 않는다.
+- ARR-01·QUE-01의 모든 `examples`·`publicTests`에는 `observations: {"argument0Unchanged": true, "returnNotArgument0": true}`를 필수로 둔다. 의미는 호출 전후 첫 입력 배열의 원소가 같고 반환 참조가 첫 입력 참조와 다름이다. 반환값 비교와 두 관찰이 모두 맞아야 통과하며 빈 배열·길이 1도 예외가 아니다. ARR-02에는 이 필드를 넣지 않는다. 같은 값을 반환하지만 입력을 바꾸거나 입력 자체를 돌려주는 답안을 실패시켜야 한다.
+- 공개 사례 수와 `failureExplanations` 1:1 계약은 유지한다. 이번 세 문제는 정상 입력의 반환·관찰만 평가하므로 `expectedError`나 임의 assertion 표현식을 만들지 않는다. 대표오답의 실패 기대는 개발 fixture의 문제·공개 test ID에 연결하고 학습자 채점에는 추가하지 않는다.
+- 단일 예시/공개 사례 JSON은 UTF-8 4 MiB 이내로 제한한다. 100000개 int32의 입력·기대 배열을 충분히 수용하되 무제한 데이터를 받지 않는다. 큰 배열은 파일에서 한 줄로 저장해 불필요한 줄 수를 줄일 수 있다. UI는 배열 앞 20개와 전체 길이를 보여 주고 긴 배열을 생략했음을 명시한다. 모든 공개 값은 사용자가 누르는 전체 공개 원본 JSON 다운로드로 제공한다. Blob/objectURL은 사용자 동작 때 만들고 다운로드가 끝나거나 화면을 떠날 때 해제한다. 거대한 textarea·pre 등 DOM으로 전체 값을 주입하지 않는다. 공개 관찰 기준도 표시한다. 요약은 표시만 바꾸며 평가 배열을 자르지 않는다.
+- 출처는 제품 JSON에 로컬 경로·revision을 더하지 않고 [편입 작업 카드](work-items/2026-09-15-algorithm-bridge-quests.md#출처와-보존)의 Quest ID→원본 project/slot/revision/파일/SHA-256 관리 대응표에 둔다. 원본은 읽기 전용이며 실제 실행·런타임 필수 경로로 사용하지 않는다.
+
+스키마·정적 검사 PASS는 실제 Java 실행 PASS가 아니다. typed 입력·결과와 공개 관찰의 실행 후보 계약은 [ADR 0005의 배열 확장](decisions/0005-java-quest-local-runtime.md#배열-세-문제의-비활성-프로토콜-확장), 실제 역할별 검증·미실행 범위는 작업 카드에 기록한다.
+
+### Algorithm Bridge 전체 편입의 draft 계약
+
+`[대체됨]` 아래의 신규69 **Quest 등록 위치·ID·순서**는 [코딩테스트 전환 계약](#algorithm-bridge-java-코딩테스트-draft-계약)으로 대체한다. 타입·원본 공개 소스·지원 보존 규칙은 새 Java CT 데이터의 동일 내용에 재사용한다.
+
+`[대체됨]` 당시 [전체 편입 제품 계약](designs/code-quest.md#algorithm-bridge-전체-문제-편입)에 따라 나머지 69개를 `content/quests/java.json`에 추가한다. 컬렉션의 `schemaVersion: 1`, `contractVersion: 1`, `evaluationKind: "java-static-method-v1"`를 유지하고 기존 네 객체는 완전히 보존한다. 위 배열 절의 네 exact signature 제한은 **실행 후보 네 문제**에 유지하며 신규 읽기·작성 데이터만 아래 분기로 확장한다. 새 실행 계약 버전이나 범용 Java 호출기는 만들지 않는다.
+
+- 신규 문제는 `executionMode: "draft-only"`를 필수로 가지며 안정 slot 기반 ID/slug·revision 1·order 5~73을 쓴다. 공통 지문·함수 계약·`Solution.java`/`Solution` 시작 틀과 실제 교안·개념 연결을 유지한다. 기존 네 문제는 이 필드를 추가하거나 수정하지 않는다.
+- draft `conceptIds`는 실제 알고리즘 교안의 `algo.*`를 포함한 점 구분 ID를 허용한다. 원본 Problem에 없는 해답 정보를 만들지 않도록 draft의 `functionContract.complexity`는 선택 필드이며 기존 네 실행 후보에서는 필수 계약을 유지한다.
+- draft 함수의 매개변수/반환 타입은 `int`, `long`, `double`, `boolean`, `String`, `int[]`, `long[]`, `double[]`, `String[]`, `int[][]`, `boolean[][]`, `String[][]`의 12개만 허용한다. 이는 표시/typed 예시 검증 허용 목록이며 runner 지원 목록이 아니다.
+- `examples`의 `args`는 매개변수 순서·개수·타입과 맞고 `expected`는 반환 타입과 맞아야 한다. int는 signed int32 정수, long은 Java long 범위의 정규 10진 문자열(불필요한 선행 0·`+`·`L`·소수 금지), double은 유한한 JSON number, boolean/String은 해당 JSON 타입이다. 배열은 최대 길이 100000, 지정된 차수와 원소 타입을 재귀 검증하고 단일 예제 record는 UTF-8 4 MiB 이내로 제한한다. 임의 객체·null·다른 차수·정수 범위 초과를 허용하지 않는다. 기존 long을 number로 변환하지 않는다.
+- `publicTestSource`는 UTF-8 8 KiB 이내의 원본 Test 파일 전체 문자열이다. `publicTests`의 각 항목은 필수 세 키 `id`, `label`, `assertionSource`만 가지며 원본 사례 메서드 소스를 보존한다. 사례의 `assertionSource`는 전체 `publicTestSource`에 포함되어야 한다. helper·loop·생성된 최대 길이·tolerance·identity/입력 불변 assertion은 전체 원문에서 빠짐없이 공개하고 일반 args/expected로 환원하지 않는다. 원본 테스트 소스는 읽는 자료이며 브라우저나 runner에서 실행하지 않는다.
+- typed 예시와 원본 공개 테스트는 별개다. source-first 열람·다운로드에서 원본 테스트 전체를 볼 수 있어야 하며 파일 경로·정답 fixture가 실행 의존성이 되지 않는다. HTML로 해석되지 않게 source를 escape한다. 원본 주석·문자열·특수 문자를 무손실로 유지한다.
+- draft `hints`는 원본의 지원 0~5개를 유지한다. 기존 네 문제의 힌트 계약은 유지하며 신규 0개는 정상이다. 단계 수를 맞추기 위해 L3/L4에 힌트를 생성하지 않는다. draft는 실행 실패 피드백 `failureExplanations`를 생략하며 기존 실행 후보의 공개 사례 1:1 실패 설명 규칙은 그대로다. 추후 실행을 허용할 때의 테스트/실패 계약은 별도 결정 사항이다.
+- 출처 대응표에는 Quest ID·원본 slot/순서·실제 lessonId·원본 revision·Problem/Solution/Test/guide 경로와 hash를 기록한다. 제품 데이터에 로컬 원본 경로를 넣지 않으며 원본 229개 파일을 수정하지 않는다. 기준답안은 개발 fixture 경로에만 둔다.
+
+validator는 draft 분기에서 타입·예시·필수 공개 소스·포함 관계·힌트·연결을 검증한다. request builder/adapter의 실행 allowlist를 확장하지 않으며 capability가 true여도 draft는 요청 생성 전에 차단한다. 등록 수, 작성 가능 수, 실행 가능한 수를 구분한다. 실제 인벤토리·콘텐츠 독립 검토·검사 및 미실행 상태는 [전체 편입 카드](work-items/2026-09-15-algorithm-bridge-all-quests.md)가 관리한다.
+
+draft의 `commonMistakes`는 빈 배열을 허용한다. 원본에 없는 풀이 힌트를 앱에 추가하지 않으며 입력·출력 전제 오독에 관한 보충만 허용한다. Solution에서 가져온 접근 순서·대표오답 해법은 개발 fixture/경험 카드에만 둔다. 특히 L4 `instructions`에는 원본 Problem의 설명을 사용하고 Solution의 ‘이 문제에서 연습할 것’ 같은 접근 요약을 넣지 않는다. 원본 무지원 문제의 독립 판단을 단계 수나 공통 필드 때문에 훼손하지 않는다.
+
 ### HTML·CSS 직접 소스 Quest
 
 HTML·CSS Quest는 함수를 선언하지 않습니다. `instructions`, 문자열 배열 `requirements`, 실제 HTML 또는 CSS 문자열과 설명으로 구성된 `examples`, assertion 기반 `publicTests`를 사용합니다. 학습자 소스는 UTF-8 20 KiB 이하여야 합니다.
@@ -295,7 +347,7 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 
 `content/coding-tests/<languageId>.json`은 목록 검색·필터와 제출 채점에 사용하는 문제를 정의합니다. `content/schema/coding-test.schema.json`과 런타임 검증을 함께 적용합니다.
 
-`[현재 사실]` 아래 계약은 현재 구현된 JavaScript 코딩테스트 형식이다. Java 코딩테스트 JSON·schema·runner·fixture는 아직 없으며 이 표를 Java 지원이 구현됐다는 근거로 사용하지 않는다.
+`[현재 사실]` 아래 계약은 현재 구현된 JavaScript 코딩테스트 형식이다. Java의 별도 draft JSON·schema·fixture는 아래 계약으로 추가했으며 이 JavaScript 표를 Java 실행 지원의 근거로 사용하지 않는다.
 
 | 필드 | 의미 |
 | --- | --- |
@@ -313,9 +365,25 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 
 `테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 같은 브라우저 공개 데이터이고 이것이 학습자 결과에 쓰이는 전체 집합입니다. 비공개·숨김 테스트나 원격 추가 채점은 사용하지 않습니다. 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/coding-test-content.test.js`에서 실제 JavaScript 런타임으로 검증합니다. 이 개발 fixture는 설치본의 학습자 답안에는 실행하지 않고 결과·완료에 영향을 주지 않습니다.
 
-`[확정 결정]` `DEC-JAVA-CODING-TEST-01`에 따라 Java 코딩테스트 계약을 별도 언어 컬렉션으로 추가하는 것은 MVP 목표다. 안정 ID·revision·교안·개념 연결, `publicTests`만 완료에 사용하는 원칙과 Code Quest와의 분리는 유지한다. 승인된 Java 교안·개념 ID는 현재 커리큘럼에 존재한다. `DEC-MVP-01`이 실제 Java 코딩테스트 문제 묶음과 근거 연결을 정하기 전에 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. Java 학습자 소스·공개 테스트 계약은 `DEC-JAVA-VERSION-02`에 따라 정식 Java 25 언어·표준 API와 preview 금지를 전제로 한다. Java의 소스 단위, 진입점, 인수·반환 직렬화, 컴파일·호출 결과와 오류 DTO도 현재 JavaScript `functionContract`를 그대로 복사하지 않는다. 실제 schemaVersion과 필드는 승인된 문제 묶음, `DEC-JAVA-RUNNER-01`, 별도 격리 ADR과 prototype 증거가 정해진 뒤 스키마 변경으로 제안한다.
+`[확정 결정]` `DEC-JAVA-CODING-TEST-01`에 따라 Java 코딩테스트 계약을 별도 언어 컬렉션으로 추가하는 것은 MVP 목표다. 안정 ID·revision·교안·개념 연결, `publicTests`만 완료에 사용하는 원칙과 Code Quest와의 분리는 유지한다. 승인된 Java 교안·개념 ID는 현재 커리큘럼에 존재한다. `DEC-MVP-01`이 실제 Java 코딩테스트 문제 묶음과 근거 연결을 정하기 전에 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. Java 학습자 소스·공개 테스트 계약은 `DEC-JAVA-VERSION-02`에 따라 정식 Java 25 언어·표준 API와 preview 금지를 전제로 한다. Java의 소스 단위, 진입점, 인수·반환 직렬화, 컴파일·호출 결과와 오류 DTO도 현재 JavaScript `functionContract`를 그대로 복사하지 않는다. 실행 schemaVersion·결과 필드는 `DEC-JAVA-RUNNER-01`, 별도 격리 ADR과 prototype 증거 후 결정한다. 승인된 정적 draft72의 필드는 아래 계약으로 구현했다.
+
+### Algorithm Bridge Java 코딩테스트 draft 계약
+
+`[확정 결정]` [제품 전환](designs/coding-test.md#algorithm-bridge-코딩테스트-전환)은 `content/coding-tests/java.json`과 별도 `content/schema/java-coding-test.schema.json`을 사용한다. 기존 JavaScript schema·6문제는 변경하지 않는다. 상위 객체는 `schemaVersion: 1`, `contractVersion: 1`, `languageId: java`, `evaluationKind: java-static-method-v1`, `title`, `problems`다. evaluationKind는 원본 서명 분류이며 실행 허가가 아니다.
+
+- 각 문제의 필수 필드는 `id`, `slug`, `revision`, `order`, `lessonId`, `conceptIds`, `difficulty`, `type`, `tags`, `estimatedMinutes`, `title`, `summary`, `description`, `functionContract`, `entryPoint`, `javaContract`, `starterCode`, `examples`, `publicTestSource`, `publicTests`, `hints`, `executionMode`다. `executionMode`는 항상 `draft-only`다.
+- ID는 `coding-test-java-bridge-<slot>`, slug는 `bridge-<slot>`이며 slot은 소문자 원본 키다. revision은 1, order는 원본 전체 순서 1~72다. 기존69의 `instructions`는 `description`으로 옮기고 원문·공개 Test·typed 예시·지원 문구는 재작성하지 않는다. 원본3은 같은 원본 revision에서 별도 CT로 편입한다.
+- `javaContract`는 정확히 `sourceFile: Solution.java`, `className: Solution`을 유지한다. 함수 타입12개·long 문자열·배열 차수/길이·예제 4 MiB·Test 전체 8 KiB·HTML escape 규칙은 위 draft 계약과 같다. `functionContract.complexity`는 선택이며 공개 Test는 `{id,label,assertionSource}`만 사용하고 각 assertionSource가 전체 publicTestSource에 포함돼야 한다. `runTestIds`·`failureExplanations`는 추가하지 않는다.
+- `hints`는 원본 0~5개다. `commonMistakes` 및 기존 경험/출처 metadata가 있으면 원래 구조와 의미를 선택 필드로 보존하되 개인 로컬 경로를 제품 JSON에 넣지 않는다. 실제 필드명·자료형은 원본 대조 후 schema에 명시하며 임의 additionalProperties로 검증을 우회하지 않는다.
+- `relatedQuestId`는 준비3의 실제 기존 Quest만, `legacyQuestId`는 옮기는69의 옛 Quest ID만 선택적으로 기록한다. 두 필드는 동시에 사용하지 않고 전체 대응의 중복·누락과 실제 참조를 검증한다. prefix만으로 이동·초안 가져오기를 추정하지 않는다.
+- 난이도는 원본 지원 L1→beginner, L2/L3→intermediate, L4→advanced로 표시하되 이미 독립 검토한 원본별 난이도 대응이 다르면 원본 카드 근거와 함께 보존한다. 이는 필터용 난이도이며 지원 단계와 동일 개념이 아니다. 원본 L값은 tags/기존 metadata에 유지한다. type은 기존 필터의 array/object/sorting/search/simulation/string 중 선택한다: array·twopointer는 array, hash·set는 object, sorting은 sorting, tree·graph·backtracking은 search, stack·queue·simulation·dynamicprogramming·greedy는 simulation. 원본13주제는 tags로 보존해 넓은 유형 매핑에서 유실되지 않게 한다.
+
+`[현재 사실]` Java72 collection/schema와 Java 전용 validation을 구현했고 독립 콘텐츠 검토는 PASS다. 현재 난이도는 기존 승인 대응인 L1 beginner16·L2 beginner15·L3 intermediate24·L4 intermediate17을 유지한다. L지원 단계와 필터 난이도를 동일하게 해석하지 않는다. 관련 자동 검사·대표 UI·독립 문서·통합 및 PR #22 CI PASS와 미병합 경계는 [전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)를 따른다. Java 실제 실행은 BLOCKED다.
+
+Java 전용 validation은 이 정적 계약·실제 교안/개념·원본 대응을 확인한다. 다중 언어 컬렉션을 기존 CT 목록/상세에 전달하고 UI·handler·adapter의 Java 실행 차단을 독립 검사한다. 새 저장소나 실행 DTO·범용 Java 호출기는 만들지 않는다. 위 Java 문제 묶음 미승인 서술은 이 승인된 읽기/작성72에 적용하지 않으며 실행·채점 계약은 계속 별도다.
 
 ## Web Project 컬렉션
+
 
 `content/web-projects/index.json`은 HTML·CSS를 함께 작성하는 작은 프로젝트를 정의합니다. `content/schema/web-project.schema.json`과 런타임 계약을 함께 적용하며, 프로젝트는 `web-project-` 안정 ID, URL용 `slug`, `revision`, 연속된 `order`와 실제 교안·개념을 가리키는 `conceptRefs`를 가집니다.
 
@@ -341,4 +409,4 @@ Quest의 기존 `id`, `revision`, `difficulty`, route와 진도는 보존한다.
 
 ### 외부 Git 웹과제
 
-외부 과제의 목표 메타데이터는 현재 Web Project JSON과 다른 도메인이다. `assignmentId`, track, 선수 교안·Quest, 저장소 URL, 검증한 starter·solution ref와 commit, brief 경로, 순서 있는 요구사항·검증 명령을 연결한다. 정확한 schemaVersion과 파일 경로는 과제 저장소·branch 결정 후 확정하며, 그 전에는 현재 `content/web-projects/index.json`을 외부 과제 manifest로 재해석하지 않는다. 목표 계약은 [`designs/web-assignments.md`](designs/web-assignments.md)가 담당한다.
+`[제안]` 외부 과제 데이터는 기존 인앱 Web Project와 다른 도메인이며 아직 구현되지 않았다. [밤위키 원본 활용 계약](designs/web-assignments.md#과제-메타데이터-계약)에 따라 선정한 과제의 안정 ID·revision·선수 연결, 원본 버전·시작 브랜치/commit·루트 README·허용 파일·AI 제공 범위·도구·공개 검증·전달/공개 범위를 최소 매핑한다. 중앙 저장소·일률 starter/solution ref를 필수 필드로 가정하지 않는다. 구체 schemaVersion·파일 경로는 원본별 연결 계약에서 확정하고 `content/web-projects/index.json`을 외부 manifest로 재해석하지 않는다.

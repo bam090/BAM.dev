@@ -1,5 +1,7 @@
 # 확정된 학습 서비스 변경의 GitHub 게시
 
+날짜별 준비·실패·보류는 당시 이력이다. 최신 확인 결과는 [후속 게시 기록](#후속-게시-기록-2026-09-15)을 따르며, 이 문서 정리 자체의 commit·push·merge를 뜻하지 않는다.
+
 작업 ID는 `GITHUB-PUBLICATION-20260913`이다. bam의 2026-09-13 “깃헙에 올리자 지금 변경되고 확정된부분들” 요청에 따라 검증된 로컬 제품·콘텐츠·운영 문서를 별도 브랜치에 게시하고 기존 `dev`와의 차이를 Draft PR로 보여 준다. 새 기능·교안 작성이나 기존 원격 기능의 폐기 승인은 아니다. 운영 문서 변경과 Git 게시 준비는 [개발 절차](../development-workflow.md), 게시 권한은 [`DEC-GIT-01`](../roadmap.md#bam-결정-대기-목록)을 따른다.
 
 ## 기준선과 범위
@@ -78,3 +80,28 @@
 `[확정 결정]` 배포 원본인 `dev:/`의 루트에 빈 `.nojekyll` 파일을 두어 Jekyll 처리를 건너뛴다. Pages source 설정은 `dev:/`로 유지하고 GitHub 설정은 변경하지 않으며, 이 표식은 Markdown 원문을 정적 파일로 보존한다.
 
 `[확인 필요]` 이 후속 PR의 실제 Pages 배포와 게시 사이트 동작은 아직 검증하지 않았다. 최종 승인·병합 뒤 해당 Pages 실행과 공개 사이트를 확인해 결과를 기록한다.
+
+## 최근 게시 결과 (2026-09-14)
+
+`[현재 사실]` 이 절은 앞선 준비·보류 기록 이후 확인한 PR #19의 게시 결과다. bam의 “커밋푸시해 병합까지 승인”에 따라 README 소개·사용 안내·계획 정리와 전 주제 공통 객관식의 오답 즉시 재도전·첫 오답 기록 보존을 [PR #19](https://github.com/bam090/BAM.dev/pull/19)로 게시하고 `dev`에 병합했다. 제품 4파일·테스트 4파일·설계 문서 3파일·README·AGENTS의 13파일 범위이며 학습 본문·문항·콘텐츠 ID는 변경하지 않았다.
+
+| 확인 대상 | 실제 결과 |
+| --- | --- |
+| 게시 feature | `codex/review-immediate-retry`, HEAD `4e20388272201fe90f68afd30691e892dd1e7383` |
+| PR·병합 | PR #19 `MERGED`, 2026-09-14 09:24:14 UTC, `dev` squash merge `cafc7fc767f537e9b69793c8631bddebf3d18255` |
+| feature·PR CI | [feature 실행 34827652212](https://github.com/bam090/BAM.dev/actions/runs/34827652212), [PR 실행 34827672333](https://github.com/bam090/BAM.dev/actions/runs/34827672333) 모두 `SUCCESS` |
+| 병합 뒤 CI·Pages | [dev CI 34827760772](https://github.com/bam090/BAM.dev/actions/runs/34827760772), [Pages 34827760084](https://github.com/bam090/BAM.dev/actions/runs/34827760084) 모두 같은 merge SHA에서 `success` |
+| `main` 보존 | 빈 초기 기준선 `7b2055478c381e098dd99da528d24f0e43582575` 유지 |
+| CodeRabbit | check 표시는 `SUCCESS`지만 [실제 자동 리뷰는 건너뜀](https://github.com/bam090/BAM.dev/pull/19#issuecomment-5661812963). 코드 리뷰 완료로 해석하지 않음 |
+
+`[현재 사실]` 위 상태는 문서 갱신 시 GitHub PR·Actions·`main` ref의 읽기 전용 조회로 확인했다. PR 본문의 독립 focused 14/14·HTML 2문항 데스크톱 PASS와 통합 근거는 기존 게시 증거이며, 이번 문서 작업에서 앱 테스트·빌드를 다시 실행한 결과가 아니다. 공통 기능 게시를 타 과목 전수 브라우저 검증으로 표현하지 않는다.
+
+`[현재 사실]` 원본 작업 폴더는 `codex/service-sidebar`의 HEAD `b97260eb866a15a02a80531107eca4b2144d436b`와 미커밋 변경을 유지한다. 원본 폴더 전체가 위 배포본과 같다는 뜻은 아니다. 최근 운영 지침의 후속 변경과 이번 게시 기록 문서 패치는 위 PR·배포에 포함되지 않았다. 새 Code Quest·SQL 기능도 이 게시 범위가 아니며, 이 기록은 해당 작업의 구현·게시 완료를 뜻하지 않는다.
+
+## 후속 게시 기록 (2026-09-15)
+
+`[현재 사실]` 앞선 기록 이후 확인된 게시 이력을 인수했다. 탐색·힌트 [PR #20](https://github.com/bam090/BAM.dev/pull/20)의 병합 SHA는 `896a306469983a373b8c03591419c5e00a26ef0f`로 기존 게시 작업 카드에 기록돼 있다. 개념별 Quest 확장 [PR #21](https://github.com/bam090/BAM.dev/pull/21)은 후속 Git 사전조사에서 merged=true·merge SHA `3d2f4b90f834d2fe400de69d048f3bf133015645`를 확인했다. 근거는 `/tmp/bridge-coding-publish-audit.md`이며 이 문서 작업에서 원격 재조회나 해당 PR의 CI·Pages 재검증은 하지 않았다.
+
+Algorithm Bridge 코딩테스트 [PR #22](https://github.com/bam090/BAM.dev/pull/22)는 최종 게시 receipt에서 Draft·미병합이다. 독립 콘텐츠·자동 검사·대표 UI·문서·통합과 후속 원격 CI는 PASS이며, 최초 실패·수정·정확한 head·검증 조건은 [전환 카드](2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)에 모은다. PR #19의 공개 사이트 성공을 이 미병합 전환의 배포 완료로 확대하지 않는다.
+
+PR #17 시기의 validator 수정 대기·실패는 위 당시 기록으로 보존한다. 후속 게시 head의 콘텐츠 검사·CI 성공은 검증된 보관 교안의 형식 예외와 제품 상태를 포함한 후속 증거이며 원문 교안을 재작성했다는 뜻이 아니다. 원본 로컬의 별도 Java/Electron 후보와 최신 운영 지침 변경 전체를 위 게시 범위에 포함하지 않는다.

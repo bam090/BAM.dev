@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bam.dev/schema/java-coding-test.schema.json",
+  "title": "BAM.dev Algorithm Bridge Java coding test collection",
+  "type": "object",
+  "required": ["schemaVersion", "contractVersion", "languageId", "evaluationKind", "title", "problems"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractVersion": { "const": 1 },
+    "languageId": { "const": "java" },
+    "evaluationKind": { "const": "java-static-method-v1" },
+    "title": { "type": "string", "minLength": 1 },
+    "problems": {
+      "type": "array",
+      "minItems": 72,
+      "maxItems": 72,
+      "items": { "$ref": "#/$defs/problem" }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "conceptId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$"
+    },
+    "javaType": {
+      "enum": ["int", "long", "double", "boolean", "String", "int[]", "long[]", "double[]", "String[]", "int[][]", "boolean[][]", "String[][]"]
+    },
+    "problem": {
+      "type": "object",
+      "required": [
+        "id", "slug", "revision", "order", "lessonId", "conceptIds", "difficulty", "type", "tags",
+        "estimatedMinutes", "title", "summary", "description", "functionContract", "entryPoint", "javaContract",
+        "starterCode", "examples", "publicTestSource", "publicTests", "hints", "executionMode"
+      ],
+      "properties": {
+        "id": { "type": "string", "pattern": "^coding-test-java-bridge-[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "slug": { "type": "string", "pattern": "^bridge-[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "order": { "type": "integer", "minimum": 1, "maximum": 72 },
+        "lessonId": { "$ref": "#/$defs/stableId" },
+        "conceptIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/conceptId" } },
+        "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+        "type": { "enum": ["string", "array", "object", "sorting", "search", "simulation"] },
+        "tags": { "type": "array", "minItems": 2, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "estimatedMinutes": { "type": "integer", "minimum": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 },
+        "functionContract": { "$ref": "#/$defs/functionContract" },
+        "entryPoint": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "javaContract": { "$ref": "#/$defs/javaContract" },
+        "starterCode": { "type": "string", "minLength": 1, "maxLength": 20480 },
+        "examples": { "type": "array", "minItems": 1, "maxItems": 3, "items": { "$ref": "#/$defs/example" } },
+        "publicTestSource": { "type": "string", "minLength": 1, "maxLength": 8192 },
+        "publicTests": { "type": "array", "minItems": 1, "maxItems": 6, "items": { "$ref": "#/$defs/publicTest" } },
+        "hints": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/hint" } },
+        "commonMistakes": { "type": "array", "items": { "$ref": "#/$defs/commonMistake" } },
+        "relatedQuestId": { "type": "string", "pattern": "^quest-java-bridge-[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "legacyQuestId": { "type": "string", "pattern": "^quest-java-bridge-[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "executionMode": { "const": "draft-only" }
+      },
+      "oneOf": [
+        { "required": ["relatedQuestId"], "not": { "required": ["legacyQuestId"] } },
+        { "required": ["legacyQuestId"], "not": { "required": ["relatedQuestId"] } }
+      ],
+      "additionalProperties": false
+    },
+    "functionContract": {
+      "type": "object",
+      "required": ["parameters", "returns", "constraints"],
+      "properties": {
+        "parameters": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "$ref": "#/$defs/parameter" } },
+        "returns": { "$ref": "#/$defs/returnValue" },
+        "constraints": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "complexity": { "$ref": "#/$defs/complexity" }
+      },
+      "additionalProperties": false
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type": { "$ref": "#/$defs/javaType" },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "returnValue": {
+      "type": "object",
+      "required": ["type", "description"],
+      "properties": {
+        "type": { "$ref": "#/$defs/javaType" },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "complexity": {
+      "type": "object",
+      "required": ["time", "space"],
+      "properties": {
+        "time": { "type": "string", "minLength": 1 },
+        "space": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "javaContract": {
+      "type": "object",
+      "required": ["sourceFile", "className"],
+      "properties": {
+        "sourceFile": { "const": "Solution.java" },
+        "className": { "const": "Solution" }
+      },
+      "additionalProperties": false
+    },
+    "example": {
+      "type": "object",
+      "required": ["args", "expected", "explanation"],
+      "properties": {
+        "args": { "type": "array", "minItems": 1, "maxItems": 5, "items": {} },
+        "expected": {},
+        "explanation": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "publicTest": {
+      "type": "object",
+      "required": ["id", "label", "assertionSource"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "type": "string", "minLength": 1 },
+        "assertionSource": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "hint": {
+      "type": "object",
+      "required": ["level", "stage", "title", "content"],
+      "properties": {
+        "level": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "stage": { "enum": ["concept", "observation", "implementation"] },
+        "title": { "type": "string", "minLength": 1 },
+        "content": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "commonMistake": {
+      "type": "object",
+      "required": ["id", "title", "explanation"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "title": { "type": "string", "minLength": 1 },
+        "explanation": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  }
+}

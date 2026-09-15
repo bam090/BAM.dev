@@ -157,6 +157,157 @@ test("Code Quest 입력은 즉시 반영하고 250ms 동안의 변경을 한 번
   assert.equal(saves.length, 1);
 });
 
+test("Java 실행 준비 중에는 편집·힌트·전체 공개 데이터·초안 저장만 허용한다", async (t) => {
+  const clock = installFakeBrowserClock(t);
+  const collection = JSON.parse(
+    await readFile(new URL("../content/quests/java.json", import.meta.url), "utf8"),
+  );
+  const quest = collection.quests.find(({ id }) => id === "quest-java-bridge-arr-01");
+  const { app, saves, attempts, events } = createAppHarness(quest);
+  let runnerCalls = 0;
+  app.codeQuestCollection = collection;
+  app.javaCodeQuestCapability = { available: false };
+  app.codeQuestRunner = {
+    async run() {
+      runnerCalls += 1;
+      throw new Error("비활성 Java runner를 호출하면 안 됩니다.");
+    },
+  };
+
+  const editedSource = `${quest.starterCode}\n// 저장 가능한 Java 초안`;
+  inputSource(app, editedSource);
+  app.revealNextCodeQuestHint();
+  await app.runCurrentCodeQuest();
+
+  assert.equal(app.codeQuestState.source, editedSource);
+  assert.equal(app.codeQuestState.visibleHintCount, 1);
+  assert.equal(app.javaCodeQuestCapability.available, false);
+  assert.equal(runnerCalls, 0);
+  assert.equal(attempts.length, 0);
+  assert.equal(app.codeQuestState.report, null);
+  assert.equal(app.codeQuestState.isRunning, false);
+  assert.match(app.codeQuestState.uiError, /코드는 작성하고 저장할 수 있지만/);
+  assert.ok(events.filter((event) => event === "render").length >= 2);
+
+  clock.runLiveTimers();
+  assert.deepEqual(saves, [{
+    questId: quest.id,
+    languageId: "java",
+    source: editedSource,
+  }]);
+
+  const output = { value: "" };
+  const details = {
+    open: true,
+    dataset: { questTestIndex: "0" },
+    closest(selector) { return selector === "[data-quest-public-data]" ? this : null; },
+    querySelector(selector) {
+      return selector === "[data-quest-public-data-output]" ? output : null;
+    },
+  };
+  app.handleCodeQuestDetailsToggle({ target: details });
+  assert.deepEqual(JSON.parse(output.value), {
+    args: quest.publicTests[0].args,
+    expected: quest.publicTests[0].expected,
+    observations: quest.publicTests[0].observations,
+  });
+  details.open = false;
+  app.handleCodeQuestDetailsToggle({ target: details });
+  assert.equal(output.value, "");
+});
+
+test("큰 Java 공개 데이터 다운로드는 전체 JSON Blob을 만들고 임시 자원을 정리한다", async (t) => {
+  const clock = installFakeBrowserClock(t);
+  const collection = JSON.parse(
+    await readFile(new URL("../content/quests/java.json", import.meta.url), "utf8"),
+  );
+  const quest = collection.quests.find(({ id }) => id === "quest-java-bridge-que-01");
+  const testIndex = quest.publicTests.findIndex(({ args, expected }) =>
+    args.some((value) => Array.isArray(value) && value.length > 20)
+      || (Array.isArray(expected) && expected.length > 20));
+  assert.ok(testIndex >= 0);
+  const publicTest = quest.publicTests[testIndex];
+  const { app } = createAppHarness(quest);
+  const status = { textContent: "" };
+  const link = {
+    href: "",
+    download: "",
+    hidden: false,
+    clickCount: 0,
+    removeCount: 0,
+    click() { this.clickCount += 1; },
+    remove() { this.removeCount += 1; },
+  };
+  let appendedLink = null;
+  let capturedBlob = null;
+  const revokedUrls = [];
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const previousCreateObjectUrl = Object.getOwnPropertyDescriptor(URL, "createObjectURL");
+  const previousRevokeObjectUrl = Object.getOwnPropertyDescriptor(URL, "revokeObjectURL");
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    value: {
+      createElement(tagName) {
+        assert.equal(tagName, "a");
+        return link;
+      },
+      body: { append(candidate) { appendedLink = candidate; } },
+    },
+  });
+  Object.defineProperty(URL, "createObjectURL", {
+    configurable: true,
+    value(blob) {
+      capturedBlob = blob;
+      return "blob:java-public-data";
+    },
+  });
+  Object.defineProperty(URL, "revokeObjectURL", {
+    configurable: true,
+    value(objectUrl) { revokedUrls.push(objectUrl); },
+  });
+  t.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else delete globalThis.document;
+    if (previousCreateObjectUrl) Object.defineProperty(URL, "createObjectURL", previousCreateObjectUrl);
+    else delete URL.createObjectURL;
+    if (previousRevokeObjectUrl) Object.defineProperty(URL, "revokeObjectURL", previousRevokeObjectUrl);
+    else delete URL.revokeObjectURL;
+  });
+
+  const button = {
+    dataset: { questTestIndex: String(testIndex) },
+    parentElement: {
+      querySelector(selector) {
+        return selector === "[data-quest-public-download-status]" ? status : null;
+      },
+    },
+    closest(selector) {
+      return selector === "[data-quest-public-download]" ? this : null;
+    },
+  };
+  assert.equal(app.handleCodeQuestClick({ target: button }), true);
+  assert.equal(appendedLink, link);
+  assert.equal(link.href, "blob:java-public-data");
+  assert.equal(link.download, `${quest.id}-${publicTest.id}-public.json`);
+  assert.equal(link.hidden, true);
+  assert.equal(link.clickCount, 1);
+  assert.equal(link.removeCount, 1);
+  assert.equal(status.textContent, "전체 공개 JSON 다운로드를 요청했습니다.");
+  assert.equal(capturedBlob.type, "application/json");
+
+  const json = await capturedBlob.text();
+  assert.ok(json.length > 2_000_000);
+  assert.deepEqual(JSON.parse(json), {
+    args: publicTest.args,
+    expected: publicTest.expected,
+    observations: publicTest.observations,
+  });
+  assert.deepEqual(revokedUrls, []);
+  assert.deepEqual(clock.scheduled.map(({ delay }) => delay), [0]);
+  clock.runLiveTimers();
+  assert.deepEqual(revokedUrls, ["blob:java-public-data"]);
+});
+
 test("라우트 전환은 대기 중인 최신 초안을 즉시 한 번 저장한다", async (t) => {
   const clock = installFakeBrowserClock(t);
   const { app, saves } = createAppHarness();

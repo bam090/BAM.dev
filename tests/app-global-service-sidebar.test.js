@@ -111,6 +111,7 @@ function createApp() {
       number: "",
     },
     codeQuestCatalogNotice: "",
+    codingTestCollections: new Map([["javascript", codingTests]]),
     codingTestCollection: codingTests,
     codingTestFilters: {
       query: "",
