@@ -1,4 +1,7 @@
-import { getCodingTestPublicTestsForMode } from "../core/coding-test.js";
+import {
+  canRunCodingTest,
+  getCodingTestPublicTestsForMode,
+} from "../core/coding-test.js";
 import { BrowserCodeQuestRunner } from "./browser-code-quest-runner.js";
 import { createExecutionRequestSnapshot } from "./code-grading.js";
 
@@ -37,6 +40,9 @@ export function createCodingTestRunnerRequest({
     throw new TypeError('코딩테스트 실행 모드는 "run" 또는 "submit"이어야 합니다.');
   }
   const canonicalProblem = getCanonicalProblem(collection, problem);
+  if (!canRunCodingTest(collection, canonicalProblem)) {
+    throw new Error("이 코딩테스트는 현재 앱에서 실행할 수 없습니다.");
+  }
   const publicTests = getCodingTestPublicTestsForMode(canonicalProblem, mode);
   const runnerRequest = createExecutionRequestSnapshot({
     requestId,

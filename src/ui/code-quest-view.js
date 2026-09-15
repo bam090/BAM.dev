@@ -74,6 +74,8 @@ const QUEST_PROGRESS_COPY = Object.freeze({
   completed: "완료",
 });
 
+const PUBLIC_ARRAY_PREVIEW_LIMIT = 20;
+
 function normalizeOutcome(outcome) {
   return typeof outcome === "string" && Object.hasOwn(OUTCOME_COPY, outcome)
     ? outcome
@@ -103,7 +105,83 @@ function formatJsonValue(value) {
   }
 }
 
-function renderQuestProse(value) {
+function formatCompactJsonValue(value, showDecimalStringAsNumber = false) {
+  if (
+    showDecimalStringAsNumber &&
+    typeof value === "string" &&
+    /^-?\d+$/.test(value)
+  ) {
+    return value;
+  }
+
+  try {
+    const serialized = JSON.stringify(value, null, 1);
+    return serialized === undefined
+      ? String(value)
+      : serialized.replace(/\n\s*/g, " ");
+  } catch {
+    return "값을 표시할 수 없습니다.";
+  }
+}
+
+function renderCompactJsonValue(value, showDecimalStringAsNumber = false) {
+  return `<code class="language-json">${renderHighlightedCode(formatCompactJsonValue(value, showDecimalStringAsNumber), "json")}</code>`;
+}
+
+function formatJavaTypedValue(value, type) {
+  if (type === "long" && typeof value === "string" && /^(?:0|-?[1-9]\d*)$/.test(value)) {
+    return value;
+  }
+  if (typeof type === "string" && type.endsWith("[]") && Array.isArray(value)) {
+    const itemType = type.slice(0, -2);
+    return `[${value.map((item) => formatJavaTypedValue(item, itemType)).join(", ")}]`;
+  }
+  return formatCompactJsonValue(value);
+}
+
+function renderJavaTypedValue(value, type) {
+  return `<code class="language-json">${renderHighlightedCode(formatJavaTypedValue(value, type), "json")}</code>`;
+}
+
+function createArrayPreview(value) {
+  if (!Array.isArray(value)) return value;
+  return value
+    .slice(0, PUBLIC_ARRAY_PREVIEW_LIMIT)
+    .map((item) => createArrayPreview(item));
+}
+
+function getArrayCountSummary(value, label) {
+  const summaries = [];
+  const visit = (item, path) => {
+    if (!Array.isArray(item)) return;
+    summaries.push(`${path} 총 ${item.length}개`);
+    item.slice(0, PUBLIC_ARRAY_PREVIEW_LIMIT).forEach((child, index) => {
+      if (Array.isArray(child)) visit(child, `${path}[${index}]`);
+    });
+  };
+  visit(value, label);
+  return summaries.join(" · ");
+}
+
+function containsLongArray(value) {
+  return Array.isArray(value) && (
+    value.length > PUBLIC_ARRAY_PREVIEW_LIMIT ||
+    value.slice(0, PUBLIC_ARRAY_PREVIEW_LIMIT).some((item) => containsLongArray(item))
+  );
+}
+
+function renderPublicValuePreview(label, value, showDecimalStringAsNumber = false) {
+  const countSummary = getArrayCountSummary(value, label);
+  const previewLimitCopy = containsLongArray(value)
+    ? ` · 처음 ${PUBLIC_ARRAY_PREVIEW_LIMIT}개까지 표시`
+    : "";
+  return `<div class="quest-public-value">
+    <dt><code>${escapeHtml(label)}</code>${countSummary ? `<small>${escapeHtml(countSummary)}${previewLimitCopy}</small>` : ""}</dt>
+    <dd>${renderCompactJsonValue(createArrayPreview(value), showDecimalStringAsNumber)}</dd>
+  </div>`;
+}
+
+export function renderQuestProse(value) {
   const text = String(value ?? "");
   const inlineCodePattern = /`([^`\n]+)`/g;
   let rendered = "";
@@ -202,12 +280,15 @@ function renderReportPersistence(status) {
   return `<p class="quest-persistence${warning ? " is-warning" : ""}">${copy}</p>`;
 }
 
-function renderQuestReport(report, quest, persistenceStatus) {
+function renderQuestReport(report, quest, persistenceStatus, executionAvailable) {
   if (!report) {
+    const unavailableCopy = quest?.executionMode === "draft-only"
+      ? "이 draft는 원본 공개 테스트를 읽는 자료이며 앱에서 실행한 결과는 만들지 않습니다."
+      : "Java 실행 준비 중이므로 아직 실행 결과가 없습니다. 공개 입력과 기대값은 문제 영역에서 확인할 수 있습니다.";
     return `
       <section class="quest-results-empty" aria-labelledby="quest-results-empty-title">
         <h3 id="quest-results-empty-title">공개 테스트 결과</h3>
-        <p>코드를 실행하면 ${quest?.publicTests?.length ?? 0}개의 공개 테스트 결과가 표시됩니다.</p>
+        <p>${executionAvailable ? `코드를 실행하면 ${quest?.publicTests?.length ?? 0}개의 공개 테스트 결과가 표시됩니다.` : unavailableCopy}</p>
       </section>
     `;
   }
@@ -241,7 +322,7 @@ function renderQuestReport(report, quest, persistenceStatus) {
   `;
 }
 
-function renderFunctionContract(quest) {
+export function renderFunctionContract(quest) {
   const contract = quest?.functionContract ?? {};
   const parameters = Array.isArray(contract.parameters) ? contract.parameters : [];
   const constraints = Array.isArray(contract.constraints) ? contract.constraints : [];
@@ -278,29 +359,117 @@ function renderFunctionContract(quest) {
   `;
 }
 
-function renderExamples(examples) {
+export function renderExamples(quest, evaluationKind) {
+  const examples = Array.isArray(quest?.examples) ? quest.examples : [];
+  const parameters = Array.isArray(quest?.functionContract?.parameters)
+    ? quest.functionContract.parameters
+    : [];
+  const isJava = evaluationKind === "java-static-method-v1";
+  const explanations = examples
+    .map((example, index) => ({ example, number: index + 1 }))
+    .filter(
+      ({ example }) =>
+        typeof example?.explanation === "string" && example.explanation.length > 0,
+    );
+
   return `
     <section class="quest-section" aria-labelledby="quest-examples-title">
       <p class="quest-section-label">입출력 확인</p>
       <h2 id="quest-examples-title">예제</h2>
-      <div class="quest-examples">
-        ${(examples ?? [])
-          .map(
-            (example, index) => `
-              <article>
-                <h3>예제 ${index + 1}</h3>
-                <dl>
-                  ${renderValue("인수", formatJsonValue(example.args))}
-                  ${renderValue("기대값", formatJsonValue(example.expected))}
-                </dl>
-                <p class="quest-prose">${renderQuestProse(example.explanation)}</p>
-              </article>
-            `,
-          )
-          .join("")}
+      <div class="quest-example-table-container">
+        <table class="quest-example-table">
+          <colgroup><col class="quest-example-number-column">${parameters.map(() => "<col>").join("")}<col></colgroup>
+          <thead><tr>
+            <th scope="col">예제</th>
+            ${parameters.map((parameter) => `<th scope="col"><code>${escapeHtml(parameter.name)}</code></th>`).join("")}
+            <th scope="col"><code>return</code></th>
+          </tr></thead>
+          <tbody>${examples.map((example, index) => `<tr>
+            <th scope="row">${index + 1}</th>
+            ${parameters.map((parameter, parameterIndex) => `<td>${isJava ? renderJavaTypedValue(example.args?.[parameterIndex], parameter.type) : renderCompactJsonValue(example.args?.[parameterIndex])}</td>`).join("")}
+            <td>${isJava ? renderJavaTypedValue(example.expected, quest?.functionContract?.returns?.type) : renderCompactJsonValue(example.expected)}</td>
+          </tr>`).join("")}</tbody>
+        </table>
       </div>
+      ${explanations.length ? `<h3>예제 설명</h3><ol class="quest-example-explanations">${explanations.map(({ example, number }) => `<li class="quest-prose" value="${number}"><strong>예제 ${number} 설명</strong>${renderQuestProse(example.explanation)}</li>`).join("")}</ol>` : ""}
     </section>
   `;
+}
+
+function renderPublicObservations(observations) {
+  if (!observations) return "";
+  const conditions = [
+    observations.argument0Unchanged === true ? "첫 번째 인수의 원본 값 보존" : "",
+    observations.returnNotArgument0 === true ? "입력과 다른 새 배열 반환" : "",
+  ].filter(Boolean);
+  if (!conditions.length) return "";
+  return `<div><h4>공개 추가 관찰</h4><ul class="quest-constraints">${conditions.map((condition) => `<li>${condition}</li>`).join("")}</ul></div>`;
+}
+
+function renderPublicDataAccess(test, index) {
+  const label = test.label ?? `공개 테스트 ${index + 1}`;
+  if (containsLongArray(test.args) || containsLongArray(test.expected)) {
+    const descriptionId = `quest-public-download-description-${index}`;
+    const statusId = `quest-public-download-status-${index}`;
+    return `<div>
+      <p id="${descriptionId}">전체 공개 원본 JSON에는 인수와 기대값${test.observations ? "·추가 관찰" : ""}이 포함됩니다.</p>
+      <button class="button button--secondary" type="button" data-quest-public-download data-quest-test-index="${index}" aria-describedby="${descriptionId} ${statusId}">전체 공개 JSON 다운로드</button>
+      <span class="sr-only" id="${statusId}" data-quest-public-download-status role="status" aria-live="polite"></span>
+    </div>`;
+  }
+  return `<details class="quest-console" data-quest-public-data data-quest-test-index="${index}">
+    <summary>전체 공개 데이터 보기</summary>
+    <textarea data-quest-public-data-output aria-label="${escapeHtml(label)} 전체 공개 데이터" rows="12" cols="60" readonly spellcheck="false" wrap="off"></textarea>
+  </details>`;
+}
+
+export function renderJavaPublicTests(quest, executionAvailable) {
+  const tests = Array.isArray(quest?.publicTests) ? quest.publicTests : [];
+  if (!tests.length) return "";
+  if (quest?.executionMode === "draft-only") {
+    return `<section class="quest-section" aria-labelledby="quest-public-tests-title">
+      <p class="quest-section-label">원본 공개 검증 자료</p>
+      <h2 id="quest-public-tests-title">공개 테스트 소스</h2>
+      <p>아래 코드는 원본 저장소의 공개 테스트입니다. <code>Solution</code> 호출과 assertion은 읽기 자료이며 앱에서 실행한 결과가 아닙니다.</p>
+      <details class="quest-public-tests">
+        <summary>원본 Test.java 전체 보기</summary>
+        <pre class="syntax-code" tabindex="0" aria-label="원본 공개 테스트 전체 소스"><code class="language-java">${renderHighlightedCode(quest.publicTestSource ?? "", "java")}</code></pre>
+      </details>
+      <div>
+        <button class="button button--secondary" type="button" data-quest-public-source-download>원본 Test.java 다운로드</button>
+        <span class="sr-only" data-quest-public-source-status role="status" aria-live="polite"></span>
+      </div>
+      <div class="quest-public-test-list">
+        ${tests.map((test, index) => `<details class="quest-console">
+          <summary>${index + 1}. ${escapeHtml(test.label ?? `공개 테스트 ${index + 1}`)}</summary>
+          <pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(test.label ?? `공개 테스트 ${index + 1}`)} 원본 메서드"><code class="language-java">${renderHighlightedCode(test.assertionSource ?? "", "java")}</code></pre>
+        </details>`).join("")}
+      </div>
+    </section>`;
+  }
+  const parameters = Array.isArray(quest?.functionContract?.parameters)
+    ? quest.functionContract.parameters
+    : [];
+  const showDecimalStringAsNumber = quest?.functionContract?.returns?.type === "long";
+  return `<section class="quest-section" aria-labelledby="quest-public-tests-title">
+    <p class="quest-section-label">공개 평가 조건</p>
+    <h2 id="quest-public-tests-title">공개 테스트</h2>
+    <p>모든 입력과 반환값·추가 확인 조건을 공개합니다.${executionAvailable ? "" : " Java 실행 준비 중이며 이 데이터는 아직 실행된 결과가 아닙니다."}</p>
+    <details class="quest-public-tests">
+      <summary>공개 테스트 ${tests.length}개 보기</summary>
+      <div class="quest-public-test-list">
+        ${tests.map((test, index) => `<article>
+          <h3>${index + 1}. ${escapeHtml(test.label ?? `공개 테스트 ${index + 1}`)}</h3>
+          <dl class="quest-public-values">
+            ${(Array.isArray(test.args) ? test.args : []).map((value, parameterIndex) => renderPublicValuePreview(parameters[parameterIndex]?.name ?? `인수 ${parameterIndex + 1}`, value)).join("")}
+            ${renderPublicValuePreview("return", test.expected, showDecimalStringAsNumber)}
+          </dl>
+          ${renderPublicObservations(test.observations)}
+          ${renderPublicDataAccess(test, index)}
+        </article>`).join("")}
+      </div>
+    </details>
+  </section>`;
 }
 
 function renderWebRequirements(quest, evaluationKind) {
@@ -362,6 +531,12 @@ function getEditorCopy(evaluationKind, languageName, entryPoint) {
       help: "CSS를 직접 작성하세요. 실행하면 제공된 고정 HTML에 적용해 공개된 규칙·스타일 검사만 수행합니다.",
     };
   }
+  if (evaluationKind === "java-static-method-v1") {
+    return {
+      label: "Solution.java 전체 소스",
+      help: "메서드 본문을 완성하세요. 작성 중인 초안은 자동으로 저장됩니다.",
+    };
+  }
   return {
     label: `${entryPoint || "함수"} 함수 코드`,
     help: `함수 선언을 포함한 ${languageName} 코드를 작성하세요. 실행하면 이 브라우저에서 공개 테스트만 평가합니다.`,
@@ -370,6 +545,13 @@ function getEditorCopy(evaluationKind, languageName, entryPoint) {
 
 function renderHints(quest, visibleHintCount) {
   const hints = Array.isArray(quest?.hints) ? quest.hints : [];
+  if (hints.length === 0) {
+    return `<section class="quest-section quest-hints" aria-labelledby="quest-hints-title">
+      <p class="quest-section-label">막혔을 때</p>
+      <h2 id="quest-hints-title">단계별 힌트</h2>
+      <p>원본 문제에는 제공된 힌트가 없습니다. 함수 계약과 공개 테스트 소스를 관찰해 보세요.</p>
+    </section>`;
+  }
   const visibleCount = clamp(visibleHintCount, 0, hints.length);
   const visibleHints = hints.slice(0, visibleCount);
   const hasMore = visibleCount < hints.length;
@@ -446,11 +628,30 @@ function getQuestProgressEvidenceCopy(item) {
     : "";
 }
 
-function renderQuestLearningMap(course) {
+function isCatalogItemExecutionAvailable(item, javaExecutionAvailable) {
+  return item?.languageId !== "java" || (
+    javaExecutionAvailable && item?.executionMode !== "draft-only"
+  );
+}
+
+function getCourseExecutionCount(course, javaExecutionAvailable) {
+  return (course?.items ?? []).filter((item) =>
+    isCatalogItemExecutionAvailable(item, javaExecutionAvailable)).length;
+}
+
+function getCourseAvailabilityCopy(course, javaExecutionAvailable, languageId = course?.languageId) {
+  if (languageId !== "java") return `${course?.completedCount ?? 0}/${course?.totalCount ?? 0} 완료`;
+  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable);
+  return executableCount > 0
+    ? `${course.totalCount}개 등록 · ${executableCount}개 실행 가능`
+    : `${course.totalCount}개 등록 · 실행 준비 중`;
+}
+
+function renderQuestLearningMap(course, javaExecutionAvailable) {
   return `<section class="quest-learning-map" aria-labelledby="quest-map-title">
     <header><p class="eyebrow">실제 콘텐츠 연결</p><h2 id="quest-map-title">학습 지도</h2><p>교안에 선언된 개념과 연결된 Code Quest만 보여 줍니다.</p></header>
     <div class="quest-map-topics">${course.topics.map((topic) => `<article>
-      <div><h3>${escapeHtml(topic.title)}</h3><p>${topic.completedCount}/${topic.totalCount} 완료</p><a href="${escapeHtml(topic.items[0]?.lessonHref ?? "#")}">관련 학습문서 읽기</a></div>
+      <div><h3>${escapeHtml(topic.title)}</h3><p>${getCourseAvailabilityCopy(topic, javaExecutionAvailable, course.languageId)}</p><a href="${escapeHtml(topic.items[0]?.lessonHref ?? "#")}">관련 학습문서 읽기</a></div>
       <ul>${topic.items.map((item) => `<li><a href="${escapeHtml(item.href)}"><span>${String(item.displayOrder).padStart(2, "0")}</span><strong>${escapeHtml(item.title)}</strong></a><small>${getQuestProgressEvidenceCopy(item) ? `진행 상태: ${getQuestProgressEvidenceCopy(item)}<br>` : ""}연결 개념: ${item.conceptIds.map((conceptId) => `<code>${escapeHtml(conceptId)}</code>`).join(" · ")}</small></li>`).join("")}</ul>
     </article>`).join("")}</div>
   </section>`;
@@ -462,6 +663,7 @@ export function renderCodeQuestCatalogView({
   items = [],
   filters = {},
   notice = "",
+  javaExecutionAvailable = true,
 } = {}) {
   const courses = Array.isArray(catalog?.courses) ? catalog.courses : [];
   if (!course) {
@@ -472,6 +674,13 @@ export function renderCodeQuestCatalogView({
   const status = filters.status ?? "all";
   const number = String(filters.number ?? "");
   const resume = course.resumeItem;
+  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable);
+  const draftOnlyCount = course.items.filter((item) => item.executionMode === "draft-only").length;
+  const javaExecutionPending = course.languageId === "java" && executableCount < course.totalCount;
+  const resumeExecutionAvailable = isCatalogItemExecutionAvailable(
+    resume,
+    javaExecutionAvailable,
+  );
   const statusOptions = [
     ["all", "전체"],
     ["not_started", "시작 전"],
@@ -482,9 +691,9 @@ export function renderCodeQuestCatalogView({
 
   return `<main class="main-area service-main quest-catalog-main" id="lesson-content" tabindex="-1">
     <header class="catalog-header quest-catalog-header"><p class="eyebrow">읽은 개념을 짧은 코드로 확인하세요</p><h1>Code Quest</h1><p>과정과 학습 주제를 확인하고, 공개된 실행 기준으로 직접 작성해 보세요.</p></header>
-    <nav class="quest-course-tabs" aria-label="Code Quest 과정">${courses.map((item) => `<button type="button" data-quest-course="${escapeHtml(item.id)}" aria-pressed="${String(item.id === course.id)}"${item.id === course.id ? ' aria-current="true"' : ""}><strong>${escapeHtml(item.name)}</strong><span>${item.completedCount}/${item.totalCount} 완료</span></button>`).join("")}</nav>
-    ${renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
-    ${resume ? `<aside class="resume-card quest-resume-card" aria-label="Code Quest 이어서 풀기"><div><strong>${resume.progress === "in_progress" ? "이어서 풀 수 있어요" : resume.progress === "completed" ? "처음부터 다시 풀어 보세요" : "다음 Quest를 시작하세요"}</strong><p>${resume.displayOrder}. ${escapeHtml(resume.title)} · ${QUEST_PROGRESS_COPY[resume.progress]}${getQuestProgressEvidenceCopy(resume) ? ` · ${getQuestProgressEvidenceCopy(resume)}` : ""}</p></div><a class="button button--primary" href="${escapeHtml(resume.href)}">${resume.progress === "in_progress" ? "이어서 풀기" : resume.progress === "completed" ? "다시 풀기" : "시작하기"}</a></aside>` : ""}
+    <nav class="quest-course-tabs" aria-label="Code Quest 과정">${courses.map((item) => `<button type="button" data-quest-course="${escapeHtml(item.id)}" aria-pressed="${String(item.id === course.id)}"${item.id === course.id ? ' aria-current="true"' : ""}><strong>${escapeHtml(item.name)}</strong><span>${getCourseAvailabilityCopy(item, javaExecutionAvailable)}</span></button>`).join("")}</nav>
+    ${javaExecutionPending ? draftOnlyCount > 0 ? `<p class="catalog-notice" role="status"><strong>Java Quest ${course.totalCount}개 등록 · ${executableCount}개 실행 가능</strong><br>${draftOnlyCount}개 draft는 원본 문제·힌트·공개 테스트를 읽고 코드를 저장할 수 있으며, 앱 실행과 완료 판정은 제공하지 않습니다.</p>` : `<p class="catalog-notice" role="status"><strong>Java 실행 준비 중 · 코드 작성·저장 가능</strong><br>등록된 ${course.totalCount}개 Quest의 문제·힌트·공개 조건을 읽고 코드를 저장할 수 있습니다. 실행과 완료 판정은 아직 사용할 수 없습니다.</p>` : renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
+    ${resume ? `<aside class="resume-card quest-resume-card" aria-label="Code Quest 이어서 풀기"><div><strong>${resumeExecutionAvailable ? resume.progress === "in_progress" ? "이어서 풀 수 있어요" : resume.progress === "completed" ? "처음부터 다시 풀어 보세요" : "다음 Quest를 시작하세요" : resume.hasDraft ? "저장한 코드를 이어서 작성하세요" : "코드 작성을 시작하세요"}</strong><p>${resume.displayOrder}. ${escapeHtml(resume.title)} · ${resumeExecutionAvailable ? QUEST_PROGRESS_COPY[resume.progress] : resume.hasDraft ? "초안 저장됨" : resume.executionMode === "draft-only" ? "원본 테스트 읽기" : "실행 준비 중"}${getQuestProgressEvidenceCopy(resume) ? ` · ${getQuestProgressEvidenceCopy(resume)}` : ""}</p></div><a class="button button--primary" href="${escapeHtml(resume.href)}">${resumeExecutionAvailable ? resume.progress === "in_progress" ? "이어서 풀기" : resume.progress === "completed" ? "다시 풀기" : "시작하기" : resume.hasDraft ? "이어서 작성하기" : "코드 작성하기"}</a></aside>` : ""}
     <section class="quest-catalog-tools" aria-labelledby="quest-explorer-title">
       <header><h2 id="quest-explorer-title">문제 탐색기</h2><p>검색과 필터를 함께 사용하거나 과정 안의 번호로 바로 이동할 수 있습니다.</p></header>
       <form data-quest-catalog-form role="search" aria-label="Code Quest 검색"><label>번호·제목·요약 검색<input type="search" data-quest-search value="${escapeHtml(query)}" placeholder="예: 배열, 3" autocomplete="off"></label><button class="button button--secondary" type="submit">찾기</button></form>
@@ -495,8 +704,8 @@ export function renderCodeQuestCatalogView({
       ${query || topicId !== "all" || status !== "all" ? '<button class="text-button" type="button" data-quest-catalog-reset>검색과 필터 초기화</button>' : ""}
       <p class="catalog-count" data-quest-result-count role="status" tabindex="-1">${course.name} · ${items.length}/${course.totalCount}개 Quest</p>
     </section>
-    ${items.length ? `<div class="quest-catalog-list">${items.map((item) => `<a class="quest-catalog-card" href="${escapeHtml(item.href)}"><span class="quest-catalog-number">${String(item.displayOrder).padStart(2, "0")}</span><div><p>${escapeHtml(item.topicTitle)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${getQuestProgressEvidenceCopy(item) ? `<small>${getQuestProgressEvidenceCopy(item)}</small>` : ""}${item.hasDraft ? '<small>저장된 초안의 문제 버전은 확인할 수 없습니다.</small>' : ""}</div>${renderQuestProgressBadge(item)}</a>`).join("")}</div>` : `<section class="catalog-empty"><h2>조건에 맞는 Quest가 없습니다.</h2><p>검색어 또는 주제·진행 상태 필터를 바꿔 보세요.</p></section>`}
-    ${renderQuestLearningMap(course)}
+    ${items.length ? `<div class="quest-catalog-list">${items.map((item) => `<a class="quest-catalog-card" href="${escapeHtml(item.href)}"><span class="quest-catalog-number">${String(item.displayOrder).padStart(2, "0")}</span><div><p>${escapeHtml(item.topicTitle)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${item.executionMode === "draft-only" ? '<small>원본 공개 테스트 읽기 · 앱 실행 미지원</small>' : !isCatalogItemExecutionAvailable(item, javaExecutionAvailable) ? '<small>Java 실행 준비 중 · 코드 작성·저장 가능</small>' : ""}${getQuestProgressEvidenceCopy(item) ? `<small>${getQuestProgressEvidenceCopy(item)}</small>` : ""}${item.hasDraft ? '<small>저장된 초안의 문제 버전은 확인할 수 없습니다.</small>' : ""}</div>${renderQuestProgressBadge(item)}</a>`).join("")}</div>` : `<section class="catalog-empty"><h2>조건에 맞는 Quest가 없습니다.</h2><p>검색어 또는 주제·진행 상태 필터를 바꿔 보세요.</p></section>`}
+    ${renderQuestLearningMap(course, javaExecutionAvailable)}
   </main>`;
 }
 
@@ -541,6 +750,7 @@ export function renderCodeQuestView({
   source = "",
   isRunning = false,
   cancelRequested = false,
+  executionAvailable = true,
   draftStatus = "starter",
   uiError = null,
   report = null,
@@ -559,7 +769,8 @@ export function renderCodeQuestView({
   const difficulty = DIFFICULTY_LABELS[quest?.difficulty] ?? "연습";
   const normalizedDraftStatus = normalizeDraftStatus(draftStatus);
   const editorDisabled = isRunning ? " readonly" : "";
-  const runDisabled = isRunning || String(source).trim().length === 0 ? " disabled" : "";
+  const runDisabled =
+    !executionAvailable || isRunning || String(source).trim().length === 0 ? " disabled" : "";
   const isWebQuest = evaluationKind === "html-dom-v1" || evaluationKind === "css-style-v1";
   const sourceLanguage =
     evaluationKind === "html-dom-v1"
@@ -568,6 +779,8 @@ export function renderCodeQuestView({
         ? "css"
         : languageId;
   const editorCopy = getEditorCopy(evaluationKind, languageName, quest?.entryPoint);
+  const isDraftOnly = quest?.executionMode === "draft-only";
+  const javaExecutionPending = evaluationKind === "java-static-method-v1" && !executionAvailable;
   const progress = catalogItem?.progress ?? (isCompleted ? "completed" : "in_progress");
   const progressLabel = QUEST_PROGRESS_COPY[progress] ?? QUEST_PROGRESS_COPY.in_progress;
 
@@ -598,9 +811,10 @@ export function renderCodeQuestView({
           ${catalogItem?.hasDraft ? '<p class="quest-draft-revision-note">저장된 초안의 문제 버전은 확인할 수 없습니다. 코드는 그대로 보존됩니다.</p>' : ""}
         </header>
 
+        ${javaExecutionPending ? isDraftOnly ? '<p class="catalog-notice" role="status"><strong>원본 공개 테스트 읽기 · 앱 실행 미지원</strong><br>문제와 공개 테스트 소스를 확인하고 코드를 저장할 수 있습니다. 이 draft는 실행과 완료 판정을 제공하지 않습니다.</p>' : '<p class="catalog-notice" role="status"><strong>Java 실행 준비 중 · 코드 작성·저장 가능</strong><br>문제와 힌트를 확인하고 코드를 저장할 수 있습니다. 공개 테스트 실행과 완료 판정은 아직 사용할 수 없습니다.</p>' : ""}
+
         ${catalogCourse && catalogTopic ? `<section class="quest-location-summary" aria-label="현재 과정과 주제 진도">
-          ${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}
-          ${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}
+          ${javaExecutionPending ? `<p><strong>${escapeHtml(catalogCourse.name)} Code Quest ${catalogCourse.totalCount}개 등록</strong> · 실행 준비 중</p><p><strong>${escapeHtml(catalogTopic.title)} ${catalogTopic.totalCount}개 등록</strong> · 코드 작성·저장 가능</p>` : `${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}`}
           <div class="quest-location-actions"><a href="${escapeHtml(catalogHref)}">문제 탐색기로 돌아가기</a><a href="${escapeHtml(catalogItem?.lessonHref ?? "#")}">관련 학습문서 읽기</a><button class="text-button" type="button" data-quest-map-focus>학습 지도 보기</button></div>
         </section>` : ""}
 
@@ -614,7 +828,8 @@ export function renderCodeQuestView({
               <p class="quest-prose">${renderQuestProse(quest?.instructions)}</p>
             </section>
             ${isWebQuest ? renderWebRequirements(quest, evaluationKind) : renderFunctionContract(quest)}
-            ${isWebQuest ? renderWebExamples(quest?.examples, sourceLanguage) : renderExamples(quest?.examples)}
+            ${isWebQuest ? renderWebExamples(quest?.examples, sourceLanguage) : renderExamples(quest, evaluationKind)}
+            ${evaluationKind === "java-static-method-v1" ? renderJavaPublicTests(quest, executionAvailable) : ""}
             ${renderHints(quest, visibleHintCount)}
           </article>
 
@@ -632,13 +847,14 @@ export function renderCodeQuestView({
               <textarea id="quest-source" data-quest-source aria-labelledby="quest-source-label" aria-describedby="quest-draft-status quest-editor-help" rows="20" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorDisabled}>${escapeHtml(source)}</textarea>
             </div>
             <p class="quest-editor-help" id="quest-editor-help">${escapeHtml(editorCopy.help)}</p>
+            ${javaExecutionPending ? `<p class="quest-editor-help" role="status">${isDraftOnly ? "원본 테스트 읽기용 draft · 코드 작성·저장 가능. 앱 실행과 완료 판정은 제공하지 않습니다." : "Java 실행 준비 중 · 코드 작성·저장 가능. 실행과 완료 판정은 차단되어 있습니다."}</p>` : ""}
             <p class="quest-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="quest-draft-status" data-quest-draft-status>${getCodeQuestDraftStatusMessage(normalizedDraftStatus)}</p>
             <div class="quest-run-actions">
               <button class="button button--primary" type="button" data-quest-run aria-busy="${String(isRunning)}"${runDisabled}>${isRunning ? "실행 중…" : "공개 테스트 실행"}</button>
               ${isRunning ? `<button class="button button--danger" type="button" data-quest-cancel${cancelRequested ? " disabled" : ""}>${cancelRequested ? "취소하는 중…" : "실행 취소"}</button>` : '<button class="button button--secondary" type="button" data-quest-reset>초기 코드로 되돌리기</button>'}
             </div>
             <div class="quest-inline-error" data-quest-error role="alert">${uiError ? escapeHtml(uiError) : ""}</div>
-            ${renderQuestReport(report, quest, reportPersistenceStatus)}
+            ${renderQuestReport(report, quest, reportPersistenceStatus, executionAvailable)}
           </section>
         </div>
 

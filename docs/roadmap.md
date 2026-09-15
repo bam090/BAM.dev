@@ -53,6 +53,33 @@
 
 `DEC-QUEST-01`을 전제로 작성됐던 통합 카탈로그·기초/심화 제품 분류는 최신 결정의 gate로 사용하지 않는다. 실행기 재사용과 교안·개념 연결은 유지할 수 있지만 두 기능의 진도·완료율을 합치지 않는다.
 
+## 2026-09-15 Algorithm Bridge 전체 편입 결정
+
+`[현재 사실]` 후속 CT 전환의 Java72 등록·원문 열람·작성/저장·URL/초안 연결·실행 차단을 구현하고 독립 콘텐츠 검토 PASS를 받았다. 독립 실행/화면·통합·이번 변경의 게시 결과는 전환 카드에서 후속 판정한다. 원격 dev의 기존 PR #21은 이미 병합된 이력이며 이번 미게시 변경과 구분한다. Java 실행 후보는 별도 미게시 로컬 작업으로 보존하고 desktop/**·desktop 스크립트는 이번 웹 게시에 포함하지 않는다.
+
+`[대체됨]` `DEC-ALGORITHM-BRIDGE-QUEST-02`의 전체69 Quest 등록은 아래 `DEC-ALGORITHM-BRIDGE-CODING-01`로 대체한다. 당시 검사·출처 기록은 내용이 같은 범위의 증거로만 재사용한다.
+
+`[확정 결정]` `DEC-ALGORITHM-BRIDGE-CODING-01`: bam의 재분류·검증 후 커밋/푸시 승인에 따라 원본72를 Java 코딩테스트 draft로 정리한다. 기존32 Quest와 JS CT6을 보존하고 신규69 Quest만 CT로 이동한다. 원본지원·공개Test·옛URL/초안은 [제품 계약](designs/coding-test.md#algorithm-bridge-코딩테스트-전환)과 [데이터 계약](content-schema.md#algorithm-bridge-java-코딩테스트-draft-계약)을 따른다. Java 실행·채점·설치 지원은 별도이며 고정 실행 차단을 유지한다. 실제 구현·검증·게시 결과는 [전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md)에서만 확정한다.
+
+`[확정 결정]` `DEC-ALGORITHM-BRIDGE-QUEST-02`: bam의 전체 적용 요청으로 `DEC-ALGORITHM-BRIDGE-QUEST-01`의 대표 3개 제한을 대체한다. 기존 네 Java 객체와 28개 다른 언어 Quest를 보존하고 나머지 원본 69개를 실행 미지원 draft-only로 추가한다. 원본 공개 소스·L1~L4 지원 수준을 보존하고 읽기·코드 작성·저장까지 제공한다. Java 실행 재개나 신규 타입의 향후 실행 계약은 승인하지 않는다. [전체 편입 카드](work-items/2026-09-15-algorithm-bridge-all-quests.md)의 실제 receipt 전에는 구현·검증 완료를 주장하지 않는다.
+
+`[현재 사실]` 전체 편입의 신규 콘텐츠 등록과 draft 계약·읽기/작성 UI를 반영했다. 독립 콘텐츠 검토·등록 검사·선정 정적 테스트 PASS이며 데스크톱·문서·최종 통합은 전체 편입 카드의 실제 receipt를 따른다. Java 실행 BLOCKED·로컬 미게시 상태다.
+
+## 2026-09-15 Java 실행 지원 결정
+
+아래 prototype 착수·후보·격리 실패는 별도 미게시 로컬 작업의 이력이다. 이 웹 게시 작업본에는 desktop 소스·JDK·Electron·desktop 스크립트가 포함되지 않는다.
+
+| ID | 결정 | 이유 | 상태 |
+| --- | --- | --- | --- |
+| `DEC-JAVA-QUEST-RUNTIME-01` | bam의 “Java 실행 지원” 선택에 따라 첫 Java Code Quest의 실제 로컬 컴파일·실행과 필요한 Electron·번들 JDK prototype을 진행한다. 첫 문제는 `quest-java-total-price`이며 공개 테스트만 평가한다. 기존 Java 실행기·설치앱 제외는 이 필요한 범위에서 대체한다. | Java 직접 작성 문제를 실제 결과·실패 근거로 확인할 수 있게 하기 위해 | `[확정 결정]` bam, 2026-09-15. 첫 pilot 설계와 구현 승인, 구현·격리·배포 PASS 아님 |
+| `DEC-ALGORITHM-BRIDGE-QUEST-01` | 대표 ARR-01·ARR-02·QUE-01을 기존 Java Code Quest에 추가하고 원본 제약·공개 assertion·기존 pilot을 보존한다. 실행 차단 중에도 문제 읽기·힌트·코드 작성·초안 저장을 제공하고 실행/완료만 capability로 막는다. 배열 평가 후보의 정적 준비는 허용하되 고정 false gate·새 Java 실행 중지는 유지한다. | 원본의 직접 작성 경험을 편입하면서 실행 미완료를 정확히 알리기 위해 | `[확정 결정]` bam의 대표 3개 편입 승인, 2026-09-15. [계약·출처·검증 카드](work-items/2026-09-15-algorithm-bridge-quests.md). 구현·Java 실행 PASS 아님 |
+
+이 결정은 `DEC-JAVA-01`의 **첫 Java Quest 편입**, `DEC-JAVA-RUNNER-01`의 **해당 prototype 실행 계약**을 [ADR 0005](decisions/0005-java-quest-local-runtime.md) 범위로 구체화한다. JDK 25·Java 25 제품 runner·preview 금지·공개 평가와 기존 Electron·DMG 단일 후보는 유지한다. ADR→격리/실행 prototype→첫 Quest 연결→독립 검증 순서로 진행하며 미검증 안전 경계를 정식 기능 완료로 표시하지 않는다. Java 코딩테스트 콘텐츠·Spring 실행·전체 설치형 release 묶음·공식 지원 OS·서명/업데이트 선택은 이번 결정에 포함하지 않는다. 실제 단계·근거와 잔여 조건은 [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md)에서만 누적한다.
+
+`[현재 사실]` 첫 Java 데이터·schema·프런트 연결과 runtime/shell 후보를 작성했지만 실제 격리 javac가 종료·reap되지 않아 Java 실행 지원은 **미완료 / BLOCKED**다. capability를 고정 false로 유지하고 새 Java/JDK 실행·profile 실험을 중지했다. `.app` 생성·ad-hoc 서명과 콘텐츠 정적 검사는 부분 증거이며 제품 지원 PASS가 아니다. DMG 실행은 자동 승인 검토가 별도 설치·패키징 승인 범위라고 거부했으므로 재시도하지 않고 이번 로컬 `.app` 실행 목표와 분리한다. [실패와 재개 조건](work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)을 충족한 후 실행 경계를 재평가한다.
+
+`[현재 사실]` Algorithm Bridge 대표 세 문제의 콘텐츠 등록·배열 계약/비활성 평가 후보·Java 읽기/작성/저장 UI를 반영했다. 독립 콘텐츠 검토·등록/정적 콘텐츠 검사는 PASS이며 실제 Java 실행은 계속 BLOCKED다. 독립 실행·문서·통합 판정은 [편입 카드](work-items/2026-09-15-algorithm-bridge-quests.md#검사와-인계-기록)의 receipt로 구분하고 이번 변경은 로컬 미게시 상태다.
+
 ## 2026-08-30 확정 제품 결정
 
 | ID | 결정 | 이유 | 상태 |

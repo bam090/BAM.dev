@@ -23,6 +23,9 @@ const collections = new Map(
     ]),
   ),
 );
+const javaCollection = JSON.parse(
+  await readFile(new URL("../content/quests/java.json", import.meta.url), "utf8"),
+);
 
 function createCatalogFixture() {
   const [previouslyCompleted, draftInProgress] = collections.get("javascript").quests;
@@ -43,6 +46,36 @@ function createCatalogFixture() {
   const course = catalog.courses.find((item) => item.id === "javascript");
   return { catalog, course, previouslyCompleted, draftInProgress };
 }
+
+test("Java 실행 준비 중 목록은 네 Quest의 읽기·작성 진입을 유지한다", () => {
+  const catalog = createCodeQuestCatalog(
+    curriculum,
+    new Map([...collections, ["java", javaCollection]]),
+    {
+      completedQuestIds: [],
+      completedQuestRevisions: [],
+      questAttempts: [],
+      questDrafts: [],
+    },
+  );
+  const course = catalog.courses.find((item) => item.id === "java");
+  const html = renderCodeQuestCatalogView({
+    catalog,
+    course,
+    items: course.items,
+    filters: { courseId: "java", topicId: "all", status: "all", query: "" },
+    javaExecutionAvailable: false,
+  });
+
+  assert.equal(course.totalCount, 4);
+  assert.match(html, /data-quest-course="java"[^>]*[\s\S]*?<span>4개 등록 · 실행 준비 중<\/span>/);
+  assert.match(html, /등록된 4개 Quest의 문제·힌트·공개 조건을 읽고 코드를 저장할 수 있습니다/);
+  assert.equal((html.match(/Java 실행 준비 중 · 코드 작성·저장 가능/g) ?? []).length, 5);
+  for (const item of course.items) {
+    assert.match(html, new RegExp(`href="${item.href}"`));
+  }
+  assert.doesNotMatch(html, /aria-disabled="true"|data-quest-course="java"[^>]*disabled/);
+});
 
 test("목록은 과정·주제·상태·범위 진도와 필터 결과를 접근 가능한 이름으로 표시한다", () => {
   const { catalog, course, draftInProgress } = createCatalogFixture();

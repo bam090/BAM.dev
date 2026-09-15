@@ -2,7 +2,7 @@
 
 ## 현재 브라우저 구현 경계
 
-`[현재 사실]` 화면과 도메인 모듈은 HTML·CSS·Vanilla JavaScript ES modules로 구현되어 있으며 `package.json`에는 React·TypeScript 또는 전용 프런트엔드 빌드 도구 의존성이 없다. 현재 저장소에는 Java 제품 소스, Maven·Gradle 설정이나 Java 로컬 runner 구현도 없다.
+`[현재 사실]` 화면과 도메인 모듈은 HTML·CSS·Vanilla JavaScript ES modules로 구현되어 있으며 `package.json`에는 React·TypeScript 또는 전용 프런트엔드 빌드 도구 의존성이 없다. 별도 미게시 로컬 작업에서 Java 제품 runner·감독 코드·Electron shell 후보를 작성했으나 격리 prototype 실패로 Java 실행을 고정 비활성화했다. Maven·Gradle은 추가하지 않았다.
 
 ```text
 curriculum.json + Markdown ──► 학습 화면 ─────────────────────────┐
@@ -14,7 +14,8 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
             │                    ├── HTML ───────► inert DOM 검사  │
             │                    └── CSS ────────► CSSOM/iframe 검사
             │
-            ├── coding-test JSON ─► 목록·풀이·제출 ─► one-shot Worker
+            ├── coding-test JSON ─► 목록·작성·저장 (Java draft 실행 차단)
+            │                         └── JavaScript 제출 ─► one-shot Worker
             │
             └── web-project JSON ─► 두 파일 편집·안전 미리보기·공개 평가
                                       │
@@ -23,7 +24,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 객관식의 `review-concepts.json` 발췌는 개념 오버레이와 문서 절로 연결되고, 진행 상태는 별도 `LocalStorageReviewSessionRepository`로 저장합니다. 위 `ProgressRepository`의 완료 기록과 다른 제품 진도는 유지합니다.
 
-콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 카테고리 아래 과정(`courseId`)이 교안 순서와 학습 경로를 정하고 언어(`languageId`)가 예제·평가 실행 계약을 정합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. 현재 Java도 정적 교안·객관식의 available 과정·언어로 제공하며, 실행 평가 언어는 기존 JavaScript·HTML·CSS 3개입니다. Java 실행기는 아직 없습니다.
+콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 카테고리 아래 과정(`courseId`)이 교안 순서와 학습 경로를 정하고 언어(`languageId`)가 예제·평가 실행 계약을 정합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. Java는 정적 교안·객관식의 available 과정·언어이며 첫 Quest 데이터도 등록됐지만 실행 capability는 false입니다. 실행 평가 언어는 기존 JavaScript·HTML·CSS 3개입니다.
 
 ## 현재 브라우저 앱
 
@@ -35,7 +36,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - JavaScript Quest: 문제 계약, 시작 코드, 입출력 예시, 공개 테스트와 실패 설명을 콘텐츠로 관리합니다. 공개 테스트마다 새 module Worker를 만들고 문법·런타임·시간·출력 제한·취소를 구분합니다.
 - HTML Quest: 학습자가 JavaScript 함수가 아닌 HTML 마크업을 작성합니다. doctype 검사는 source 첫 선언과 `DOMParser` 결과를 함께 사용해 정확한 HTML5 doctype인지 확인하고 나머지 구조 검사는 주 문서에 삽입하지 않은 `<template>`의 inert `DocumentFragment`에서 선택자·개수·속성·텍스트를 관찰합니다. 학습자 마크업의 스크립트는 실행하지 않습니다.
 - CSS Quest: 학습자가 JavaScript 함수가 아닌 CSS 스타일시트를 작성합니다. 최상위 선언과 최상위 미디어 조건 검사는 constructed `CSSStyleSheet`의 CSSOM에서 수행하고, 계산 스타일 검사는 문제에 포함된 고정 HTML fixture와 학습자 스타일만 one-shot sandbox iframe에 넣어 수행합니다. 매 검사 뒤 iframe을 제거합니다.
-- 코딩테스트: 목록 검색과 난이도·언어·유형·풀이 상태 필터를 순수 도메인 함수로 분리합니다. 빠른 실행은 공개 테스트 일부, 제출은 전부를 사용하며 `CodingTestRunnerAdapter`가 기존 Worker DTO에 투영한 뒤 문제 ID와 실행 모드로 결과를 복원합니다.
+- 코딩테스트: JavaScript·Java 별도 컬렉션을 함께 로드한다. Java72는 원본 공개 소스 열람과 초안 저장만 제공하고 UI·handler·adapter에서 실행·제출·완료를 차단한다. 명시된 legacy69 URL만 CT로 안내하고 옛 초안 가져오기는 CT 초안이 없는 경우만 허용한다. 기존 준비3 Quest는 유지한다. 목록 검색과 난이도·언어·유형·풀이 상태 필터를 순수 도메인 함수로 분리합니다. 빠른 실행은 공개 테스트 일부, 제출은 전부를 사용하며 `CodingTestRunnerAdapter`가 기존 Worker DTO에 투영한 뒤 문제 ID와 실행 모드로 결과를 복원합니다.
 - Web Project: `index.html`과 `styles.css`를 하나의 제출 snapshot으로 만들고, 보수적인 source preflight 뒤 sandbox 미리보기와 HTML DOM·CSSOM 평가 어댑터에 전달합니다. 공개 자동 기준 70점과 검증되지 않은 자가평가 30점을 별도 결과로 계산하며, 평가기 오류·취소·미실행은 0점으로 확정하지 않습니다.
 - 공개성: 브라우저에 내려가는 Quest·코딩테스트·Web Project의 문제, assertion, 기대값은 개발자 도구로 확인할 수 있습니다. 학습자 결과에는 이 공개 테스트·공개 기준만 사용하며 비공개·숨김 테스트나 원격 추가 채점을 사용하지 않습니다. `tests/fixtures/`의 독립 사례는 제품 콘텐츠를 검증하는 개발 증거일 뿐 설치본의 학습자 결과에는 실행하지 않습니다.
 - 진도: `ProgressRepository` 계약과 `LocalStorageProgressRepository` 구현을 분리합니다. 학습 완료, 객관식 시도·오답 ID, Quest 초안·실행·완료와 코딩테스트 초안·제출·리비전별 완료를 `bam.dev.progress.v1` 안의 독립 배열로 관리합니다. Quest ID의 언어 네임스페이스로 HTML·CSS 상태를 기존 계약 안에서 구분하며 실행·제출 기록에는 사용자 소스를 저장하지 않습니다.
@@ -72,12 +73,24 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - 외부 HTML·CSS·JavaScript·Java 실습 폴더와 Git 경계는 [`designs/web-assignments.md`](designs/web-assignments.md)가 정본이다.
 - 현재의 분리된 route·JSON·진도 배열은 유지할 제품 경계다. JavaScript Code Quest와 코딩테스트는 공개 테스트마다 새로 만드는 one-shot Worker와 runner DTO·실행 추상화를 내부에서 재사용할 수 있지만, 문제 레코드·진도 배열·완료율은 합치지 않는다. 저장소 인터페이스와 `bam.dev.progress.v1` 물리 키의 내부 재사용도 제품 통합을 뜻하지 않는다.
 - React는 화면 구성 경계에 도입하는 목표이며 학습자 코드를 renderer에서 실행하거나 기존 Worker 실행 계약을 대체하는 JavaScript runner가 아니다. TypeScript 도입도 저장 포맷·콘텐츠 스키마·route·공개 평가 DTO를 자동 변경하는 근거가 아니다. 정확한 버전·빌드 도구·정적 출력, CSP·Worker import 방식, JavaScript와 TypeScript의 공존 경계, 첫 이관 화면·rollback은 `DEC-FRONTEND-MIGRATION-01`과 후속 ADR·prototype 전까지 구현 계약으로 간주하지 않는다.
-- Java 25로 작성할 로컬 runner는 BAM.dev의 제품 코드다. runner 자체의 구현 언어 결정과 runner가 학습자 소스·공개 테스트를 Java 25로 컴파일하는 콘텐츠 실행 기준은 서로 다른 계약이다. 정확한 클래스·프로토콜·빌드 도구·IPC·격리는 `DEC-JAVA-RUNNER-01`과 후속 ADR 전까지 정하지 않으며 Spring Boot를 이 구성요소에 추가하지 않는다.
+- Java 25로 작성하는 로컬 runner는 BAM.dev의 제품 코드다. runner 자체의 구현 언어와 학습자 소스·공개 테스트의 Java 25 기준은 서로 다른 계약이다. 첫 Quest의 클래스·프로토콜·IPC·격리 후보는 ADR 0005로 구체화했지만 실제 격리 실패로 비활성화했으며, 코딩테스트 전체와 추가 OS 계약은 `DEC-JAVA-RUNNER-01`의 후속 범위다. Spring Boot를 이 구성요소에 추가하지 않는다.
 - 설치형 MVP의 두 기능과 Java 코딩테스트는 Docker, Spring Boot, PostgreSQL, Nginx, 계정이나 사용자가 관리하는 수신 포트를 요구하지 않는다. 개발용 Node localhost는 개발 도구일 수 있지만 최종 사용자의 설치·실행 요구사항이 아니다.
 - Java 코딩테스트의 로컬 runner는 확정된 목표 경계지만 현재 구현이 아니다. 설치 패키지 내부의 JDK 25 LTS 계열 경로만 사용하고 학습자 소스·공개 테스트는 정식 Java 25 언어·표준 API 기준으로 preview 없이 컴파일·실행한다. [`DEC-JAVA-RUNNER-01`](roadmap.md#bam-결정-대기-목록), 별도 격리 ADR과 설치 prototype이 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 컴파일·호출·IPC·프로세스·파일·네트워크·시간·메모리·출력 제한 및 OS별 패키징을 검증할 때까지 구체 구현과 완료를 주장하지 않는다.
 - Spring Boot는 앱 본체나 Java 코딩테스트 runner의 의존성·실행 모드가 아니다. 향후 교안은 정적 콘텐츠로 읽고 실제 Spring Boot 실행은 사용자가 받은 외부 웹과제 폴더에서 시작하며 BAM.dev가 그 코드를 자동 실행하지 않는다.
 
 모든 학습자 평가 사례·기대값·실행기와 진도를 설치본 안에 두면 BAM.dev가 운영하는 런타임 서버는 필요하지 않다. 이 구조는 로컬 자기학습 결과를 제공하지만 공인 점수, 변조 방지, 부정행위 방지, 신원 확인, 중앙 제출 감사와 기기 간 동기화를 보장하지 않는다.
+
+## Java Code Quest 로컬 prototype 경계
+
+이번 브라우저 게시 범위는 아래 desktop 소스·실행 후보를 포함하지 않는다. 아래는 별도 미게시 로컬 작업의 설계와 실패 이력이며 웹 저장소의 실행 지원 사실이 아니다.
+
+`[확정 결정]` [DEC-JAVA-QUEST-RUNTIME-01](roadmap.md#2026-09-15-java-실행-지원-결정)에 따라 첫 Java Quest 실행 후보를 작성했다. `[현재 사실]` 실제 sandbox javac가 종료·reap 필수 조건을 충족하지 못해 prototype은 FAIL / BLOCKED이며 아래 실행 경로는 비활성 후보 계약이다. 고정 false gate는 새 subprocess를 만들지 않고 명시적인 실행기 오류·미실행 결과를 반환한다. 정확한 hash·실측·미검증·재개 조건은 [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)에서 구분한다.
+
+기존 renderer의 Quest UI·저장소는 유지하고 Java adapter만 좁은 preload bridge에 연결한다. renderer는 Quest ID·revision·source·requestId만 전달하고 Electron main이 bundle의 공개 manifest·고정 JDK·제한을 선택한다. 별도 sandbox javac가 정식 Java 25를 컴파일한 뒤 각 공개 테스트마다 새로운 sandbox JVM의 Java 제품 코드 `BamQuestRunner`를 실행한다. renderer나 감독 프로세스에서 learner class를 로드하지 않는다. 실제 반환과 bundle 기대값 비교는 부모에서 수행하며 진도는 기존 Quest 전용 배열에만 기록한다.
+
+앱 shell은 `bam://app` 정적 자산 origin을 제공하고 HTTP 포트를 열지 않는다. Node·일반 IPC·파일 시스템을 renderer에 노출하지 않으며 renderer CSP와 기존 JavaScript Worker의 제한된 동적 컴파일 문맥을 분리한다. Java 없는 일반 브라우저는 기존 세 언어 평가를 계속 제공한다. capability가 없는 Java route는 실행 불가 안내를 제공하고 거짓 PASS·완료를 만들지 않는다.
+
+선택된 runtime·정확한 artifact·통신·compile/run protocol·sandbox·timeout/output/memory·cleanup·실제 부정 검증은 [ADR 0005](decisions/0005-java-quest-local-runtime.md), Java 데이터는 [콘텐츠 계약](content-schema.md#java-정적-메서드-quest-pilot), 장기 설치 목표는 [로컬 앱 설계](designs/local-application.md)가 정본이다. 별도 로컬 prototype의 설치 산출물·실패 이력은 위 ADR와 작업 카드에서 확인한다. Java 코딩테스트 UI·콘텐츠·완료율·Spring·React 이관·원격 서비스는 추가하지 않는다.
 
 ## Web Code Quest 안전 경계
 
@@ -94,9 +107,9 @@ HTML·CSS 소스, 작성 예시와 CSS 고정 fixture는 평가기 호출 전에
 ## 목표 전환에서 아직 결정할 경계
 
 - 목표 프런트엔드는 React·TypeScript로 확정됐지만 현재 구현과 도구체인은 Vanilla JavaScript 기준이다. 정확한 React·TypeScript 버전, 빌드 도구·의존성·라이선스, 정적 번들·오프라인 출력, CSP와 one-shot Worker 통합, 기존 모듈 공존·이관 단위, 첫 화면과 rollback 증거는 `DEC-FRONTEND-MIGRATION-01`에서 결정한다. 이 결정 전에는 전체 UI 재작성이나 기존 Worker·도메인 로직 폐기를 시작하지 않는다.
-- Java는 현재 승인된 정적 교안·객관식을 available로 제공하며 Java 제품 코드·코딩테스트 콘텐츠·runner·설치 지원은 없다. Java 코딩테스트의 MVP 포함, 설치 패키지 내부 JDK 25 LTS 계열과 정식 Java 25·preview 금지 기준은 확정됐지만 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 컴파일·호출 계약, shell↔runner 경계와 IPC, 격리·OS별 패키징은 `DEC-JAVA-RUNNER-01`과 별도 ADR·prototype 증거가 필요하다. 현재 정적 교안 제공과 별개로 설치형 MVP의 과정 범위 및 Java Code Quest·웹과제의 포함 시점은 `DEC-JAVA-01`에서 구분한다.
+- Java 정적 교안·객관식 available 제공과 실제 실행은 구분한다. 첫 Java Quest의 배포물·컴파일·IPC·격리 계약과 prototype 착수는 `DEC-JAVA-QUEST-RUNTIME-01`·ADR 0005로 구체화했다. Java 코딩테스트 전체·추가 OS·정식 설치 지원과 release 콘텐츠 묶음은 기존 `DEC-JAVA-RUNNER-01`·`DEC-JAVA-01`의 후속 결정·증거가 필요하다.
 - Spring Boot 과정의 향후 추가와 외부 웹과제 실행 위치는 확정됐지만 과정·과제는 현재 구현되어 있지 않다. MVP 포함 시점·교안 범위·Code Quest 여부와 과제 저장소·빌드·의존성·오프라인·공개 검증 계약은 `DEC-JAVA-01`·`DEC-WEB-REPO-01`·`DEC-WEB-OFFLINE-01`에서 결정한다.
-- [`DEC-DESKTOP-PROTOTYPE-01`](roadmap.md#2026-08-30-확정-제품-결정)에 따라 현재 Mac에서 Electron·DMG 단일 후보를 먼저 검증한다. 이는 구현·채택·지원 선언이 아니며, 공식 OS·shell·설치 형식·업데이트와 export/import를 포함한 백업·복구 방식은 prototype 증거 뒤 `DEC-DESKTOP-01`이 확정될 때까지 목표 구현으로 취급하지 않는다.
+- [`DEC-DESKTOP-PROTOTYPE-01`](roadmap.md#2026-08-30-확정-제품-결정)의 Electron·DMG는 장기 설치 후보이며 공식 기술·지원 선언이 아니다. 이번 Java 작업은 로컬 Electron `.app` 후보를 작성했지만 실행 목표는 미완료이고, DMG는 자동 승인 검토가 거부한 별도 패키징 범위로 분리한다. 공식 OS·설치·업데이트·백업은 `DEC-DESKTOP-01`의 후속 결정이다.
 - 현재 인앱 Web Project를 외부 Git 웹과제와 병행할지, 검증 뒤 대체할지 결정해야 한다.
 - Code Quest의 [데스크톱 탐색 첫 구현](designs/code-quest.md#데스크톱-탐색-첫-구현-계약)은 기존 Quest·curriculum·진도를 읽기 전용으로 파생하고 기존 상세 URL에 `#/quest` 진입점을 더하는 승인 범위다. 저장·스키마·평가기 변경 없이 구현하며, 과정·주제·표시 순서의 영구 저장은 `DEC-QUEST-CATALOG-01`의 후속 선택이다. 실제 구현·검증 상태는 작업 카드에서 구분한다.
 - 코딩테스트의 전체 공개 테스트 동작을 학습자 UI에서 어떤 용어와 펼침 상태로 보여 줄지는 [`designs/coding-test.md`](designs/coding-test.md)의 확인 항목이다.
