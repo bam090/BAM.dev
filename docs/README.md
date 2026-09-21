@@ -51,7 +51,7 @@
 | Code Quest 정보 구조·진도·학습 지도 | [`designs/code-quest.md`](designs/code-quest.md) | Code Quest UI·route·진도·탐색을 바꿀 때 |
 | Code Quest 작성 형식 | [`code-quest-authoring.md`](code-quest-authoring.md) | Code Quest를 만들거나 바꿀 때 |
 | 함수형 Quest 예제·공개 사례 표시 | [예제 가독성 계약](designs/code-quest.md#함수형-예제-가독성-개선), [작업 카드](work-items/2026-09-15-code-quest-example-readability.md) | 매개변수별 표·값 타입·전체 공개 데이터 접근과 해당 검증 상태를 확인할 때 |
-| Java Quest 로컬 실행·차단 상태 | [ADR 0005](decisions/0005-java-quest-local-runtime.md), [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md) | 번들 JDK·IPC·격리·종료 계약이나 현재 실행 실패·고정 비활성 gate·재개 조건을 확인할 때 |
+| Java Quest 로컬 실행·차단 상태 | [ADR 0005](decisions/0005-java-quest-local-runtime.md), [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md) | 번들 JDK·IPC·격리·종료 계약이나 runtime·앱 검증 증거, 검증 커널의 Java Quest prototype PASS와 과거 실패를 확인할 때 |
 | Algorithm Bridge 대표 Java Quest 편입 | [편입 작업 카드](work-items/2026-09-15-algorithm-bridge-quests.md), [배열 콘텐츠 계약](content-schema.md#algorithm-bridge-java-배열-quest-편입) | ARR-01·ARR-02·QUE-01의 원본 출처·학습 카드·typed 배열 평가 준비·실행 차단 상태의 코드 작성 흐름을 다룰 때 |
 | 코딩테스트 목적·UI·공개 로컬 평가·진도 | [`designs/coding-test.md`](designs/coding-test.md) | 코딩테스트 제품 흐름이나 평가 표현을 바꿀 때 |
 | 코딩테스트 문제 필드·작성 형식 | [`content-schema.md`](content-schema.md#코딩테스트-컬렉션) | 코딩테스트 문제·공개 테스트·실패 설명을 만들거나 바꿀 때 |
@@ -96,9 +96,9 @@
 | 프런트엔드 기술 전환 | [`architecture.md`](architecture.md), `package.json` | [`architecture.md`](architecture.md#목표-설치형-구조), ADR 0001 | React·TypeScript 목표와 점진 이관 확정, 현재 Vanilla JavaScript·무의존성 기준선 유지, 도구체인·prototype·첫 화면 결정 대기 |
 | Code Quest | [`architecture.md`](architecture.md), 현 Quest 스키마·코드 | [`designs/code-quest.md`](designs/code-quest.md) | 분리 유지. [데스크톱 탐색 첫 구현](work-items/2026-09-14-code-quest-navigation.md)의 과정·주제·진도·검색/필터·지도·홈/사이드바 연결 반영, 반환 수정 후 독립 focused·대표 데스크톱 검증 PASS. 최종 독립 문서 재검·통합 PASS이며 영구 스키마·모바일·설치 목표와 구분 |
 | 코딩테스트 | [`architecture.md`](architecture.md), 현 coding-test 스키마·코드 | [`designs/coding-test.md`](designs/coding-test.md) | 분리 유지. JavaScript 실행과 Java 원문 열람·작성/저장·명시 초안 가져오기 구현. 독립 콘텐츠·관련 자동 검사·대표 UI·문서·통합 및 PR #22 CI PASS. 미병합과 Java 실행 BLOCKED는 [전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md)에서 구분 |
-| 설치·오프라인 실행 | `README.md`, [`architecture.md`](architecture.md) | [`designs/local-application.md`](designs/local-application.md) | 별도 미게시 로컬 작업에서 `.app`·Java runner 후보 작성. 이번 브라우저 게시 범위에는 포함하지 않음. 실제 격리 javac 종료/회수 실패로 Java 지원 차단·미완료이며 [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md)의 재개 조건을 따름. DMG·공식 설치 지원은 별도 범위 |
+| 설치·오프라인 실행 | `README.md`, [`architecture.md`](architecture.md) | [`designs/local-application.md`](designs/local-application.md) | 별도 미게시 로컬 작업에서 `.app`·Java runner 후보 작성. 이 게시 후보에는 관련 소스를 포함하지만 정식 설치본은 제공하지 않음. runtime·Java 미실행 앱 검증을 인수했고 검증 커널의 활성 Java Quest 앱을 독립 PASS했으며 [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md)의 현재 검증 상태와 재개 조건을 따름. DMG·공식 설치 지원은 별도 범위 |
 | 웹과제 | [`web-project-authoring.md`](web-project-authoring.md), ADR 0004 | [`designs/web-assignments.md`](designs/web-assignments.md) | 밤위키 원본 사용 확정. 기존 인앱 과제 유지, 원본별 고정 시작 버전·BAM 연결·공개 검증·오프라인 계약은 후속 |
-| 저장·평가 안전 | [`architecture.md`](architecture.md), ADR 0002~0005 | 변경 시 해당 ADR | 기존 브라우저 경계와 비활성 Java 후보의 실제 격리 실패·재개 조건을 구분 |
+| 저장·평가 안전 | [`architecture.md`](architecture.md), ADR 0002~0005 | 변경 시 해당 ADR | 기존 브라우저 경계와 Java 후보의 OS 제한·활성 UI PASS·과거 실패를 구분 |
 | 개발·검증·Git·CI | [`development-workflow.md`](development-workflow.md) | 같은 문서와 [`roadmap.md`](roadmap.md) | `DEC-GIT-01` 게시 범위 확정·기존 원격 기준선 확인. 로컬·원격 대조와 실제 게시·CI 판정은 [게시 작업 카드](work-items/2026-09-13-github-publication.md) 참조 |
 
 ## ADR 목록
@@ -107,9 +107,9 @@
 - [`0002-browser-code-execution-boundary.md`](decisions/0002-browser-code-execution-boundary.md): 브라우저 JavaScript 실행 경계
 - [`0003-inert-web-code-quest-evaluation.md`](decisions/0003-inert-web-code-quest-evaluation.md): HTML·CSS Code Quest 비실행 평가
 - [`0004-local-web-project-evaluation.md`](decisions/0004-local-web-project-evaluation.md): 로컬 Web Project 평가와 저장
-- [`0005-java-quest-local-runtime.md`](decisions/0005-java-quest-local-runtime.md): Java Quest 로컬 실행 후보와 실제 격리 실패·재개 경계
+- [`0005-java-quest-local-runtime.md`](decisions/0005-java-quest-local-runtime.md): Java Quest 로컬 실행 후보의 OS 제한·검증 상태·과거 실패 경계
 
-[Algorithm Bridge 대표 세 문제 편입](work-items/2026-09-15-algorithm-bridge-quests.md)은 기존 Java pilot을 보존해 콘텐츠·배열 계약·작성/저장 UI를 반영했다. 독립 콘텐츠 검토·등록/정적 검사는 PASS이며 Java 실제 채점은 BLOCKED다. 역할별 후속 검증·통합은 카드의 receipt로 판정한다.
+[Algorithm Bridge 대표 세 문제 편입](work-items/2026-09-15-algorithm-bridge-quests.md)은 기존 Java pilot을 보존해 콘텐츠·배열 계약·작성/저장 UI를 반영했다. 당시 독립 콘텐츠 검토·등록/정적 검사는 PASS이고 Java 실제 채점은 BLOCKED였다. 후속 runtime 상태는 위 runtime 작업 카드를 따른다. 역할별 후속 검증·통합은 카드의 receipt로 판정한다.
 
 `[대체됨]` 후속 [Algorithm Bridge 전체 편입](work-items/2026-09-15-algorithm-bridge-all-quests.md)은 대표 3개 제한을 대체하며 신규 69개의 원본 지원·공개 소스 열람·draft 작성/저장은 [draft 계약](content-schema.md#algorithm-bridge-전체-편입의-draft-계약)을 따른다. 당시 구현·검증 상태는 해당 카드에서 확인한다. 현재 등록 위치는 [코딩테스트 전환](work-items/2026-09-15-algorithm-bridge-coding-tests.md)으로 대체했다.
 

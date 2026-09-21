@@ -1,9 +1,9 @@
 # ADR 0005: Java Code Quest의 번들 JDK와 로컬 프로세스 평가
 
-`[현재 사실]` 이 문서는 별도 미게시 로컬 작업의 Java/desktop 후보 설계와 격리 실패 이력이다. 아래 desktop 파일 경로·명령·해시는 당시 로컬 증거이며 이 브라우저 게시 작업본에 해당 소스·JDK·Electron·desktop 스크립트가 있다는 뜻이 아니다. 이 문서의 보존은 실행·설치 지원이나 실행 재개 승인이 아니다. 정확한 artifact·격리 실패·실행 중지와 재개 계약은 아래 내용을 유지한다.
+`[현재 사실]` 이 ADR은 검증 커널에 한정한 Java Quest 로컬 prototype 계약과 실제 검증·실패 이력이다. 이 게시 후보에는 관련 실행기 소스를 포함하며, JDK·Electron 바이너리·정식 설치본 배포나 일반 브라우저 Java 실행 지원을 뜻하지 않는다.
 
-- 상태: `[확정 결정]` 2026-09-15 Java 실행 지원 요청의 제한된 prototype 계약. **실제 격리 prototype은 FAIL / BLOCKED이고 Java 실행 지원은 미완료**다. 아래 실행 절은 비활성 후보 계약이며 검증된 기능 설명이 아니다.
-- 범위: macOS 14.8.3·Apple Silicon 검증 장비, 첫 Java Code Quest와 승인된 배열 3개의 비활성 실행 후보, 기존 정적 앱의 Electron shell. 제품 범위는 [`DEC-JAVA-QUEST-RUNTIME-01`](../roadmap.md#2026-09-15-java-실행-지원-결정)과 [배열 편입 계약](../content-schema.md#algorithm-bridge-java-배열-quest-편입), 실행·패키징 상태는 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md)를 따른다.
+- 상태: `[확정 결정]` 2026-09-15 Java 실행 지원 요청의 제한된 prototype 계약. `[현재 사실]` compile·정상/부정 결과·배열 공개 평가·Java 미실행 앱 기본 검증과 OS 제한 활성 후보의 focused는 독립 PASS다. 단계 4 원본 harness FAIL과 격리 효과 한정 PASS를 함께 보존하며, 검증 커널의 로컬 Java Quest 활성 UI·취소·창 닫기·재시작 복원도 독립 PASS다. 최종 프로젝트 통합·Git 게시는 별도다. 전체 Java 지원 완료를 뜻하지 않는다.
+- 범위: macOS 14.8.3·Apple Silicon 검증 장비, 첫 Java Code Quest와 승인된 배열 3개의 OS 제한 실행 후보, 기존 정적 앱의 Electron shell. 제품 범위는 [`DEC-JAVA-QUEST-RUNTIME-01`](../roadmap.md#2026-09-15-java-실행-지원-결정)과 [배열 편입 계약](../content-schema.md#algorithm-bridge-java-배열-quest-편입), 실행·패키징 상태는 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md)를 따른다.
 
 ## 선택과 이유
 
@@ -11,13 +11,53 @@
 
 ## 현재 실행 판정과 재개 조건
 
-`[현재 사실]` macOS 14.8.3 arm64에서 `sandbox-exec`로 시작한 번들 `javac`가 `UEs` 상태에 남았고 SIGKILL 발송 뒤에도 종료·reap을 관찰하지 못했다. 무격리 상태의 Java 제품 runner 컴파일만 통과했으며 실제 격리 학습자 컴파일·공개 평가·자원/파일/네트워크 부정 검증은 통과하지 못했다. 중간 profile별 hash가 보존되지 않아 최종 profile로 이전 PID의 원인을 확정할 수 없고, 독립 진단도 원인을 특정하지 못했다. 상세 관찰과 최종 파일 hash는 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)를 따른다.
+`[현재 사실]` 2026-09-15 실패 당시 macOS 14.8.3 arm64에서 `sandbox-exec`로 시작한 번들 `javac`가 `UEs` 상태에 남았고 SIGKILL 발송 뒤에도 종료·reap을 관찰하지 못했다. 당시에는 무격리 상태의 Java 제품 runner 컴파일만 통과했고 실제 격리 학습자 컴파일·공개 평가·자원/파일/네트워크 부정 검증은 통과하지 못했다. 중간 profile별 hash가 보존되지 않아 최종 profile로 이전 PID의 원인을 확정할 수 없고, 독립 진단도 원인을 특정하지 못했다. 과거 관찰과 파일 hash는 [작업 카드의 실패 기록](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)을 보존한다.
 
-`desktop/runtime/supervisor.mjs`는 `ISOLATION_PROTOTYPE_VALIDATED = false`로 고정되어 있다. capability는 false이며 `runJavaQuest()`는 subprocess를 만들지 않고 `engine_error` / `java_isolation_unavailable` 및 공개 사례 `not_run`을 반환한다. 새 Java/JDK 실행과 추가 profile 실험은 중지했다. Java 콘텐츠·schema·프런트 연결의 정적 검사와 `.app` 생성이 이 gate를 해제하지 않는다.
+`[현재 사실]` 2026-09-21 격리 compile의 종료·회수·안전 cleanup PASS와 첫 runtime의 exit 1·fd3 부재 실패를 보존한다. 첫 실패의 stdout/stderr는 원시 결과 미보존으로 미확인이다. runtime metadata 보완 뒤 새 검증본에서는 javac 0회·JVM 1회로 exit 0·close·그룹 부재·`returned 3`을 관찰했고 parse 전 원시 receipt로 stdout/stderr 각각 0 bytes를 확인했다. 관련 프로세스는 회수됐고 class 3개의 전후 hash는 동일하다. 제품 runtime 관찰은 부분 PASS지만 검증 도구의 상태 조립 오류로 coordinator는 FAIL이며 cleanup 미시작·workRoot 보존 상태다. 정상 실행은 재시도하지 않았다. 원본 receipt와 poison 구분은 [정상 runtime 부분 PASS 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-21-정상-runtime-부분-pass와-검증-도구-오류), 이전 진단·보완 계약은 [첫 runtime 실패 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-21-첫-runtime-실행-실패와-회수)을 따른다.
 
-재개 전에는 종료 불능 원인과 프로세스 회수 가능 상태를 확인하고 격리·수명주기 설계를 독립 검토해야 한다. 후보 감독 코드의 hard deadline·poison 처리는 무한 대기를 피하는 보완일 뿐 reap 성공이 아니다. `unreaped_process` 뒤 `finally`가 작업 디렉터리를 삭제하는 후보 경로도 보존·정리 순서를 고친 후 검증해야 한다. 성공한 독립 실행 환경과 동일 bundle/profile의 실제 종료·정리 및 필수 부정 검증 증거가 생기기 전에는 고정 false gate를 해제하지 않는다. 재부팅을 자동 실행하거나 신호 전송을 프로세스 정리 완료로 기록하지 않는다.
+`[현재 사실]` 2026-09-21 timeout/cancel 준비 검증본은 javac 1회·JVM 0회에서 중단했다. javac PID 40323의 exit 0·close와 최종 그룹 부재·observer 회수는 관찰됐지만 `terminationReason: lingering_process`가 기대와 달라 `FAIL_STOPPED`였다. worker도 회수됐으며 cleanup 미시작·workRoot/클래스 보존·harness poison true·제품 poison false였다. 당시 원인 미확정으로 진단에 반환했고 해당 검증본의 timeout/cancel은 미실행·재시도 없음으로 보존한다. 정확한 관찰 시각과 원본 증거는 [준비 compile 중단 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-21-timeoutcancel-준비-compile-중단)을 따른다.
+
+`[현재 사실]` 2026-09-22 새 종료 관측을 사용하는 supervisor로 javac 1회·timeout JVM 1회·cancel JVM 1회를 검증해 단계 2·3 실제 PASS를 인수했다. READY 뒤 timeout/cancelled 결과, 모든 child·그룹·observer와 worker 회수, cleanup 완료·workRoot 부재, 양쪽 poison false를 확인했다. 독립 focused 38 PASS를 재사용했으며 이후 `__test`의 기존 환경 생성 함수 참조 추가는 제품 동작·권한 변경이 아니다. receipt와 검증 대상은 [최신 회수·정리 PASS 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-timeoutcancel-회수와-안전-정리-pass)을 따른다.
+
+`[현재 사실]` 같은 날 단계 4 one-shot에서 javac·canary JVM·동일 helper native 양성 대조를 각각 1회 실행하고 환경 7·파일 12·네트워크 10·프로세스 1의 probe 30개를 시도했다. `ProcessBuilder`가 `posix_spawn failed, error: 0 (none)`으로 끝난 결과를 harness가 기대한 deny 형식으로 분류하지 못해 원본은 `FAIL_STOPPED_POISONED`이며 cleanup 없이 work를 보존했다. javac·JVM·native control·worker와 각 그룹·observer는 모두 회수됐고 harness poison true·제품 poison false다. 독립 검토자는 동일 JVM PID·시각의 `process-fork` OS deny와 동일 helper 양성 대조를 결합해 관찰된 격리 효과만 PASS로 판정했다. Unix socket 생성은 `file-write-create`에서 차단됐으며 `network-bind` 규칙 자체의 입증으로 확대하지 않는다. 생성 class 전후 hash는 영속 증거가 없어 불변 검증 완료를 주장하지 않는다. 원본 실패·독립 판정·receipt는 [단계 4 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-단계-4-격리-canary-실행과-독립-판정)을 따른다.
+
+`[현재 사실]` 단계 5의 첫 `/private/tmp/bam-java-outcomes-TxJEdi` 원본은 preview 진단문구 기대 불일치로 FAIL·work 보존 상태지만 실제 type error와 preview 비활성 결과는 모두 `syntax_error`로 독립 PASS했다(javac 2·JVM 0). 이 둘을 재실행하지 않고 `/private/tmp/bam-java-outcomes-rest-SDUwT0`에서 javac 1·fresh JVM 8로 wrong answer, static reset/runtime error, `System.exit` 7/0, 출력 제한, heap/direct OOME, READY 뒤 thread timeout과 회수·class 불변·cleanup·poison false를 독립 PASS했다. 두 판정 SHA-256은 각각 `862aa02a7bc738a0dbeffaf491ddef5cb537e87ec54cd609ef7e241f3d911b84`, `dca2137636c29f7647385c5ea3683b845325f1f5cd8c17cc309b523d525f622c`이며 합계 javac 3·JVM 8이다.
+
+`[현재 사실]` `/private/tmp/bam-java-array-runtime-Yqoh92`에서 javac 6·JVM 21을 실행해 기준답안 공개 사례 18개 PASS와 대표오답 3개 `wrong_answer`를 확인했다. 빈 배열·100000개 배열과 동일 값 alias의 `returnNotArgument0:false`를 포함했고 모든 child/group/observer/worker 회수, class/source hash 불변, cleanup 완료, poison false였다. 실제 2 MiB 초과 경계는 실행하지 않았다. 독립 판정 SHA-256은 `175a7d955cb28f399961100a5f1054e10b68da90ec775503bd8d80534058cf4a`, 원 receipt SHA-256은 `03aaad7cfdaca3c1bdc8c8d413432949bdf7c237e2c5c96657dfd8feb4e9eabf`다.
+
+`[현재 사실]` supervisor SHA-256 `1c61e9bc706c41d6d9284cb51b0b8e1913818b58e0c06086ad0b203c867e5b0d`는 exit code가 0이 아니고 fd 3 프로토콜 파싱에 실패했을 때 stdout `OutOfMemoryError`를 메모리 제한 안내로 분류하는 한 분기만 추가했다. 작성 회귀 1개와 기존/수정 raw 8개 독립 재분류에서 heap 안내 외 결과가 동일했으며 Java는 재실행하지 않았다. 기존 focused 38과 runtime·배열 증거를 재사용했다.
+
+`[현재 사실]` tGqkAv 앱의 lesson route timeout FAIL·Java 0회와 원본은 보존한다. 이후 `.md` MIME 보완 앱에서 Electron 2회·Java/javac 0회로 Markdown·origin·Worker·IPC/CSP·진도/초안 재시작 복원을 독립 PASS했다. staging도 상대 symlink 14개·원본 불변·strict sign을 독립 PASS했다. 당시 앱 gate는 false였으므로 활성 Java UI PASS가 아니다. 대상 hash·receipt·실패 이력은 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-활성-java-quest-앱-검증-pass)에 모은다.
+
+`[현재 사실]` 현 supervisor는 prototype gate true와 함께 `darwin/arm64`·검증 OS release `23.6.0`·kernel 전체 version 일치를 요구한다. capability/run 공통 resolver는 OS 읽기 실패·불일치를 파일 접근·임시 디렉터리·spawn 전에 차단한다. 검증 커널의 실제 활성 Java Quest 앱에서 정상 공개 6·취소 1·창 닫기 1과 재시작 복원·회수·scratch 정리를 독립 PASS했다. 오래된 bundle class의 array-v1 미지원 실패 뒤 기존 배열 검증 class를 Java 실행 없이 재사용했고 staging source/class 정합 검사를 보완했다. 대상 hash·실행 수·이전 실패·IPC 응답 미관찰 한계는 [최신 작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-활성-java-quest-앱-검증-pass)를 따른다. 정식 OS·설치본·DMG·공식 Electron 채택과 Java 코딩테스트 완료는 별도다.
+
+실행 재개의 역사와 보존 조건은 아래 [감독 보존 계약](#실행-재개를-위한-감독-보존-계약)과 작업 카드의 [재개 순서](../work-items/2026-09-15-java-code-quest-runtime.md#재시작-후-인수와-실행-재개-순서)를 따른다. hard deadline·poison은 reap 성공이 아니며 재부팅을 자동 실행하거나 신호 전송을 정리 완료로 기록하지 않는다. 검증 커널의 활성 UI PASS와 정식 지원·최종 프로젝트 통합 완료는 구분한다.
 
 Java 25로 작성한 `BamQuestRunner`는 학습자 클래스의 허용된 정적 메서드 한 번을 호출한다. Electron main의 감독 코드는 고정 JDK 경로·sandbox·시간·출력·종료를 관리한다. 컴파일과 학습자 실행은 모두 sandbox가 적용된 별도 프로세스이며, 공개 테스트마다 새 JVM을 만든다. 부모가 학습자 클래스를 로드하지 않는다. Java Security Manager를 격리 수단으로 삼지 않는다.
+
+## 실행 재개를 위한 감독 보존 계약
+
+`[확정 결정]` 2026-09-15 후속 실행·채점 요청 당시 첫 단계는 비활성 감독 후보의 정적 결함 수정이었다. 원인 불명의 잔존 javac를 해결했다는 뜻이 아니며 당시에는 `ISOLATION_PROTOTYPE_VALIDATED = false`, public capability, 두 SBPL과 bundle lock을 유지했다. Java·javac·sandbox 실행은 [재개 순서](../work-items/2026-09-15-java-code-quest-runtime.md#재시작-후-인수와-실행-재개-순서)에 따라 위 단계 2~5와 배열 범위까지 진행했고, 이후 Java 미실행 Electron 앱 PASS를 인수했다. 현재 OS 제한 후보와 활성 Java UI 검증은 위 현재 판정에 따른다. Gradle·Spring은 이 범위가 아니다.
+
+- child 생성 여부·PID, 실제 `exit`/`close` 관찰과 code/signal을 감독 내부에서 추적한다. 발송한 SIGTERM/SIGKILL을 관찰 종료값으로 채우지 않는다. renderer에 PID·경로·일반 실행 API를 노출하지 않는다.
+- spawn 전 실패 또는 생성된 모든 child의 종료·close와 정리 가능성을 확인했을 때만 이번 `workRoot`를 삭제한다. timeout·취소라는 이유만으로 보존하지는 않지만 `unreaped_process`, `close_timeout`, 종료 불명 error이면 보존하고 process-wide poison으로 나머지 사례·다음 실행을 막는다. 보존 공간과 과거 scratch를 자동 재사용·삭제하지 않는다.
+- cleanup 실패는 Promise rejection으로 관찰 결과를 덮지 않고 `java_cleanup_error` / top-level `engine_error`로 구조화하며 후속 실행을 poison한다. 사례 관찰값은 유지하되 완료로 저장하지 않고 사용자 안내에 절대 경로·소스를 노출하지 않는다.
+- fake child/event/timer를 쓰는 최소 내부 seam으로 spawn 전 실패, exit→close, 회수된 timeout/취소, 미회수, exit만 관찰, child error, 늦은 이벤트, 삭제 실패와 timer 정리 경합을 검사한다. 공개 실행 API에 우회 flag를 만들지 않는다. Node PASS는 OS 회수·격리 PASS가 아니다.
+- 보조 `ps`의 deadline·cancellation과 전체 process group 부재 확인은 활성화 전 별도 감사 항목이다. child `close`만으로 그룹 회수 완료를 선언하지 않는다. 필요하면 최소 수정하고, 남은 항목은 gate 차단으로 기록한다.
+
+`[현재 사실]` 2026-09-21 후속 후보는 leader/descendant 그룹 회수·bounded observer·cleanup poison과 runtime-only 별도 staging을 보완했다. 독립 팀 인계의 focused 28 PASS(25+3)·정적 독립 검토 PASS와 당시 대상 hash는 [정적 보완 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-21-감독-후보-정적-보완-인수)을 따른다. 그 정적 검사에서는 Java·javac·sandbox·Electron·실제 `ps`·signal을 실행하지 않았다. 당시에는 runtime 회수·격리 및 필수 검증 증거를 확보하기 전까지 고정 false gate를 유지했다. 후속 증거와 현재 OS 제한 후보는 위 현재 판정을 따른다.
+
+## Java 코딩테스트 실행 확장의 선행 계약
+
+`[현재 사실]` Java CT 72개는 `draft-only`이며 공개 항목 168개는 JUnit 메서드 묶음(일반 `@Test` 96, `@ParameterizedTest` 72)이다. parameterized invocation 총수는 미실행으로 미확정이다. 현재 Quest runner의 네 정확한 서명과 배열 codec, Quest 전용 IPC만으로 CT를 실행할 수 없다. capability 변경만으로 지원하지 않는다.
+
+`[확정 결정]` 후속 구현은 원본 `publicTestSource`, provider/helper, 최대 길이 생성, identity·입력 불변·tolerance assertion을 그대로 실행하는 계약을 먼저 검증한다. source-full을 정규식이나 JS 모사로 축소하지 않는다. 값 타입 12개(`int`, `long`, `double`, `boolean`, `String`, `int[]`, `long[]`, `double[]`, `String[]`, `int[][]`, `boolean[][]`, `String[][]`)의 표시는 실행 지원 증거가 아니다. long은 정규 decimal 문자열, double은 finite, 배열은 값과 원본/새 참조 의미를 보존한다.
+
+`[제안]` 격리 복구 이후 JUnit Jupiter/Platform의 정확한 artifact·hash·license를 선정하고 신뢰된 원본 `bridge.*.solution.*` 호출과 unnamed `Solution.java`를 연결할 작은 typed adapter를 검증한다. 아직 JUnit 버전·의존성·adapter는 확정·추가되지 않았다. discovery/provider 실행도 격리 내부에서 수행하고 Java 25·`--release 25`·preview off·processor off·고정 classpath를 유지한다. 사용자 소스나 원본 테스트를 문자열 치환하지 않는다.
+
+활성화 전 등록 publicTest ID와 class/method/invocation 대응, 빠른/전체 실행 선택, **공개 테스트마다 fresh JVM**의 실제 단위를 확정한다. 메서드 묶음의 static 상태 공유를 숨기거나 freshness를 줄이지 않는다. skipped/aborted/provider 실패/zero discovered는 PASS가 아니며 전체 현재 revision의 원본 사례가 끝나기 전 완료를 기록하지 않는다. 부모는 bundle 선택 목록과 결과 ID·revision·개수·상태를 대조하고 assertion 실패·컴파일 오류·provider/protocol 오류·예외·시간/출력 제한·취소·미실행을 구별한다. CT 결과와 진도는 Quest와 별도로 유지한다.
+
+일반 웹 `localhost:4173`에는 기존 `window.bamJava` bridge가 없다. dev server exec endpoint나 native host를 몰래 추가하지 않는다. 기존 제한 shell 재사용은 격리 PASS 이후 진입 UX·origin·저장 경계를 확인할 후속 항목이며, 서로 다른 origin의 초안·진도를 자동 이관하지 않는다. 정식 설치·DMG·지원 OS 확대는 이 준비 작업에 포함하지 않는다.
 
 ## 고정 배포물과 업데이트
 
@@ -57,15 +97,15 @@ main은 모든 메시지의 실제 sender가 해당 BrowserWindow의 살아 있�
 1. main이 생성한 UUID 임시 디렉터리에 고정 이름 `Solution.java`를 쓴다. 신뢰한 bundle에서 읽은 runner·manifest 경로와 직접 생성한 임시 경로만 subprocess 인수가 된다. 실행 환경은 새 allowlist로 만들고 `JAVA_TOOL_OPTIONS`, `_JAVA_OPTIONS`, `JDK_JAVA_OPTIONS`, `CLASSPATH`, `DYLD_*` 및 비밀 환경을 상속하지 않는다. HOME·TMPDIR·user.home·java.io.tmpdir는 해당 임시 공간으로 설정한다.
 2. 번들 `javac`를 별도 compile profile 아래에서 `--release 25 -encoding UTF-8 -proc:none -implicit:none`과 명시적인 빈 classpath·고정 source/output 경로로 실행한다. `--enable-preview`·processor·사용자 compiler option을 받지 않는다. 컴파일 오류 출력은 제한된 일반 텍스트로만 보여 준다. [Java 25 javac 문서](https://docs.oracle.com/en/java/javase/25/docs/specs/man/javac.html)
 3. 컴파일 성공 뒤 publicTests 순서대로 새 JVM에서 신뢰한 Java `BamQuestRunner`를 실행한다. runner classpath는 번들의 runner를 먼저, 이번 source의 classes를 뒤에 둔다. 서명은 public/static·int 3개·long 반환인지 확인한다. runner는 manifest에서 선택한 세 int 값을 전달하고 long 반환 또는 예외 종류를 내보낸다. 학습자 코드가 추가 파일·프로세스·네트워크를 얻도록 reflection/JNI 권한 예외를 만들지 않는다.
-4. 구현된 비활성 후보의 자식 결과는 fd 3의 **4-byte big-endian payload 길이 + 단일 UTF-8 record**다. payload는 `returned\n<정규 10진 long>` 또는 `runtime_error\n<오류 설명의 padding 없는 base64url>`이며 부모가 각각 returned/actual 또는 runtime_error/message 객체로 해석한다. 길이·trailing byte·정규 정수/base64를 검사한다. stdout/stderr는 별도로 합산 제한하며 malformed record를 성공으로 추정하지 않는다. parser의 정적 검사는 통과했지만 실제 격리 JVM의 이 채널 전송은 미검증이다. `long`을 JS number로 변환하지 않는다.
+4. 구현된 실행 후보의 자식 결과는 fd 3의 **4-byte big-endian payload 길이 + 단일 UTF-8 record**다. payload는 `returned\n<정규 10진 long>` 또는 `runtime_error\n<오류 설명의 padding 없는 base64url>`이며 부모가 각각 returned/actual 또는 runtime_error/message 객체로 해석한다. 길이·trailing byte·정규 정수/base64를 검사한다. stdout/stderr는 별도로 합산 제한하며 malformed record를 성공으로 추정하지 않는다. parser의 정적 검사와 실제 격리 JVM 전송은 위 runtime·앱 증거 범위에서 확인했다. `long`을 JS number로 변환하지 않는다.
 5. 부모가 bundle의 expected와 actual을 비교해 공통 Quest 실행 결과를 만든다. 자식이 `passed`나 기대값을 결정하지 않는다. 정상 불일치는 `wrong_answer`; javac 오류는 `syntax_error`와 컴파일 단계 설명; 예외는 `runtime_error`; 감독이 끊은 시간/출력은 각각 `timeout`/`output_limit`; 사용자가 끊으면 `cancelled`; 부재·격리 실패·잘못된 프로토콜·비정상 실행기 종료는 `engine_error`; 미실행 사례는 `not_run`이다. 메모리 제한은 기존 DTO를 불필요하게 확장하지 않고 `runtime_error`에 제한 원인을 명시한다.
-6. 끝난 프로세스를 reap하고 핸들·타이머를 닫은 뒤 임시 source/classes를 삭제해야 한다. timeout/취소에서는 process group 종료 후 잔여 프로세스가 없는지 확인한다. reap되지 않으면 성공한 cleanup으로 처리하지 않고 작업 공간을 보존하는 경로가 필요하며 현재 후보의 `finally`는 재활성화 전 보완 대상이다. 성공 기록은 전체 공개 사례 PASS 때만 기존 Quest 저장소에 넣는다.
+6. 끝난 프로세스를 reap하고 핸들·타이머를 닫은 뒤 임시 source/classes를 삭제해야 한다. timeout/취소에서는 process group 종료 후 잔여 프로세스가 없는지 확인한다. reap되지 않으면 성공한 cleanup으로 처리하지 않고 [감독 보존 계약](#실행-재개를-위한-감독-보존-계약)에 따라 작업 공간을 보존한다. 수정 전의 무조건 `finally` 삭제와 후속 패치·검사 이력은 [재개 준비 기록](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-15-실행-재개-준비-인수)에서 구분한다. 성공 기록은 전체 공개 사례 PASS 때만 기존 Quest 저장소에 넣는다.
 
 자식 프로세스와 학습자 코드는 같은 JVM에 있으므로 프로토콜 spoofing까지 방지하는 인증 채점기가 아니다. 공개 입력을 하드코딩하거나 로컬 앱/진도/출력을 변조할 수 있는 자기학습 제품의 기존 한계는 유지한다. 이 한계가 renderer에 임의 OS 실행 권한을 주거나 격리를 생략하는 근거는 아니다.
 
 ### 배열 세 문제의 비활성 프로토콜 확장
 
-`[확정 결정]` ARR-01·ARR-02·QUE-01 편입에 필요한 배열 입출력·원본 보존·새 참조 관찰만 추가한다. 아래는 구현 대상으로 고정한 **비활성 후보 계약**이며 실제 JVM 통과가 아니다. 기존 pilot의 argv·`returned\n<long>`·4 KiB frame, IPC 요청 네 필드, 고정 false gate와 격리·시간·stdout/stderr 제한을 유지한다. [공개 데이터 정본](../content-schema.md#algorithm-bridge-java-배열-quest-편입)에 없는 타입·관찰식을 해석하지 않는다.
+`[확정 결정]` ARR-01·ARR-02·QUE-01 편입에 필요한 배열 입출력·원본 보존·새 참조 관찰만 추가한다. 아래 배열 계약의 고정 공개 18개와 대표오답 3개를 실제 JVM으로 검증했다. 후속 활성 앱 PASS의 범위는 위 현재 판정을 따른다. 기존 pilot의 argv·`returned\n<long>`·4 KiB frame, IPC 요청 네 필드와 격리·시간·stdout/stderr 제한을 유지하며, 현재 gate는 검증한 OS에 한정한다. [공개 데이터 정본](../content-schema.md#algorithm-bridge-java-배열-quest-편입)에 없는 타입·관찰식을 해석하지 않는다.
 
 1. 부모는 bundle에서 Quest ID/revision·서명·공개 입력을 선택한다. 새 배열 경로의 argv는 고정 `--array-v1`, `solve`, 세 허용 signature 중 하나(`int-array-int-int-to-int-array`, `int-array-int-int-to-int`, `int-array-to-int-array`)다. renderer가 signature·입력·expected를 지정하지 않는다.
 2. 입력은 stdin 단일 binary record로 전달한다. 첫 signed int32 big-endian은 첫 배열의 길이, 뒤에는 길이만큼 signed int32 big-endian 원소, 3인수 서명에는 마지막 두 int32를 차례로 붙인다. 길이 0..100000·서명별 정확한 원소 수·후행 바이트 부재를 검사하며 최대 400012 byte다. argv에 대형 배열 문자열을 넣거나 임의 파일 경로·JSON 파서를 노출하지 않는다. 부모는 write 오류·조기 종료도 기존 감독 수명주기로 처리한다.
@@ -74,7 +114,7 @@ main은 모든 메시지의 실제 sender가 해당 BrowserWindow의 살아 있�
 5. 새 배열 경로에만 fd 3 payload 최대 2 MiB를 적용한다. 최대 100000개의 int32를 담기에 충분하며 read 중 상한을 검사한다. 기존 pilot payload 상한 4 KiB와 stdout+stderr 32 KiB는 늘리지 않는다. 배열 결과 길이는 최대 100000이고 비교는 전체 값·순서 및 필수 두 관찰을 포함한다. 원본 훼손·같은 참조이면 값이 맞아도 wrong_answer다.
 6. 부모가 공개 expected/observations와 비교해 결과를 만들고 learner에게 실제 값과 실패 관찰을 설명한다. 자식은 expected·passed를 결정하지 않는다. 기존 long 문자열 비교도 정확히 유지한다. 큰 배열 UI는 [공개 데이터 표시 계약](../content-schema.md#algorithm-bridge-java-배열-quest-편입)으로 요약하되 모든 값에 접근할 수 있어야 한다.
 
-Node 단위 검사는 최대 길이 입력/출력, 빈 배열, signed int32 경계, 짧거나 과한 입력, 잘못된 길이·tag·CSV·boolean·후행 데이터, 관찰 false/누락, 배열 값 불일치, 기존 long/pilot 호환을 확인한다. Java source 읽기·Node codec PASS를 Java 컴파일·reflection·stdin/fd3 전송·격리 PASS로 기록하지 않는다. 실제 배열 정답·대표오답 검증은 [재개 조건](#현재-실행-판정과-재개-조건)을 먼저 충족한 독립 실행에서 수행한다.
+Node 단위 검사는 최대 길이 입력/출력, 빈 배열, signed int32 경계, 짧거나 과한 입력, 잘못된 길이·tag·CSV·boolean·후행 데이터, 관찰 false/누락, 배열 값 불일치, 기존 long/pilot 호환을 확인한다. Java source 읽기·Node codec PASS와 별도로, 고정된 기준답안 18개와 대표오답 3개는 [현재 실행 판정](#현재-실행-판정과-재개-조건)의 독립 Java 실행에서 통과했다. 이는 승인된 Quest 3개의 해당 사례 증거이며 실제 2 MiB 초과 경계나 Java 코딩테스트 72개 실행으로 확대하지 않는다.
 
 ## macOS 격리와 자원 제한
 
