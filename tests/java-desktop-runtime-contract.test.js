@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   mkdir,
   mkdtemp,
@@ -81,6 +82,13 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
   const outputAppPath = path.join(outputRoot, "BAM.dev.app");
   const sourceRuntime = path.join(sourceAppPath, "Contents", "Resources", "runtime");
   const outputRuntime = path.join(outputAppPath, "Contents", "Resources", "runtime");
+  const runnerClasses = [
+    ["BamQuestRunner$ArrayInput.class", "fake nested class\n"],
+    ["BamQuestRunner.class", "fake class\n"],
+  ];
+  const runnerSourceSha256 = createHash("sha256")
+    .update(await readFile(new URL("../desktop/runtime/JavaBamQuestRunner.java", import.meta.url)))
+    .digest("hex");
 
   try {
     await Promise.all([
@@ -93,7 +101,22 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
       writeFile(path.join(sourceRuntime, "supervisor.mjs"), "source supervisor\n"),
       writeFile(path.join(sourceRuntime, "profiles", "compile.sb"), "source profile\n"),
       writeFile(path.join(sourceRuntime, "jdk", "Contents", "Home", "bin", "java"), "fake java\n"),
-      writeFile(path.join(sourceRuntime, "java-runner", "BamQuestRunner.class"), "fake class\n"),
+      ...runnerClasses.map(([name, content]) => (
+        writeFile(path.join(sourceRuntime, "java-runner", name), content)
+      )),
+      writeFile(path.join(sourceRuntime, "java-runner", "runner-provenance.json"), `${JSON.stringify({
+        schemaVersion: 1,
+        sourceSha256: runnerSourceSha256,
+        classes: runnerClasses.map(([name, content]) => ({
+          name,
+          sha256: createHash("sha256").update(content).digest("hex"),
+        })),
+        provenance: {
+          kind: "bundled-javac",
+          release: 25,
+          javacSha256: "a".repeat(64),
+        },
+      }, null, 2)}\n`),
       writeFile(path.join(outputAppPath, "stale-output"), "stale\n"),
     ]);
 
