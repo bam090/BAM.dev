@@ -6,7 +6,7 @@ Code Quest는 교안의 개념을 학습자가 언어의 실제 작성 단위로
 
 ## 코딩테스트와의 분리
 
-`[확정 결정]` [`DEC-QUEST-SEPARATE-01`](roadmap.md#2026-08-29-확정-제품-결정)에 따라 Code Quest와 코딩테스트를 서로 변환하거나 기초·심화 경로로 합치지 않는다.
+`[확정 결정]` [`DEC-QUEST-SEPARATE-01`](roadmap.md#2026-08-29-확정-제품-결정)에 따라 Code Quest와 코딩테스트를 하나의 기초·심화 제품이나 통합 진도로 합치지 않는다. 명시적으로 승인된 [Algorithm Bridge 재분류](roadmap.md#2026-09-15-algorithm-bridge-전체-편입-결정)는 원본 지원과 기존 URL·초안을 보존하는 별도 유지보수이며 일반적인 자동 변환 승인이 아니다.
 
 - Code Quest는 `content/quests/<languageId>.json`과 해당 Code Quest schema를 사용한다.
 - 코딩테스트는 `content/coding-tests/<languageId>.json`과 [`코딩테스트 스키마·작성 형식`](content-schema.md#코딩테스트-컬렉션), [`코딩테스트 제품 설계`](designs/coding-test.md)를 사용한다.

@@ -2250,6 +2250,169 @@ article.lesson-body > h3 {
   margin: 11px 0 0;
 }
 
+.quest-example-table-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.quest-example-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.quest-example-number-column {
+  width: 42px;
+}
+
+.quest-example-table th,
+.quest-example-table td {
+  min-width: 0;
+  padding: 9px 8px;
+  border: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+}
+
+.quest-example-table thead th {
+  background: var(--color-brand-tint);
+  color: var(--color-text);
+  font-size: 10px;
+}
+
+.quest-example-table tbody th {
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.quest-example-table code,
+.quest-public-value dd code {
+  display: block;
+  min-width: 0;
+  color: var(--color-text-soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.quest-example-table th code {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.quest-example-table .code-line,
+.quest-public-value .code-line {
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  overflow-wrap: inherit;
+  white-space: inherit;
+}
+
+.quest-example-explanations {
+  display: grid;
+  gap: 8px;
+  padding-left: 24px;
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.quest-example-explanations strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--color-text);
+  font-size: 10px;
+}
+
+.quest-public-tests {
+  margin-top: 16px;
+}
+
+.quest-public-tests > summary {
+  padding: 11px 13px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-tint);
+  color: var(--color-primary-strong);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.quest-public-tests[open] > summary {
+  margin-bottom: 12px;
+}
+
+.quest-public-test-list {
+  display: grid;
+  gap: 12px;
+}
+
+.quest-public-test-list > article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.quest-public-test-list h3 {
+  margin: 0 0 10px;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.quest-public-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.quest-public-value {
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.quest-public-value dt {
+  color: var(--color-text-muted);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.quest-public-value dt code,
+.quest-public-value dt small {
+  display: block;
+}
+
+.quest-public-value dt code {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+.quest-public-value dt small {
+  margin-top: 2px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.quest-public-value dd {
+  min-width: 0;
+  margin: 5px 0 0;
+}
+
 .quest-source-examples pre,
 .quest-fixture pre {
   --syntax-gutter: 12px;
@@ -2764,6 +2927,16 @@ article.lesson-body > h3 {
   font-size: 15px;
 }
 
+.coding-test-route-notice {
+  padding: 11px 13px;
+  margin: 14px 0 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand-tint);
+  color: var(--color-text-soft);
+  font-size: 12px;
+}
+
 .coding-test-filters {
   padding: 22px;
   margin-top: 24px;
@@ -3024,6 +3197,10 @@ article.lesson-body > h3 {
 }
 
 .coding-test-section + .coding-test-section {
+  border-top: 1px solid var(--color-border);
+}
+
+.coding-test-problem-panel > .coding-test-section + .quest-section {
   border-top: 1px solid var(--color-border);
 }
 
@@ -5176,6 +5353,7 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
   .lesson-toc { grid-column: 2; grid-row: 1; }
 }
 @media (max-width: 1100px) {
+  .quest-workspace { grid-template-columns: minmax(0, 1fr); }
   .lesson-layout { grid-template-columns: 1fr; gap: 27px; }
   .lesson-toc { position: static; max-height: none; display: flex; flex-wrap: wrap; gap: 6px; overflow: visible; }
   .lesson-toc p { flex-basis: 100%; margin-bottom: 4px; }

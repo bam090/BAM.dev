@@ -11,6 +11,11 @@ import {
   assertValidWebCodeQuestCollection,
   createWebCodeQuestExecutionRequest,
 } from "../src/core/web-code-quest.js";
+import {
+  assertValidJavaCodeQuestCollection,
+  canRunCodeQuest,
+  createCodeQuestExecutionRequest,
+} from "../src/core/code-quest.js";
 import { assertValidWebProjectCollection } from "../src/core/web-project.js";
 import {
   areJsonValuesEqual,
@@ -212,6 +217,11 @@ export function validateSchemaValue(value, schema, rootSchema, valuePath, errors
         validateSchemaValue(item, schema.items, rootSchema, `${valuePath}[${index}]`, errors),
       );
     }
+    (schema.prefixItems ?? []).forEach((itemSchema, index) => {
+      if (index < value.length) {
+        validateSchemaValue(value[index], itemSchema, rootSchema, `${valuePath}[${index}]`, errors);
+      }
+    });
     return;
   }
 
@@ -242,6 +252,9 @@ export function validateSchemaValue(value, schema, rootSchema, valuePath, errors
     }
     if (schema.minimum !== undefined && value < schema.minimum) {
       errors.push(`${valuePath}: ${schema.minimum}보다 작습니다.`);
+    }
+    if (schema.maximum !== undefined && value > schema.maximum) {
+      errors.push(`${valuePath}: ${schema.maximum}보다 큽니다.`);
     }
   }
 }
@@ -605,6 +618,19 @@ try {
   contentErrors.push("HTML·CSS Code Quest 스키마 파일을 읽을 수 없습니다.");
 }
 
+const javaCodeQuestSchemaPath = path.join(
+  projectRoot,
+  "content",
+  "schema",
+  "java-code-quest.schema.json",
+);
+let javaCodeQuestSchema;
+try {
+  javaCodeQuestSchema = JSON.parse(await readFile(javaCodeQuestSchemaPath, "utf8"));
+} catch {
+  contentErrors.push("Java Code Quest 스키마 파일을 읽을 수 없습니다.");
+}
+
 const questDirectory = path.join(projectRoot, "content", "quests");
 const questCollections = new Map();
 const questIds = new Set();
@@ -628,8 +654,24 @@ for (const fileName of questFileNames) {
     }
 
     const collection = JSON.parse(await readFile(questPath, "utf8"));
-    const isWebCollection = Object.hasOwn(collection, "evaluationKind");
-    if (isWebCollection && webCodeQuestSchema) {
+    const isJavaCollection = collection.evaluationKind === "java-static-method-v1";
+    const isWebCollection = new Set(["html-dom-v1", "css-style-v1"]).has(
+      collection.evaluationKind,
+    );
+    if (isJavaCollection && javaCodeQuestSchema) {
+      const schemaErrors = [];
+      validateSchemaValue(
+        collection,
+        javaCodeQuestSchema,
+        javaCodeQuestSchema,
+        "$",
+        schemaErrors,
+      );
+      if (schemaErrors.length > 0) {
+        throw new Error(`JSON Schema 불일치:\n- ${schemaErrors.join("\n- ")}`);
+      }
+      assertValidJavaCodeQuestCollection(collection, curriculum);
+    } else if (isWebCollection && webCodeQuestSchema) {
       const schemaErrors = [];
       validateSchemaValue(
         collection,
@@ -676,7 +718,41 @@ for (const fileName of questFileNames) {
         publicTestIds.add(publicTest.id);
       }
 
-      if (isWebCollection) {
+      if (isJavaCollection) {
+        const executionAvailable = canRunCodeQuest(collection, quest, true);
+        if (quest.executionMode === "draft-only") {
+          if (executionAvailable) {
+            throw new Error(`${quest.id}: draft-only Quest를 실행 가능으로 분류했습니다.`);
+          }
+          let requestBlocked = false;
+          try {
+            createCodeQuestExecutionRequest(
+              collection,
+              quest,
+              quest.starterCode,
+              `validate-${quest.id}`,
+            );
+          } catch {
+            requestBlocked = true;
+          }
+          if (!requestBlocked) {
+            throw new Error(`${quest.id}: draft-only Quest 실행 요청이 차단되지 않았습니다.`);
+          }
+          continue;
+        }
+        if (!executionAvailable) {
+          throw new Error(`${quest.id}: 승인된 Java Quest 실행 계약이 없습니다.`);
+        }
+        const request = createCodeQuestExecutionRequest(
+          collection,
+          quest,
+          quest.starterCode,
+          `validate-${quest.id}`,
+        );
+        if (Object.hasOwn(request, "tests") || Object.hasOwn(request, "expected")) {
+          throw new Error("Java renderer 실행 요청에 공개 테스트나 기대값이 포함됐습니다.");
+        }
+      } else if (isWebCollection) {
         createWebCodeQuestExecutionRequest(
           collection,
           quest,
@@ -726,9 +802,20 @@ const codingTestSchemaPath = path.join(
   "schema",
   "coding-test.schema.json",
 );
-let codingTestSchema;
+const javaCodingTestSchemaPath = path.join(
+  projectRoot,
+  "content",
+  "schema",
+  "java-coding-test.schema.json",
+);
+const codingTestSchemas = new Map();
 try {
-  codingTestSchema = JSON.parse(await readFile(codingTestSchemaPath, "utf8"));
+  const [javascriptSchema, javaSchema] = await Promise.all([
+    readFile(codingTestSchemaPath, "utf8"),
+    readFile(javaCodingTestSchemaPath, "utf8"),
+  ]);
+  codingTestSchemas.set("javascript", JSON.parse(javascriptSchema));
+  codingTestSchemas.set("java", JSON.parse(javaSchema));
 } catch {
   contentErrors.push("코딩테스트 스키마 파일을 읽을 수 없습니다.");
 }
@@ -755,6 +842,10 @@ for (const fileName of codingTestFileNames) {
       throw new Error(`파일명 언어 ID 형식이 올바르지 않습니다: ${languageId}`);
     }
     const document = JSON.parse(await readFile(codingTestPath, "utf8"));
+    const codingTestSchema = codingTestSchemas.get(languageId);
+    if (!codingTestSchema) {
+      throw new Error(`지원하는 코딩테스트 스키마가 없습니다: ${languageId}`);
+    }
     if (codingTestSchema) {
       const schemaErrors = [];
       validateSchemaValue(
@@ -778,6 +869,12 @@ for (const fileName of codingTestFileNames) {
       throw new Error(`커리큘럼에 없는 언어입니다: ${languageId}`);
     }
 
+    const questIds = new Set(
+      [...questCollections.values()].flatMap((questCollection) =>
+        questCollection.quests.map((quest) => quest.id),
+      ),
+    );
+
     for (const problem of collection.problems) {
       if (codingTestProblemIds.has(problem.id)) {
         throw new Error(`다른 컬렉션과 코딩테스트 문제 ID가 중복됩니다: ${problem.id}`);
@@ -787,6 +884,12 @@ for (const fileName of codingTestFileNames) {
       }
       codingTestProblemIds.add(problem.id);
       codingTestSlugs.add(problem.slug);
+      if (problem.relatedQuestId && !questIds.has(problem.relatedQuestId)) {
+        throw new Error(`관련 준비 Quest를 찾을 수 없습니다: ${problem.relatedQuestId}`);
+      }
+      if (problem.legacyQuestId && questIds.has(problem.legacyQuestId)) {
+        throw new Error(`legacyQuestId가 현재 Quest와 겹칩니다: ${problem.legacyQuestId}`);
+      }
       for (const publicTest of problem.publicTests) {
         if (codingTestPublicTestIds.has(publicTest.id)) {
           throw new Error(
@@ -805,6 +908,9 @@ for (const fileName of codingTestFileNames) {
 
 if (!codingTestCollections.has("javascript")) {
   contentErrors.push("javascript: 4차 코딩테스트 콘텐츠가 없습니다.");
+}
+if (!codingTestCollections.has("java")) {
+  contentErrors.push("java: Algorithm Bridge 코딩테스트 콘텐츠가 없습니다.");
 }
 
 const webProjectSchemaPath = path.join(

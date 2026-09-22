@@ -29,12 +29,14 @@ import {
   resolveLessonRoute,
 } from "./core/navigation.js";
 import {
+  canRunCodingTest,
   filterCodingTestProblems,
   findCodingTestProblemBySlug,
   getCodingTestProblemsInOrder,
   loadCodingTestCollection,
 } from "./core/coding-test.js";
 import {
+  canRunCodeQuest,
   createCodeQuestCatalog,
   createCodeQuestExecutionRequest,
   filterCodeQuestCatalogItems,
@@ -60,6 +62,7 @@ import { ExecutionCoordinator } from "./core/execution-coordinator.js";
 import { BrowserCodeQuestRunner } from "./grading/browser-code-quest-runner.js";
 import { BrowserWebCodeQuestRunner } from "./grading/browser-web-code-quest-runner.js";
 import { CodeQuestRunnerRouter } from "./grading/code-quest-runner-router.js";
+import { JavaCodeQuestRunnerAdapter } from "./grading/java-code-quest-runner-adapter.js";
 import { CodingTestRunnerAdapter } from "./grading/coding-test-runner-adapter.js";
 import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js";
 import { scoreWebProject } from "./grading/web-project-scoring.js";
@@ -111,10 +114,22 @@ const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
 const CODING_TEST_SEARCH_DEBOUNCE_MS = 250;
 const WEB_PROJECT_DRAFT_SAVE_DEBOUNCE_MS = 250;
 const CODE_QUEST_LANGUAGE_IDS = new Set(["javascript", "html", "css"]);
+const JAVA_CODE_QUEST_LANGUAGE_ID = "java";
+const CODING_TEST_LANGUAGE_IDS = new Set([DEFAULT_LANGUAGE_ID, "java"]);
 
-function isAvailableCodeQuestLanguage(language) {
-  // 정적 교안·객관식의 available 상태와 Code Quest 지원 범위는 별개다.
-  return language?.status === "available" && CODE_QUEST_LANGUAGE_IDS.has(language.id);
+function createCodeQuestPublicData(test) {
+  return {
+    args: test.args,
+    expected: test.expected,
+    ...(test.observations ? { observations: test.observations } : {}),
+  };
+}
+
+function isCodeQuestRouteLanguage(language) {
+  return (
+    language?.status === "available" &&
+    (CODE_QUEST_LANGUAGE_IDS.has(language.id) || language.id === JAVA_CODE_QUEST_LANGUAGE_ID)
+  );
 }
 
 function createDefaultCodingTestFilters() {
@@ -138,13 +153,37 @@ export async function loadCodingTestCollectionSafely(
   }
 }
 
+export async function loadAvailableCodingTestCollectionsSafely(
+  curriculum,
+  loader = loadCodingTestCollection,
+) {
+  const languages = Array.isArray(curriculum?.languages)
+    ? curriculum.languages.filter(
+        (language) =>
+          language.status === "available" && CODING_TEST_LANGUAGE_IDS.has(language.id),
+      )
+    : [];
+  const loaded = await Promise.all(
+    languages.map(async (language) => {
+      try {
+        return [language.id, await loader(language.id, curriculum)];
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return new Map(loaded.filter(Boolean));
+}
+
 export async function loadAvailableCodeQuestCollectionsSafely(
   curriculum,
   loader = loadCodeQuestCollection,
 ) {
   const collections = new Map();
   const languages = Array.isArray(curriculum?.languages)
-    ? curriculum.languages.filter(isAvailableCodeQuestLanguage)
+    ? curriculum.languages.filter((language) =>
+        isCodeQuestRouteLanguage(language),
+      )
     : [];
 
   await Promise.all(
@@ -245,10 +284,18 @@ export class BamLearningApp {
     this.codeQuestCatalogNotice = "";
     this.javascriptCodeQuestRunner = new BrowserCodeQuestRunner();
     this.webCodeQuestRunner = new BrowserWebCodeQuestRunner();
+    this.javaCodeQuestRunner = new JavaCodeQuestRunnerAdapter(window.bamJava);
+    this.javaCodeQuestCapability = {
+      contractVersion: 1,
+      evaluationKind: "java-static-method-v1",
+      available: false,
+    };
     this.codeQuestRunner = new CodeQuestRunnerRouter({
       javascriptRunner: this.javascriptCodeQuestRunner,
       webRunner: this.webCodeQuestRunner,
+      javaRunner: this.javaCodeQuestRunner,
     });
+    this.codingTestCollections = new Map();
     this.codingTestCollection = null;
     this.codingTestFilters = createDefaultCodingTestFilters();
     this.codingTestState = null;
@@ -284,14 +331,18 @@ export class BamLearningApp {
     this.bindGlobalEvents();
     try {
       this.curriculum = await loadCurriculum();
+      this.javaCodeQuestCapability = await this.javaCodeQuestRunner.capabilities();
       this.codeQuestCollections = await loadAvailableCodeQuestCollectionsSafely(
         this.curriculum,
+        loadCodeQuestCollection,
       );
       this.codeQuestCollection =
         this.codeQuestCollections.get(DEFAULT_LANGUAGE_ID) ?? null;
-      this.codingTestCollection = await loadCodingTestCollectionSafely(
+      this.codingTestCollections = await loadAvailableCodingTestCollectionsSafely(
         this.curriculum,
       );
+      this.codingTestCollection =
+        this.codingTestCollections.get(DEFAULT_LANGUAGE_ID) ?? null;
       this.webProjectCollection = await loadWebProjectCollectionSafely(
         this.curriculum,
       );
@@ -300,6 +351,14 @@ export class BamLearningApp {
     } catch (error) {
       this.renderFatalError(error);
     }
+  }
+
+  isCodeQuestExecutionAvailable(collection, quest) {
+    return canRunCodeQuest(
+      collection,
+      quest,
+      this.javaCodeQuestCapability?.available === true,
+    );
   }
 
   bindGlobalEvents() {
@@ -348,7 +407,7 @@ export class BamLearningApp {
         this.renderQuiz();
       } else if (this.currentView === "quest" && this.codeQuestState) {
         this.renderCodeQuest();
-      } else if (this.currentView === "coding-test-list" && this.codingTestCollection) {
+      } else if (this.currentView === "coding-test-list" && this.getCodingTestCollections().length) {
         this.renderCodingTestList();
       } else if (this.currentView === "coding-test" && this.codingTestState) {
         this.renderCodingTest();
@@ -416,6 +475,7 @@ export class BamLearningApp {
       if (this.activateQuizQuestionForElement(event.target) && previousIndex !== this.quizSession.currentIndex) this.saveReviewSession();
     });
     this.root.addEventListener("input", (event) => this.handleInput(event));
+    this.root.addEventListener("toggle", (event) => this.handleCodeQuestDetailsToggle(event), true);
     this.root.addEventListener("scroll", (event) => this.handleScroll(event), true);
   }
 
@@ -430,11 +490,20 @@ export class BamLearningApp {
     if (["", "#", "#/"].includes(routePath)) {
       this.enterView("home");
       const questCatalog = this.getCodeQuestCatalog();
+      const executableQuestItems = questCatalog.items.filter((item) => {
+        const collection = this.codeQuestCollections.get(item.languageId);
+        const quest = collection?.quests.find((candidate) => candidate.id === item.id);
+        return this.isCodeQuestExecutionAvailable(collection, quest);
+      });
       this.root.innerHTML = this.renderServiceShell({ mainContent: renderLearningHome({
         saved: this.savedReviewSession,
         questOverview: {
           courseCount: questCatalog.courses.length,
-          completedCount: questCatalog.items.filter((item) => item.progress === "completed").length,
+          completedCount: executableQuestItems.filter((item) => item.progress === "completed").length,
+          executableCount: executableQuestItems.length,
+          draftOnlyCount: questCatalog.items.filter(
+            (item) => item.executionMode === "draft-only",
+          ).length,
           totalCount: questCatalog.items.length,
         },
       }) });
@@ -508,7 +577,7 @@ export class BamLearningApp {
         questRoute.languageId,
       );
       if (
-        isAvailableCodeQuestLanguage(questLanguage) &&
+        isCodeQuestRouteLanguage(questLanguage) &&
         questLessons.length > 0
       ) {
         await this.openCodeQuestRoute(questRoute.languageId, questRoute.slug);
@@ -900,6 +969,7 @@ export class BamLearningApp {
       items,
       filters: this.codeQuestCatalogFilters,
       notice: this.codeQuestCatalogNotice,
+      javaExecutionAvailable: this.javaCodeQuestCapability?.available === true,
     });
     this.root.innerHTML = this.renderServiceShell({ current: "quest", mainContent });
     this.syncMenuState();
@@ -1096,10 +1166,21 @@ export class BamLearningApp {
       curriculum: this.curriculum,
       progress,
       quizCollections: this.quizCollections,
-      codeQuestCollections: this.codeQuestCollections,
-      codingTestCollections: this.codingTestCollection
-        ? [this.codingTestCollection]
-        : [],
+      codeQuestCollections: new Map(
+        [...this.codeQuestCollections].filter(
+          ([languageId]) =>
+            languageId !== JAVA_CODE_QUEST_LANGUAGE_ID ||
+            this.javaCodeQuestCapability?.available === true,
+        ),
+      ),
+      codingTestCollections: this.getCodingTestCollections()
+        .map((collection) => ({
+          ...collection,
+          problems: collection.problems.filter((problem) =>
+            canRunCodingTest(collection, problem),
+          ),
+        }))
+        .filter((collection) => collection.problems.length > 0),
       webProjectCollection: this.webProjectCollection,
       webProjectState,
       isPersistent,
@@ -1271,10 +1352,39 @@ export class BamLearningApp {
     if (restoreFocus && this.conceptTrigger?.isConnected) this.conceptTrigger.focus({ preventScroll: true });
   }
 
+  getCodingTestCollections() {
+    if (this.codingTestCollections instanceof Map && this.codingTestCollections.size > 0) {
+      return [...this.codingTestCollections.values()];
+    }
+    return this.codingTestCollection ? [this.codingTestCollection] : [];
+  }
+
+  getRelatedCodeQuest(problem) {
+    if (typeof problem?.relatedQuestId !== "string") return null;
+    for (const collection of this.codeQuestCollections.values()) {
+      const quest = collection.quests?.find((candidate) => candidate.id === problem.relatedQuestId);
+      if (quest) {
+        return {
+          href: buildQuestHash(collection.languageId, quest.slug),
+          title: quest.title,
+        };
+      }
+    }
+    return null;
+  }
+
+  findLegacyCodingTestProblem(languageId, slug) {
+    const collection = this.codingTestCollections?.get(languageId);
+    const problem = collection?.problems?.find(
+      (candidate) => candidate.slug === slug && typeof candidate.legacyQuestId === "string",
+    );
+    return problem ? { collection, problem } : null;
+  }
+
   async openCodeQuestRoute(languageId, slug) {
     const language = getLanguage(this.curriculum, languageId);
     const lessons = getLessonsForLanguage(this.curriculum, languageId);
-    if (!isAvailableCodeQuestLanguage(language) || lessons.length === 0) {
+    if (!isCodeQuestRouteLanguage(language) || lessons.length === 0) {
       await this.openLessonRoute();
       return;
     }
@@ -1296,7 +1406,19 @@ export class BamLearningApp {
       this.codeQuestCollection = collection;
 
       const quests = getCodeQuestsInOrder(collection);
-      const quest = findCodeQuestBySlug(collection, slug) ?? quests[0] ?? null;
+      let quest = findCodeQuestBySlug(collection, slug);
+      if (!quest) {
+        const legacy = this.findLegacyCodingTestProblem(languageId, slug);
+        if (legacy) {
+          const canonicalHash = buildCodingTestHash(languageId, legacy.problem.slug);
+          window.history.replaceState(null, "", canonicalHash);
+          await this.openCodingTestRoute(languageId, legacy.problem.slug, {
+            routeNotice: "이 문제는 Code Quest에서 코딩테스트로 이동했습니다.",
+          });
+          return;
+        }
+        quest = quests[0] ?? null;
+      }
       if (!quest) {
         this.renderFatalError(new Error("등록된 Code Quest가 없습니다."));
         return;
@@ -1344,7 +1466,7 @@ export class BamLearningApp {
 
   openCodingTestListRoute() {
     this.enterView("coding-test-list");
-    if (!this.codingTestCollection) {
+    if (this.getCodingTestCollections().length === 0) {
       this.renderFatalError(new Error("등록된 코딩테스트가 없습니다."));
       return;
     }
@@ -1355,7 +1477,7 @@ export class BamLearningApp {
     }
 
     this.renderCodingTestList();
-    document.title = `${this.codingTestCollection.title} · BAM.dev`;
+    document.title = "코딩테스트 · BAM.dev";
     window.scrollTo({ top: 0, behavior: "instant" });
     if (this.hasRenderedView) {
       window.requestAnimationFrame(() => {
@@ -1365,12 +1487,12 @@ export class BamLearningApp {
     this.hasRenderedView = true;
   }
 
-  async openCodingTestRoute(languageId, slug) {
+  async openCodingTestRoute(languageId, slug, { routeNotice = "" } = {}) {
     const language = getLanguage(this.curriculum, languageId);
     if (
       !language ||
       language.status === "planned" ||
-      languageId !== DEFAULT_LANGUAGE_ID
+      !CODING_TEST_LANGUAGE_IDS.has(languageId)
     ) {
       window.history.replaceState(null, "", buildCodingTestListHash());
       this.openCodingTestListRoute();
@@ -1385,18 +1507,18 @@ export class BamLearningApp {
     this.syncMenuState();
 
     try {
-      if (
-        !this.codingTestCollection ||
-        this.codingTestCollection.languageId !== languageId
-      ) {
-        this.codingTestCollection = await loadCodingTestCollection(
+      let collection = this.codingTestCollections.get(languageId) ?? null;
+      if (!collection) {
+        collection = await loadCodingTestCollection(
           languageId,
           this.curriculum,
         );
+        this.codingTestCollections.set(languageId, collection);
       }
       if (sequence !== this.renderSequence) return;
+      this.codingTestCollection = collection;
 
-      const problem = findCodingTestProblemBySlug(this.codingTestCollection, slug);
+      const problem = findCodingTestProblemBySlug(collection, slug);
       if (!problem) {
         window.history.replaceState(null, "", buildCodingTestListHash());
         this.openCodingTestListRoute();
@@ -1408,6 +1530,7 @@ export class BamLearningApp {
       }
 
       let draft = null;
+      let legacyDraft = null;
       let draftStatus = "starter";
       let uiError = null;
       try {
@@ -1423,8 +1546,16 @@ export class BamLearningApp {
         draftStatus = "failed";
         uiError = "저장된 초안을 읽지 못해 초기 코드를 불러왔습니다.";
       }
+      if (problem.legacyQuestId) {
+        try {
+          legacyDraft = this.progressRepository.getQuestDraft(problem.legacyQuestId);
+        } catch {
+          uiError ??= "이전 Code Quest 초안을 읽지 못했습니다.";
+        }
+      }
 
       this.codingTestState = {
+        collection,
         problem,
         source: draft ? draft.source : problem.starterCode,
         isRunning: false,
@@ -1434,6 +1565,10 @@ export class BamLearningApp {
         uiError,
         report: null,
         reportPersistenceStatus: null,
+        routeNotice,
+        relatedQuest: this.getRelatedCodeQuest(problem),
+        legacyDraft,
+        hasCodingTestDraft: Boolean(draft),
       };
       this.renderCodingTest();
       document.title = `${problem.title} · BAM.dev`;
@@ -1912,6 +2047,7 @@ export class BamLearningApp {
       !codingTestState.isRunning
     ) {
       codingTestState.source = codingTestEditor.value;
+      codingTestState.hasCodingTestDraft = true;
       codingTestState.uiError = null;
       this.scheduleCodingTestDraftSave(codingTestState);
       this.updateCodingTestDraftFeedback();
@@ -1932,6 +2068,83 @@ export class BamLearningApp {
   handleScroll(event) {
     const editor = event.target.closest?.("[data-quest-source]");
     if (editor) this.syncCodeQuestEditorHighlight(editor);
+  }
+
+  handleCodeQuestDetailsToggle(event) {
+    const details = event.target.closest?.("[data-quest-public-data]");
+    if (!details || this.currentView !== "quest" || !this.codeQuestState) return;
+    const output = details.querySelector("[data-quest-public-data-output]");
+    if (!output) return;
+    if (!details.open) {
+      output.value = "";
+      return;
+    }
+    const test = this.codeQuestState.quest.publicTests?.[Number(details.dataset.questTestIndex)];
+    if (!test) return;
+    output.value = JSON.stringify(createCodeQuestPublicData(test), null, 2);
+  }
+
+  downloadCurrentCodeQuestPublicData(button) {
+    const state = this.codeQuestState;
+    if (!state || this.currentView !== "quest") return;
+    const index = Number(button.dataset.questTestIndex);
+    const test = state.quest.publicTests?.[index];
+    if (!test) return;
+
+    const status = button.parentElement?.querySelector("[data-quest-public-download-status]");
+    let link = null;
+    let objectUrl = null;
+    try {
+      const json = JSON.stringify(createCodeQuestPublicData(test), null, 2);
+      objectUrl = URL.createObjectURL(new Blob([json], { type: "application/json" }));
+      link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `${state.quest.id}-${test.id ?? index + 1}-public.json`;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      if (status) status.textContent = "전체 공개 JSON 다운로드를 요청했습니다.";
+    } catch {
+      if (status) {
+        status.textContent = "전체 공개 JSON 다운로드를 준비하지 못했습니다. 다시 시도해 주세요.";
+      }
+    } finally {
+      link?.remove();
+      if (objectUrl) {
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+      }
+    }
+  }
+
+  downloadCurrentPublicTestSource(button) {
+    const subject =
+      this.currentView === "quest"
+        ? this.codeQuestState?.quest
+        : this.currentView === "coding-test"
+          ? this.codingTestState?.problem
+          : null;
+    if (!subject || typeof subject.publicTestSource !== "string") return;
+
+    const status = button.parentElement?.querySelector("[data-quest-public-source-status]");
+    let link = null;
+    let objectUrl = null;
+    try {
+      objectUrl = URL.createObjectURL(
+        new Blob([subject.publicTestSource], { type: "text/x-java-source;charset=utf-8" }),
+      );
+      link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `${subject.id}-public-tests.java`;
+      link.hidden = true;
+      document.body.append(link);
+      link.click();
+      if (status) status.textContent = "원본 공개 테스트 소스 다운로드를 요청했습니다.";
+    } catch {
+      if (status) status.textContent = "원본 공개 테스트 소스를 준비하지 못했습니다.";
+    } finally {
+      link?.remove();
+      if (objectUrl) window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+    }
   }
 
   syncCodeQuestEditorHighlight(editor = this.root?.querySelector?.("[data-quest-source]")) {
@@ -2015,6 +2228,15 @@ export class BamLearningApp {
     }
 
     if (this.currentView !== "coding-test" || !this.codingTestState) return false;
+    const publicSourceDownload = event.target.closest("[data-quest-public-source-download]");
+    if (publicSourceDownload) {
+      this.downloadCurrentPublicTestSource(publicSourceDownload);
+      return true;
+    }
+    if (event.target.closest("[data-coding-test-import-legacy-draft]")) {
+      this.importLegacyCodeQuestDraft();
+      return true;
+    }
     if (event.target.closest("[data-coding-test-run]")) {
       void this.executeCurrentCodingTest("run");
       return true;
@@ -2042,6 +2264,16 @@ export class BamLearningApp {
       const map = this.root.querySelector("#quest-detail-map");
       map?.focus({ preventScroll: true });
       map?.scrollIntoView({ behavior: "instant", block: "start" });
+      return true;
+    }
+    const publicDataDownload = event.target.closest("[data-quest-public-download]");
+    if (publicDataDownload) {
+      this.downloadCurrentCodeQuestPublicData(publicDataDownload);
+      return true;
+    }
+    const publicSourceDownload = event.target.closest("[data-quest-public-source-download]");
+    if (publicSourceDownload) {
+      this.downloadCurrentPublicTestSource(publicSourceDownload);
       return true;
     }
     if (event.target.closest("[data-quest-run]")) {
@@ -2561,7 +2793,11 @@ export class BamLearningApp {
     const error = document.querySelector("[data-quest-error]");
     if (error) error.textContent = state.uiError ?? "";
     const runButton = document.querySelector("[data-quest-run]");
-    if (runButton) runButton.disabled = state.source.trim().length === 0;
+    const executionAvailable = this.isCodeQuestExecutionAvailable(
+      this.codeQuestCollection,
+      state.quest,
+    );
+    if (runButton) runButton.disabled = !executionAvailable || state.source.trim().length === 0;
   }
 
   setQuestDraftSaveTimer(callback) {
@@ -2719,7 +2955,7 @@ export class BamLearningApp {
   }
 
   scheduleCodingTestDraftSave(state) {
-    const languageId = this.codingTestCollection?.languageId;
+    const languageId = (state.collection ?? this.codingTestCollection)?.languageId;
     if (!languageId) {
       state.draftStatus = "failed";
       state.uiError = "초안을 저장하지 못했습니다. 편집 중인 코드는 화면에 유지됩니다.";
@@ -2984,6 +3220,7 @@ export class BamLearningApp {
     try {
       this.progressRepository.clearCodingTestDraft(state.problem.id);
       const persistence = this.progressRepository.getPersistenceStatus();
+      state.hasCodingTestDraft = false;
       state.draftStatus = persistence.isPersistent ? "starter" : "memory";
     } catch {
       state.draftStatus = "failed";
@@ -2995,6 +3232,65 @@ export class BamLearningApp {
     window.requestAnimationFrame(() => {
       document.querySelector("[data-coding-test-source]")?.focus({ preventScroll: true });
     });
+  }
+
+  importLegacyCodeQuestDraft() {
+    const state = this.codingTestState;
+    if (
+      !state ||
+      state.isRunning ||
+      state.hasCodingTestDraft ||
+      typeof state.legacyDraft?.source !== "string"
+    ) {
+      return false;
+    }
+
+    let currentDraft;
+    try {
+      currentDraft = this.progressRepository.getCodingTestDraft(
+        state.problem.id,
+        state.problem.revision,
+      );
+    } catch {
+      state.uiError =
+        "최신 코딩테스트 초안을 확인하지 못해 이전 코드를 가져오지 않았습니다.";
+      this.renderCodingTest();
+      return false;
+    }
+    if (currentDraft) {
+      this.cancelPendingCodingTestDraftSave();
+      state.source = currentDraft.source;
+      state.hasCodingTestDraft = true;
+      state.draftStatus = "saved";
+      state.uiError =
+        "다른 위치에서 저장된 최신 코딩테스트 초안을 불러왔습니다. 이전 코드는 가져오지 않았습니다.";
+      this.renderCodingTest();
+      return false;
+    }
+
+    this.cancelPendingCodingTestDraftSave();
+    state.source = state.legacyDraft.source;
+    state.hasCodingTestDraft = true;
+    state.uiError = null;
+    try {
+      this.progressRepository.saveCodingTestDraft({
+        problemId: state.problem.id,
+        problemRevision: state.problem.revision,
+        languageId: state.collection.languageId,
+        source: state.source,
+      });
+      const persistence = this.progressRepository.getPersistenceStatus();
+      state.draftStatus = persistence.isPersistent ? "saved" : "memory";
+    } catch {
+      state.draftStatus = "failed";
+      state.uiError =
+        "이전 코드를 편집기에 복사했지만 코딩테스트 초안으로 저장하지 못했습니다.";
+    }
+    this.renderCodingTest();
+    window.requestAnimationFrame(() => {
+      document.querySelector("[data-coding-test-source]")?.focus({ preventScroll: true });
+    });
+    return true;
   }
 
   resetWebProjectFiles() {
@@ -3217,6 +3513,13 @@ export class BamLearningApp {
       return;
     }
 
+    const collection = state.collection ?? this.codingTestCollection;
+    if (!canRunCodingTest(collection, state.problem)) {
+      state.uiError = "이 Java 코딩테스트는 현재 풀이 작성과 저장만 지원합니다.";
+      this.renderCodingTest();
+      return;
+    }
+
     this.flushPendingCodingTestDraftSave();
     if (this.executionCoordinator.active) {
       state.uiError = "이전 코드 실행을 정리하고 있습니다. 잠시 후 다시 시도해 주세요.";
@@ -3229,7 +3532,7 @@ export class BamLearningApp {
     const execution = this.executionCoordinator.start({
       kind: "coding-test",
       requestId,
-      ownerId: `${this.codingTestCollection.languageId}:${state.problem.id}:${String(state.problem.revision)}`,
+      ownerId: `${collection.languageId}:${state.problem.id}:${String(state.problem.revision)}`,
       mode,
     });
     if (!execution) {
@@ -3252,7 +3555,7 @@ export class BamLearningApp {
     try {
       report = await this.codingTestRunner.run(
         {
-          collection: this.codingTestCollection,
+          collection,
           problem: state.problem,
           source: state.source,
           requestId,
@@ -3278,7 +3581,7 @@ export class BamLearningApp {
       this.codingTestState === state &&
       this.currentView === "coding-test" &&
       execution.ownerId ===
-        `${this.codingTestCollection.languageId}:${state.problem.id}:${String(state.problem.revision)}`;
+        `${collection.languageId}:${state.problem.id}:${String(state.problem.revision)}`;
     if (!ownsExecution) {
       this.executionCoordinator.finish(execution);
       return;
@@ -3308,7 +3611,7 @@ export class BamLearningApp {
       this.codingTestState !== state ||
       this.currentView !== "coding-test" ||
       execution.ownerId !==
-        `${this.codingTestCollection.languageId}:${state.problem.id}:${String(state.problem.revision)}`
+        `${collection.languageId}:${state.problem.id}:${String(state.problem.revision)}`
     ) {
       return;
     }
@@ -3340,6 +3643,17 @@ export class BamLearningApp {
   async runCurrentCodeQuest() {
     const state = this.codeQuestState;
     if (!state || this.currentView !== "quest" || state.isRunning) return;
+
+    if (
+      this.codeQuestCollection?.evaluationKind === "java-static-method-v1" &&
+      !this.isCodeQuestExecutionAvailable(this.codeQuestCollection, state.quest)
+    ) {
+      state.uiError = state.quest.executionMode === "draft-only"
+        ? "이 Quest는 원본 문제와 공개 테스트를 읽고 코드를 작성하는 draft입니다. 앱 실행과 완료 판정은 아직 제공하지 않습니다."
+        : "Java 실행 준비 중입니다. 코드는 작성하고 저장할 수 있지만 공개 테스트 실행과 완료 판정은 아직 사용할 수 없습니다.";
+      this.renderCodeQuest();
+      return;
+    }
 
     this.flushPendingQuestDraftSave();
 
@@ -3812,6 +4126,7 @@ export class BamLearningApp {
       source: state.source,
       isRunning: state.isRunning,
       cancelRequested: state.cancelRequested,
+      executionAvailable: this.isCodeQuestExecutionAvailable(collection, state.quest),
       draftStatus: state.draftStatus,
       uiError: state.uiError,
       report: state.report,
@@ -3914,10 +4229,11 @@ export class BamLearningApp {
       ? progress.completedCodingTestProblems
       : [];
     const revisionByProblemId = new Map(
-      getCodingTestProblemsInOrder(this.codingTestCollection).map((problem) => [
-        problem.id,
-        problem.revision,
-      ]),
+      this.getCodingTestCollections().flatMap((collection) =>
+        getCodingTestProblemsInOrder(collection)
+          .filter((problem) => canRunCodingTest(collection, problem))
+          .map((problem) => [problem.id, problem.revision]),
+      ),
     );
     return new Set(
       completions
@@ -3932,39 +4248,53 @@ export class BamLearningApp {
 
   renderCodingTestList({ focusSelector = null, cursorPosition = null } = {}) {
     this.cancelPendingCodingTestSearchRender();
-    const collection = this.codingTestCollection;
-    if (!this.curriculum || !collection) return;
-    const language = getLanguage(this.curriculum, collection.languageId);
-    if (!language) return;
-
-    const allProblems = getCodingTestProblemsInOrder(collection);
+    const collections = this.getCodingTestCollections();
+    if (!this.curriculum || collections.length === 0) return;
+    const allProblems = collections.flatMap((collection) => {
+      const language = getLanguage(this.curriculum, collection.languageId);
+      return getCodingTestProblemsInOrder(collection).map((problem) => ({
+        ...problem,
+        languageId: collection.languageId,
+        languageName: language?.name ?? collection.languageId,
+      }));
+    });
     const progress = this.progressRepository.getProgress();
     const solvedProblemIds = this.getSolvedCodingTestProblemIds(progress);
-    const languageMatches =
-      this.codingTestFilters.language === "all" ||
-      this.codingTestFilters.language === collection.languageId;
-    const visibleProblems = languageMatches
-      ? filterCodingTestProblems(collection, {
+    const languageProblems =
+      this.codingTestFilters.language === "all"
+        ? allProblems
+        : allProblems.filter(
+            (problem) => problem.languageId === this.codingTestFilters.language,
+          );
+    const visibleProblems = filterCodingTestProblems(languageProblems, {
           query: this.codingTestFilters.query,
           difficulty: this.codingTestFilters.difficulty,
           type: this.codingTestFilters.type,
           status: this.codingTestFilters.status,
           completedProblemIds: solvedProblemIds,
-        })
-      : [];
+        });
     const hrefByProblemId = Object.fromEntries(
       allProblems.map((problem) => [
         problem.id,
-        buildCodingTestHash(collection.languageId, problem.slug),
+        buildCodingTestHash(problem.languageId, problem.slug),
       ]),
     );
     const mainContent = renderCodingTestListView({
-      title: collection.title,
+      title: "코딩테스트",
       problems: visibleProblems,
       totalCount: allProblems.length,
+      executableCount: collections.reduce(
+        (total, collection) =>
+          total + collection.problems.filter((problem) => canRunCodingTest(collection, problem)).length,
+        0,
+      ),
+      draftOnlyCount: allProblems.filter((problem) => problem.executionMode === "draft-only").length,
       filters: this.codingTestFilters,
-      languageName: language.name,
-      languageOptions: [{ value: language.id, label: language.name }],
+      languageName: "코딩테스트",
+      languageOptions: collections.map((collection) => {
+        const language = getLanguage(this.curriculum, collection.languageId);
+        return { value: collection.languageId, label: language?.name ?? collection.languageId };
+      }),
       typeOptions: [...new Set(allProblems.map((problem) => problem.type))],
       solvedProblemIds,
       hrefByProblemId,
@@ -3987,7 +4317,7 @@ export class BamLearningApp {
 
   renderCodingTest() {
     const state = this.codingTestState;
-    const collection = this.codingTestCollection;
+    const collection = state?.collection ?? this.codingTestCollection;
     if (!this.curriculum || !collection || !state) return;
     const language = getLanguage(this.curriculum, collection.languageId);
     if (!language) return;
@@ -4007,6 +4337,12 @@ export class BamLearningApp {
       report: state.report,
       reportPersistenceStatus: state.reportPersistenceStatus,
       isSolved: solvedProblemIds.has(state.problem.id),
+      evaluationKind: collection.evaluationKind ?? null,
+      executionAvailable: canRunCodingTest(collection, state.problem),
+      routeNotice: state.routeNotice,
+      relatedQuest: state.relatedQuest,
+      legacyDraft: state.legacyDraft,
+      hasCodingTestDraft: state.hasCodingTestDraft,
     });
     this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
   }

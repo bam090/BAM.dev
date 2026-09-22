@@ -40,4 +40,6 @@
 
 `[현재 사실]` 독립 content/doc 검증은 문서 단어 반환을 해소해 최종 PASS했고, 독립 `test_engineer`가 위 검증 결과를 확인했다. 독립 `project_integrator` 검토와 최종 통합 판정, commit·push·PR·CI 결과는 각각 인계 보고와 PR에서 실제로 확인한다.
 
-`[현재 사실]` `6eef6d2` 게시 뒤 [PR #17](https://github.com/bam090/BAM.dev/pull/17)의 `CI / verify` 두 실행은 위 다섯 원본에 없는 답변 섹션을 요구해 실패했다. 원문 교육 내용 변경은 승인 범위가 아니며, validator 계약 수정은 진행 중이다. 새 독립 테스트와 `test_engineer` 검증, 최종 후속 검증과 Git 결과는 인계 보고와 PR에서 실제로 확인한다.
+`[현재 사실]` 다음은 당시 실패·반환 이력이다. `6eef6d2` 게시 뒤 [PR #17](https://github.com/bam090/BAM.dev/pull/17)의 `CI / verify` 두 실행은 위 다섯 원본에 없는 답변 섹션을 요구해 실패했다. 원문 교육 내용 변경은 승인 범위가 아니며, validator 계약 수정은 진행 중이다. 새 독립 테스트와 `test_engineer` 검증, 최종 후속 검증과 Git 결과는 인계 보고와 PR에서 실제로 확인한다.
+
+2026-09-15 인수한 [후속 게시 기록](../work-items/2026-09-13-github-publication.md#후속-게시-기록-2026-09-15)과 [CT CI 결과](../work-items/2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)에서는 콘텐츠 검사·전체 CI 성공을 확인했다. 위 validator 수정 대기를 현재 상태로 적용하지 않는다. `#/my`는 계정형 마이페이지가 아닌 브라우저 로컬 학습 기록이며 원문 보관·진도 계약은 유지한다.

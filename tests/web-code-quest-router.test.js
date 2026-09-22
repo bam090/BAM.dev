@@ -71,6 +71,31 @@ test("HTML·CSS evaluationKind는 공통 Web runner로 분기한다", async () =
   assert.equal(router.supports(css), true);
 });
 
+test("Java static method 요청만 별도 runner로 분기하고 기존 runner를 보존한다", async () => {
+  const javascriptRunner = createSpyRunner("javascript");
+  const webRunner = createSpyRunner("web");
+  const javaRunner = createSpyRunner("java");
+  const router = new CodeQuestRunnerRouter({ javascriptRunner, webRunner, javaRunner });
+  const java = {
+    requestId: "java-one",
+    languageId: "java",
+    evaluationKind: "java-static-method-v1",
+  };
+
+  assert.equal((await router.run(java)).runner, "java");
+  assert.equal((await router.run({ requestId: "js", languageId: "javascript" })).runner, "javascript");
+  assert.equal((await router.run({
+    requestId: "html",
+    languageId: "html",
+    evaluationKind: "html-dom-v1",
+  })).runner, "web");
+  assert.equal(router.resolve(java), javaRunner);
+  assert.deepEqual(
+    [javaRunner.calls.length, javascriptRunner.calls.length, webRunner.calls.length],
+    [1, 1, 1],
+  );
+});
+
 test("알 수 없는 언어·evaluationKind는 지원하지 않고 명시적으로 거부한다", () => {
   const router = new CodeQuestRunnerRouter({
     javascriptRunner: createSpyRunner("javascript"),
@@ -86,7 +111,7 @@ test("알 수 없는 언어·evaluationKind는 지원하지 않고 명시적으�
   assert.throws(() => router.resolve({ languageId: "java" }), /평가기가 없습니다/);
 });
 
-test("두 runner 계약은 생성 시점에 검증한다", () => {
+test("runner 계약은 생성 시점에 검증한다", () => {
   const runner = createSpyRunner("valid");
 
   assert.throws(
@@ -96,5 +121,9 @@ test("두 runner 계약은 생성 시점에 검증한다", () => {
   assert.throws(
     () => new CodeQuestRunnerRouter({ javascriptRunner: runner, webRunner: {} }),
     /Web Code Quest runner/,
+  );
+  assert.throws(
+    () => new CodeQuestRunnerRouter({ javascriptRunner: runner, webRunner: runner, javaRunner: {} }),
+    /Java Code Quest runner/,
   );
 });

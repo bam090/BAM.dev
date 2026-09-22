@@ -19,7 +19,7 @@
 
 [최신 독립 학습·홈·사용자 편의 결정](roadmap.md#2026-09-12-확정-제품-결정)을 적용한다. 사용자 편의를 제품 판단의 최우선 기준으로 삼아 원하는 서비스·자료·문제를 쉽게 찾고, 상태를 잃지 않고 중단·복귀하며, 불필요한 선택·반복 입력을 줄이는 흐름을 설계한다. 정확성·접근성·비공개 자료 보호는 유지한다.
 
-첫 화면은 BAM.dev 소개와 **학습문서 / 객관식 문제**의 독립 진입을 제공한다. 밤위키는 콘텐츠 제작 재료이고 개인 위키·수업 일정이 서비스 이용의 조건이 아니다. 첫 콘텐츠 목표는 HTML·CSS·JavaScript·Java 문서와 객관식이며 확장 순서는 [로드맵](roadmap.md#학습문서객관식의-우선-완성-순서)에 둔다. 아래 설치형 전체 MVP와 첫 사용 흐름의 완료는 구분한다. 앞선 2026-09-12 설계 작업을 마친 뒤 bam의 구현 시작 요청으로 [R1 첫 사용 범위](designs/lesson-review.md#r1-첫-사용-구현-계약)의 홈·독립 목록·개별 채점·개념/문서 왕복·진행 복구를 구현했다. 현재 검증 증거와 미실행 범위는 [첫 사용 작업 카드](work-items/2026-09-12-independent-review-first-use.md)에서 확인한다. 전부 보기·전체 채점·모름·헷갈림·문제별 전체 이력은 후속 범위다.
+첫 화면은 BAM.dev 소개와 **학습문서 / 객관식 문제**의 독립 진입을 제공한다. 밤위키는 콘텐츠 제작 재료이고 개인 위키·수업 일정이 서비스 이용의 조건이 아니다. 첫 콘텐츠 목표는 HTML·CSS·JavaScript·Java 문서와 객관식이며 확장 순서는 [로드맵](roadmap.md#학습문서객관식의-우선-완성-순서)에 둔다. 아래 설치형 전체 MVP와 첫 사용 흐름의 완료는 구분한다. 앞선 2026-09-12 설계 작업을 마친 뒤 bam의 구현 시작 요청으로 [R1 첫 사용 범위](designs/lesson-review.md#r1-첫-사용-구현-계약)의 홈·독립 목록·개별 채점·개념/문서 왕복·진행 복구를 구현했다. 현재 검증 증거와 미실행 범위는 [첫 사용 작업 카드](work-items/2026-09-12-independent-review-first-use.md)에서 확인한다. 후속 [보기·채점 확장](work-items/2026-09-14-review-display-and-grading.md)과 [오답 즉시 재도전](designs/lesson-review.md#오답-문항의-즉시-재도전)도 구현·검증됐다. 모름·헷갈림·문제별 전체 이력은 남은 범위다.
 
 ## 확정된 제품 방향
 
@@ -39,7 +39,7 @@
 - [`DEC-FRONTEND-01`](roadmap.md#2026-09-04-확정-제품-결정)의 제품 효과: 목표 UI는 HTML·CSS 기반의 React·TypeScript를 사용하고 JavaScript도 유지한다. 현재 검증된 Vanilla JavaScript·Worker·도메인 로직은 폐기하지 않고 작은 화면·경계부터 이관한다. 이 기술 방향만으로 React·TypeScript 학습 과정의 MVP 편입이 확정되지는 않는다.
 - [`DEC-DOC-01`](roadmap.md#2026-08-29-확정-제품-결정)의 운영 효과: 변경 가능한 주요 제품 경계는 구현 전에 설계 정본을 갖는다. 상세 범위는 [`docs/README.md`](README.md#설계-문서화-범위)가 담당한다.
 
-이 방향 중 두 기능의 분리와 JavaScript 공개 브라우저 평가는 현재 구현에도 존재한다. 현재 화면은 HTML·CSS·Vanilla JavaScript이며 React·TypeScript와 해당 빌드 의존성은 없다. Java 제품 소스·Maven·Gradle 설정도 없다. Java 코딩테스트 콘텐츠·Java 25 제품 runner·설치 지원, 설치 프로그램, React·TypeScript 이관, 새 Code Quest 탐색 UI와 외부 과제 저장소는 아직 목표 상태다. Java 도구체인의 패키지 포함과 정식 Java 25·preview 금지 기준은 확정됐지만 구현된 사실은 아니며, 공식 지원 OS·shell·설치 형식과 Java runner의 나머지 계약은 prototype 증거 뒤 결정한다. Spring 핵심·Spring Boot 정적 입문 문서와 객관식은 [이번 작업](work-items/2026-09-14-css-quiz-spring-foundations.md)으로 본문·문항·연결을 반영하고 독립 내용·문서·데스크톱 검증과 수정 후 전체 gate·빌드·보존 검사를 통과했다. 검증 범위와 한계는 그 카드에 기록한다. 실제 Spring Boot 실행 과제는 아직 목표다.
+현재 브라우저 앱은 HTML·CSS·Vanilla JavaScript이며 분리된 Code Quest·코딩테스트의 탐색과 JavaScript 공개 평가를 제공한다. Java 정적 교안·객관식, Quest와 코딩테스트의 작성·저장도 구현됐다. 별도 미게시 로컬 Java/Electron 후보는 실제 격리 실패로 **BLOCKED**이고 Java 실제 실행·채점·정식 설치는 미완료다. React·TypeScript 이관과 설치형 오프라인 MVP는 유지되는 장기 목표다. Spring 정적 학습은 [기초](work-items/2026-09-14-css-quiz-spring-foundations.md)와 [Security·JPA 확장](work-items/2026-09-14-spring-security-jpa.md)의 검증 범위를 따른다. 외부 실행 과제는 [밤위키 원본 활용 계약](designs/web-assignments.md)에 따라 후속 연결하며 새 과제의 BAM 제공 완료를 주장하지 않는다.
 
 ## MVP가 답해야 하는 질문
 
@@ -61,7 +61,7 @@
 ### 학습 과정
 
 - `[제안]` 현재 `available`인 JavaScript, 알고리즘, HTML, CSS 과정을 설치본의 오프라인 정식 과정으로 제공한다.
-- `[현재 사실]` Java 과정은 승인된 [JS·Java 개념 전환](work-items/2026-09-14-js-java-concepts-and-review.md)으로 정적 학습문서·객관식을 `available`로 제공한다. Java 제품 코드·코딩테스트 콘텐츠·runner·설치 지원은 없다.
+- `[현재 사실]` Java 과정은 승인된 [JS·Java 개념 전환](work-items/2026-09-14-js-java-concepts-and-review.md)으로 정적 학습문서·객관식을 `available`로 제공한다. Java 코딩테스트 작성용 콘텐츠도 등록됐다. 별도 로컬 Java runner 후보는 비활성이며 실제 실행·설치 지원은 미완료다.
 - `[확정 결정]` Java 코딩테스트는 설치형 MVP 필수 목표이며 설치 패키지의 JDK 25 LTS 계열로 정식 Java 25 소스·표준 API를 preview 없이 컴파일·실행한다. `[확인 필요]` 실제 포함 문제 묶음·수량과 관찰 가능한 핵심 완료 행동은 `DEC-MVP-01`, 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책과 컴파일·호출·IPC·격리·OS별 패키징 계약은 `DEC-JAVA-RUNNER-01`에서 정한다.
 - `[확정 결정]` Java 학습문서·객관식은 `DEC-INDEPENDENT-LEARNING-01`의 첫 콘텐츠 목표에 포함하며 이번 승인 묶음의 실제 단위·검증은 위 작업 카드에 기록한다. `[확인 필요]` 설치형 MVP의 정확한 과정·차단 콘텐츠 범위와 Java Code Quest·외부 과제의 포함 시점은 `DEC-MVP-01`·`DEC-JAVA-01`에서 별도로 구분한다. 현재 정적 제공이 이 설치·실습 범위를 자동 승인하지 않는다.
 - `[확정 결정]` Spring 핵심과 Spring Boot를 포함한 정적 문서·객관식의 입문 범위는 [`DEC-CSS-SPRING-FOUNDATIONS-01`](roadmap.md#2026-09-14-확정-제품-결정)에 따라 진행한다. `[확인 필요]` 설치형 MVP의 정확한 차단 묶음과 Code Quest·실행 과제 포함 여부는 `DEC-JAVA-01`에서 별도로 결정한다. 실제 Spring Boot 실행은 승인된 외부 웹과제에서만 시작한다.
@@ -73,7 +73,7 @@
 - 객관식: 학습문서와 독립적으로 진입해 키워드의 여러 단일·복합 문항을 선택한다. 두 보기 모드·채점 방식, 선택한 오답의 이유·관련 개념·조건부 문서 복귀·헷갈림·모름·자율 재도전은 [`designs/lesson-review.md`](designs/lesson-review.md)가 정본이다.
 - Code Quest: 교안에 연결된 개념·조건을 실제 작성 단위로 연습하고 단계별 힌트와 공개 실패 근거로 다시 시도한다. 정보 구조는 [`designs/code-quest.md`](designs/code-quest.md)가 정본이다.
 - 코딩테스트: 별도 목록에서 문제 단서를 읽고 접근·조합·조건을 스스로 선택해 전체 공개 테스트로 로컬 결과를 확인한다. 제품 계약은 [`designs/coding-test.md`](designs/coding-test.md)가 정본이다.
-- 웹과제: 실습 저장소의 여러 파일과 순서 있는 요구사항을 로컬 도구에서 구현하고 자신의 commit과 공개 solution을 비교한다. 목표 흐름은 [`designs/web-assignments.md`](designs/web-assignments.md)가 정본이다.
+- 웹과제: 밤위키 원본의 고정 시작점·요구사항을 로컬 도구에서 구현하고 공개 검증과 승인된 비교 자료로 결과를 설명한다. 목표 흐름은 [`designs/web-assignments.md`](designs/web-assignments.md)가 정본이다.
 - 학습 콘텐츠의 지원 수준은 교안 관찰에서 힌트 없는 전이까지 점차 줄인다. 세부 기준은 [`learning-content-design.md`](learning-content-design.md)가 정본이다.
 
 ### 실행·데이터 경계
@@ -85,7 +85,7 @@
 - 브라우저에서 실행하는 학습자 코드는 현재 채택된 안전 경계를 지키며, 학습자 결과에 비공개·숨김 테스트나 원격 추가 채점을 사용하지 않는다. 개발 fixture는 콘텐츠 검증에만 쓰고 학습자 결과에 포함하지 않는다.
 - Java 코딩테스트는 사용자 기기에서 공개 테스트만 실행하는 목표다. runner는 설치 패키지 내부의 JDK 25 LTS 계열로 정식 Java 25 소스·표준 API를 컴파일·실행하고 preview를 허용하거나 시스템 `JAVA_HOME`·`PATH`에 의존하지 않는다. JavaScript의 one-shot Worker를 Java 실행 방식으로 간주하지 않으며, 정확한 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책과 컴파일·호출·IPC 및 프로세스·파일·네트워크·시간·메모리·출력 제한은 별도 결정·ADR·prototype을 통과해야 한다.
 - BAM.dev 앱 본체와 Java 코딩테스트 runner에는 Spring Boot를 포함하지 않는다. Spring Boot 실습은 앱이 임의 실행하지 않는 외부 웹과제 폴더에서만 시작하며 저장소·빌드·의존성·오프라인·공개 검증 계약은 별도 승인을 기다린다.
-- 핵심 앱은 설치 뒤 오프라인으로 동작한다. 외부 웹과제는 pinned starter·solution commit을 처음 clone·fetch하는 별도 네트워크 단계를 거치며, 두 commit을 확보한 뒤에는 오프라인으로 수행·비교한다.
+- 핵심 앱은 설치 뒤 오프라인으로 동작한다. 외부 웹과제는 원본별 고정 시작 버전·공개 검증·필요 도구를 확보한 뒤 오프라인으로 수행한다. 원격 전달을 채택한 경우의 최초 다운로드와 비교 자료·의존성 준비는 과제별 계약으로 구분한다.
 - 설치·업데이트·데이터 보존 계약은 [`designs/local-application.md`](designs/local-application.md)가 정본이다.
 
 ### MVP 품질 기준
@@ -100,7 +100,7 @@
 
 - Java Code Quest의 설치형 MVP 자동 편입. Java 학습문서·객관식의 첫 목표 포함은 최신 독립 학습 결정으로 확정됐으므로 비범위에서 제외
 - Spring·Spring Boot 정적 입문 묶음의 설치형 MVP 자동 편입과 Code Quest·실제 실행 과제 구현
-- 회원가입, 로그인, 다중 사용자, 마이페이지와 원격 동기화
+- 회원가입, 로그인, 다중 사용자, 계정형 마이페이지와 원격 동기화
 - Supabase, 원격 API·DB, 서버 저장과 운영 대시보드
 - AI 학습 튜터 또는 외부 모델 호출
 - 교사·반·스터디 협업, 순위, 소셜 기능
@@ -126,7 +126,11 @@
 
 ## 현재 상태와 목표 상태의 차이
 
-조사 기준일은 2026-08-29이다.
+현재 기능·수량·실행/작성 구분은 [README의 현재 기능과 남은 범위](../README.md#현재-기능과-남은-범위)를 따른다. 2026-09-15 문서 정리 시점에 브라우저 학습·복습 기본 흐름과 직접 작성 UI는 구현됐으나 Java 실제 실행, 밤위키 웹과제의 BAM 연결, React 이관과 정식 설치는 미완료다. 현재 시각 시스템은 승인된 light/dark와 semantic token을 적용했다. PR·CI·공개 사이트의 범위는 [게시 기록](work-items/2026-09-13-github-publication.md#후속-게시-기록-2026-09-15)과 [CT 전환 기록](work-items/2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)을 따른다. 로컬 `#/my`는 계정 기능이 아닌 학습 기록 화면이다.
+
+### 2026-08-29 조사와 후속 목표 기록
+
+아래 표의 현재 상태는 **2026-08-29 당시 조사 이력**이고 목표 열에는 이후 확정 결정을 함께 기록해 왔다. Java·팔레트·Git 부재 등 과거 사실은 현재 상태로 적용하지 않는다.
 
 | 영역 | 현재 상태 | MVP 목표 상태 |
 | --- | --- | --- |

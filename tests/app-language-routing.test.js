@@ -9,6 +9,9 @@ import {
 const curriculum = JSON.parse(
   await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
 );
+const javaCodeQuests = JSON.parse(
+  await readFile(new URL("../content/quests/java.json", import.meta.url), "utf8"),
+);
 
 function installWindow(t, hash) {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -110,15 +113,63 @@ test("Code Quest 목록 해시는 상세 경로와 구분해 탐색기를 연다
   assert.deepEqual(replacements, []);
 });
 
-test("정적 학습이 available인 Java도 미제공 Code Quest 해시는 기본 JavaScript 교안으로 복귀한다", async (t) => {
+test("Java 실행 capability가 없어도 정식 Quest 상세와 저장된 초안을 연다", async (t) => {
   const replacements = installWindow(t, "#/quest/java/types-and-methods");
-  const { app, opened } = createRouteHarness();
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    writable: true,
+    value: { title: "" },
+  });
+  t.after(() => {
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else delete globalThis.document;
+  });
+  const app = Object.create(BamLearningApp.prototype);
+  const opened = [];
+  Object.assign(window, {
+    scrollTo() {},
+    requestAnimationFrame(callback) { callback(); },
+  });
+  Object.assign(app, {
+    curriculum,
+    javaCodeQuestCapability: { available: false },
+    codeQuestCollections: new Map([["java", javaCodeQuests]]),
+    codeQuestCollection: { languageId: "javascript" },
+    codeQuestState: { quest: { id: "old-quest" } },
+    renderSequence: 0,
+    hasRenderedView: false,
+    root: { innerHTML: "" },
+    progressRepository: {
+      getQuestDraft(questId) {
+        return questId === "quest-java-total-price"
+          ? { source: "public class Solution { /* 저장한 Java 초안 */ }" }
+          : null;
+      },
+      getPersistenceStatus() { return { isPersistent: true }; },
+    },
+    enterView(view) {
+      opened.push(view);
+      this.renderSequence += 1;
+      return this.renderSequence;
+    },
+    renderServiceShell({ mainContent }) { return mainContent; },
+    syncMenuState() {},
+    renderCodeQuest() { opened.push("java-detail"); },
+    focusCodeQuestTitle() {},
+    renderFatalError(error) { throw error; },
+  });
   assert.equal(curriculum.languages.find((language) => language.id === "java")?.status, "available");
 
-  await app.openRoute();
+  await app.openCodeQuestRoute("java", "types-and-methods");
 
-  assert.deepEqual(opened, [{ view: "lesson" }]);
-  assert.deepEqual(replacements, ["#/learn/javascript/javascript-and-runtime"]);
+  assert.deepEqual(opened, ["quest", "java-detail"]);
+  assert.equal(app.codeQuestCollection, javaCodeQuests);
+  assert.equal(app.codeQuestState.quest.id, "quest-java-total-price");
+  assert.equal(app.codeQuestState.source, "public class Solution { /* 저장한 Java 초안 */ }");
+  assert.equal(app.codeQuestState.draftStatus, "saved");
+  assert.equal(app.javaCodeQuestCapability.available, false);
+  assert.deepEqual(replacements, ["#/quest/java/total-price"]);
 });
 
 test("사용 가능한 Code Quest 컬렉션을 병렬 로드하고 언어별 실패를 격리한다", async () => {
@@ -132,9 +183,10 @@ test("사용 가능한 Code Quest 컬렉션을 병렬 로드하고 언어별 실
     },
   );
 
-  assert.deepEqual(new Set(calls), new Set(["javascript", "html", "css"]));
-  assert.deepEqual([...collections.keys()].sort(), ["html", "javascript"]);
+  assert.deepEqual(new Set(calls), new Set(["javascript", "html", "css", "java"]));
+  assert.deepEqual([...collections.keys()].sort(), ["html", "java", "javascript"]);
   assert.equal(collections.get("html").languageId, "html");
+  assert.equal(collections.get("java").languageId, "java");
   assert.equal(collections.has("css"), false);
 });
 
