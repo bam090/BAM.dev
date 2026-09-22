@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { release as osRelease, version as osVersion } from "node:os";
 import test from "node:test";
 
 import {
@@ -224,7 +225,13 @@ test("method 결과는 invocation을 보존하고 깨진 protocol·비정상 종
   assert.match(nonzeroExit.error.message, /비정상 종료/u);
 });
 
-test("활성화된 CT capability는 검증되지 않은 bundle을 false로 닫는다", async () => {
+test("활성화된 CT capability는 플랫폼·bundle의 첫 실패 단계에서 false로 닫는다", async () => {
+  const failureStage = supervisorTest.matchesValidatedKernel(
+    osRelease(),
+    osVersion(),
+  )
+    ? "bundle"
+    : "kernel";
   const capability = await getJavaCodingTestCapabilities({
     bundleRoot: "/must-not-be-read",
     trustedManifest: collection,
@@ -233,7 +240,9 @@ test("활성화된 CT capability는 검증되지 않은 bundle을 false로 닫�
     contractVersion: 1,
     evaluationKind: "java-junit-method-v1",
     available: false,
-    reason: "번들 Java 실행 환경을 사용할 수 없습니다.",
+    reason: failureStage === "kernel"
+      ? "검증된 Java 실행 환경과 일치하지 않습니다."
+      : "번들 Java 실행 환경을 사용할 수 없습니다.",
   });
 });
 
