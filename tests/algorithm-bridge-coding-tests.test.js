@@ -461,7 +461,7 @@ test("가져오기 버튼을 누르는 순간 생긴 CT 초안을 재확인해 �
   assert.equal(app.codingTestState.hasCodingTestDraft, true);
 });
 
-test("Java 상세는 source-first 자료·typed 표·접힌 힌트와 3중 실행 차단을 표시한다", () => {
+test("Java 상세는 source-first 자료를 보존하고 검증 capability에만 JUnit 실행 UI를 연다", () => {
   const problem = structuredClone(findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-01"));
   const maliciousSource = "</code><script>globalThis.bad = true</script>";
   problem.publicTestSource += maliciousSource;
@@ -484,8 +484,14 @@ test("Java 상세는 source-first 자료·typed 표·접힌 힌트와 3중 실�
   assert.equal((html.match(/<summary>[123]단계 ·/g) ?? []).length, 3);
   assert.match(html, /Code Quest에서 코딩테스트로 이동/);
   assert.match(html, /관련 준비 연습:/);
-  assert.match(html, /작성 전용/);
-  assert.doesNotMatch(html, /data-coding-test-(?:run|submit|cancel|results)/);
+  assert.doesNotMatch(html, /작성 전용/);
+  assert.match(html, /data-coding-test-run/);
+  assert.match(html, /첫 공개 그룹 실행/);
+  assert.match(html, /data-coding-test-submit/);
+  assert.match(html, /전체 공개 테스트 확인/);
+  assert.match(html, /data-coding-test-results/);
+  assert.match(html, /첫 공개 JUnit 메서드 그룹 1개/);
+  assert.match(html, /공개 그룹 2개를 모두 실행/);
   assert.match(html, /globalThis\.bad/);
   assert.doesNotMatch(html, /<script>/);
 
@@ -499,6 +505,8 @@ test("Java 상세는 source-first 자료·typed 표·접힌 힌트와 3중 실�
     executionAvailable: false,
   });
   assert.doesNotMatch(noHintHtml, /coding-test-support-title|단계 ·|힌트.*(?:button|버튼)/);
+  assert.match(noHintHtml, /작성 전용/);
+  assert.doesNotMatch(noHintHtml, /data-coding-test-(?:run|submit|cancel|results)/);
 });
 
 test("legacy 초안은 현재 CT 초안 유무에 따라 가져오기만 숨기고 원문은 따로 보존한다", () => {

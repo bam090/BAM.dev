@@ -21,5 +21,46 @@
     "bundleIdentifier": "dev.bam.prototype",
     "jdkHome": "runtime/jdk/Contents/Home",
     "runnerClass": "runtime/java-runner/BamQuestRunner.class"
+  },
+  "junit": {
+    "version": "6.1.3",
+    "artifact": "junit-platform-console-standalone-6.1.3.jar",
+    "sha256": "e62b96ac475dbcde8599ea905d088f65d90778f86e259b856a49fa5c4ea256ec",
+    "size": 2997949,
+    "url": "https://repo.maven.apache.org/maven2/org/junit/platform/junit-platform-console-standalone/6.1.3/junit-platform-console-standalone-6.1.3.jar",
+    "notices": [
+      {
+        "entry": "META-INF/MANIFEST.MF",
+        "sha256": "88b27677ae3ce5ebacb2e81d1fc4768a6eda42dd9d257cd8bb68075d42440a62"
+      },
+      {
+        "entry": "META-INF/LICENSE-fastcsv",
+        "sha256": "44a3c34ab8724a755072803e5941fb87a967eb451147df335afcb5d1a44ba758"
+      },
+      {
+        "entry": "META-INF/LICENSE-hamcrest",
+        "sha256": "1cde867cab5c8e842929da5391cef98b4017314822270e934e8e2eef3767c666"
+      },
+      {
+        "entry": "META-INF/LICENSE-junit4",
+        "sha256": "9648bb2891b9813970bddb68d4be8a5e6ec8280d0180a53dfb29236b579c55bb"
+      },
+      {
+        "entry": "META-INF/LICENSE-notice.md",
+        "sha256": "c7340d7b84e87498bf1e3ce8e2763b8cf1d8153def1648800b796f7b24ec0020"
+      },
+      {
+        "entry": "META-INF/LICENSE-open-test-reporting.md",
+        "sha256": "a54304564eda345ce83d806b6fd5b9b137ed653e50e459ed0f1ac2547537cad0"
+      },
+      {
+        "entry": "META-INF/LICENSE-picocli.md",
+        "sha256": "a54304564eda345ce83d806b6fd5b9b137ed653e50e459ed0f1ac2547537cad0"
+      },
+      {
+        "entry": "META-INF/LICENSE.md",
+        "sha256": "5aa4cd44c111add178d1c2e2fe36d58a484012c80167df925f826cd64d411bf0"
+      }
+    ]
   }
 }

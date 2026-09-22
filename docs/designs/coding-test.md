@@ -10,11 +10,11 @@
 - `DEC-JAVA-CODING-TEST-01` 적용: Java도 설치형 MVP의 코딩테스트 필수 지원 언어다. 공개 테스트만 사용자 기기에서 실행하며, JavaScript Worker 계약을 Java 실행 방식으로 복사하지 않는다. Java 정식 교안 과정·Code Quest·웹과제의 포함 결정과도 분리한다.
 - `DEC-JAVA-RUNTIME-01` 적용: Java runner는 설치 패키지 내부의 `javac` 포함 고정 JDK 경로만 사용하고 시스템 JDK나 prototype용 별도 경로를 요구하지 않는다. LTS 계열과 콘텐츠 컴파일 기준은 `DEC-JAVA-VERSION-02`, 정확한 배포판·패치와 나머지 runner 계약은 `DEC-JAVA-RUNNER-01`이 담당한다.
 - `DEC-JAVA-VERSION-02` 적용: 번들 도구체인과 Java 학습자 소스·공개 테스트의 언어·표준 API 기준은 정식 Java 25 하나이며 preview를 허용하지 않는다.
-- `DEC-JAVA-IMPLEMENTATION-01` 적용: Java 코딩테스트 로컬 runner 자체도 Java 25로 작성하는 BAM.dev 제품 구성요소다. 정확한 클래스·프로토콜·빌드 도구·IPC·격리는 `DEC-JAVA-RUNNER-01` 결정 대기다.
+- `DEC-JAVA-IMPLEMENTATION-01` 적용: Java 코딩테스트 로컬 runner 자체도 Java 25로 작성하는 BAM.dev 제품 구성요소다. 이번 72개 원본 JUnit 실행의 클래스 연결·프로토콜·IPC·격리는 [ADR 0006](../decisions/0006-java-coding-test-local-runtime.md)으로 구현 전 계약을 고정한다. 정식 설치·추가 OS는 계속 별도다.
 - `DEC-SPRING-BOOT-01` 적용: Java 코딩테스트 runner에는 Spring Boot를 포함하거나 Spring 애플리케이션 실행 모드를 추가하지 않는다. 실제 Spring Boot 실행은 별도 외부 웹과제의 경계다.
 - `[현재 사실]` 현재 JavaScript 코딩테스트는 별도 JSON Schema, `#/coding-tests` route, 목록·필터, 초안·제출·revision별 완료 진도와 `CodingTestRunnerAdapter`를 사용한다.
-- `[현재 사실]` `테스트 실행`은 공개 테스트 일부를, `제출 및 채점`은 같은 문제의 공개 테스트 전체를 로컬 Worker에서 실행한다. 서버로 소스나 결과를 보내지 않는다.
-- `[현재 사실]` 전환 시작 당시 코딩테스트 콘텐츠와 동작하는 runner는 JavaScript에만 있었다. 로컬 Java Quest 후보는 있으나 격리 실패로 비활성이며 Java 코딩테스트 실행·설치 지원은 없다. 아래 승인된 Java draft 편입의 실제 상태는 전환 카드로 갱신한다.
+- `[현재 사실]` JavaScript의 `테스트 실행`은 공개 테스트 일부를, `제출 및 채점`은 같은 문제의 공개 테스트 전체를 로컬 Worker에서 실행한다. 서버로 소스나 결과를 보내지 않는다.
+- `[현재 사실]` 전환 시작 당시 코딩테스트 콘텐츠와 동작하는 runner는 JavaScript에만 있었다. 당시 로컬 Java Quest는 격리 실패로 비활성이었다. 이후 검증 커널의 Quest prototype은 PASS했지만 Java 코딩테스트 실행·정식 설치 지원은 별도다. 아래 승인된 Java draft 편입의 실제 상태는 전환 카드로 갱신한다.
 - `[확정 결정]` Java 코딩테스트의 문제·공개 테스트·runner·설치 패키지 경계를 MVP 목표에 추가한다. 실제 문제 묶음과 핵심 완료 행동은 `DEC-MVP-01`, 실행 방식은 `DEC-JAVA-RUNNER-01`과 별도 격리 ADR·prototype 증거가 확정될 때까지 구현 완료로 간주하지 않는다.
 
 내부에서 Code Quest의 Worker runner와 결과 형식을 재사용하는 것은 제품 통합이 아니다. 화면 명칭, URL, 데이터 원본, 저장 진도와 학습 목적을 서로 섞지 않는다.
@@ -27,13 +27,13 @@
 
 - 현재 목록은 기존 JavaScript와 원본 순서의 Java 작성용 콘텐츠다. 수량은 [README](../../README.md)에만 요약한다. 기존 Quest 32개(다른 세 언어 28개·Java pilot 1개·준비 3개)는 보존한다. ARR-01·ARR-02·QUE-01의 기존 Quest는 준비 경험으로 연결하고 나머지 69개만 Quest 목록에서 옮긴다.
 - Java·유형·난이도·작성 상태로 탐색한 뒤 지문→서명·제약·typed 예시→원본 공개 Test 전체→코드 작성·저장→재진입으로 이어진다. 원본 힌트는 `원본 학습 지원`으로 기본 접힘 제공하며 0개도 정상이다. L1 안내를 삭제하거나 L3/L4에 새 힌트를 만들지 않는다.
-- Java72는 모두 `작성·저장 가능 / 실행·채점 미지원`이다. UI는 실행·제출을 제공하지 않고 미지원 사유를 텍스트로 알리며 handler와 adapter도 요청 생성 전에 차단한다. capability를 true로 바꿔도 Java 소스가 Worker에 들어가거나 실행·제출·완료 기록이 생겨서는 안 된다. 공개 Test는 읽기/다운로드 자료이며 결과나 통과 수가 아니다.
+- 아래 전환 단계에서 Java72는 모두 `작성·저장 가능 / 실행·채점 미지원`이다. 검증 전에는 이 차단을 유지하며 후속 활성화 범위는 아래 [원본 JUnit 계약](#java-원본-junit-실행-계약)을 따른다. UI는 실행·제출을 제공하지 않고 미지원 사유를 텍스트로 알리며 handler와 adapter도 요청 생성 전에 차단한다. capability를 true로 바꿔도 Java 소스가 Worker에 들어가거나 실행·제출·완료 기록이 생겨서는 안 된다. 공개 Test는 읽기/다운로드 자료이며 결과나 통과 수가 아니다.
 - canonical URL은 `#/coding-tests/java/bridge-<slot>`이다. 옛 Quest URL은 실제 Quest lookup을 우선한다. 준비3은 그대로 열고, 없는69에만 명시된 `legacyQuestId` 대응으로 canonical URL을 replace하여 이동 이유를 알린다. 알 수 없는 URL은 기존 오류 흐름을 유지한다.
 - `bam.dev.progress.v1`의 기존 `codingTestDrafts`·`codingTestSubmissions`·`completedCodingTestProblems`와 ID/revision 계약을 재사용하며 새 저장 키를 만들지 않는다. 옛 Quest 초안·시도·완료를 삭제하지 않는다. 대응하는 옛69 초안이 있고 CT 초안이 없을 때만 `이전 Code Quest 초안 가져오기` 버튼을 제공한다. 누른 시점에도 CT 초안 존재를 재확인하고 덮어쓰지 않는다. 시도·완료는 복사하거나 합산하지 않는다.
 - 정적 번들과 로컬 저장만 사용하고 원본 저장소나 외부 응답에 의존하지 않는다. 공개 소스는 escape하며 코드 영역은 독립 가로 스크롤, label·펼침 상태·저장/이동 안내는 키보드와 텍스트를 제공한다.
 - 검증은 1024px·1440px 데스크톱의 탐색→상세→원문→편집/저장·재진입, 옛 URL·명시 가져오기·CT 초안 우선·0힌트·키보드와 72개 source/타입/연결·Quest32/JS CT6/진도 보존·3중 실행 차단이다. 모바일·다른 OS·Java/JDK 실행·설치 지원은 이번 완료 조건이 아니다.
 
-`[현재 사실]` 선행 설계에 따라 Java72 등록·다중 컬렉션·작성/저장·옛 URL/명시 초안 가져오기·실행 차단을 구현했다. 독립 콘텐츠·관련 자동 검사·대표 UI·문서·통합과 PR #22 원격 CI는 PASS다. 확인된 PR은 Draft·미병합이며 실행 가능한 CT는 JavaScript다. 별도 로컬 Java Quest 후보는 격리 실패로 비활성이다. 아래 기존 Java 부재·gate 서술은 이 시작 기준과 향후 실행 지원에 관한 것으로, 승인된 draft 편입을 막지 않는다. 실제 구현·검증·게시 상태는 [전환 카드](../work-items/2026-09-15-algorithm-bridge-coding-tests.md)를 따른다. 실패하면 CT 등록·전환 UI 변경을 반환하고 원본·기존 사용자 상태를 보존한다. Java 실행 재개·채점 계약은 별도다.
+`[현재 사실]` 선행 설계에 따라 Java72 등록·다중 컬렉션·작성/저장·옛 URL/명시 초안 가져오기·실행 차단을 구현했다. 독립 콘텐츠·관련 자동 검사·대표 UI·문서·통합과 PR #22 원격 CI는 PASS다. 당시 PR은 Draft였으며 이후 PR #22·#23의 병합과 CI·Pages SUCCESS를 인수했다. 실제 merge 식별자는 [후속 실행 카드](../work-items/2026-09-22-java-coding-test-runtime.md#인수한-기준-증거)를 따른다. 이후 검증 커널의 Java CT 정상·오류·대표 앱 실행도 독립 PASS했으며 그 결과는 아래 원본 JUnit 실행 절을 따른다. 아래 기존 Java 부재·gate 서술은 이 시작 기준과 향후 실행 지원에 관한 것으로, 승인된 draft 편입을 막지 않는다. 실제 구현·검증·게시 상태는 [전환 카드](../work-items/2026-09-15-algorithm-bridge-coding-tests.md)를 따른다. 실패하면 CT 등록·전환 UI 변경을 반환하고 원본·기존 사용자 상태를 보존한다. Java 실행 재개·채점 계약은 별도다.
 
 | 구분 | Code Quest | 코딩테스트 |
 | --- | --- | --- |
@@ -45,6 +45,14 @@
 | 현재 진도 | Quest 초안·실행·완료 | 코딩테스트 초안·제출·revision별 완료 |
 
 `difficulty`가 같거나 실행기를 공유해도 두 기능의 진도와 완료율을 합치지 않는다. 서로 연결할 때는 실제 `lessonId`·`conceptIds`와 링크를 사용하고, 코딩테스트를 Code Quest ID나 `practiceLevel`로 변환하지 않는다.
+
+## Java 원본 JUnit 실행 계약
+
+`[확정 결정]` 2026-09-22 후속 구현은 [ADR 0006](../decisions/0006-java-coding-test-local-runtime.md)의 원본 JUnit 선컴파일·typed adapter·method별 fresh JVM 계약을 따른다. `[현재 사실]` 이 계약의 CT runner·IPC·UI를 구현했고 검증 커널의 정상·오류·대표 앱 실행을 독립 PASS해 CT capability를 활성화했다. 실행 수·재사용·한계는 작업 카드가 정본이다. 문제·공개 Test·학습 지원의 의미를 바꾸지 않는다.
+
+검증 앱에서는 첫 공개 그룹 하나를 `테스트 실행`으로, 해당 문제의 전체 공개 그룹을 `제출 및 채점`으로 선택한다. 한 그룹 문제는 두 실행의 범위가 같음을 알린다. parameterized invocation은 원본 method 안에서 모두 실행·집계하며 168개 method 묶음을 invocation 총수로 표시하지 않는다. 실제 실행이 0이거나 skip/abort/누락·실행기 오류이면 성공으로 표시하지 않는다. 일부 실행 성공은 완료가 아니고 전체 submit의 모든 공개 결과 PASS만 기존 CT revision 완료로 기록한다.
+
+원본 `codingTestDrafts`·`codingTestSubmissions`·`completedCodingTestProblems`와 안정 ID를 사용하며 Quest 진도를 합치거나 기존 사용자 상태를 지우지 않는다. 실행·취소·오류 상태는 텍스트와 키보드로 확인할 수 있게 하고 취소·창 닫기·재시작 복원에서 거짓 성공을 막는다. 선행 검증에서는 source·PASS submission·completion을 재시작 후 복원했고 상세 결과 카드는 session-only였다. 후속 상세 복원의 구현·검증 상태는 [상세 결과 복원 계약](#상세-결과-복원과-오류-안내)을 따른다. 일반 웹은 Java 작성/저장과 미지원 안내를 유지한다. 단계별 역할·실행 상한·원본 보존·실패 중단과 검증 증거는 [작업 카드](../work-items/2026-09-22-java-coding-test-runtime.md) 한 곳에서 관리한다.
 
 ## 학습자 흐름
 
@@ -92,6 +100,34 @@
 
 `tests/fixtures/`의 기준답안·독립 사례·대표오답은 콘텐츠 제작자가 문제와 공개 평가를 검증하는 개발 증거다. 설치본의 학습자 답안에 실행하지 않고 점수·완료에 영향을 주지 않으므로 숨김 채점 테스트가 아니다. 이 구분을 문서와 인계 증거에 명시한다.
 
+## 상세 결과 복원과 오류 안내
+
+`[확정 결정]` 2026-09-22 사용자 요청에 따라 현재 단일 마지막 결과 패널을 재시작 후 복원하고 오류 6종에 원인과 확인할 점을 안내한다. 새 탭·결과 이력 UI·문제·교안·채점 기준은 추가하지 않는다. `[현재 사실]` 단일 상세 snapshot·정확한 source fingerprint·이전 코드 표시·reset·6종 안내를 구현했고 focused 13/13과 독립 문구 검토 PASS를 인수했다. 기존 실제 report replay를 사용한 Electron 상세 저장·재시작 복원·이전 코드 표시·reset 검증도 독립 PASS했다. 이 검증에서 Java·javac는 새로 실행하지 않았다. 근거는 [후속 작업 기록](../work-items/2026-09-22-java-coding-test-runtime.md#2026-09-22-상세-결과-복원과-오류-안내-후속-설계)을 따른다.
+
+### 저장과 복원
+
+- 기존 `bam.dev.progress.v1`에 독립 optional `codingTestResults` 배열을 추가한다. snapshot은 문제 ID·revision·language·실행 source fingerprint·mode·finishedAt과 UI에 필요한 요약, 각 공개 테스트 상태, Java 그룹/invocation 집계, JavaScript 기대/실제 값과 오류만 보관한다. 사용자 source·JUnit 원문·IPC 실행 권한을 복제하지 않으며 snapshot을 실행 요청으로 사용하지 않는다.
+- 최신 20문제의 마지막 결과 하나씩만 유지한다. 각 snapshot은 직렬화한 UTF-8 기준 64 KiB 이내로 제한한다. 큰 결과를 잘라 다른 판정처럼 저장하지 않고 “결과가 커서 상세 내용을 저장하지 못했습니다. 현재 화면에서 확인해 주세요.”라고 안내한다. 기존 판정·제출·완료와 현재 화면의 결과는 보존한다.
+- 배열이 없는 기존 v1도 유효하다. 개별 snapshot이 손상됐으면 해당 항목만 제외하고 다른 진도를 초기화하지 않는다. ID·language·revision이 일치하는 마지막 유효 결과만 복원하고 revision이 다르면 복원하지 않는다. 복원은 새 제출·완료·실행으로 기록하지 않는다.
+- 현재 코드와 실행 source fingerprint가 다르면 “이 결과는 이전 코드로 실행한 결과입니다. 현재 코드를 확인하려면 다시 실행하세요.”라고 안내한다. 자동 재실행하지 않는다. fingerprint는 실행 당시 source의 정확한 UTF-8 바이트를 lowercase SHA-256으로 계산하며 trim·NFKC 정규화하지 않는다. 기존 coding-test 도메인에 async `createCodingTestSourceFingerprint(source, crypto = globalThis.crypto)` 한 함수만 두고 Web Crypto 부재·digest 실패는 현재 실행 결과를 보존한 상세 저장 실패로 처리한다. repository는 `getCodingTestResult(problemId, problemRevision)`·`saveCodingTestResult(input)`·`clearCodingTestResult(problemId)`만 추가하며 `finishedAt`은 repository clock이 부여한다. 저장 input은 식별자·revision·languageId·sourceFingerprint·mode와 필요한 report projection만 받는다. 별도 범용 저장 추상화를 만들지 않는다.
+- 문제 reset 시 해당 상세 snapshot도 삭제한다. `run` 결과 저장은 제출·완료 배열과 독립이며 `submit`은 기존 전체 공개 PASS 규칙을 유지한다. 저장 실패는 화면 결과·기존 진도를 유지하고 “상세 결과를 저장하지 못했습니다. 현재 화면의 결과와 기존 학습 기록은 유지됩니다.”라고 알린다. 실패한 상세 저장 때문에 기존 기록을 빈 값으로 덮어쓰지 않는다.
+- 브라우저와 macOS prototype의 공통 renderer·저장 경계에 적용한다. 웹 Java의 실행 미지원, 앱의 검증 커널 제한은 그대로다. engine·IPC·JDK·sandbox·공개 평가 의미는 변경하지 않는다.
+
+### 오류별 확인할 점
+
+아래 안내는 실제 상태·오류 메시지와 함께 표시한다. 관찰하지 않은 원인을 확정하거나 정답 코드를 제공하지 않는다.
+
+| 상태 | 원인과 다음 확인 안내 |
+| --- | --- |
+| 오답 | “실패한 공개 테스트의 기대값·실제값과 문제 조건을 비교해 보세요.” |
+| 컴파일·문법 오류 | “오류 위치를 확인하고 기호, 이름, 타입이 맞는지 살펴보세요.” |
+| 실행 중 오류 | “오류 메시지를 확인해 보세요. 표시된 사유에 따라 배열 범위, null 사용, 메모리 사용 등을 점검하세요.” |
+| 시간 초과 | “실행 시간 제한을 넘었습니다. 반복문의 종료 조건과 입력 크기에 따른 반복량을 확인해 보세요.” |
+| 취소 | “사용자가 실행을 중단했습니다. 오답이나 성공으로 판정하지 않았습니다. 준비되면 다시 실행하세요.” |
+| 출력 제한 | “출력량 제한을 넘었습니다. 디버그 출력을 줄이고 필요한 출력만 남겨 보세요.” |
+
+실행기·provider·protocol 등 infrastructure 오류는 “실행기 문제로 결과를 확인하지 못했습니다.”로 구분하고 학습자 오답으로 표시하지 않는다. 미실행은 “이 테스트는 실행되지 않았습니다.”로 표시한다. 복원된 오류도 같은 안내를 사용하며 상태·원래 오류를 새 안내로 덮어쓰지 않는다. 키보드 흐름·기존 결과 패널과 상태 알림을 유지한다.
+
 ## 로컬 결과의 한계
 
 공개 로컬 평가는 개인 학습에 필요한 설명 가능성과 오프라인 실행을 우선한다. 다음은 보장하지 않는다.
@@ -123,7 +159,7 @@ Worker는 완전한 악성 코드 격리가 아니다. 앱 origin에는 민감�
 
 `[확정 결정]` Java 코딩테스트도 원격 서버·Docker·Spring Boot·PostgreSQL·Nginx 또는 사용자가 관리하는 수신 포트 없이 설치 앱 안에서 시작하고, 설치본에 포함된 공개 테스트만 사용자 기기에서 실행한다. 공개 평가의 문제·입력·기대값·제한과 실패 근거는 JavaScript와 같은 투명성 원칙을 따르지만 실행 엔진은 같은 Worker라고 가정하지 않는다.
 
-`[현재 사실]` Java 코딩테스트 schema·문제·개발 fixture와 읽기/작성/저장 UI는 등록됐다. 실행 가능한 Java 코딩테스트 runner·IPC·설치 지원은 없으며 다음은 실제 실행·채점 지원 전에 닫아야 할 gate다. 승인된 draft72의 등록을 다시 막는 조건은 아니다.
+`[현재 사실]` Java 코딩테스트 schema·문제·개발 fixture와 읽기/작성/저장 UI는 등록됐다. 검증 커널의 Java CT runner·IPC·대표 앱 실행은 독립 PASS했다. 다음 정식 설치 목표의 gate는 해당 prototype 증거와 구분하며 공식 설치 지원을 완료한 것으로 보지 않는다. 승인된 draft72의 등록을 다시 막는 조건은 아니다.
 
 1. 이번 draft72의 문제·근거 연결 승인은 위 전환 계약으로 충족한다. `DEC-MVP-01`에서 설치형 실제 실행 묶음과 핵심 완료 행동을 확정한다. 이미 승인된 정적 Java 교안·개념 ID와 별개로 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. 정적 과정의 제공 상태를 설치형 코딩테스트 묶음의 승인으로 해석하지 않는다.
 2. `DEC-JAVA-RUNNER-01`에서 JDK 25 LTS의 정확한 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 패키지 크기와 업데이트 비용을 결정한다. JRE-only 구성, 시스템 `JAVA_HOME`·`PATH` 의존, Java 25가 아닌 호환 기준과 preview 활성화는 후보가 아니다.

@@ -110,6 +110,28 @@ const JAVA_LONG_MAX = 2n ** 63n - 1n;
 const CANONICAL_DECIMAL_PATTERN = /^(?:0|-?[1-9][0-9]*)$/;
 const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*tests?|hidden\s*tests?/iu;
 const JAVA_EVALUATION_KIND = "java-static-method-v1";
+
+export async function createCodingTestSourceFingerprint(
+  source,
+  crypto = globalThis.crypto,
+) {
+  if (typeof source !== "string") {
+    throw new TypeError("코딩테스트 source는 문자열이어야 합니다.");
+  }
+  if (typeof crypto?.subtle?.digest !== "function") {
+    throw new Error("코딩테스트 source fingerprint를 계산할 수 없습니다.");
+  }
+
+  const digest = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source)),
+  );
+  if (digest.byteLength !== 32) {
+    throw new Error("코딩테스트 source fingerprint를 계산할 수 없습니다.");
+  }
+  return [...digest]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 const JAVA_DRAFT_EXECUTION_MODE = "draft-only";
 const JAVA_TYPES = new Set([
   "int",
@@ -940,14 +962,24 @@ export function findCodingTestProblemBySlug(collectionOrProblems, slug) {
   return resolveProblemList(collectionOrProblems).find((problem) => problem?.slug === slug) ?? null;
 }
 
-export function canRunCodingTest(collection, problem) {
-  return (
+export function canRunCodingTest(collection, problem, javaExecutionAvailable = false) {
+  const belongsToCollection =
     isPlainRecord(collection) &&
-    collection.languageId === "javascript" &&
     isPlainRecord(problem) &&
-    problem.executionMode !== JAVA_DRAFT_EXECUTION_MODE &&
     Array.isArray(collection.problems) &&
-    collection.problems.some((candidate) => candidate?.id === problem.id)
+    collection.problems.some(
+      (candidate) =>
+        candidate?.id === problem.id && candidate?.revision === problem.revision,
+    );
+  if (!belongsToCollection) return false;
+  if (collection.languageId === "javascript") {
+    return problem.executionMode !== JAVA_DRAFT_EXECUTION_MODE;
+  }
+  return (
+    collection.languageId === "java" &&
+    collection.evaluationKind === JAVA_EVALUATION_KIND &&
+    problem.executionMode === JAVA_DRAFT_EXECUTION_MODE &&
+    javaExecutionAvailable === true
   );
 }
 
@@ -983,7 +1015,9 @@ export function filterCodingTestProblems(
     if (difficulty !== "all" && problem.difficulty !== difficulty) return false;
     if (type !== "all" && problem.type !== type) return false;
     const isCompleted = completedIds.has(problem.id);
-    const isDraftOnly = problem.executionMode === JAVA_DRAFT_EXECUTION_MODE;
+    const isDraftOnly =
+      problem.executionMode === JAVA_DRAFT_EXECUTION_MODE &&
+      problem.executionAvailable !== true;
     if (status === "solved" && (isDraftOnly || !isCompleted)) return false;
     if (status === "unsolved" && (isCompleted || isDraftOnly)) return false;
     if (!normalizedQuery) return true;

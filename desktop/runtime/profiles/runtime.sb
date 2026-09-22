@@ -18,6 +18,7 @@
   (subpath "/private/var/db/timezone"))
 
 (allow file-read-metadata
+  (literal "/dev")
   (literal "/etc")
   (literal "/tmp")
   (literal "/var")

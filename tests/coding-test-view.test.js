@@ -238,6 +238,55 @@ test("실행과 제출 결과 문구를 구분하고 제출에만 저장 상태�
   assert.match(submitHtml, /0\/1 통과/);
 });
 
+test("복원 결과는 현재 draft provenance와 상세 저장 실패 사유를 별도 안내한다", () => {
+  const staleHtml = renderDetail({
+    executionMode: "run",
+    report: createReport("passed"),
+    reportSourceStatus: "stale",
+    resultPersistenceStatus: "restored",
+  });
+  const currentHtml = renderDetail({
+    executionMode: "run",
+    report: createReport("passed"),
+    reportSourceStatus: "current",
+    resultPersistenceStatus: "saved",
+  });
+
+  assert.match(staleHtml, /data-coding-test-result-provenance>/);
+  assert.match(
+    staleHtml,
+    /이 결과는 이전 코드로 실행한 결과입니다\. 현재 코드를 확인하려면 다시 실행하세요\./,
+  );
+  assert.match(
+    staleHtml,
+    /data-coding-test-result-storage>저장된 마지막 상세 결과를 복원했습니다\./,
+  );
+  assert.match(currentHtml, /data-coding-test-result-provenance hidden>/);
+  assert.match(
+    currentHtml,
+    /data-coding-test-result-storage>상세 결과를 이 브라우저에 저장했습니다\./,
+  );
+
+  for (const [status, message] of [
+    [
+      "failed",
+      "상세 결과를 저장하지 못했습니다. 현재 화면의 결과와 기존 학습 기록은 유지됩니다.",
+    ],
+    [
+      "too-large",
+      "결과가 커서 상세 내용을 저장하지 못했습니다. 현재 화면에서 확인해 주세요.",
+    ],
+  ]) {
+    const html = renderDetail({
+      executionMode: "run",
+      report: createReport("passed"),
+      resultPersistenceStatus: status,
+    });
+    assert.match(html, /data-coding-test-result-storage/);
+    assert.equal(html.includes(message), true, status);
+  }
+});
+
 test("모든 실행 outcome을 구분하고 실제값이 없는 결과를 만들어 내지 않는다", () => {
   const expectedLabels = new Map([
     ["passed", "통과"],
@@ -257,6 +306,55 @@ test("모든 실행 outcome을 구분하고 실제값이 없는 결과를 만들
     if (!["passed", "wrong_answer"].includes(outcome)) {
       assert.doesNotMatch(html, /<dt>실제값<\/dt>/);
     }
+  }
+});
+
+test("실패 6종과 실행기 오류·미실행은 원인별 다음 행동을 구분하고 원문 오류를 escape한다", () => {
+  const guidanceByOutcome = new Map([
+    [
+      "wrong_answer",
+      "실패한 공개 테스트의 기대값·실제값과 문제 조건을 비교해 보세요.",
+    ],
+    [
+      "syntax_error",
+      "오류 위치를 확인하고 기호, 이름, 타입이 맞는지 살펴보세요.",
+    ],
+    [
+      "runtime_error",
+      "오류 메시지를 확인해 보세요. 표시된 사유에 따라 배열 범위, null 사용, 메모리 사용 등을 점검하세요.",
+    ],
+    [
+      "timeout",
+      "실행 시간 제한을 넘었습니다. 반복문의 종료 조건과 입력 크기에 따른 반복량을 확인해 보세요.",
+    ],
+    [
+      "cancelled",
+      "사용자가 실행을 중단했습니다. 오답이나 성공으로 판정하지 않았습니다. 준비되면 다시 실행하세요.",
+    ],
+    [
+      "output_limit",
+      "출력량 제한을 넘었습니다. 디버그 출력을 줄이고 필요한 출력만 남겨 보세요.",
+    ],
+    ["engine_error", "실행기 문제로 결과를 확인하지 못했습니다."],
+    ["not_run", "이 테스트는 실행되지 않았습니다."],
+  ]);
+
+  for (const [outcome, guidance] of guidanceByOutcome) {
+    const report = createReport(outcome, {
+      error: {
+        learnerMessage: `<img src=x onerror=bad()>${outcome}`,
+      },
+    });
+    const html = renderDetail({ executionMode: "run", report });
+
+    assert.match(html, /data-coding-test-guidance/);
+    assert.equal(html.includes(guidance), true, outcome);
+    assert.equal(
+      html.includes(`&lt;img src=x onerror=bad()&gt;${outcome}`),
+      true,
+      `${outcome} 원문 오류`,
+    );
+    assert.doesNotMatch(html, /<img(?:\s|>)/);
   }
 });
 
