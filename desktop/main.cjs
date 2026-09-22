@@ -8,6 +8,8 @@ const { app, BrowserWindow, ipcMain, protocol, session } = require("electron");
 const APP_ORIGIN = "bam://app";
 const JAVA_EVALUATION_KIND = "java-static-method-v1";
 const JAVA_MANIFEST_PATH = path.join("dist", "content", "quests", "java.json");
+const JAVA_CT_EVALUATION_KIND = "java-junit-method-v1";
+const JAVA_CT_MANIFEST_PATH = path.join("dist", "content", "coding-tests", "java.json");
 const MAX_SOURCE_BYTES = 20 * 1024;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u;
 const QUEST_ID_PATTERN = /^quest-java-[a-z0-9-]{1,96}$/u;
@@ -75,16 +77,23 @@ function hasExactFields(value, names) {
   );
 }
 
-function assertRunRequest(request) {
-  if (!hasExactFields(request, ["requestId", "questId", "revision", "source"])) {
+function assertRunRequest(request, kind = "quest") {
+  const idField = kind === "coding-test" ? "problemId" : "questId";
+  const fields = ["requestId", idField, "revision", "source", ...(kind === "coding-test" ? ["mode"] : [])];
+  if (!hasExactFields(request, fields) || fields.some((name) => {
+    const descriptor = Object.getOwnPropertyDescriptor(request, name);
+    return !descriptor?.enumerable || !("value" in descriptor);
+  })) {
     throw new TypeError("Java 실행 요청 형식이 올바르지 않습니다.");
   }
-  if (!REQUEST_ID_PATTERN.test(request.requestId)) {
+  if (typeof request.requestId !== "string" || !REQUEST_ID_PATTERN.test(request.requestId)) {
     throw new TypeError("Java 실행 requestId 형식이 올바르지 않습니다.");
   }
-  if (!QUEST_ID_PATTERN.test(request.questId)) {
-    throw new TypeError("Java 실행 questId 형식이 올바르지 않습니다.");
+  const idPattern = kind === "coding-test" ? /^coding-test-java-[a-z0-9-]{1,96}$/u : QUEST_ID_PATTERN;
+  if (typeof request[idField] !== "string" || !idPattern.test(request[idField])) {
+    throw new TypeError(`Java 실행 ${idField} 형식이 올바르지 않습니다.`);
   }
+  if (kind === "coding-test" && !["run", "submit"].includes(request.mode)) throw new TypeError("Java CT mode가 올바르지 않습니다.");
   if (!Number.isSafeInteger(request.revision) || request.revision < 1) {
     throw new TypeError("Java 실행 revision은 1 이상의 안전한 정수여야 합니다.");
   }
@@ -288,6 +297,19 @@ async function loadTrustedManifest() {
 
 let javaRuntimePromise = null;
 let trustedManifestPromise = null;
+let trustedCodingTestManifestPromise = null;
+
+async function loadTrustedCodingTestManifest() {
+  const manifest = JSON.parse(await readFile(path.join(app.getAppPath(), JAVA_CT_MANIFEST_PATH), "utf8"));
+  if (!isPlainRecord(manifest) || manifest.contractVersion !== 1 || manifest.languageId !== "java"
+    || manifest.evaluationKind !== JAVA_EVALUATION_KIND || !Array.isArray(manifest.problems)) throw new Error("Java CT manifest contract mismatch");
+  return manifest;
+}
+
+function getTrustedCodingTestManifest() {
+  trustedCodingTestManifestPromise ??= loadTrustedCodingTestManifest();
+  return trustedCodingTestManifestPromise;
+}
 
 function getJavaRuntime() {
   javaRuntimePromise ??= loadJavaRuntime();
@@ -299,40 +321,42 @@ function getTrustedManifest() {
   return trustedManifestPromise;
 }
 
-function unavailableCapabilities() {
+function unavailableCapabilities(evaluationKind = JAVA_EVALUATION_KIND, reason = "이 설치본에서 Java 실행기를 준비하지 못했습니다.") {
   return {
     contractVersion: 1,
-    evaluationKind: JAVA_EVALUATION_KIND,
+    evaluationKind,
     available: false,
-    reason: "이 설치본에서 Java 실행기를 준비하지 못했습니다.",
+    reason,
   };
 }
 
-function normalizeCapabilities(capabilities) {
+function normalizeCapabilities(capabilities, evaluationKind = JAVA_EVALUATION_KIND) {
   if (
     !isPlainRecord(capabilities) ||
     capabilities.contractVersion !== 1 ||
-    capabilities.evaluationKind !== JAVA_EVALUATION_KIND ||
+    capabilities.evaluationKind !== evaluationKind ||
     typeof capabilities.available !== "boolean"
   ) {
-    return unavailableCapabilities();
+    return unavailableCapabilities(evaluationKind);
   }
   if (capabilities.available) {
     return {
       contractVersion: 1,
-      evaluationKind: JAVA_EVALUATION_KIND,
+      evaluationKind,
       available: true,
     };
   }
-  return unavailableCapabilities();
+  return unavailableCapabilities(evaluationKind, evaluationKind === JAVA_CT_EVALUATION_KIND && typeof capabilities.reason === "string" ? capabilities.reason : undefined);
 }
 
-function engineErrorReport(request) {
+function engineErrorReport(request, kind = "quest") {
   return {
     requestId: request.requestId,
     contractVersion: 1,
-    questId: request.questId,
-    questRevision: request.revision,
+    ...(kind === "coding-test" ? {
+      problemId: request.problemId, problemRevision: request.revision,
+      evaluationKind: JAVA_CT_EVALUATION_KIND, mode: request.mode,
+    } : { questId: request.questId, questRevision: request.revision }),
     languageId: "java",
     suite: "public",
     outcome: "engine_error",
@@ -360,56 +384,58 @@ function engineErrorReport(request) {
   };
 }
 
-async function beginJavaRun(event, request) {
+async function beginJavaRun(event, request, kind = "quest") {
+  assertTrustedMainFrame(event);
+  if (
+    finishedRequestIds.has(request.requestId) ||
+    activeRun?.requestId === request.requestId
+  ) {
+    throw new TypeError("이미 사용한 Java 실행 requestId입니다.");
+  }
+
+  const previous = activeRun;
+  const controller = new AbortController();
+  const record = {
+    kind,
+    requestId: request.requestId,
+    owner: frameIdentity(event),
+    controller,
+    promise: null,
+  };
+  let execution;
   const start = runTransition.then(async () => {
-    assertTrustedMainFrame(event);
-    if (
-      finishedRequestIds.has(request.requestId) ||
-      activeRun?.requestId === request.requestId
-    ) {
-      throw new TypeError("이미 사용한 Java 실행 requestId입니다.");
-    }
-
-    if (activeRun) {
-      activeRun.controller.abort();
-      await activeRun.promise;
-    }
+    if (previous) await previous.promise;
 
     assertTrustedMainFrame(event);
-    const owner = frameIdentity(event);
-    const controller = new AbortController();
-    const record = {
-      requestId: request.requestId,
-      owner,
-      controller,
-      promise: null,
-    };
-    record.promise = (async () => {
-      try {
-        const [runtime, trustedManifest] = await Promise.all([
-          getJavaRuntime(),
-          getTrustedManifest(),
-        ]);
-        return await runtime.runJavaQuest(request, {
-          signal: controller.signal,
-          bundleRoot: process.resourcesPath,
-          trustedManifest,
-        });
-      } catch {
-        return engineErrorReport(request);
-      } finally {
-        finishedRequestIds.add(request.requestId);
-        if (activeRun === record) activeRun = null;
-      }
+    execution = (async () => {
+      const [runtime, trustedManifest] = await Promise.all([
+        getJavaRuntime(),
+        kind === "coding-test" ? getTrustedCodingTestManifest() : getTrustedManifest(),
+      ]);
+      const run = kind === "coding-test" ? runtime.runJavaCodingTest : runtime.runJavaQuest;
+      // Pending cancellation uses the supervisor's existing no-launch cancelled report.
+      return await run(request, {
+        signal: controller.signal,
+        bundleRoot: process.resourcesPath,
+        trustedManifest,
+      });
     })();
-    activeRun = record;
     return record;
   });
 
+  record.promise = start.then(() => execution)
+    .catch(() => engineErrorReport(request, kind))
+    .finally(() => {
+      if (activeRun === record) activeRun = null;
+    });
+  // Reserve the ID and expose cancellation before waiting for earlier cleanup.
+  finishedRequestIds.add(request.requestId);
+  activeRun = record;
   runTransition = start.then(
     () => undefined,
     () => undefined,
   );
+  previous?.controller.abort();
   return start;
 }
 
@@ -440,21 +466,37 @@ function registerJavaIpc() {
   });
 
   ipcMain.handle("bam-java:cancel", async (event, request) => {
-    assertTrustedMainFrame(event);
-    assertCancelRequest(request);
-    const owner = frameIdentity(event);
-    if (
-      !activeRun ||
-      activeRun.requestId !== request.requestId ||
-      !sameFrame(activeRun.owner, owner)
-    ) {
-      return { requestId: request.requestId, cancelled: false };
-    }
-    const run = activeRun;
-    run.controller.abort();
-    await run.promise;
-    return { requestId: request.requestId, cancelled: true };
+    return cancelJavaRun(event, request, "quest");
   });
+  ipcMain.handle("bam-java-ct:capabilities", async (event) => {
+    assertTrustedMainFrame(event);
+    try {
+      const [runtime, trustedManifest] = await Promise.all([getJavaRuntime(), getTrustedCodingTestManifest()]);
+      return normalizeCapabilities(await runtime.getJavaCodingTestCapabilities({ bundleRoot: process.resourcesPath, trustedManifest }), JAVA_CT_EVALUATION_KIND);
+    } catch { return unavailableCapabilities(JAVA_CT_EVALUATION_KIND); }
+  });
+  ipcMain.handle("bam-java-ct:run", async (event, request) => {
+    assertTrustedMainFrame(event);
+    assertRunRequest(request, "coding-test");
+    const record = await beginJavaRun(event, Object.freeze({ ...request }), "coding-test");
+    return record.promise;
+  });
+  ipcMain.handle("bam-java-ct:cancel", async (event, request) => {
+    return cancelJavaRun(event, request, "coding-test");
+  });
+}
+
+async function cancelJavaRun(event, request, kind) {
+  assertTrustedMainFrame(event);
+  assertCancelRequest(request);
+  const owner = frameIdentity(event);
+  if (!activeRun || activeRun.kind !== kind || activeRun.requestId !== request.requestId || !sameFrame(activeRun.owner, owner)) {
+    return { requestId: request.requestId, cancelled: false };
+  }
+  const run = activeRun;
+  run.controller.abort();
+  await run.promise;
+  return { requestId: request.requestId, cancelled: true };
 }
 
 function createWindow() {

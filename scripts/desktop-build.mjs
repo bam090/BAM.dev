@@ -19,6 +19,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { execFile } from "node:child_process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { CT_JUNIT, createCodingTestArtifacts, codingTestBundleFiles, codingTestCodeHashes, verifyCodingTestBundle } from "../desktop/runtime/coding-test-artifacts.mjs";
+import { compileTrustedCodingTestSources } from "../desktop/runtime/supervisor.mjs";
 
 const execFileAsync = promisify(execFile);
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -29,6 +31,64 @@ const defaultArtifactRoot = "/private/tmp/bam-java-runtime-artifacts";
 const runnerSourcePath = path.join(projectRoot, "desktop", "runtime", "JavaBamQuestRunner.java");
 const runnerClassNames = ["BamQuestRunner$ArrayInput.class", "BamQuestRunner.class"];
 const runnerReceiptName = "runner-provenance.json";
+const ctRuntimeFiles = ["coding-test-artifacts.mjs", "JavaBamCodingTestRunner.java", "SolutionInvoker.java"];
+
+async function copyCodingTestRuntimeSources(runtimePath) {
+  for (const name of ctRuntimeFiles) await cp(path.join(projectRoot, "desktop", "runtime", name), path.join(runtimePath, name));
+}
+
+export async function buildCodingTestBundle({ resourcesPath, stagingRoot, junitArtifact, lock }, { compileSources = compileTrustedCodingTestSources } = {}) {
+  const collection = JSON.parse(await readFile(path.join(resourcesPath, "app", "dist", "content", "coding-tests", "java.json"), "utf8"));
+  const { manifest, sources } = createCodingTestArtifacts(collection);
+  const codeHashes = await codingTestCodeHashes();
+  if (lock.junit?.artifact !== CT_JUNIT.file || lock.junit.sha256 !== CT_JUNIT.sha256 || lock.junit.version !== CT_JUNIT.version || lock.junit.size !== CT_JUNIT.size) throw new Error("CT JUnit lock mismatch");
+  await verifyArchive(junitArtifact, CT_JUNIT.sha256);
+  if ((await stat(junitArtifact)).size !== CT_JUNIT.size) throw new Error("CT JUnit size mismatch");
+  const workRoot = await mkdtemp(path.join(stagingRoot, "ct-build-"));
+  try {
+    for (const [file, source] of Object.entries(sources)) {
+      const destination = path.join(workRoot, file);
+      await mkdir(path.dirname(destination), { recursive: true });
+      await writeFile(destination, source, { flag: "wx" });
+    }
+    for (const name of ["JavaBamCodingTestRunner.java", "SolutionInvoker.java"]) {
+      await cp(path.join(projectRoot, "desktop", "runtime", name), path.join(workRoot, "sources", name));
+    }
+    await cp(junitArtifact, path.join(workRoot, CT_JUNIT.file));
+    const sourcePaths = [...Object.keys(sources), "sources/JavaBamCodingTestRunner.java", "sources/SolutionInvoker.java"].sort().map((file) => path.join(workRoot, file));
+    const compile = await compileSources({ bundleRoot: resourcesPath, workRoot, sourcePaths });
+    // Preserve the actual compiler/termination record before inspecting success or cleaning work.
+    await writeFile(path.join(workRoot, "compile-receipt.json"), `${JSON.stringify(compile, null, 2)}\n`, { flag: "wx" });
+    if (!compile.safe || compile.execution.exitCode !== 0 || compile.execution.startError || compile.execution.terminationReason) throw new Error("CT trusted compilation did not complete safely");
+    if (JSON.stringify(codeHashes) !== JSON.stringify(await codingTestCodeHashes())) throw new Error("CT source changed during compilation");
+    await rm(path.join(workRoot, "home"), { recursive: true, force: true });
+    await rm(path.join(workRoot, "tmp"), { recursive: true, force: true });
+    await mkdir(path.join(workRoot, "licenses"));
+    for (const notice of lock.junit.notices) {
+      if (!/^META-INF\/(?:MANIFEST\.MF|LICENSE[-.A-Za-z0-9]*)$/u.test(notice.entry)) throw new Error("Invalid JUnit notice path");
+      const { stdout } = await run("/usr/bin/unzip", ["-p", junitArtifact, notice.entry], { encoding: "buffer" });
+      if (createHash("sha256").update(stdout).digest("hex") !== notice.sha256) throw new Error("JUnit notice hash mismatch");
+      await writeFile(path.join(workRoot, "licenses", path.basename(notice.entry)), stdout, { flag: "wx" });
+    }
+    await writeFile(path.join(workRoot, "licenses", "SOURCE.txt"), `JUnit ${CT_JUNIT.version}\n${lock.junit.url}\nSource: https://github.com/junit-team/junit-framework/tree/r${CT_JUNIT.version}\n`, { flag: "wx" });
+    await writeFile(path.join(workRoot, "ct-manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, { flag: "wx" });
+    await writeFile(path.join(workRoot, "ct-provenance.json"), `${JSON.stringify({
+      schemaVersion: 1, codeHashes, junit: CT_JUNIT, files: await codingTestBundleFiles(workRoot),
+      provenance: { kind: "bundled-javac", release: 25, javacSha256: await sha256(compile.executable),
+        compileClasspath: [path.join(workRoot, CT_JUNIT.file)],
+        runtimeClasspath: ["classes", CT_JUNIT.file, "<fresh-learner-classes>"],
+        sourcePaths, args: compile.args },
+    }, null, 2)}\n`, { flag: "wx" });
+    await verifyCodingTestBundle(workRoot, collection);
+    const destination = path.join(resourcesPath, "runtime", "java-ct-runner");
+    await rename(workRoot, destination);
+    return destination;
+  } catch (error) {
+    error.preserveStagingRoot = true;
+    error.message = `${error.message}; preserved CT build: ${workRoot}`;
+    throw error;
+  }
+}
 
 async function sha256(filePath) {
   const hash = createHash("sha256");
@@ -248,7 +308,7 @@ export async function writeDesktopReceipt({ appPath, dmgPath = null, lock }) {
   await writeFile(path.join(outputRoot, "RECEIPT.md"), lines.join("\n"), "utf8");
 }
 
-export async function stageDesktopRuntimeOnly({ sourceAppPath, outputAppPath } = {}) {
+export async function stageDesktopRuntimeOnly({ sourceAppPath, outputAppPath } = {}, { verifyCodingTest = verifyCodingTestBundle } = {}) {
   const lock = JSON.parse(await readFile(lockPath, "utf8"));
   const sourcePath = path.resolve(sourceAppPath ?? path.join(outputRoot, lock.bundle.appName));
   const destinationPath = path.resolve(
@@ -278,6 +338,9 @@ export async function stageDesktopRuntimeOnly({ sourceAppPath, outputAppPath } =
     const resourcesPath = path.join(stagedAppPath, "Contents", "Resources");
     const runtimePath = path.join(resourcesPath, "runtime");
     await verifyRunnerProvenance(path.join(runtimePath, "java-runner"));
+    await copyCodingTestRuntimeSources(runtimePath);
+    const ctCollection = JSON.parse(await readFile(path.join(resourcesPath, "app", "dist", "content", "coding-tests", "java.json"), "utf8"));
+    await verifyCodingTest(path.join(runtimePath, "java-ct-runner"), ctCollection);
     await rm(path.join(runtimePath, "profiles"), { recursive: true, force: true });
     await Promise.all([
       cp(path.join(projectRoot, "desktop", "runtime", "supervisor.mjs"), path.join(runtimePath, "supervisor.mjs"), {
@@ -314,9 +377,11 @@ export async function buildDesktopApp() {
   );
   const electronArchive = path.join(artifactRoot, lock.electron.archive);
   const jdkArchive = path.join(artifactRoot, lock.jdk.archive);
+  const junitArtifact = path.join(artifactRoot, lock.junit.artifact);
   await Promise.all([
     verifyArchive(electronArchive, lock.electron.sha256),
     verifyArchive(jdkArchive, lock.jdk.sha256),
+    verifyArchive(junitArtifact, lock.junit.sha256),
   ]);
 
   await run(process.execPath, [path.join(projectRoot, "scripts", "build.mjs")]);
@@ -326,6 +391,7 @@ export async function buildDesktopApp() {
   const jdkExtractRoot = path.join(stagingRoot, "jdk");
   const stagedAppPath = path.join(stagingRoot, lock.bundle.appName);
   const finalAppPath = path.join(outputRoot, lock.bundle.appName);
+  let preserveStagingRoot = false;
 
   try {
     await Promise.all([
@@ -427,6 +493,8 @@ export async function buildDesktopApp() {
       provenance: { kind: "bundled-javac", release: 25, javacSha256: await sha256(bundledJavac) },
     }, null, 2)}\n`, { flag: "wx" });
     await verifyRunnerProvenance(runnerPath);
+    await copyCodingTestRuntimeSources(runtimePath);
+    await buildCodingTestBundle({ resourcesPath, stagingRoot, junitArtifact, lock });
 
     const electronVersion = (await readFile(path.join(electronExtractRoot, "version"), "utf8")).trim();
     const jdkRelease = await readFile(path.join(runtimePath, "jdk", "Contents", "Home", "release"), "utf8");
@@ -457,8 +525,11 @@ export async function buildDesktopApp() {
     await writeDesktopReceipt({ appPath: finalAppPath, lock });
     console.log(`로컬 데스크톱 앱 빌드 완료: ${path.relative(projectRoot, finalAppPath)}`);
     return { appPath: finalAppPath, lock, outputRoot };
+  } catch (error) {
+    preserveStagingRoot = error.preserveStagingRoot === true;
+    throw error;
   } finally {
-    await rm(stagingRoot, { recursive: true, force: true });
+    if (!preserveStagingRoot) await rm(stagingRoot, { recursive: true, force: true });
   }
 }
 

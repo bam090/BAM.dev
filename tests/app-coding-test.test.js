@@ -7,6 +7,7 @@ import {
 } from "../src/app.js";
 import { DraftSaveCoordinator } from "../src/core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "../src/core/execution-coordinator.js";
+import { createCodingTestSourceFingerprint } from "../src/core/coding-test.js";
 import {
   LocalStorageProgressRepository,
   MemoryStorage,
@@ -14,7 +15,9 @@ import {
 
 const problem = {
   id: "coding-test-javascript-test-problem",
+  slug: "test-problem",
   revision: 2,
+  title: "테스트 문제",
   starterCode: "function solve(value) { return value; }",
 };
 
@@ -27,6 +30,55 @@ const codingTestCollection = JSON.parse(
     "utf8",
   ),
 );
+
+function createCodingTestReport({
+  targetProblem = problem,
+  languageId = "javascript",
+  mode = "run",
+  outcome = "passed",
+  requestId = `coding-test-${mode}-test`,
+} = {}) {
+  const counts = {
+    passed: 0,
+    wrong_answer: 0,
+    syntax_error: 0,
+    runtime_error: 0,
+    timeout: 0,
+    output_limit: 0,
+    cancelled: 0,
+    engine_error: 0,
+    not_run: 0,
+  };
+  counts[outcome] = 1;
+  return {
+    requestId,
+    contractVersion: 1,
+    problemId: targetProblem.id,
+    problemRevision: targetProblem.revision,
+    languageId,
+    mode,
+    suite: "public",
+    outcome,
+    tests: [
+      {
+        testId: "public-one",
+        label: "공개 테스트 1",
+        outcome,
+        expectedDisplay: "2",
+        actualDisplay: outcome === "passed" || outcome === "wrong_answer" ? "2" : null,
+        hasActual: outcome === "passed" || outcome === "wrong_answer",
+        durationMs: 1,
+        console: [],
+        error: null,
+        invocations: null,
+      },
+    ],
+    summary: { outcome, total: 1, ...counts },
+    durationMs: 1,
+    limitsApplied: {},
+    error: null,
+  };
+}
 
 function installMinimalWindow(t) {
   const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -41,6 +93,76 @@ function installMinimalWindow(t) {
     if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
     else delete globalThis.window;
   });
+}
+
+function installCodingTestRouteEnvironment(t) {
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "window", {
+    configurable: true,
+    writable: true,
+    value: {
+      location: { hash: "#/coding-tests/javascript/test-problem" },
+      history: { replaceState() {} },
+      requestAnimationFrame(callback) {
+        callback?.();
+      },
+      scrollTo() {},
+    },
+  });
+  Object.defineProperty(globalThis, "document", {
+    configurable: true,
+    writable: true,
+    value: {
+      title: "",
+      querySelector() {
+        return null;
+      },
+    },
+  });
+  t.after(() => {
+    if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
+    else delete globalThis.window;
+    if (previousDocument) Object.defineProperty(globalThis, "document", previousDocument);
+    else delete globalThis.document;
+  });
+}
+
+function createRouteHarness(repository) {
+  const collection = {
+    contractVersion: 1,
+    languageId: "javascript",
+    title: "JavaScript 코딩테스트",
+    problems: [problem],
+  };
+  const app = Object.create(BamLearningApp.prototype);
+  Object.assign(app, {
+    curriculum,
+    currentView: null,
+    renderSequence: 0,
+    root: { innerHTML: "" },
+    codingTestCollections: new Map([["javascript", collection]]),
+    codingTestCollection: null,
+    progressRepository: repository,
+    hasRenderedView: false,
+    renderCount: 0,
+    enterView(view) {
+      this.currentView = view;
+      this.renderSequence += 1;
+      return this.renderSequence;
+    },
+    renderServiceShell({ mainContent }) {
+      return mainContent;
+    },
+    syncMenuState() {},
+    getRelatedCodeQuest() {
+      return null;
+    },
+    renderCodingTest() {
+      this.renderCount += 1;
+    },
+  });
+  return app;
 }
 
 function createExecutionHarness() {
@@ -71,21 +193,10 @@ function createExecutionHarness() {
     codingTestRunner: {
       async run(input, options) {
         assert.equal(options.signal instanceof AbortSignal, true);
-        const report = {
-          requestId: input.requestId,
-          contractVersion: 1,
-          problemId: problem.id,
-          problemRevision: problem.revision,
-          languageId: "javascript",
+        const report = createCodingTestReport({
           mode: input.mode,
-          suite: "public",
-          outcome: "passed",
-          tests: [],
-          summary: { passed: input.mode === "run" ? 3 : 6, total: input.mode === "run" ? 3 : 6 },
-          durationMs: 1,
-          limitsApplied: {},
-          error: null,
-        };
+          requestId: input.requestId,
+        });
         reports.push(report);
         return report;
       },
@@ -99,14 +210,67 @@ function createExecutionHarness() {
   return { app, repository, reports };
 }
 
-test("코딩테스트 실행은 기록하지 않고 제출만 정확히 한 번 저장한다", async (t) => {
+test("코딩테스트 source fingerprint는 trim·정규화 없이 UTF-8 원문을 SHA-256에 전달한다", async () => {
+  const source = "  cafe\u0301\n";
+  let algorithm = null;
+  let received = null;
+  const crypto = {
+    subtle: {
+      async digest(nextAlgorithm, bytes) {
+        algorithm = nextAlgorithm;
+        received = new Uint8Array(bytes);
+        return Uint8Array.from(
+          { length: 32 },
+          (_, index) => (index * 17) % 256,
+        ).buffer;
+      },
+    },
+  };
+
+  const fingerprint = await createCodingTestSourceFingerprint(source, crypto);
+
+  assert.equal(algorithm, "SHA-256");
+  assert.equal(new TextDecoder().decode(received), source);
+  assert.equal(
+    fingerprint,
+    "00112233445566778899aabbccddeeff102132435465768798a9bacbdcedfe0f",
+  );
+  await assert.rejects(
+    () => createCodingTestSourceFingerprint(source, {}),
+    /fingerprint를 계산할 수 없습니다/,
+  );
+});
+
+test("코딩테스트 실행은 상세만 저장하고 제출만 완료 처리하며 Quest 진도를 보존한다", async (t) => {
   installMinimalWindow(t);
   const { app, repository, reports } = createExecutionHarness();
+  repository.recordQuestAttempt({
+    questId: "quest-javascript-coding-test-separation",
+    questRevision: 1,
+    languageId: "javascript",
+    outcome: "passed",
+    passed: 1,
+    total: 1,
+  });
+  const questState = structuredClone({
+    questAttempts: repository.getProgress().questAttempts,
+    completedQuestIds: repository.getProgress().completedQuestIds,
+    completedQuestRevisions: repository.getProgress().completedQuestRevisions,
+  });
 
   await app.executeCurrentCodingTest("run");
   assert.equal(reports.length, 1);
   assert.equal(repository.getProgress().codingTestSubmissions.length, 0);
+  assert.equal(repository.getProgress().completedCodingTestProblems.length, 0);
   assert.equal(app.codingTestState.reportPersistenceStatus, null);
+  assert.equal(app.codingTestState.resultPersistenceStatus, "memory");
+  assert.equal(app.codingTestState.reportSourceStatus, "current");
+  const runResult = repository.getCodingTestResult(problem.id, problem.revision);
+  assert.equal(runResult.mode, "run");
+  assert.match(runResult.sourceFingerprint, /^[a-f0-9]{64}$/);
+  for (const forbidden of ["source", "requestId", "suite", "limitsApplied"]) {
+    assert.equal(Object.hasOwn(runResult, forbidden), false, forbidden);
+  }
 
   await app.executeCurrentCodingTest("submit");
   const progress = repository.getProgress();
@@ -122,6 +286,314 @@ test("코딩테스트 실행은 기록하지 않고 제출만 정확히 한 번 
     },
   ]);
   assert.equal(app.codingTestState.reportPersistenceStatus, "memory");
+  assert.equal(app.codingTestState.resultPersistenceStatus, "memory");
+  assert.equal(
+    repository.getCodingTestResult(problem.id, problem.revision).mode,
+    "submit",
+  );
+  assert.deepEqual(
+    {
+      questAttempts: progress.questAttempts,
+      completedQuestIds: progress.completedQuestIds,
+      completedQuestRevisions: progress.completedQuestRevisions,
+    },
+    questState,
+  );
+});
+
+test("상세 결과는 재진입 때 현재 draft와 비교해 복원하고 reset·revision 경계를 지킨다", async (t) => {
+  installCodingTestRouteEnvironment(t);
+  const { app: executionApp, repository, reports } = createExecutionHarness();
+  await executionApp.executeCurrentCodingTest("run");
+  const savedResult = repository.getCodingTestResult(problem.id, problem.revision);
+  const progressAfterRun = structuredClone(repository.getProgress());
+
+  const restoredApp = createRouteHarness(repository);
+  await restoredApp.openCodingTestRoute("javascript", problem.slug);
+
+  assert.equal(restoredApp.codingTestState.report.outcome, "passed");
+  assert.equal(restoredApp.codingTestState.executionMode, "run");
+  assert.equal(restoredApp.codingTestState.reportSourceStatus, "current");
+  assert.equal(restoredApp.codingTestState.reportSource, problem.starterCode);
+  assert.equal(restoredApp.codingTestState.resultPersistenceStatus, "restored");
+  assert.equal(reports.length, 1);
+  assert.deepEqual(repository.getProgress(), progressAfterRun);
+
+  const editedSource = `${problem.starterCode}\n// 현재 draft`;
+  repository.saveCodingTestDraft({
+    problemId: problem.id,
+    problemRevision: problem.revision,
+    languageId: "javascript",
+    source: editedSource,
+  });
+  const staleApp = createRouteHarness(repository);
+  await staleApp.openCodingTestRoute("javascript", problem.slug);
+
+  assert.equal(staleApp.codingTestState.source, editedSource);
+  assert.equal(staleApp.codingTestState.report.outcome, "passed");
+  assert.equal(staleApp.codingTestState.reportSourceStatus, "stale");
+  assert.equal(staleApp.codingTestState.reportSource, null);
+  assert.equal(staleApp.codingTestState.resultPersistenceStatus, "restored");
+  assert.equal(reports.length, 1);
+
+  staleApp.resetCodingTestSource();
+  assert.equal(staleApp.codingTestState.report, null);
+  assert.equal(staleApp.codingTestState.resultPersistenceStatus, null);
+  assert.equal(repository.getCodingTestDraft(problem.id, problem.revision), null);
+  assert.equal(repository.getCodingTestResult(problem.id, problem.revision), null);
+
+  const { finishedAt, ...resultInput } = savedResult;
+  repository.saveCodingTestResult({
+    ...resultInput,
+    problemRevision: problem.revision + 1,
+  });
+  const revisedApp = createRouteHarness(repository);
+  await revisedApp.openCodingTestRoute("javascript", problem.slug);
+  assert.equal(revisedApp.codingTestState.report, null);
+  assert.equal(revisedApp.codingTestState.executionMode, null);
+  assert.equal(revisedApp.codingTestState.resultPersistenceStatus, null);
+  assert.equal(reports.length, 1);
+  assert.equal(repository.getProgress().codingTestSubmissions.length, 0);
+});
+
+test("상세 복원 fingerprint 실패가 늦게 끝나도 이동한 route의 화면·상태·제목을 덮어쓰지 않는다", async (t) => {
+  installCodingTestRouteEnvironment(t);
+  const { app: executionApp, repository } = createExecutionHarness();
+  await executionApp.executeCurrentCodingTest("run");
+
+  let rejectDigest;
+  let markDigestStarted;
+  const digestStarted = new Promise((resolve) => {
+    markDigestStarted = resolve;
+  });
+  const previousCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    writable: true,
+    value: {
+      subtle: {
+        digest() {
+          markDigestStarted();
+          return new Promise((_, reject) => {
+            rejectDigest = reject;
+          });
+        },
+      },
+    },
+  });
+  t.after(() => {
+    if (previousCrypto) Object.defineProperty(globalThis, "crypto", previousCrypto);
+    else delete globalThis.crypto;
+  });
+
+  const app = createRouteHarness(repository);
+  const previousState = { marker: "new-route-state" };
+  const opening = app.openCodingTestRoute("javascript", problem.slug);
+  await digestStarted;
+  app.enterView("lesson");
+  app.codingTestState = previousState;
+  app.root.innerHTML = "new route screen";
+  document.title = "새 화면 · BAM.dev";
+  rejectDigest(new Error("delayed digest failure"));
+  await opening;
+
+  assert.equal(app.currentView, "lesson");
+  assert.equal(app.codingTestState, previousState);
+  assert.equal(app.root.innerHTML, "new route screen");
+  assert.equal(document.title, "새 화면 · BAM.dev");
+  assert.equal(app.renderCount, 0);
+});
+
+test("stale 상세 결과는 원래 source에서 current가 되고 늦은 fingerprint는 추가 편집·이동을 덮어쓰지 않는다", async (t) => {
+  installCodingTestRouteEnvironment(t);
+  const { app: executionApp, repository } = createExecutionHarness();
+  await executionApp.executeCurrentCodingTest("run");
+  repository.saveCodingTestDraft({
+    problemId: problem.id,
+    problemRevision: problem.revision,
+    languageId: "javascript",
+    source: `${problem.starterCode}\n// stale draft`,
+  });
+
+  const app = createRouteHarness(repository);
+  await app.openCodingTestRoute("javascript", problem.slug);
+  const state = app.codingTestState;
+  assert.equal(state.reportSourceStatus, "stale");
+  assert.equal(state.reportSource, null);
+
+  state.source = problem.starterCode;
+  await app.updateCodingTestResultSourceStatus(state);
+  assert.equal(state.reportSourceStatus, "current");
+  assert.equal(state.reportSource, problem.starterCode);
+
+  const originalFingerprint = state.report.sourceFingerprint;
+  const fingerprintBytes = Uint8Array.from(
+    originalFingerprint.match(/.{2}/g),
+    (pair) => Number.parseInt(pair, 16),
+  ).buffer;
+  const previousCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  const pendingDigests = [];
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    writable: true,
+    value: {
+      subtle: {
+        digest() {
+          return new Promise((resolve) => pendingDigests.push(resolve));
+        },
+      },
+    },
+  });
+  t.after(() => {
+    if (previousCrypto) Object.defineProperty(globalThis, "crypto", previousCrypto);
+    else delete globalThis.crypto;
+  });
+
+  state.reportSource = null;
+  state.reportSourceStatus = "stale";
+  state.source = problem.starterCode;
+  const editRace = app.updateCodingTestResultSourceStatus(state);
+  assert.equal(pendingDigests.length, 1);
+  state.source = `${problem.starterCode}\n// later edit`;
+  pendingDigests.shift()(fingerprintBytes.slice(0));
+  await editRace;
+  assert.equal(state.reportSource, null);
+  assert.equal(state.reportSourceStatus, "stale");
+
+  state.source = problem.starterCode;
+  const routeRace = app.updateCodingTestResultSourceStatus(state);
+  assert.equal(pendingDigests.length, 1);
+  app.enterView("lesson");
+  pendingDigests.shift()(fingerprintBytes.slice(0));
+  await routeRace;
+  assert.equal(app.currentView, "lesson");
+  assert.equal(state.reportSource, null);
+  assert.equal(state.reportSourceStatus, "stale");
+});
+
+test("상세 저장 용량·quota·WebCrypto 실패에도 현재 report와 기존 진도를 유지한다", async (t) => {
+  installMinimalWindow(t);
+
+  for (const [error, expectedStatus] of [
+    [new RangeError("too large"), "too-large"],
+    [new Error("quota exceeded"), "failed"],
+  ]) {
+    const { app, repository } = createExecutionHarness();
+    repository.setLessonCompleted("js-01-runtime", true);
+    const progressBeforeRun = structuredClone(repository.getProgress());
+    repository.saveCodingTestResult = () => {
+      throw error;
+    };
+
+    await app.executeCurrentCodingTest("run");
+
+    assert.equal(app.codingTestState.report.outcome, "passed");
+    assert.equal(app.codingTestState.reportSourceStatus, "current");
+    assert.equal(app.codingTestState.resultPersistenceStatus, expectedStatus);
+    assert.deepEqual(repository.getProgress(), progressBeforeRun);
+  }
+
+  const previousCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  const { app, repository } = createExecutionHarness();
+  repository.setLessonCompleted("js-01-runtime", true);
+  const progressBeforeRun = structuredClone(repository.getProgress());
+  let resultSaveCalls = 0;
+  repository.saveCodingTestResult = () => {
+    resultSaveCalls += 1;
+  };
+  try {
+    Object.defineProperty(globalThis, "crypto", {
+      configurable: true,
+      writable: true,
+      value: undefined,
+    });
+    await app.executeCurrentCodingTest("run");
+  } finally {
+    if (previousCrypto) Object.defineProperty(globalThis, "crypto", previousCrypto);
+    else delete globalThis.crypto;
+  }
+
+  assert.equal(app.codingTestState.report.outcome, "passed");
+  assert.equal(app.codingTestState.reportSourceStatus, "current");
+  assert.equal(app.codingTestState.resultPersistenceStatus, "failed");
+  assert.equal(resultSaveCalls, 0);
+  assert.deepEqual(repository.getProgress(), progressBeforeRun);
+});
+
+test("기존 실제 오류 6종의 report 형태를 상세 snapshot으로 투영하고 다시 읽는다", async (t) => {
+  installMinimalWindow(t);
+  const invocationCases = new Map([
+    [
+      "wrong_answer",
+      {
+        discovered: 5,
+        started: 5,
+        finished: 5,
+        passed: 0,
+        wrongAnswer: 5,
+        runtimeError: 0,
+        skipped: 0,
+        aborted: 0,
+        infrastructure: 0,
+      },
+    ],
+    [
+      "runtime_error",
+      {
+        discovered: 5,
+        started: 5,
+        finished: 5,
+        passed: 0,
+        wrongAnswer: 0,
+        runtimeError: 5,
+        skipped: 0,
+        aborted: 0,
+        infrastructure: 0,
+      },
+    ],
+  ]);
+  const outcomes = [
+    "wrong_answer",
+    "syntax_error",
+    "runtime_error",
+    "timeout",
+    "cancelled",
+    "output_limit",
+  ];
+
+  for (const outcome of outcomes) {
+    const { app, repository } = createExecutionHarness();
+    app.codingTestRunner = {
+      async run(input) {
+        const report = createCodingTestReport({
+          mode: input.mode,
+          outcome,
+          requestId: input.requestId,
+        });
+        report.tests[0].error = {
+          type: outcome,
+          message: `${outcome} 원인`,
+          learnerMessage: `${outcome} 원인`,
+        };
+        report.tests[0].invocations = invocationCases.get(outcome) ?? null;
+        return report;
+      },
+    };
+
+    await app.executeCurrentCodingTest("run");
+    const restored = repository.getCodingTestResult(problem.id, problem.revision);
+
+    assert.equal(app.codingTestState.resultPersistenceStatus, "memory", outcome);
+    assert.equal(restored.outcome, outcome);
+    assert.equal(restored.summary.outcome, outcome);
+    assert.equal(restored.tests[0].outcome, outcome);
+    assert.deepEqual(restored.tests[0].error, {
+      type: outcome,
+      message: `${outcome} 원인`,
+      learnerMessage: `${outcome} 원인`,
+    });
+    assert.deepEqual(restored.tests[0].invocations, invocationCases.get(outcome) ?? null);
+  }
 });
 
 test("코딩테스트 초안은 연속 입력을 마지막 값 한 건으로 저장하고 리비전을 보존한다", () => {

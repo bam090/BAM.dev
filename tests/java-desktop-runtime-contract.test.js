@@ -24,6 +24,9 @@ import { stageDesktopRuntimeOnly } from "../scripts/desktop-build.mjs";
 const collection = JSON.parse(
   await readFile(new URL("../content/quests/java.json", import.meta.url), "utf8"),
 );
+const codingTestCollection = JSON.parse(
+  await readFile(new URL("../content/coding-tests/java.json", import.meta.url), "utf8"),
+);
 const REPORT_OUTCOMES = [
   "passed",
   "wrong_answer",
@@ -81,7 +84,12 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
   const outputRoot = path.join(temporaryRoot, "output");
   const outputAppPath = path.join(outputRoot, "BAM.dev.app");
   const sourceRuntime = path.join(sourceAppPath, "Contents", "Resources", "runtime");
+  const sourceCodingTestBundle = path.join(sourceRuntime, "java-ct-runner");
   const outputRuntime = path.join(outputAppPath, "Contents", "Resources", "runtime");
+  const codingTestReceipt = {
+    schemaVersion: 1,
+    fixture: "runtime-only-positive",
+  };
   const runnerClasses = [
     ["BamQuestRunner$ArrayInput.class", "fake nested class\n"],
     ["BamQuestRunner.class", "fake class\n"],
@@ -95,12 +103,34 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
       mkdir(path.join(sourceRuntime, "profiles"), { recursive: true }),
       mkdir(path.join(sourceRuntime, "jdk", "Contents", "Home", "bin"), { recursive: true }),
       mkdir(path.join(sourceRuntime, "java-runner"), { recursive: true }),
+      mkdir(path.join(
+        sourceAppPath,
+        "Contents",
+        "Resources",
+        "app",
+        "dist",
+        "content",
+        "coding-tests",
+      ), { recursive: true }),
       mkdir(outputAppPath, { recursive: true }),
     ]);
     await Promise.all([
       writeFile(path.join(sourceRuntime, "supervisor.mjs"), "source supervisor\n"),
       writeFile(path.join(sourceRuntime, "profiles", "compile.sb"), "source profile\n"),
       writeFile(path.join(sourceRuntime, "jdk", "Contents", "Home", "bin", "java"), "fake java\n"),
+      writeFile(
+        path.join(
+          sourceAppPath,
+          "Contents",
+          "Resources",
+          "app",
+          "dist",
+          "content",
+          "coding-tests",
+          "java.json",
+        ),
+        `${JSON.stringify(codingTestCollection)}\n`,
+      ),
       ...runnerClasses.map(([name, content]) => (
         writeFile(path.join(sourceRuntime, "java-runner", name), content)
       )),
@@ -118,6 +148,27 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
         },
       }, null, 2)}\n`),
       writeFile(path.join(outputAppPath, "stale-output"), "stale\n"),
+    ]);
+
+    await assert.rejects(
+      stageDesktopRuntimeOnly({ sourceAppPath, outputAppPath }),
+      /java-ct-runner/u,
+    );
+    assert.equal(
+      (await readdir(outputRoot)).some((name) => name.startsWith(".runtime-staging-")),
+      false,
+    );
+
+    await mkdir(path.join(sourceCodingTestBundle, "classes"), { recursive: true });
+    await Promise.all([
+      writeFile(
+        path.join(sourceCodingTestBundle, "ct-provenance.json"),
+        `${JSON.stringify(codingTestReceipt)}\n`,
+      ),
+      writeFile(
+        path.join(sourceCodingTestBundle, "classes", "BamCodingTestRunner.class"),
+        "fake CT class\n",
+      ),
     ]);
 
     await assert.rejects(
@@ -139,7 +190,22 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
       /서로 분리된 경로/u,
     );
 
-    const staged = await stageDesktopRuntimeOnly({ sourceAppPath, outputAppPath });
+    let codingTestVerificationCount = 0;
+    const staged = await stageDesktopRuntimeOnly(
+      { sourceAppPath, outputAppPath },
+      {
+        async verifyCodingTest(root, actualCollection) {
+          codingTestVerificationCount += 1;
+          assert.equal(path.basename(root), "java-ct-runner");
+          assert.deepEqual(actualCollection, codingTestCollection);
+          assert.deepEqual(
+            JSON.parse(await readFile(path.join(root, "ct-provenance.json"), "utf8")),
+            codingTestReceipt,
+          );
+        },
+      },
+    );
+    assert.equal(codingTestVerificationCount, 1);
     assert.equal(staged.appPath, outputAppPath);
     assert.equal(staged.sourceAppPath, sourceAppPath);
     assert.equal(await readFile(path.join(sourceRuntime, "supervisor.mjs"), "utf8"), "source supervisor\n");
@@ -159,6 +225,13 @@ test("runtime-only staging은 분리 출력에 overlay하고 source와 기존 ru
     assert.equal(
       await readFile(path.join(outputRuntime, "java-runner", "BamQuestRunner.class"), "utf8"),
       "fake class\n",
+    );
+    assert.deepEqual(
+      JSON.parse(await readFile(
+        path.join(outputRuntime, "java-ct-runner", "ct-provenance.json"),
+        "utf8",
+      )),
+      codingTestReceipt,
     );
     assert.equal(
       await readFile(path.join(outputAppPath, "stale-output"), "utf8").catch(() => null),

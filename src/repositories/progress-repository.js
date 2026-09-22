@@ -7,7 +7,9 @@ const MAX_QUEST_ATTEMPTS = 50;
 const MAX_QUEST_SOURCE_BYTES = 20 * 1024;
 const MAX_CODING_TEST_DRAFTS = 20;
 const MAX_CODING_TEST_SUBMISSIONS = 50;
+const MAX_CODING_TEST_RESULTS = 20;
 const MAX_CODING_TEST_SOURCE_BYTES = 20 * 1024;
+const MAX_CODING_TEST_RESULT_BYTES = 64 * 1024;
 const STABLE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const LANGUAGE_ID_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const OPTION_ID_PATTERN = /^[a-d]$/;
@@ -20,6 +22,30 @@ const QUEST_OUTCOMES = new Set([
   "output_limit",
   "cancelled",
   "engine_error",
+]);
+const CODING_TEST_RESULT_OUTCOMES = new Set([...QUEST_OUTCOMES, "not_run"]);
+const CODING_TEST_RESULT_OUTCOME_PRIORITY = [
+  "cancelled",
+  "engine_error",
+  "timeout",
+  "output_limit",
+  "syntax_error",
+  "runtime_error",
+  "wrong_answer",
+  "not_run",
+];
+const CODING_TEST_RESULT_MODES = new Set(["run", "submit"]);
+const CODING_TEST_CONSOLE_METHODS = new Set(["log", "info", "warn", "error"]);
+const CODING_TEST_INVOCATION_FIELDS = new Set([
+  "discovered",
+  "started",
+  "finished",
+  "passed",
+  "wrongAnswer",
+  "runtimeError",
+  "skipped",
+  "aborted",
+  "infrastructure",
 ]);
 const QUEST_DRAFT_INPUT_FIELDS = new Set(["questId", "languageId", "source"]);
 const STORED_QUEST_DRAFT_FIELDS = new Set([
@@ -74,6 +100,53 @@ const COMPLETED_CODING_TEST_FIELDS = new Set([
   "problemRevision",
   "completedAt",
 ]);
+const CODING_TEST_RESULT_SUMMARY_FIELDS = new Set([
+  "outcome",
+  "total",
+  "passed",
+  "wrong_answer",
+  "syntax_error",
+  "runtime_error",
+  "timeout",
+  "output_limit",
+  "cancelled",
+  "engine_error",
+  "not_run",
+]);
+const CODING_TEST_RESULT_ERROR_FIELDS = new Set([
+  "type",
+  "message",
+  "learnerMessage",
+]);
+const CODING_TEST_RESULT_CONSOLE_FIELDS = new Set(["method", "preview"]);
+const CODING_TEST_RESULT_TEST_FIELDS = new Set([
+  "testId",
+  "label",
+  "outcome",
+  "expectedDisplay",
+  "actualDisplay",
+  "hasActual",
+  "durationMs",
+  "console",
+  "error",
+  "invocations",
+]);
+const CODING_TEST_RESULT_INPUT_FIELDS = new Set([
+  "problemId",
+  "problemRevision",
+  "languageId",
+  "sourceFingerprint",
+  "mode",
+  "outcome",
+  "tests",
+  "summary",
+  "durationMs",
+  "error",
+]);
+const STORED_CODING_TEST_RESULT_FIELDS = new Set([
+  ...CODING_TEST_RESULT_INPUT_FIELDS,
+  "finishedAt",
+]);
 const textEncoder = new TextEncoder();
 
 export function createEmptyProgress() {
@@ -90,6 +163,7 @@ export function createEmptyProgress() {
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
+    codingTestResults: [],
     updatedAt: null,
   };
 }
@@ -142,6 +216,7 @@ export function normalizeProgress(value) {
   }
   const retainedQuestAttempts = questAttempts.slice(-MAX_QUEST_ATTEMPTS);
   const codingTestDrafts = normalizeCodingTestDrafts(value.codingTestDrafts);
+  const codingTestResults = normalizeCodingTestResults(value.codingTestResults);
   const codingTestSubmissions = [];
   const codingTestSubmissionIds = new Set();
   const completedCodingTestProblems = normalizeCompletedCodingTestProblems(
@@ -176,6 +251,7 @@ export function normalizeProgress(value) {
     codingTestDrafts,
     codingTestSubmissions: codingTestSubmissions.slice(-MAX_CODING_TEST_SUBMISSIONS),
     completedCodingTestProblems: [...completedCodingTestProblems.values()],
+    codingTestResults,
     updatedAt: isValidDateString(value.updatedAt) ? value.updatedAt : null,
   };
 }
@@ -357,6 +433,192 @@ function normalizeCodingTestDraftInput(value) {
     languageId: draft.languageId,
     source: draft.source,
   };
+}
+
+function normalizeCodingTestResultError(value) {
+  if (value === null) return null;
+  const error = snapshotPlainDataDto(value, CODING_TEST_RESULT_ERROR_FIELDS);
+  if (!error) return undefined;
+  for (const field of CODING_TEST_RESULT_ERROR_FIELDS) {
+    if (error[field] !== null && typeof error[field] !== "string") return undefined;
+  }
+  return {
+    type: error.type,
+    message: error.message,
+    learnerMessage: error.learnerMessage,
+  };
+}
+
+function normalizeCodingTestResultInvocations(value) {
+  if (value === null) return null;
+  const invocations = snapshotPlainDataDto(value, CODING_TEST_INVOCATION_FIELDS);
+  if (!invocations) return undefined;
+  for (const field of CODING_TEST_INVOCATION_FIELDS) {
+    if (!Number.isSafeInteger(invocations[field]) || invocations[field] < 0) return undefined;
+  }
+  return Object.fromEntries(
+    [...CODING_TEST_INVOCATION_FIELDS].map((field) => [field, invocations[field]]),
+  );
+}
+
+function normalizeCodingTestResultConsole(value) {
+  if (!Array.isArray(value)) return null;
+  const entries = [];
+  for (const storedValue of value) {
+    const entry = snapshotPlainDataDto(storedValue, CODING_TEST_RESULT_CONSOLE_FIELDS);
+    if (
+      !entry ||
+      !CODING_TEST_CONSOLE_METHODS.has(entry.method) ||
+      typeof entry.preview !== "string"
+    ) {
+      return null;
+    }
+    entries.push({ method: entry.method, preview: entry.preview });
+  }
+  return entries;
+}
+
+function normalizeCodingTestResultTest(value) {
+  const test = snapshotPlainDataDto(value, CODING_TEST_RESULT_TEST_FIELDS);
+  if (
+    !test ||
+    !isStableId(test.testId) ||
+    (test.label !== null && typeof test.label !== "string") ||
+    !CODING_TEST_RESULT_OUTCOMES.has(test.outcome) ||
+    (test.expectedDisplay !== null && typeof test.expectedDisplay !== "string") ||
+    (test.actualDisplay !== null && typeof test.actualDisplay !== "string") ||
+    typeof test.hasActual !== "boolean" ||
+    typeof test.durationMs !== "number" ||
+    !Number.isFinite(test.durationMs) ||
+    test.durationMs < 0
+  ) {
+    return null;
+  }
+  const consoleEntries = normalizeCodingTestResultConsole(test.console);
+  const error = normalizeCodingTestResultError(test.error);
+  const invocations = normalizeCodingTestResultInvocations(test.invocations);
+  if (consoleEntries === null || error === undefined || invocations === undefined) return null;
+  return {
+    testId: test.testId,
+    label: test.label,
+    outcome: test.outcome,
+    expectedDisplay: test.expectedDisplay,
+    actualDisplay: test.actualDisplay,
+    hasActual: test.hasActual,
+    durationMs: test.durationMs,
+    console: consoleEntries,
+    error,
+    invocations,
+  };
+}
+
+function normalizeCodingTestResultSummary(value, tests) {
+  const summary = snapshotPlainDataDto(value, CODING_TEST_RESULT_SUMMARY_FIELDS);
+  if (!summary || !CODING_TEST_RESULT_OUTCOMES.has(summary.outcome)) return null;
+  for (const outcome of CODING_TEST_RESULT_OUTCOMES) {
+    if (!Number.isSafeInteger(summary[outcome]) || summary[outcome] < 0) return null;
+  }
+  if (!Number.isSafeInteger(summary.total) || summary.total !== tests.length) return null;
+
+  const counts = Object.fromEntries(
+    [...CODING_TEST_RESULT_OUTCOMES].map((outcome) => [outcome, 0]),
+  );
+  for (const test of tests) counts[test.outcome] += 1;
+  if ([...CODING_TEST_RESULT_OUTCOMES].some((outcome) => summary[outcome] !== counts[outcome])) {
+    return null;
+  }
+  const expectedOutcome =
+    tests.length === 0
+      ? "not_run"
+      : CODING_TEST_RESULT_OUTCOME_PRIORITY.find((outcome) => counts[outcome] > 0) ??
+        "passed";
+  if (summary.outcome !== expectedOutcome) return null;
+  return {
+    outcome: summary.outcome,
+    total: summary.total,
+    passed: summary.passed,
+    wrong_answer: summary.wrong_answer,
+    syntax_error: summary.syntax_error,
+    runtime_error: summary.runtime_error,
+    timeout: summary.timeout,
+    output_limit: summary.output_limit,
+    cancelled: summary.cancelled,
+    engine_error: summary.engine_error,
+    not_run: summary.not_run,
+  };
+}
+
+function normalizeCodingTestResult(value, allowedFields) {
+  const result = snapshotPlainDataDto(value, allowedFields);
+  if (
+    !result ||
+    !isCodingTestProblemId(result.problemId) ||
+    !isValidProblemRevision(result.problemRevision) ||
+    !isLanguageId(result.languageId) ||
+    !codingTestProblemMatchesLanguage(result.problemId, result.languageId) ||
+    typeof result.sourceFingerprint !== "string" ||
+    !/^[a-f0-9]{64}$/.test(result.sourceFingerprint) ||
+    !CODING_TEST_RESULT_MODES.has(result.mode) ||
+    !CODING_TEST_RESULT_OUTCOMES.has(result.outcome) ||
+    !Array.isArray(result.tests) ||
+    typeof result.durationMs !== "number" ||
+    !Number.isFinite(result.durationMs) ||
+    result.durationMs < 0
+  ) {
+    return null;
+  }
+  const tests = result.tests.map(normalizeCodingTestResultTest);
+  if (tests.some((test) => test === null)) return null;
+  const summary = normalizeCodingTestResultSummary(result.summary, tests);
+  const error = normalizeCodingTestResultError(result.error);
+  if (!summary || error === undefined) return null;
+  const expectedOutcome = error === null ? summary.outcome : "engine_error";
+  if (result.outcome !== expectedOutcome) return null;
+
+  return {
+    problemId: result.problemId,
+    problemRevision: result.problemRevision,
+    languageId: result.languageId,
+    sourceFingerprint: result.sourceFingerprint,
+    mode: result.mode,
+    outcome: result.outcome,
+    tests,
+    summary,
+    durationMs: result.durationMs,
+    error,
+  };
+}
+
+function isCodingTestResultWithinSizeLimit(result) {
+  return utf8ByteLength(JSON.stringify(result)) <= MAX_CODING_TEST_RESULT_BYTES;
+}
+
+function normalizeStoredCodingTestResult(value) {
+  const result = normalizeCodingTestResult(value, STORED_CODING_TEST_RESULT_FIELDS);
+  if (!result || !isValidDateString(value.finishedAt)) return null;
+  const storedResult = { ...result, finishedAt: value.finishedAt };
+  return isCodingTestResultWithinSizeLimit(storedResult) ? storedResult : null;
+}
+
+function normalizeCodingTestResults(value) {
+  const latestByProblemId = new Map();
+  for (const storedValue of Array.isArray(value) ? value : []) {
+    const result = normalizeStoredCodingTestResult(storedValue);
+    if (!result) continue;
+    const previous = latestByProblemId.get(result.problemId);
+    if (!previous || previous.finishedAt <= result.finishedAt) {
+      latestByProblemId.set(result.problemId, result);
+    }
+  }
+  return [...latestByProblemId.values()]
+    .sort((left, right) => left.finishedAt.localeCompare(right.finishedAt))
+    .slice(-MAX_CODING_TEST_RESULTS);
+}
+
+function normalizeCodingTestResultInput(value) {
+  const result = normalizeCodingTestResult(value, CODING_TEST_RESULT_INPUT_FIELDS);
+  if (!result) throw new TypeError("코딩테스트 상세 결과 형식이 올바르지 않습니다.");
+  return result;
 }
 
 function isValidCodingTestSubmissionSnapshot(submission, requireStoredFields) {
@@ -769,6 +1031,18 @@ export class ProgressRepository {
     throw new Error("recordCodingTestSubmission()을 구현해야 합니다.");
   }
 
+  getCodingTestResult() {
+    throw new Error("getCodingTestResult()를 구현해야 합니다.");
+  }
+
+  saveCodingTestResult() {
+    throw new Error("saveCodingTestResult()를 구현해야 합니다.");
+  }
+
+  clearCodingTestResult() {
+    throw new Error("clearCodingTestResult()를 구현해야 합니다.");
+  }
+
   getPersistenceStatus() {
     throw new Error("getPersistenceStatus()를 구현해야 합니다.");
   }
@@ -1003,6 +1277,56 @@ export class LocalStorageProgressRepository extends ProgressRepository {
       },
       completedAt,
     );
+  }
+
+  getCodingTestResult(problemId, problemRevision) {
+    if (!isCodingTestProblemId(problemId) || !isValidProblemRevision(problemRevision)) {
+      throw new TypeError("유효한 코딩테스트 문제 ID와 리비전이 필요합니다.");
+    }
+    return (
+      this.getProgress().codingTestResults.find(
+        (result) =>
+          result.problemId === problemId && result.problemRevision === problemRevision,
+      ) ?? null
+    );
+  }
+
+  saveCodingTestResult(resultInput) {
+    const result = normalizeCodingTestResultInput(resultInput);
+    const progress = this.getProgress();
+    const finishedAt = this.clock().toISOString();
+    const storedResult = { ...result, finishedAt };
+    if (!isCodingTestResultWithinSizeLimit(storedResult)) {
+      throw new RangeError(
+        `코딩테스트 상세 결과는 UTF-8 ${MAX_CODING_TEST_RESULT_BYTES}바이트 이하여야 합니다.`,
+      );
+    }
+
+    return this.#save(
+      {
+        ...progress,
+        codingTestResults: [
+          ...progress.codingTestResults.filter(
+            (stored) => stored.problemId !== result.problemId,
+          ),
+          storedResult,
+        ].slice(-MAX_CODING_TEST_RESULTS),
+      },
+      finishedAt,
+    );
+  }
+
+  clearCodingTestResult(problemId) {
+    if (!isCodingTestProblemId(problemId)) {
+      throw new TypeError("유효한 코딩테스트 문제 ID가 필요합니다.");
+    }
+    const progress = this.getProgress();
+    return this.#save({
+      ...progress,
+      codingTestResults: progress.codingTestResults.filter(
+        (result) => result.problemId !== problemId,
+      ),
+    });
   }
 
   #save(progress, updatedAt = this.clock().toISOString()) {

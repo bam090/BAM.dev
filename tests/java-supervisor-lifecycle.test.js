@@ -332,6 +332,7 @@ test("compile/runtime profile은 metadata 외 권한 계약을 유지한다", as
     runtimeMetadata[0].trim(),
     [
       "(allow file-read-metadata",
+      "  (literal \"/dev\")",
       "  (literal \"/etc\")",
       "  (literal \"/tmp\")",
       "  (literal \"/var\")",
