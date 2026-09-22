@@ -4,7 +4,7 @@ BAM.dev는 **개념을 이해하고, 자신의 말로 설명하고 직접 코드
 학습문서로 개념을 익히고 객관식으로 이해를 확인한 뒤 코드 작성과 응용 문제로 연습을 이어 갈 수 있습니다.
 
 HTML·CSS·JavaScript부터 Java·Spring·알고리즘까지 지금 필요한 주제를 골라 자신의 속도로 공부하세요!<br>
-계정이나 특정 수업 참여 없이 사용할 수 있습니다.
+계정이나 특정 수업 참여 없이 사용할 수 있습니다. GitHub에서 소스를 clone하거나 ZIP으로 내려받아 직접 실행할 수 있습니다.
 
 **[BAM.dev 시작하기 →](https://bam090.github.io/BAM.dev/)**
 
@@ -31,8 +31,8 @@ HTML·CSS·JavaScript부터 Java·Spring·알고리즘까지 지금 필요한 �
 
 - **더 세밀한 복습** — 모름·헷갈림 표시와 문제별 재도전 기능을 확장합니다.
 - **더 넓은 학습 주제** — 컴퓨터 과학 기초(CS), TypeScript, React로 학습 범위를 넓힙니다.
-- **Java 실행의 정식 제공과 프로젝트 실습** — 검증된 로컬 prototype을 바탕으로 정식 설치·지원 범위를 정하고 밤위키 원본 웹과제의 BAM.dev 연결과 공개 검증을 준비합니다.
-- **설치해서 쓰는 학습 앱** — 설치 후 인터넷 없이도 핵심 학습을 이어 갈 수 있는 개인 학습 공간을 목표로 합니다.
+- **Java 실행 연결과 프로젝트 실습** — 소스로 실행하는 환경의 Java 지원 방식은 별도로 설계합니다. 밤위키 원본 웹과제의 BAM.dev 연결과 공개 검증도 준비합니다.
+- **학습 기록 보호** — 소스로 실행하는 브라우저 환경에서 기록 백업·복구와 안전한 저장 흐름을 보강합니다.
 
 ## 지금 공부할 수 있는 내용
 
@@ -64,7 +64,7 @@ Spring 과정에서는 Spring Boot·Spring Security·JPA·Spring Data JPA까지 
 코드를 바꾸면 이전 코드의 결과임을 표시하고, 오답·문법·실행 오류·시간 초과·취소·출력 초과에 확인할 점을 안내합니다.
 취소는 오답이나 성공으로 처리하지 않습니다.
 
-**Java 실행은 검증한 macOS 환경의 별도 로컬 prototype에 한정됩니다.** 공개 웹에서는 Java 작성·저장만 가능하며 정식 설치본이나 모든 OS 지원을 제공하는 것은 아닙니다.
+**Java 실행은 검증한 macOS 환경의 별도 로컬 prototype에 한정됩니다.** 공개 웹에서는 Java 작성·저장만 가능하며 소스를 브라우저에서 실행해도 Java 실행까지 지원되는 것은 아닙니다. 설치형 앱은 주 전달 방식이 아닙니다.
 자세한 실행·복원 검증 범위는 [Java Quest 기록](docs/work-items/2026-09-15-java-code-quest-runtime.md)과 [Java 코딩테스트 기록](docs/work-items/2026-09-22-java-coding-test-runtime.md)을 참고하세요.
 
 ## 현재 기능과 남은 범위
@@ -75,16 +75,16 @@ Spring 과정에서는 Spring Boot·Spring Security·JPA·Spring Data JPA까지 
 | --- | --- | --- |
 | 학습문서 | 주제·키워드 탐색, 읽기·자기 확인·완료 기록 | 후속 주제 확장과 release 대상 콘텐츠 감사 |
 | 객관식 | 두 보기·두 채점 방식, 해설·문서 왕복, 즉시 재도전 | 모름·헷갈림과 문제별 전체 이력 |
-| Code Quest | 탐색·작성·저장, 웹의 JavaScript·HTML·CSS 공개 검사, macOS prototype의 Java 실행 | Java 실행의 정식 제공 |
-| 코딩테스트 | 웹의 JavaScript 실행·Java 작성/저장, macOS prototype의 Java 공개 평가, 상세 결과 복원·오류 안내 | 정식 설치본과 지원 OS 확정 |
+| Code Quest | 탐색·작성·저장, 웹의 JavaScript·HTML·CSS 공개 검사, macOS prototype의 Java 실행 | 소스 실행 환경의 Java 연결 방식 확정 |
+| 코딩테스트 | 웹의 JavaScript 실행·Java 작성/저장, macOS prototype의 Java 공개 평가, 상세 결과 복원·오류 안내 | 소스 실행 환경의 Java 연결·저장 보호 |
 | 웹과제 | 기존 인앱 HTML·CSS 과제 | 밤위키 원본의 BAM 연결·안내·공개 검증 |
 
-설치형 오프라인 앱과 React·TypeScript 이관은 장기 목표입니다. 상세 범위는 [웹과제 설계](docs/designs/web-assignments.md)와 [MVP 완료 조건](docs/product-scope.md#mvp-완료-조건)에서 관리합니다.
+React·TypeScript UI는 작은 화면부터 점진적으로 도입할 계획입니다. 상세 범위는 [웹과제 설계](docs/designs/web-assignments.md)와 [MVP 완료 조건](docs/product-scope.md#mvp-완료-조건)에서 관리합니다.
 
 ## 내 컴퓨터에서 실행하기
 
-코드를 살펴보거나 로컬에서 실행하려면 **Git과 Node.js 20 이상**이 필요합니다.
-브라우저 버전은 `npm install` 없이 실행할 수 있으며 JDK나 Electron도 필요하지 않습니다.
+소스를 실행하려면 **Node.js 20 이상**이 필요합니다. Git으로 복제하거나 GitHub의 **Code → Download ZIP**으로 내려받아 압축을 푸세요.
+아래는 Git으로 시작하는 방법입니다. ZIP을 받았다면 압축을 푼 폴더에서 `npm run dev`를 실행하세요. 현재 브라우저 버전은 `npm install` 없이 실행되며 JDK나 Electron이 필요하지 않습니다.
 
 ```bash
 git clone --branch dev https://github.com/bam090/BAM.dev.git BAM.dev

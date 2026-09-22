@@ -2,9 +2,19 @@
 
 이 문서는 기능 우선순위, 전환 순서와 bam의 결정 대기 항목의 정본이다. 현재와 MVP 목표의 차이 및 제품 범위는 [`product-scope.md`](product-scope.md), 작업 절차는 [`development-workflow.md`](development-workflow.md)가 담당한다.
 
+## 2026-09-22 소스 전달 방식 정정
+
+`[확정 결정]` **DEC-SOURCE-DISTRIBUTION-01** — bam의 최신 정정 “설치형 앱이 아니야 그냥 내 깃허브에서 가져다가쓰는걸 말한거야”에 따라 주 전달 방식은 GitHub에서 소스를 clone/다운로드하여 기존 소스 실행 흐름을 사용하는 것이다. 현재 명령은 Node.js 20 이상에서 `npm run dev`이며 브라우저로 접속한다. 설치형을 필수 목표로 해석한 이전 방향은 대체한다. 이는 영구적인 브라우저 전용이나 모든 shell 폐기 결정은 아니다. 로컬 실행·서버/계정 없는 사용·개인 자료 보호 원칙은 유지하고, 최초 소스·의존성 다운로드와 이후 네트워크 요구를 구분한다. 오프라인 품질 목표의 폐기를 확정하지 않으며 소스 전달 방식에서 범위를 재정의하고 실제 검증 전 완전 오프라인을 보장하지 않는다.
+
+`[대체됨]` DEC-DELIVERY-01의 설치형 필수 해석, 설치 후 오프라인 필수, Electron·DMG·공증·공식 OS 선택을 release gate로 둔 계획은 현재 완료 조건이 아니다. 이전 prototype 코드·시험용 포장·PR #24~#26과 검증 이력은 보존하지만 설치 작업을 기본 후속 계획으로 계속하지 않는다. 과거 날짜별 결정·M1/M4/M6 표의 설치 조건은 이 정정에 종속된 이력이며 완료로 전환한 것이 아니다.
+
+공개 테스트·Java 25/preview 금지·실행 격리·개인 자료 보호·제품별 진도 분리는 유지한다. 웹/소스 브라우저의 Java는 작성·저장만 지원한다. Java 실행 PASS는 Electron IPC를 사용하는 검증 커널 prototype의 결과이며 새 소스 배포에서의 Java 연결 방식은 미결정이다. 시스템 JDK나 새 Node HTTP 실행 API를 승인한 것으로 해석하지 않는다. 기존 정적 서버의 역할도 Java 실행 서버로 확대하지 않는다.
+
+데이터 보호·복습·외부 웹과제·점진 UI 이관 설계는 유효한 부분을 보존한다. desktop admission에 의존한 writer/backup·quizHistory 제안은 소스 실행 브라우저 환경에 맞춰 다시 설계·검증하기 전 구현 준비 완료가 아니다. 기존 논리 모델 PASS를 브라우저 다중 탭의 안전 보장으로 사용하지 않는다.
+
 ## 조사 기준 상태
 
-아래 목록은 **2026-08-29 조사 이력**이다. 이후 변경의 현재 상태는 날짜별 기록과 [README의 다섯 영역](../README.md#현재-기능과-남은-범위)을 따른다. 2026-09-15 현재 브라우저 학습·복습·직접 작성 흐름은 구현됐고 Java 실행은 BLOCKED, 밤위키 웹과제의 BAM 연결과 정식 설치·React 이관은 미완료다.
+아래 목록은 **2026-08-29 조사 이력**이다. 이후 변경의 현재 상태는 날짜별 기록과 [README의 다섯 영역](../README.md#현재-기능과-남은-범위)을 따른다. 현재 브라우저 학습·복습·직접 작성 흐름과 검증 커널의 Java Quest·CT 로컬 prototype 실행은 구현·검증됐으며, 밤위키 웹과제의 BAM 연결과 정식 설치·React 이관은 미완료다.
 
 - `[현재 사실]` 교안·객관식·분리된 Code Quest·코딩테스트·인앱 Web Project와 로컬 진도·공개 평가 구현이 저장소에 있다. 현재 수량은 프로젝트 [`README.md`](../README.md)에만 요약한다.
 - `[현재 사실]` 현재 일반 실행은 설치 앱이 아니라 Node 개발 서버와 브라우저 `localhost`다.
@@ -42,7 +52,7 @@
 | ID | 결정 | 이유 | 상태 |
 | --- | --- | --- | --- |
 | `DEC-DOC-01` | 주요 제품 경계는 구현 전에 현재·목표·마이그레이션·검증을 설계 문서에 기록한다. | 긴 대화 없이 프로젝트 문서로 작업을 시작하기 위해 | `[확정 결정]` bam, 2026-08-29 |
-| `DEC-DELIVERY-01` | 최종 사용자용 BAM.dev는 원격 운영 서버가 없는 설치형 로컬 프로그램이다. | 서버 운영 부담을 줄이고 개인 학습 데이터를 기기에 두기 위해 | `[확정 결정]` bam, 2026-08-29 |
+| `DEC-DELIVERY-01` | 설치형 로컬 프로그램을 목표로 삼았던 과거 전달 계약 | 당시 로컬 개인 학습 방향 | `[대체됨]` DEC-SOURCE-DISTRIBUTION-01: GitHub 소스 clone/다운로드 후 실행 |
 | `DEC-QUEST-01` | Code Quest와 코딩테스트를 하나의 Code Quest로 제공하고 기존 Quest는 기초, 코딩테스트는 심화로 옮긴다. | 직접 코드를 쓰는 경험을 하나의 경로에서 축적하기 위해 | `[대체됨]` `DEC-QUEST-SEPARATE-01`, bam, 2026-08-29 |
 | `DEC-QUEST-SEPARATE-01` | Code Quest와 코딩테스트는 별도 학습 목적·콘텐츠·route·UI·진도를 유지한다. | 교안 직후 구현 연습과 독립 문제 해결 경험을 서로 다른 맥락으로 보존하기 위해 | `[확정 결정]` bam, 2026-08-29 |
 | `DEC-PUBLIC-EVALUATION-01` | BAM.dev 앱이 직접 계산·저장하는 결과에는 설치본의 공개 평가만 사용하고, 외부 Git 웹과제에는 고정된 실습 묶음의 공개 로컬 검증만 사용한다. 비공개·숨김 테스트나 원격 추가 채점은 사용하지 않는다. | 서버 운영 없이 결과 근거를 투명하게 제공하는 개인 학습 도구로 유지하기 위해 | `[확정 결정]` bam, 2026-08-29 |
@@ -100,7 +110,7 @@ BAM 측 원본 확인·과제 선정·연결·검증과 미결정은 [외부 웹
 
 | ID | 결정 | 이유 | 상태 |
 | --- | --- | --- | --- |
-| `DEC-DESKTOP-PROTOTYPE-01` | 공식 MVP 지원 OS·desktop shell·설치 파일 형식은 패키지 증거 전에 확정하지 않는다. 첫 capability prototype은 현재 검증 장비인 macOS 14.8.3·Apple Silicon(arm64)에서 Electron과 DMG를 단일 후보로 검증하고, 결과를 확인한 뒤 `DEC-DESKTOP-01`을 결정한다. | 검증 장비를 지원 약속으로 오해하지 않고 기존 Chromium 기반 Worker·저장·정적 자산의 설치 가능성을 가장 작은 후보 하나로 먼저 확인하기 위해 | `[확정 결정]` bam, 2026-08-30 |
+| `DEC-DESKTOP-PROTOTYPE-01` | 공식 MVP 지원 OS·desktop shell·설치 파일 형식은 패키지 증거 전에 확정하지 않는다. 첫 capability prototype은 현재 검증 장비인 macOS 14.8.3·Apple Silicon(arm64)에서 Electron과 DMG를 단일 후보로 검증하고, 결과를 확인한 뒤 `DEC-DESKTOP-01`을 결정한다. | 검증 장비를 지원 약속으로 오해하지 않고 기존 Chromium 기반 Worker·저장·정적 자산의 설치 가능성을 가장 작은 후보 하나로 먼저 확인하기 위해 | `[대체됨]` 설치 release gate는 DEC-SOURCE-DISTRIBUTION-01로 대체; 당시 prototype 승인·증거는 보존 |
 | `DEC-CONTENT-01` | 새 학습 경험과 학습 행동·목표·힌트·평가 계약을 의미 있게 바꾸는 기존 콘텐츠에는 A/E/C/T 전체 계약을 즉시 적용한다. M6 승인 전 `DEC-MVP-01`이 release 차단 범위로 정한 기존 콘텐츠 전체를 지도화하되, 교안과 안정 ID 없는 내부 확인 문제는 교안 단위 학습 사다리로 묶고 안정 ID가 있는 독립 콘텐츠는 항목별로 판정한다. 알고리즘 과정과 직접 구현 콘텐츠는 심층 감사한다. 소급 감사만으로 전면 재작성·자동 삭제하지 않고 MVP 차단 gap만 보강한다. | MVP 전체의 학습 커버리지 근거를 확보하면서 유효한 기존 콘텐츠와 안정 ID·진도를 불필요하게 재작성하지 않기 위해 | `[확정 결정]` bam, 2026-08-30 |
 
 위 macOS 버전·아키텍처는 prototype 실행 환경이지 지원 OS 선언이 아니다. Electron·DMG도 이 단계에서는 채택 기술이나 배포 완료가 아니며, 정확한 의존성 버전은 구현이 허용되고 추가되는 시점에 고정한다.
@@ -221,6 +231,8 @@ Java 학습문서·객관식의 첫 목표 포함은 최신 결정으로 확정�
 
 ## 설치형 오프라인 MVP 전환 로드맵
 
+`[대체됨]` 아래 M0~M6은 이전 설치형 전환 계획의 이력이다. 설치·공증·OS 선택 조건은 DEC-SOURCE-DISTRIBUTION-01 이후 release gate가 아니며, 콘텐츠·데이터·실습의 유효한 목표는 아래 현재 작업 순서에서 재사용한다.
+
 | 단계 | 목표 | 진입 조건 | 완료 조건 | 현재 상태 |
 | --- | --- | --- | --- | --- |
 | D1 설계 정본 재구성 | 교안, 시각 시스템, 분리된 Code Quest·코딩테스트, 설치 앱과 외부 웹과제의 현재·목표·미결정을 문서로 찾게 함 | 최신 사용자 결정, BAM·Code Quest 저장소 조사 | 문서 지도·교안 계약·목표 설계 정본·로드맵의 링크·용어·충돌 검증과 bam 검토 | `[현재 사실]` 문서 초안·기계 검증 완료, bam 검토 대기 |
@@ -228,7 +240,7 @@ Java 학습문서·객관식의 첫 목표 포함은 최신 결정으로 확정�
 | M1 MVP 범위·prototype 계약 확정 | 과정·Java 실행·프런트엔드 이관·시각 theme·웹과제 저장소·QA 범위를 결정하고 설치 후보의 검증 조건을 고정 | 관련 결정 ID와 `DEC-DESKTOP-PROTOTYPE-01` 검토 | `DEC-JAVA-RUNNER-01`·`DEC-FRONTEND-MIGRATION-01`을 포함해 구현을 갈라놓는 미결정이 닫히고 prototype 입력·PASS·FAIL 증거가 확정됨 | `[확인 필요]` |
 | M2 교안·학습 커버리지 시범 | 새 교안 계약과 A/E/C/T를 한 주제에 적용하고 기존 gap을 측정 | M1, `DEC-CONTENT-01` | 교안→Code Quest→별도 코딩테스트·웹과제 중 실제 연결 카드와 독립 검증 증거가 한 묶음에서 작동 | `[제안]` 미착수 |
 | M3 분리 학습 UI 정비·점진 이관 시범 | Code Quest에 과정→주제→Quest 탐색을 제공하고 코딩테스트의 별도 목록·필터·진도를 보존하며, `DEC-FRONTEND-MIGRATION-01`에서 승인한 작은 화면 또는 UI 경계를 React·TypeScript로 이관 | M0~M2와 `DEC-FRONTEND-MIGRATION-01` | 두 기능의 ID·URL·초안·진도 분리, 기존 Worker·도메인 동작 보존, 정적 번들·오프라인·CSP, 검색·상태·semantic token·대비·접근성·좁은 화면과 rollback 증거 PASS | `[현재 사실]` 탐색·별도 목록·진도 UI와 대표 데스크톱 검증 완료. React·TypeScript 첫 이관은 미착수이며 M3 전체 미완료 |
-| M4 설치 후보 검증·선택 | 정적 앱과 승인된 Java 로컬 runner 후보를 Electron·DMG 단일 후보로 패키징해 capability를 검증한 뒤 지원 OS·shell·설치 형식을 결정 | `DEC-DESKTOP-PROTOTYPE-01`, `DEC-JAVA-RUNNER-01`, M0~M3 | prototype 증거와 한계를 검토해 `DEC-DESKTOP-01` 및 필요한 ADR을 채택하고, 선택한 대상의 설치·첫 실행·오프라인·재실행·데이터 보존과 Java 공개 평가 smoke PASS | `[현재 사실]` 별도 미게시 로컬 `.app`·Java 후보 작성, 검증 커널의 Java Quest prototype 독립 실행 PASS. 공식 설치·M4 완료 미달 |
+| M4 설치 후보 검증·선택 | 정적 앱과 승인된 Java 로컬 runner 후보를 Electron·DMG 단일 후보로 패키징해 capability를 검증한 뒤 지원 OS·shell·설치 형식을 결정 | `DEC-DESKTOP-PROTOTYPE-01`, `DEC-JAVA-RUNNER-01`, M0~M3 | prototype 증거와 한계를 검토해 `DEC-DESKTOP-01` 및 필요한 ADR을 채택하고, 선택한 대상의 설치·첫 실행·오프라인·재실행·데이터 보존과 Java 공개 평가 smoke PASS | `[현재 사실]` 검증 커널의 Java Quest·CT prototype 실행과 시험용 DMG 포장 검증 PASS. 실제 설치·오프라인 첫 실행·기록 보존과 공식 선택은 남아 있으며 M4 완료 미달 |
 | M5 외부 웹과제 시범 | 밤위키 원본 중 한 과제의 고정 시작점에서 구현·공개 검증·회고 흐름을 BAM에 연결 | `DEC-WEB-SOURCE-01`, `DEC-WEB-REPO-01`, 선택 과제의 실행 계약 | 원본 버전·시작 commit·허용 파일/AI 제공 범위, BAM ID/연결과 독립 공개 검증·오프라인 안내 PASS | `[현재 사실]` 원본 활용 방향 확정, BAM 반입·연결·검증 미착수 |
 | M6 설치형 MVP 통합 승인 | 정식 과정의 교안·분리된 Code Quest·JavaScript·Java 코딩테스트·로컬 진도·선택한 웹과제를 설치본에서 끝까지 검증 | M0~M5 | release 차단 콘텐츠 ID 전수 지도와 A/E/C/T 차단 gap 해소, `npm run check`, JavaScript·Java 코딩테스트를 포함한 두 기능의 공개 로컬 평가, 패키지·OS smoke, 콘텐츠·팔레트·대비·접근성·오프라인·Git·CI 증거, 심각 결함 0과 bam 승인 | `[제안]` 미착수 |
 
@@ -236,7 +248,7 @@ M2는 현재 콘텐츠를 전면 재작성하라는 뜻이 아니다. 한 묶음
 
 ## MVP 이후 제안 순서
 
-아래 단계는 M6 승인 뒤 검토할 순서이며 아직 구현 약속이 아니다. 앞 단계의 실제 사용·결함 근거 없이 콘텐츠 수나 기능 수를 늘리지 않는다.
+아래는 이전 설치형 M6 이후 계획의 이력이며 현재 구현 약속이 아니다. 설치 의존 순서는 DEC-SOURCE-DISTRIBUTION-01로 대체됐다. 앞 단계의 실제 사용·결함 근거 없이 콘텐츠 수나 기능 수를 늘리지 않는다.
 
 | 단계 | 목표 | 진입 조건 | 완료 판단 | 상태 |
 | --- | --- | --- | --- | --- |
@@ -249,7 +261,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 
 ## 서버 기능에 대한 경계
 
-계정·원격 진도·Supabase·원격 채점·비공개 테스트·운영 대시보드는 현재 로드맵 후보가 아니다. 이후 다시 제안하려면 `DEC-DELIVERY-01`·`DEC-PUBLIC-EVALUATION-01`과의 충돌, 운영 비용과 완전한 로컬 대안을 새 제품 결정으로 검토해야 한다. GitHub Releases와 과제 clone은 정적 배포·수령 경로이며 설치한 핵심 앱의 런타임 서버가 아니다.
+계정·원격 진도·Supabase·원격 채점·비공개 테스트·운영 대시보드는 현재 로드맵 후보가 아니다. 이후 다시 제안하려면 `DEC-SOURCE-DISTRIBUTION-01`·`DEC-PUBLIC-EVALUATION-01`과의 충돌, 운영 비용과 완전한 로컬 대안을 새 제품 결정으로 검토해야 한다. GitHub Releases와 과제 clone은 정적 배포·수령 경로이며 핵심 학습의 원격 런타임 서버를 뜻하지 않는다.
 
 ## bam 결정 대기 목록
 
@@ -259,17 +271,40 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 | --- | --- | --- | --- | --- |
 | `DEC-REVIEW-RECORD-01` | 문제별 최초·최근·revision·재도전 기록의 보관량과 오류 교정·구버전 콘텐츠 보관 정책 | 불변 시도·과거 점수 보존·현재 버전 자율 재도전, 구버전 본문이 없으면 당시 해설 부재 표시. 보관 제한·압축은 첫 실제 데이터 크기와 복구 비용을 측정해 결정 | 최초 기록 손실·과거 정답의 재해석과 localStorage 용량 정책에 영향 | `[제안]` 필드·동작 초안 작성, 구현 전 범위 결정 |
 | `DEC-REVIEW-CONTENT-01` | 첫 과목의 제공 키워드·문항 수·행동 유형 비율과 CS의 정확한 키워드·깊이 | 기존 검증 재료를 활용해 필요한 키워드별 복수문항·단일/복합 대표만 먼저 확인. 정확한 수를 목표로 대량 생성하지 않으며 CS는 해당 확장 단계에서 결정 | 공개 가능한 실제 제공 범위와 콘텐츠 검증량이 달라짐 | `[확인 필요]` 과정 순서·첫 Java 포함은 확정 |
-| `DEC-MVP-01` | 설치형 MVP의 정식 과정·외부 웹과제, JavaScript·Java 코딩테스트의 실제 포함 문제와 과정별 관찰 가능한 핵심 완료 행동 중 무엇이 release 차단 범위인지 | 첫 학습문서·객관식 목표는 `DEC-INDEPENDENT-LEARNING-01`의 HTML·CSS·JavaScript·Java이며, 설치형 release 차단의 정확한 콘텐츠 ID와 분리된 Code Quest·JavaScript·Java 코딩테스트 묶음은 별도로 정한다. 외부 과제는 검증한 첫 묶음만 포함하고 각 과정·코딩테스트 언어에서 M6 전 직접 구현·전이를 요구할 핵심 완료 행동을 함께 승인 | Java 코딩테스트의 MVP 포함 자체는 `DEC-JAVA-CODING-TEST-01`로 확정됐지만 실제 문제 묶음·수량과 완료 행동이 없으면 구현 우선순위와 A/E/C/T gap의 차단 여부를 판정할 수 없음 | `[확인 필요]` |
-| `DEC-DESKTOP-01` | 공식 지원 OS, desktop shell, 설치 파일, 업데이트와 데이터 backup 방식 | `DEC-DESKTOP-PROTOTYPE-01`의 단일 후보에서 설치·Worker·오프라인·저장·접근성·패키지 비용을 측정한 뒤 결과에 맞춰 결정하고 ADR 채택 | prototype은 진행할 수 있지만 공식 지원·M4 완료·설치형 MVP 승인을 주장할 수 없음 | `[확인 필요]` prototype 증거 대기 |
+| `DEC-MVP-01` | 소스 전달 기준 MVP의 정식 과정·외부 웹과제, JavaScript·Java 코딩테스트의 실제 포함 문제와 과정별 관찰 가능한 핵심 완료 행동 중 무엇이 release 차단 범위인지 | 첫 학습문서·객관식 목표는 `DEC-INDEPENDENT-LEARNING-01`의 HTML·CSS·JavaScript·Java이며, 소스 전달 기준 release 차단의 정확한 콘텐츠 ID와 분리된 Code Quest·JavaScript·Java 코딩테스트 묶음은 별도로 정한다. 외부 과제는 검증한 첫 묶음만 포함하고 각 과정·코딩테스트 언어에서 M6 전 직접 구현·전이를 요구할 핵심 완료 행동을 함께 승인 | Java 코딩테스트의 MVP 포함 자체는 `DEC-JAVA-CODING-TEST-01`로 확정됐지만 실제 문제 묶음·수량과 완료 행동이 없으면 구현 우선순위와 A/E/C/T gap의 차단 여부를 판정할 수 없음 | `[확인 필요]` |
+| `DEC-DESKTOP-01` | 과거 공식 OS·shell·설치 파일 선택 | prototype 이력 보존 | 현재 소스 배포 release를 차단하지 않음 | `[대체됨]` DEC-SOURCE-DISTRIBUTION-01; 새 설치 요청 전 비활성 |
 | `DEC-QUEST-CATALOG-01` | 검증 후 과정·주제·표시 순서의 영구 저장, revision별 초안 이전과 legacy 난이도 의미 | `DEC-QUEST-NAVIGATION-01`의 데스크톱 첫 구현은 기존 URL·ID·order·진도를 보존한 읽기 전용 projection으로 진행하고 실제 이점이 있을 때만 저장 변경을 판단 | 영구 스키마·저장 변경과 난이도 의미 부여에는 추가 결정 필요. 승인된 첫 탐색 UI를 차단하지 않음 | `[확인 필요]` 후속 저장·의미 계약만 대기 |
 | `DEC-WEB-REPO-01` | 선택할 밤위키 과제·고정 시작 버전, BAM 안정 ID·선수 연결, 전달/공개 범위와 공개 검증 계약 | `DEC-WEB-SOURCE-01`의 원본별 Git·독립 시작 브랜치·같은 루트 README를 존중하고 실제 시작 commit·AI 제공 범위를 고정한다. 중앙 저장소·일률 starter/solution 제안은 대체됨 | 선정·BAM 연결·공개 검증 전 제공 완료를 주장할 수 없음 | `[확인 필요]` 원본 활용 방향은 확정, 과제별 연결 계약 대기 |
-| `DEC-WEB-OFFLINE-01` | 선정 원본의 고정 시작 버전·공개 검증·승인된 비교 자료와 도구/의존성을 어떻게 사전 제공할지 | 핵심 앱은 설치 뒤 오프라인. 이미 확보된 로컬 원본 또는 승인된 전달 방식에서 필요한 자료를 준비하고 과제별 무네트워크 실행 범위를 확인한다. archive·설치본 포함 여부와 Git 이력 제공은 별도 결정 | 설치 크기·도구 준비와 Spring Boot 빌드의 네트워크 경계가 달라짐 | `[확인 필요]` |
+| `DEC-WEB-OFFLINE-01` | 선정 원본의 고정 시작 버전·공개 검증·승인된 비교 자료와 도구/의존성을 어떻게 사전 제공할지 | 이미 확보된 로컬 원본 또는 승인된 전달 방식에서 필요한 자료를 준비하고 과제별 무네트워크 실행 범위를 확인한다. archive 포함 여부와 Git 이력 제공은 별도 결정 | 전달 묶음 크기·도구 준비와 Spring Boot 빌드의 네트워크 경계가 달라짐 | `[확인 필요]` |
 | `DEC-WEB-MIGRATION-01` | 현재 인앱 Web Project를 외부 웹과제와 병행·이관·종료 중 어떻게 처리할지 | 첫 외부 과제가 검증될 때까지 병행하고 데이터 export 뒤 종료 여부 재평가 | 기존 초안·진도와 두 제품 명칭이 혼란스러울 수 있음 | `[확인 필요]` |
 | `DEC-JAVA-RUNNER-01` | Java 코딩테스트를 포함한 전체 runner 계약·추가 OS별 격리·패키징과 정식 배포 검증 | 첫 Java Quest의 정확한 JDK·Java runner·프로토콜·IPC·격리는 `DEC-JAVA-QUEST-RUNTIME-01`과 [ADR 0005](decisions/0005-java-quest-local-runtime.md)로 구체화해 prototype을 진행한다. 검증한 작은 실행 경계만 재사용하고 나머지는 실제 제품 범위에 따라 정한다. | 첫 pilot의 착수와 M4/M6 전체 지원·완료를 혼동할 수 있음 | `[확정 결정]` 첫 Quest prototype 계약·착수 / `[현재 사실]` 검증 커널의 Java Quest prototype 독립 실행 PASS / `[확정 결정]` CT 원본 JUnit 실행 계약은 [ADR 0006](decisions/0006-java-coding-test-local-runtime.md) / `[현재 사실]` 검증 커널 CT 정상·오류·대표 앱 PASS / `[확인 필요]` 정식 배포와 전체 제품 범위 |
-| `DEC-JAVA-01` | Java와 Spring·Spring Boot 정적 자료 중 설치형 release 차단 묶음, Java Code Quest·외부 웹과제의 편입·범위 | Java 정적 제공과 `DEC-CSS-SPRING-FOUNDATIONS-01`의 정적 입문 착수는 재승인하지 않는다. 실제 Spring Boot 실행은 외부 웹과제로 유지하고 설치형 차단 ID·실습 묶음을 별도로 정한다. | 정적 콘텐츠 제공과 설치형 release·실행 지원의 범위를 혼동할 수 있음 | `[확인 필요]` 이번 정적 입문 범위는 확정·설치/실습 묶음 대기 |
+| `DEC-JAVA-01` | Java와 Spring·Spring Boot 정적 자료 중 소스 전달 기준 release 차단 묶음, Java Code Quest·외부 웹과제의 편입·범위 | Java 정적 제공과 `DEC-CSS-SPRING-FOUNDATIONS-01`의 정적 입문 착수는 재승인하지 않는다. 실제 Spring Boot 실행은 외부 웹과제로 유지하고 소스 전달 기준 차단 ID·실습 묶음을 별도로 정한다. | 정적 콘텐츠 제공과 소스 전달 기준 release·실행 지원의 범위를 혼동할 수 있음 | `[확인 필요]` 이번 정적 입문 범위는 확정·실습 묶음·새 Java 연결 계약 대기 |
 | `DEC-FRONTEND-MIGRATION-01` | 정확한 React·TypeScript 버전과 빌드 도구, 의존성 고정, 정적 번들·오프라인 출력, CSP와 Worker 연결, 기존 Vanilla JavaScript와의 경계, 첫 이관 화면·rollback·prototype 계약 | 기존 Worker·도메인·저장소 계약은 프레임워크 독립 경계로 보존하고, 새 의존성의 버전·라이선스·보안 비용을 기록한 뒤 가장 작은 새 화면 또는 UI 경계 하나로 정적 빌드·CSP·Worker·기존 route·진도·접근성을 검증한다. 전환 가치가 증명된 경계만 다음 작은 묶음으로 확장한다. | 목표 기술은 확정됐지만 의존성 추가·구현 착수·첫 이관 범위와 완료를 승인할 구체 계약이 없음 | `[확인 필요]` |
 | `DEC-VISUAL-THEME-01` | 장기 기본 화면·MVP theme 전환과 보조 색상 정책 | 초기 OS 설정·명시적 밝게/어둡게 선택과 시안의 중립색·보라색은 `DEC-APPROVED-PREVIEW-01`로 확정. 보조 상태·syntax는 실제 대비에 따라 보정 | 미결정 theme 선택을 제품 적용 선행 gate로 사용하지 않음 | `[대체됨]` bam, 2026-09-13. 시안 채택 결정으로 닫힘 |
-| `DEC-QA-01` | 실제 브라우저와 설치 패키지 smoke를 수동으로 시작할지 자동화까지 MVP gate로 둘지 | 반복 가능한 수동 핵심 체크리스트를 먼저 gate로 두고 OS 자동화 비용을 별도 검토 | MVP 일정, 회귀 비용과 배포 신뢰도가 달라짐 | `[확인 필요]` |
+| `DEC-QA-01` | 소스 실행의 실제 브라우저 smoke를 수동으로 시작할지 자동화까지 MVP gate로 둘지 | 반복 가능한 수동 핵심 체크리스트를 먼저 gate로 두고 브라우저 자동화 비용을 별도 검토 | MVP 일정, 회귀 비용과 배포 신뢰도가 달라짐 | `[확인 필요]` |
 | `DEC-GIT-01` | 검증되고 확정된 로컬 변경을 기존 `bam090/BAM.dev`에 게시한다. 기존 원격 `dev`를 부모로 한 `codex/approved-learning-updates`에 현재 로컬 스냅샷을 준비하고 게시 검증 PASS 뒤 `dev` 대상 Draft PR로 올린다. | 원본 로컬과 기존 `dev` 이력·`main`의 빈 기준선을 유지한다. 스냅샷에 없는 원격 파일은 PR diff에 명시하며 기능 폐기 승인으로 해석하지 않는다. force push·이력 재작성·merge는 하지 않는다. | 게시 승인과 실제 commit·push·PR·CI를 분리하고, 원격 기능과의 통합·폐기는 별도로 판단한다. 상세 범위는 [게시 작업 카드](work-items/2026-09-13-github-publication.md)를 따른다. | `[확정 결정]` bam, 2026-09-13 게시 요청과 기존 Git 운영 규칙. 검증된 스냅샷 게시 범위 승인, 당시 게시 검증은 진행 중이었으며 이후 결과는 [게시 기록](work-items/2026-09-13-github-publication.md#후속-게시-기록-2026-09-15) 참조 |
 
 결정이 내려지면 상태를 `[확정 결정]`으로 바꾸고 결정 날짜·결정자·짧은 이유를 같은 행에 기록한다. 결정으로 기술 경계가 바뀌면 새 ADR을 추가한다.
+
+## 남은 작업의 작은 구현 순서와 시뮬레이션
+
+`[현재 사실]` 현재 Git 기준은 PR #24 merge `75e25cbc`, #25 `f466892a`, #26 `f365e565`이며 각 CI·Pages PASS 인계를 받았다. 이 게시 근거와 검증 커널의 Java Quest·CT prototype·시험용 DMG 결과는 보존한다. 설치형 M1/M4/M6을 완료로 처리하지 않으며 설치·OS 선택은 현재 release gate에서 제외한다.
+
+`[제안]` 다음 순서로 작은 계약을 구현한다. release 콘텐츠 현황 지도는 병행하되 새 교안 저작은 별도 승인 전 시작하지 않는다.
+
+| 순서 | 입력·작은 구현 | 완료 근거와 실패 경계 |
+| --- | --- | --- |
+| 1 | 소스 실행 환경의 로컬 데이터 보호 | [데이터 보호 정본](designs/local-application.md)의 유효한 보존 원칙을 유지하고 브라우저 writer·backup 계약을 재설계. desktop admission 가정을 그대로 적용하지 않음 |
+| 2 | 객관식 모름·헷갈림·문제별 제출, 기존 탐색/복귀 연결 | [전이·ack·eviction 계약](designs/lesson-review.md#후속-최소-구현과-시뮬레이션-계약). 안정 ID·revision·중복 제출·중간 종료·quota·기존 기록 보존 |
+| 3 | 밤위키 원본 외부 과제 1개 | [단일 pilot](designs/web-assignments.md#단일-원본-pilot의-최소-구현-제안)의 고정 시작점·공개 검증·자기 보고 구분. 원본과 사용자 풀이 보존 |
+| 4 | 읽기 전용 목록 React/TS 시범 | [최소 표시 경계](architecture.md#첫-react-표시-경계와-rollback-제안). 도구체인 결정 후 작은 화면, 저장/runner 불변·rollback |
+| 5 | release 콘텐츠 완료 감사 | [기존 감사 기준](learning-content-design.md#소급-감사-완료-증거)으로 release ID/revision·증거를 지도하고 차단 gap만 별도 반환. 오래된 증거를 신규 PASS로 쓰지 않음 |
+| 후속 | CS → TypeScript → React 콘텐츠의 필요 범위 검토 | MVP 차단 gap·선수 관계·새 학습 행동을 먼저 확인. 제품 이관과 교안 추가는 별개이며 SQL은 사용자의 재요청 전 보류 |
+
+퀴즈의 새 영구 기록은 [writer 배제·복구 계약](designs/lesson-review.md#후속-최소-구현과-시뮬레이션-계약)을 소스 실행 브라우저 환경에 맞춰 재설계·검증한 뒤 구현한다. 기존 웹 객관식은 유지하며 desktop admission은 브라우저에 구현된 보장이 아니다.
+
+공통 불변조건은 기존 URL·draft·제품별 진도 보존, revision 불일치 자동재실행/재채점 금지, 저장 실패의 성공 ack 금지다. 새 기능의 모바일 구현·검증은 이번 범위에 포함하지 않는다. 수량 예산·새 저장 경계·도구체인 선택은 추천안이며 확정 결정으로 승격하지 않는다.
+
+시뮬레이션 집계(이전 desktop 가정의 보존 이력이며 새 소스 브라우저 보장 아님): 로컬 데이터·객관식·외부 과제/표시 이관의 논리 상태 모델을 local 계약 `00cd4bad…`·lesson 계약 `3dce4299…` 기준으로 조건부 PASS 인수했다. v1 경쟁 write 반례를 확인한 뒤 v2 writer 배제 가정으로 보완했다. seed `0x42414d32`, BFS 깊이 10/7/7에서 합계 2,028상태·5,613전이를 확인했고 seeded trace 1,500개에서 이벤트 선택 60,000회 중 활성 전이 15,846회를 다뤘다. 불량 모델 10/10 검출·경계 33개 PASS다. Node 모델 실행 5회는 기대한 v1 반례 1회, 모델 alias 오류 1회와 진단 1회, 개정 전체 1회, 추가 경계 1회이며 제품 버그나 앱 전체 PASS로 세지 않는다.
+
+로컬 전용 결과: `/private/tmp/bam-design-simulation-XR3Rnr/FINAL.json` (SHA-256 `ad51fc2354e1de00f34245a7158451dbce81dec2e31c68e6969e1b100467c9a4`). 당시 실행 명령은 `/usr/local/bin/node /private/tmp/bam-design-simulation-XR3Rnr/simulate.mjs`와 `/usr/local/bin/node /private/tmp/bam-design-simulation-XR3Rnr/run-boundaries.mjs`다. 재현은 기존 증거를 보존한 새 임시 폴더에 모델 소스만 복사해 그 경로에서 실행한다. 실제 lock·fsync·다중 창·구버전 writer·제품 validator·설치 후 오프라인은 미검증이며 모델 가정과 실제 구현 보장은 다르다. 이 결과로 제품·설치·콘텐츠 완료를 표시하지 않는다.

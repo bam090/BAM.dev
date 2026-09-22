@@ -120,3 +120,12 @@ BAM.dev는 GitHub API로 브랜치나 사용자 로컬 Git 상태를 자동 판�
 원본 선택과 연결을 정하기 전에는 신규 과제 생성·BAM 반입·제공 완료를 선언하지 않는다. SQL/ERD·Excalidraw/PNG·사용자 풀이 반입과 밤위키 자동운영 설정 변경은 이번 범위 밖이다.
 
 결정 ID와 구현 순서는 [`../roadmap.md`](../roadmap.md)가 담당한다.
+
+## 단일 원본 pilot의 최소 구현 제안
+
+`[제안]` 승인된 밤위키 과제 하나부터 연결한다. 기존 인앱 Web Project의 URL·초안·제출을 유지하며 외부 과제용 화면과 기록을 분리한다. 원본 선정·전달 권한·고정 commit·공개 검증 계약이 준비되지 않으면 안내 후보로 남기고 제공 완료로 표시하지 않는다.
+
+- 입력 manifest: `id`, `revision`, `sourceId`, `sourceVersion`, `startCommit`, `branchLabel`, `readme`, `allowedFiles`, `aiProvidedScope`, `toolVersions`, `publicChecks`, `offlinePrerequisites`. 실제 원본에서 확인한 값만 쓰고 로컬 개인 경로는 공개 데이터에 넣지 않는다.
+- UX·상태: 목표/선수 확인→고정 시작점·README→학습자 구현·공개 검증→회고. `not_started → in_progress → self_completed`이며 별도 저장은 과제 ID/revision·자기 보고 checklist·reflection·시각만 담는다. 자기 보고를 검증 PASS나 앱의 자동 채점으로 승격하지 않는다. 원본 revision이 달라지면 이전 보고를 보존하고 새 revision은 not_started다.
+- 실패·ack: 저장 성공 뒤에만 저장 완료를 표시한다. 실패 시 기존 기록·현재 입력을 보존하고 재시도를 안내한다. commit 부재, branch 이동, 도구 미설치, 사전 다운로드 누락, 공개 검사 실패를 각각 안내한다. 자동 clone·외부 명령·풀이 읽기·원본 수정·업로드는 하지 않는다.
+- 검증 함수의 책임과 완료: manifest의 고정 참조·허용 범위를 검사하고 revision별 자기 보고만 저장한다. 독립 검증자가 선택한 고정 시작점에서 README와 공개 검증을 실제 확인해야 pilot 제공 완료다. 상태 모델은 저장 전/후 종료·revision 교체·manifest 누락·저장 실패·자기 보고 PASS 오표시를 다룬다. 시뮬레이션과 원본 실제 실행은 아직 미실행이다.

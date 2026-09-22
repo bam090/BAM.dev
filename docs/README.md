@@ -57,7 +57,7 @@
 | 코딩테스트 목적·UI·공개 로컬 평가·진도 | [`designs/coding-test.md`](designs/coding-test.md) | 코딩테스트 제품 흐름이나 평가 표현을 바꿀 때 |
 | 코딩테스트 문제 필드·작성 형식 | [`content-schema.md`](content-schema.md#코딩테스트-컬렉션) | 코딩테스트 문제·공개 테스트·실패 설명을 만들거나 바꿀 때 |
 | Algorithm Bridge 원본72의 코딩테스트 전환 | [제품 계약](designs/coding-test.md#algorithm-bridge-코딩테스트-전환), [draft 데이터](content-schema.md#algorithm-bridge-java-코딩테스트-draft-계약), [전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md) | 전체 Quest 등록의 대체·원본 지원·옛 URL/초안 보존·Java 실행 차단과 실제 검증/게시 상태를 확인할 때 |
-| 설치형 로컬 앱·오프라인·배포 경계 | [`designs/local-application.md`](designs/local-application.md) | 패키징·저장·업데이트·OS 통합을 설계할 때 |
+| 소스 실행·로컬 데이터 보호와 설치 prototype 이력 | [`designs/local-application.md`](designs/local-application.md) | 소스 실행·저장 보호를 설계하거나 기존 prototype 이력을 확인할 때 |
 | 밤위키 원본을 사용하는 외부 Git 웹과제 연결 계약 | [`designs/web-assignments.md`](designs/web-assignments.md) | 원본 과제·고정 시작 버전·BAM 연결과 공개 검증을 설계할 때 |
 | 현재 인앱 Web Project 작성 형식 | [`web-project-authoring.md`](web-project-authoring.md) | 레거시 인앱 HTML·CSS 과제를 유지·수정할 때 |
 | 문제 실행 검증의 날짜별 기록 | [`problem-verification.md`](problem-verification.md) | 과거 검증 범위와 한계를 확인할 때 |
@@ -70,7 +70,7 @@
 
 ## 설계 문서화 범위
 
-현재 다섯 영역의 제공 행동·남은 핵심과 설치형 MVP 구분은 [README의 상태 표](../README.md#현재-기능과-남은-범위), 완료 기준은 [제품 범위](product-scope.md#mvp-완료-조건)를 따른다. 현재 수량을 이 지도에 복제하지 않는다.
+현재 다섯 영역의 제공 행동·남은 핵심과 소스 실행/prototype 구분은 [README의 상태 표](../README.md#현재-기능과-남은-범위), 완료 기준은 [제품 범위](product-scope.md#mvp-완료-조건)를 따른다. 현재 수량을 이 지도에 복제하지 않는다.
 
 `[확정 결정]` 구현 전에 변경 가능한 제품 경계의 설계 정본을 먼저 작성한다. “프로젝트의 모든 부분”은 모든 함수나 파일을 해설한다는 뜻이 아니라, 사용자 흐름·데이터·실행·보안·배포 또는 여러 모듈에 영향을 주는 경계마다 다음 질문에 답한다는 뜻이다.
 
@@ -97,7 +97,7 @@
 | 프런트엔드 기술 전환 | [`architecture.md`](architecture.md), `package.json` | [`architecture.md`](architecture.md#목표-설치형-구조), ADR 0001 | React·TypeScript 목표와 점진 이관 확정, 현재 Vanilla JavaScript·무의존성 기준선 유지, 도구체인·prototype·첫 화면 결정 대기 |
 | Code Quest | [`architecture.md`](architecture.md), 현 Quest 스키마·코드 | [`designs/code-quest.md`](designs/code-quest.md) | 분리 유지. [데스크톱 탐색 첫 구현](work-items/2026-09-14-code-quest-navigation.md)의 과정·주제·진도·검색/필터·지도·홈/사이드바 연결 반영, 반환 수정 후 독립 focused·대표 데스크톱 검증 PASS. 최종 독립 문서 재검·통합 PASS이며 영구 스키마·모바일·설치 목표와 구분 |
 | 코딩테스트 | [`architecture.md`](architecture.md), 현 coding-test 스키마·코드 | [`designs/coding-test.md`](designs/coding-test.md) | 분리 유지. JavaScript 실행과 Java 원문 열람·작성/저장·명시 초안 가져오기 구현. 독립 콘텐츠·관련 자동 검사·대표 UI·문서·통합 및 PR #22 CI PASS. PR #22·#23 병합 기준선과 검증 커널의 CT 정상·오류·대표 앱 실행 PASS와 재사용 범위는 [실행 카드](work-items/2026-09-22-java-coding-test-runtime.md)에서 구분 |
-| 설치·오프라인 실행 | `README.md`, [`architecture.md`](architecture.md) | [`designs/local-application.md`](designs/local-application.md) | 별도 미게시 로컬 작업에서 `.app`·Java runner 후보 작성. 이 게시 후보에는 관련 소스를 포함하지만 정식 설치본은 제공하지 않음. runtime·Java 미실행 앱 검증을 인수했고 검증 커널의 활성 Java Quest 앱을 독립 PASS했으며 [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md)의 현재 검증 상태와 재개 조건을 따름. DMG·공식 설치 지원은 별도 범위 |
+| 소스 전달·로컬 실행 | `README.md`, [`architecture.md`](architecture.md) | [`designs/local-application.md`](designs/local-application.md) | [DEC-SOURCE-DISTRIBUTION-01](roadmap.md#2026-09-22-소스-전달-방식-정정): GitHub clone/다운로드 후 기존 소스 실행. Electron·DMG 증거는 보존하되 설치형은 필수 목표가 아님. 웹 Java는 작성·저장만 지원하며 새 Java 연결·브라우저 writer 계약은 미결정 |
 | 웹과제 | [`web-project-authoring.md`](web-project-authoring.md), ADR 0004 | [`designs/web-assignments.md`](designs/web-assignments.md) | 밤위키 원본 사용 확정. 기존 인앱 과제 유지, 원본별 고정 시작 버전·BAM 연결·공개 검증·오프라인 계약은 후속 |
 | 저장·평가 안전 | [`architecture.md`](architecture.md), ADR 0002~0005 | 변경 시 해당 ADR | 기존 브라우저 경계와 Java 후보의 OS 제한·활성 UI PASS·과거 실패를 구분 |
 | 개발·검증·Git·CI | [`development-workflow.md`](development-workflow.md) | 같은 문서와 [`roadmap.md`](roadmap.md) | `DEC-GIT-01` 게시 범위 확정·기존 원격 기준선 확인. 로컬·원격 대조와 실제 게시·CI 판정은 [게시 작업 카드](work-items/2026-09-13-github-publication.md) 참조 |

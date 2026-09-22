@@ -1,10 +1,16 @@
-# 설치형 로컬 애플리케이션 설계
+# 소스 실행과 로컬 데이터 보호 — 설치 prototype 이력
 
-이 문서는 BAM.dev의 목표 배포 형태, 오프라인 경계, 로컬 데이터와 설치·업데이트 요구의 정본이다. 현재 브라우저 구현은 [`../architecture.md`](../architecture.md), 앱 chrome의 전역 색상·상태 표현은 [`visual-design.md`](visual-design.md), 제품 범위와 전환 순서는 [`../product-scope.md`](../product-scope.md)와 [`../roadmap.md`](../roadmap.md)가 담당한다. 결정 문구·이유·날짜의 정본은 [`DEC-DELIVERY-01`과 `DEC-PUBLIC-EVALUATION-01`](../roadmap.md#2026-08-29-확정-제품-결정), [`DEC-DESKTOP-PROTOTYPE-01`](../roadmap.md#2026-08-30-확정-제품-결정), [`DEC-LOCAL-EVALUATION-01`·`DEC-JAVA-CODING-TEST-01`·`DEC-JAVA-RUNTIME-01`](../roadmap.md#2026-09-02-확정-제품-결정), [`DEC-JAVA-VERSION-02`·`DEC-SPRING-BOOT-01`·`DEC-FRONTEND-01`·`DEC-JAVA-IMPLEMENTATION-01`](../roadmap.md#2026-09-04-확정-제품-결정)이고, 이 문서는 각 결정이 설치 경계에 미치는 효과를 풀어 쓴다.
+이 문서는 소스 실행의 데이터 보호 경계와 과거 설치 prototype 설계·검증 이력을 보존한다. 현재 전달 결정은 [로드맵](../roadmap.md#2026-09-22-소스-전달-방식-정정), 실제 소스 구조는 [아키텍처](../architecture.md)를 따른다.
+
+## 현재 전달 방식과 이 문서의 적용 범위
+
+`[확정 결정]` [DEC-SOURCE-DISTRIBUTION-01](../roadmap.md#2026-09-22-소스-전달-방식-정정)에 따라 GitHub 소스를 clone/다운로드해 기존 명령으로 실행하는 것이 주 전달 방식이다. 아래 설치형 필수·설치 후 오프라인·Electron/DMG·공증·OS 선택·설치형 완료 조건은 `[대체됨]` 이력이며 현재 release gate나 기본 후속 작업이 아니다. 기존 코드·실행/포장 receipt·실패 이력은 그대로 보존한다. 모든 shell을 폐기하거나 온라인 전용으로 바꾸는 결정은 아니다. 로컬 실행·서버/계정 없는 사용은 유지하며 최초 다운로드와 이후 네트워크 요구를 구분한다. 오프라인 품질 범위는 소스 전달 방식에서 재정의해야 한다.
+
+데이터 원본 보존·저장 실패 ack 금지·검증된 입력만 복원·진도 분리 원칙은 유지한다. INSTALL-DATA-v2의 desktop 단일 profile/instance/window admission과 파일 I/O는 브라우저에 구현된 보장이 아니다. 소스 실행 origin·복수 탭 writer 배제·backup/export/import의 허용 API·구버전 writer·quizHistory 호환은 별도 설계·검증이 필요하다. 아래 desktop 모델 조건부 PASS는 새 브라우저 환경의 보장으로 이전하지 않는다. 새로운 Java 실행 연결 또한 미결정이며 기존 Electron IPC prototype과 웹 작성·저장을 구분한다.
 
 ## 결정 적용과 현재 차이
 
-- `DEC-DELIVERY-01` 적용: 최종 사용자는 원격 운영 서버를 관리하지 않는 설치형 프로그램을 사용하며 학습 콘텐츠, 진도와 학습자 소스는 기본적으로 사용자 기기 안에 둔다.
+- `[대체됨]` DEC-DELIVERY-01의 설치형 필수 해석은 GitHub 소스 전달로 대체됐다. 학습 콘텐츠·개인 진도·학습자 소스의 로컬 보호 원칙은 유지한다.
 - `DEC-PUBLIC-EVALUATION-01` 적용: BAM.dev 앱이 직접 계산·저장하는 결과에는 설치본 안에서 확인하고 실행하는 공개 평가만 사용한다. 외부 Git 웹과제는 고정된 실습 묶음에 함께 배포된 공개 로컬 검증을 사용하며 비공개·숨김 테스트나 원격 추가 채점을 사용하지 않는다.
 - `DEC-DESKTOP-PROTOTYPE-01` 적용: 공식 지원 범위를 먼저 선언하지 않고 현재 검증 장비에서 Electron·DMG 단일 후보의 설치 capability를 측정한 뒤 `DEC-DESKTOP-01`을 결정한다.
 - `DEC-LOCAL-EVALUATION-01` 적용: Code Quest와 별도 코딩테스트의 JavaScript 공개 테스트는 one-shot Worker에서 실행하며 두 제품은 내부 runner DTO·실행 추상화만 재사용한다. 설치형 MVP는 이 두 기능을 위해 Docker, Spring Boot, PostgreSQL, Nginx, 계정이나 사용자가 관리하는 수신 포트를 요구하지 않는다.
@@ -14,14 +20,14 @@
 - `DEC-JAVA-IMPLEMENTATION-01` 적용: Java 코딩테스트 로컬 runner는 Java 25로 작성하는 BAM.dev 제품 구성요소다. runner의 구체 구조와 연결 방식은 `DEC-JAVA-RUNNER-01`을 기다린다.
 - `DEC-SPRING-BOOT-01` 적용: 앱 본체와 Java 코딩테스트 runner에는 Spring Boot를 포함하지 않는다. 교안은 정적 자산이고 실제 Spring Boot 실행은 외부 웹과제에서 시작한다.
 - `DEC-FRONTEND-01` 적용: 목표 UI 소스는 HTML·CSS 기반의 React·TypeScript를 사용하고 JavaScript도 유지한다. 현재 Vanilla JavaScript·Worker·도메인 로직은 작은 화면·경계부터 점진 이관하며 설치 shell이나 Java runner와 합치지 않는다.
-- `[현재 사실]` 현재 앱은 정적 HTML·CSS·Vanilla JavaScript지만 설치 프로그램은 아니다. 공개 GitHub Pages 또는 개발용 Node HTTP 서버의 `localhost`를 브라우저에서 연다.
+- `[현재 사실]` 현재 UI는 정적 HTML·CSS·Vanilla JavaScript다. 공개 GitHub Pages·개발용 Node HTTP 서버의 브라우저 경로와 로컬 Electron prototype이 있으며, 일반 사용자용 설치 지원 완료와는 구분한다.
 - `[현재 사실]` 현재 `package.json`에는 React·TypeScript와 전용 프런트엔드 빌드 도구 의존성이 없다.
-- `[현재 사실]` 별도 미게시 로컬 작업에서 Java 제품 runner·감독 코드·SBPL 후보를 추가했고 후속 runtime·Java 미실행 앱 검증을 인수했다. 검증 커널의 로컬 Java Quest prototype 활성 UI 검증은 독립 PASS다. Maven·Gradle 설정은 없다.
+- `[현재 사실]` Java 제품 runner·감독 코드·SBPL과 Electron shell 소스가 있다. 검증 커널의 Java Quest와 Java 코딩테스트 prototype은 활성화되었으며 실제 검증 범위는 각각 [Quest 작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md)와 [코딩테스트 작업 카드](../work-items/2026-09-22-java-coding-test-runtime.md)를 따른다. Maven·Gradle 설정은 없다.
 - `[현재 사실]` 현재 검증 장비는 macOS 14.8.3·Apple Silicon(arm64)이다. 이 사실은 지원 OS 약속이 아니다.
-- `[현재 사실]` 이 게시 후보에는 Java Quest runtime과 Electron shell 소스를 포함하며 JDK·Electron 바이너리와 설치 산출물은 포함하지 않는다. 검증 커널의 로컬 `.app` 실행은 독립 PASS지만 정식 설치 지원은 미완료이며 DMG는 미생성이다.
+- `[현재 사실]` 저장소에는 Java runtime과 Electron shell·시험용 DMG 포장 소스가 있으며 JDK·Electron 바이너리와 설치 산출물은 포함하지 않는다. 로컬 `.app` 실행과 시험용 DMG 생성·verify 증거는 있으나 실제 설치·재패키징 뒤 기록 보존·정식 설치 지원은 미완료다.
 - `[확인 필요]` 공식 지원 OS, 최종 desktop shell·설치 파일 형식, 서명·업데이트와 백업 방식은 prototype 증거 검토 뒤 정한다.
 
-개발용 localhost와 제품 운영 서버를 구분한다. 개발자가 검증을 위해 로컬 서버를 쓰는 것은 가능하지만, 최종 사용자가 Node, Docker, 포트, 데이터베이스 또는 터미널 명령을 관리해야 한다면 설치형 완료로 보지 않는다.
+현재 사용자는 소스를 받은 뒤 기존 `npm run dev`로 정적 서버를 시작한다. 이 Node 명령 사용은 정상 소스 실행 흐름이며 원격 운영 서버·Java 실행 API 도입을 뜻하지 않는다.
 
 ## Java 실행을 위한 첫 로컬 prototype
 
@@ -49,8 +55,8 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 ├── 읽기 전용 콘텐츠·스키마·fixture
 ├── 공개 로컬 평가기
 │   ├── JavaScript one-shot Worker
-│   └── Java 25 제품 코드인 코딩테스트 로컬 runner 목표(번들 JDK 사용·미구현)
-├── Java 컴파일·실행 도구체인 목표(JDK 25 후보 번들·검증 커널의 Java Quest prototype PASS)
+│   └── Java 25 코딩테스트 로컬 runner(번들 JDK·검증 커널 한정 prototype)
+├── Java 컴파일·실행 도구체인(JDK 25 후보 번들·Quest/코딩테스트 prototype 검증)
 └── 사용자 데이터 저장 경계
     ├── 진도·설정
     ├── Quest 초안·결과 요약
@@ -100,7 +106,7 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 - JavaScript Code Quest와 코딩테스트는 제품·진도를 분리한 채 현재 공개 Worker 실행 경계를 재사용한다.
 - HTML·CSS Quest는 inert DOM, 제한된 CSSOM·sandbox iframe 경계를 보존한다.
 - 외부 웹과제는 사용자가 선택한 로컬 폴더와 IDE에서 실행하며 BAM.dev가 자동 실행하지 않는다.
-- Java 코딩테스트의 로컬 실행과 패키지 내부 JDK 25 LTS·정식 Java 25·preview 금지는 MVP 목표지만 현재 미구현이다. 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 파일·프로세스·네트워크·환경 변수·시간·메모리·출력 제한, 컴파일·호출 계약, shell↔runner IPC와 OS별 패키징을 다루는 `DEC-JAVA-RUNNER-01`, 별도 ADR과 prototype이 구현보다 선행되어야 한다.
+- `[현재 사실]` Java 코딩테스트는 번들 JDK 25·preview 금지·공개 JUnit 테스트를 사용하는 검증 커널 한정 prototype으로 구현·활성화되었다. [ADR 0006](../decisions/0006-java-coding-test-local-runtime.md)과 [작업 카드](../work-items/2026-09-22-java-coding-test-runtime.md)가 실행·격리·UI 검증 범위를 정한다. 이 결과는 공식 지원 OS, 정식 설치·업데이트·보안 패치 정책의 확정을 대신하지 않는다.
 - Java 정식 교안 과정·Code Quest·웹과제에 Java 코딩테스트 runner를 자동 적용하지 않는다. 그 제품 범위와 실행 계약은 `DEC-JAVA-01`에서 따로 결정한다.
 - Spring Boot 실행을 설치 shell이나 Java 코딩테스트 runner에 추가하지 않는다. 향후 실제 실행은 별도 외부 웹과제 폴더에서 하며 BAM.dev는 그 프로젝트를 자동 실행하지 않는다.
 - 설치 shell의 파일 열기나 폴더 선택 기능은 사용자가 명시적으로 선택한 경로에만 접근한다.
@@ -144,6 +150,98 @@ BAM.dev 화면은 GitHub API 성공을 전제로 진입하거나 진도를 계�
 | 개발 비용 | 새 도구체인·의존성·보안 업데이트 비용이 서버 절감 이점을 넘지 않는가 |
 
 외부 패키징 의존성은 이 비교와 정확한 버전 고정, 라이선스·업데이트 비용 기록 없이 추가하지 않는다.
+
+## 설치·기록 보호 상세 설계 — INSTALL-DATA-v2
+
+`[대체됨: desktop 적용 가정]` 이 절은 소스 전달 정정 전에 만든 후속 구현·독립 시뮬레이션 계약의 이력이다. 데이터 보호 불변조건은 참고하되 현재 구현 착수 계약으로 사용하지 않는다. 읽기 전용 조사에서 제안한 `INSTALL-DATA-v1`의 동시 쓰기 가정을 보완하며, 구현·실제 설치·백업 복구 PASS를 뜻하지 않는다. 첫 범위는 현재 검증 macOS prototype의 **desktop 단일 profile·단일 instance·단일 window에서 협조하는 단일 writer와 진도 한 키**다. 모바일, 자동 업데이트, 새 DB·의존성, 웹 복수 tab 잠금, 임의 profile migration·삭제는 포함하지 않는다. 공식 OS·Electron 채택과 비용은 계속 `DEC-DESKTOP-01`의 결정 대상이다.
+
+### 현재 사실과 사용자 흐름
+
+`[현재 사실]` 진도는 `src/repositories/progress-repository.js`의 `bam.dev.progress.v1` 한 키·`schemaVersion: 1`에 저장한다. `getProgress()`는 손상 JSON이나 미지원 스키마를 빈 진도로 읽고, 이후 mutator의 `#save()`가 그 상태를 저장할 수 있다. `browser-storage.js`는 저장 실패 시 메모리로 전환할 수 있다. 따라서 현재 정상화·저장 API만으로 안전한 import나 디스크 저장 성공을 판정할 수 없다. 백업·복원 배제 구간은 아직 구현되지 않았다.
+
+| 사용자 흐름 | 순서와 화면에서 구분할 결과 |
+| --- | --- |
+| 첫 설치 | 검증된 DMG 확인 → 앱 복사 → 이미지 분리 → 네트워크가 차단된 첫 실행 → 포함 자산·저장·종료·재시작 확인. OS가 실행을 거부하면 설치 차단으로 기록하며 앱이 뜨지 않은 기능을 PASS 처리하지 않는다. |
+| 같은 후보 재패키징 | 기존 앱의 실행·저장을 끝내고 runner 회수 확인 → 기록 백업 → 새 앱 identity·서명·provenance 확인 → 앱 파일만 교체 → 같은 profile에서 이전 기록 비교. 원래 앱과 백업은 확인 전 보존한다. |
+| 진도 백업 | 포함·제외 범위와 학습자 소스 포함을 안내 → 쓰기 배제 → 현재 진도 snapshot → 사용자가 선택한 새 파일에 저장·재읽기 → 파일 위치와 확인 결과 표시. 파일 선택 취소는 기록을 바꾸지 않는다. |
+| 진도 복원 | 선택한 파일 검증 → 기존/복원할 기록의 개수·버전·제외 범위 미리보기 → 현재 기록의 복구 백업 저장 → 진도 한 키 교체·확인 → 화면 재로딩. 복원은 새 제출·공개 평가·완료를 생성하지 않는다. |
+| 기록 이상 | “기록을 읽을 수 없어 원본을 보호 중” 또는 “현재 세션에만 임시 저장됨”을 표시하고 읽기·원본 내보내기·복구 선택을 제공한다. 빈 진도로 자동 초기화하거나 성공 저장으로 표시하지 않는다. |
+
+설치 identity는 bundle identifier, 앱 이름, `bam://app` origin, 실제 `userData` 경로, 저장 키·스키마의 조합으로 기록한다. Electron의 기본 `userData`는 앱 이름의 영향을 받으므로 bundle identifier만 같다고 저장 위치가 같다고 추정하지 않는다. 현재 경로를 실측한 뒤 그대로 유지하며, Chromium 저장소와 별도 앱 파일을 분리하라는 권고를 기존 profile 이동 승인으로 해석하지 않는다. [Electron app 문서](https://www.electronjs.org/docs/latest/api/app)
+
+ad-hoc DMG 생성·verify는 일반 사용자의 오프라인 Gatekeeper 통과 증거가 아니다. 정식 배포에는 Developer ID·공증·ticket stapling 등 별도 검토가 필요하고, 계정·비용·외부 업로드 승인 전에 이를 실행하지 않는다. 오프라인 OS 차단과 앱 내부 오프라인 자산 실패를 서로 다른 결과로 기록한다. [Apple 배포 안내](https://developer.apple.com/documentation/xcode/packaging-mac-software-for-distribution), [공증 흐름](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)
+
+### 데이터·파일 계약
+
+`[제안]` 최초 import/export는 `bam.dev.progress.v1`만 대상으로 한다. 통합 제안인 optional `quizHistory`도 같은 키의 snapshot에 포함한다. 이 필드를 추가하는 릴리스는 import validator의 보존·검사를 함께 제공해야 하며, 이를 이해하지 못하는 검증기는 해당 입력 전체를 거부하고 필드를 조용히 삭제하지 않는다. theme와 일시적 review-session, 다른 도메인 저장소, Chromium profile 전체와 실행 scratch는 제외한다. UI와 파일에도 이 범위를 명시하며 모든 앱 데이터의 백업이라고 표현하지 않는다. 여러 키를 연속 쓰는 것을 하나의 원자적 복원이라고 표현하지 않는다. 기존 도메인 ID와 Quest/코딩테스트 구분, 콘텐츠 revision, 기록 시각은 보존하며 현재 콘텐츠와 연결되지 않는 기록을 조용히 삭제하거나 현재 답안의 통과로 재해석하지 않는다.
+
+객관식의 prepare/commit/cancel·owner/generation 저장도 아래 공통 writer 배제에 포함한다. 복원된 `quizHistory`의 활성 토큰을 그대로 제출 가능 상태로 되살리지 않는다. 재시작·복원 후 새 owner/generation과 이전 활성 토큰 무효화의 저장이 확정되기 전 submit을 막는 세부 계약은 [객관식 저장 설계](lesson-review.md)를 따른다. 이 계약은 새 구현의 목표이며 기존 구버전 binary의 안전한 쓰기를 보장하지 않는다.
+
+| 필드 | 제안 형식과 검증 |
+| --- | --- |
+| `format`, `formatVersion`, `scope` | 각각 `bam-progress-backup`, `1`, `progress-only`. 알 수 없는 형식·버전·범위는 거부한다. |
+| `kind` | `snapshot` 또는 `recovery-before-restore`. 손상 원본을 담은 recovery 파일은 정상 진도로 바로 import하지 않는다. |
+| `createdAt`, `appVersion`, `contentVersion` | 생성 시각과 당시 앱·콘텐츠 식별자. 내보낸 기록의 출처이며 파일 신뢰·새 평가 PASS의 증명은 아니다. |
+| `storageKey`, `schemaVersion`, `raw` | 고정 키, 해석 가능한 경우 원본 스키마, 정확한 저장 문자열 또는 키 부재를 뜻하는 `null`. 정상 snapshot은 엄격한 schema 1 검증을 통과해야 한다. |
+| `rawSha256`, `rawBytes` | 문자열의 UTF-8 bytes 기준 SHA-256·길이. 부재는 `raw: null`, hash도 `null`, 길이 0으로 빈 문자열과 구분한다. |
+| `sourceIdentity` | 앱 ID·origin·profile 식별 근거. 이 필드를 경로 접근 명령으로 사용하지 않는다. 다른 profile의 정상 snapshot 복원은 별도 확인 대상이며 원래 profile의 crash 복구로 오인하지 않는다. |
+| recovery 추가 필드 | `operationId`, `targetRawSha256`, `targetRawBytes`. `raw`에는 교체 전 값 B를 담고, 선택한 import 파일에는 목표 값 N을 보존한다. recovery 파일은 commit 성공 여부를 주장하지 않는다. |
+
+파일은 UTF-8 JSON, 제안 상한 16 MiB다. 읽기 전에 파일 크기를 제한하고 파싱 뒤 문자열·배열·필드 타입과 기존 저장 스키마의 한도를 검증한다. 상한 초과·알 수 없는 필드/버전·정상화 과정에서 값이 탈락하는 입력은 자동 잘라내지 않고 실패로 반환한다. 일반적인 `normalizeProgress()` 호출을 엄격한 import 검증으로 대체하지 않는다. checksum은 우발적 손상 확인용이며 서명이나 진위 인증이 아니다. 백업 파일에 평문 학습자 소스가 포함됨을 알려준다.
+
+파일 I/O는 사용자가 선택한 파일만 대상으로 하고 renderer에 일반 경로 읽기·쓰기 API를 주지 않는다. 신규 파일을 기본으로 하며 기존 백업은 덮어쓰지 않는다. 저장·close·재읽기와 bytes/hash 확인이 끝나기 전에는 백업 성공이나 기존 raw 교체를 허용하지 않는다. 파일 저장 확인과 아래 저장소 ack 모두 전원 손실 시 내구성을 보증하지 않으며, 실제 flush·Chromium 정책 검증은 별도다.
+
+### writer admission과 복원 순서
+
+Web Storage의 한 키 교체는 read-modify-write 잠금이 아니다. 표준은 다른 window/agent cluster와의 locking을 가정하지 말라고 명시하며 `setItem()`은 저장 불가 시 quota 오류를 낼 수 있다. 따라서 마지막 readback이나 `storage` 이벤트만으로 동시 writer를 배제했다고 주장하지 않는다. [HTML Web Storage 표준](https://html.spec.whatwg.org/multipage/webstorage.html)
+
+`[제안]` desktop에서 같은 profile의 앱 중복 실행을 막고, 하나의 진도 writer만 허용한다. 기존 Java 실행 lock은 모든 진도 writer의 lock이 아니므로 그대로 대체 사용하지 않는다. 저장소 진입점에 작은 배제 상태와 generation을 두고 모든 read-modify-write mutator가 이를 거치게 한다. 대상에는 초안 autosave·reset·교안/객관식 기록·Quest/코딩테스트 제출·상세 결과 저장·삭제가 포함된다. UI 버튼 비활성화만으로 충족하지 않으며 우회 writer가 남거나 배제를 확보하지 못하면 restore를 비활성화한다. 웹 복수 tab에는 이 복원 기능을 제공하지 않고 desktop 한정임을 알린다.
+
+1. `idle → quiescing`: 중복 백업/복원 진입을 거부하고 새 grade·mutator admission을 닫는다. 이미 편집한 미저장 초안은 마지막 한 번 저장·영속 확인하거나 사용자가 원본을 내보낼 때까지 진행을 막는다. 취소 대기 중 실행이 있으면 기존 수명주기로 종료·회수를 확인한다.
+2. 기존 쓰기 작업을 마친 뒤 generation을 올려 `exclusive`로 진입한다. 이전 generation의 autosave timer·grade 응답은 저장소에서 거부하고 재개 후에도 자동 재생하지 않는다. 단일 인스턴스·단일 writer 소유를 잃으면 이후 단계를 중단한다.
+3. primary 저장소에서 B를 읽고 `persistent / empty-new / volatile / recovery-required`를 구분한다. volatile이면 일반 restore를 막고 임시 snapshot 내보내기만 제공한다. 손상 raw를 복원으로 교체하려면 먼저 그 정확한 raw의 recovery 백업을 저장한다.
+4. 엄격히 검증한 N과 미리보기를 제시하고 사용자가 확인한다. 기록을 병합하지 않는다. 키 부재를 나타내는 recovery 자료는 자동으로 삭제 작업으로 변환하지 않는다.
+5. B와 N의 식별 정보를 담은 새 recovery 파일을 저장·재읽기 확인한다. 실패·취소하면 K는 B 그대로다. 기존 백업과 선택한 입력 파일은 변경하지 않는다.
+6. exclusive 소유와 generation을 확인하고 primary K가 여전히 B인지 대조한다. 다르면 `conflict`로 멈추고 새 값을 보존한다. 이 비교는 배제의 보조 검사이며 compare-and-swap 구현이라고 주장하지 않는다.
+7. `committing`: K에 N을 단 한 번 쓴다. 이 시점 이후 취소는 “처리 확인 중”으로 표시하며 취소됐다는 이유로 B를 자동 재기록하지 않는다. memory fallback 성공을 primary commit으로 취급하지 않는다.
+8. primary K의 정확한 N 일치와 영속 저장소 상태를 확인해야 `acknowledged`다. 이는 현재 세션의 저장 확인이며 fsync 증명은 아니다. 새 저장 상태로 UI를 읽어 들이고 새 generation으로 writer를 재개한다. 원래 recovery 백업은 성공 후에도 자동 삭제하지 않는다.
+9. 실패·충돌·결과 불명은 `recovery-required`로 남겨 쓰기를 계속 차단한다. 자동 재시도·queue replay·empty 초기화는 없다. commit 전 사용자 취소이고 B가 그대로이며 배제가 유지됐다면 새 generation으로 정상 쓰기를 재개할 수 있다.
+
+### 재진입·중단·다운그레이드
+
+복구 우선순위는 현재 raw 보존 → 원래 B 백업과 입력 N 보존 → 사용자가 선택한 같은 작업 recovery 파일의 identity/hash 확인 → 현재 값 C 판별이다. recovery 파일을 자동 검색하거나 이전 작업의 파일을 자동 선택하는 시스템은 첫 구현에 포함하지 않는다. 앱 종료 중 전원 손실까지 기존 프로세스 회수 계약이 보장한다고 확대하지 않는다.
+
+| 재진입 시 관찰 | 동작 |
+| --- | --- |
+| C = B, B ≠ N | 미적용으로 안내한다. 사용자 재확인과 새 exclusive 구간 없이 다시 쓰지 않는다. |
+| C = N, B ≠ N | 목표 값이 현재 존재함을 확인한다. crash 이전 ack나 실제 disk flush 여부는 추정하지 않는다. 새 평가·제출을 만들지 않는다. |
+| B = N = C | 데이터 변경 없는 복원으로 표시하며 write 발생 여부를 추정하지 않는다. |
+| C가 B/N 모두와 다름·읽기 실패·손상 | C를 보존하고 쓰기를 막는다. B나 N으로 자동 덮어쓰지 않는다. 사용자가 C까지 별도 보존한 뒤 명시적으로 복구를 선택해야 한다. |
+| backup 저장 실패·quota·memory fallback | 교체 전이면 B를 유지한다. 교체 시도 후면 primary C를 다시 확인하고 위 분기로 간다. 메모리 N과 durable B를 구분한다. |
+
+같은 스키마의 앱 교체도 기존 앱과 자식 프로세스가 종료된 상태에서만 한다. 앱 복사/서명/identity 검사 실패 시 원래 앱·profile을 그대로 두며 재패키징을 profile 초기화 수단으로 쓰지 않는다. 콘텐츠 revision이 달라져도 과거 기록을 현재 평가 결과로 승격하지 않는다.
+
+`[확인 필요]` 구버전 앱은 새 `minReader` 필드를 이해하지 못할 수 있으므로 필드 하나로 안전한 downgrade가 보장되지 않는다. 권장안은 구버전이 현재 profile을 열지 않게 하고 구버전 당시 백업과 별도 profile에서만 재개하는 것이다. 그 분리 실행 수단이 구현·검증되기 전에는 downgrade를 지원하지 않는다고 안내한다. 사용자가 임의로 구버전을 실행하는 상황까지 현 앱이 차단한다고 주장하지 않는다. 새 profile 경로·migration·제거 후 데이터 삭제는 별도 승인 대상이다.
+
+### OS·격리 변경과 오프라인 실패
+
+현재 exact kernel·번들 JDK·runner/provenance·profile 검사를 유지한다. OS/kernel/JDK/격리 profile 변경으로 증거가 맞지 않으면 Java capability를 unavailable로 닫고, 원인과 재검증 필요를 표시한다. 학습자 오답으로 분류하거나 시스템 JDK·네트워크 실행·제한 상향으로 우회하지 않는다. 기록 읽기·편집·백업은 저장 상태가 허용하는 범위에서 유지한다. poison 또는 회수 불명은 실행 재개를 막고 원래 증거·scratch를 보존하며, 앱 재시작을 안전 회수의 증거로 삼지 않는다. 변경된 실행 경계의 필요한 검사만 다시 선정한다.
+
+오프라인 첫 실행에서 누락된 번들 자산은 경로·상태·MIME과 화면 실패를 기록하고 원격 다운로드로 숨기지 않는다. OS 실행 차단, 앱 자산 누락, Java unavailable, 저장 불가를 각각 다른 상태로 표시한다. 기존 실행 PASS를 다시 전부 수행하는 대신 설치 위치·기본 profile·네트워크 차단처럼 달라진 조건의 대표 흐름만 후속 계획으로 고정한다.
+
+### 작은 구현 순서와 검증 인계
+
+| 순서 | 작은 수정 대상 | 완료 기준 |
+| --- | --- | --- |
+| 1. 원본 보호 | `src/repositories/progress-repository.js`, `browser-storage.js` 및 직접 호출부 | missing/corrupt/unsupported/volatile 구분, corrupt 원본의 다음 save 차단, memory-only를 saved로 표시하지 않음. |
+| 2. writer 배제 | `desktop/main.cjs`의 profile 중복 실행 경계, 저장소 admission·`src/app.js`의 timer/grade 결과 연결 | 모든 mutator가 같은 배제를 통과하고 late generation 저장 0, 중복 진입·소유 상실 시 복원 0. runner 수명주기는 기존 경계를 재사용. |
+| 3. 한 키 백업·복원 | 저장소의 엄격한 snapshot 검증, 좁은 main/preload 파일 선택·저장 경계와 UI | backup 검증 전 기존 raw 교체 0, 잘못된 입력·quota·취소·충돌에서 원본 보존, 확인된 primary 값만 ack. 키보드·focus·상태 안내 포함. |
+| 4. 설치·교체 관찰 | 기존 packager·일회성 독립 검증 준비물 | 원본 앱/profile 보호, 설치 뒤 첫 오프라인 실행, 같은 후보 재패키징 뒤 실제 기본 profile의 기록 비교. 포장 PASS와 분리. |
+| 5. 결정 반환 | 이 설계의 증거와 미결정 목록 | 비용·OS·공증·업데이트·downgrade 지원을 별도 결정. 시뮬레이션 PASS만으로 실제 설치·전원 손실 내구성을 선언하지 않음. |
+
+독립 시뮬레이션은 정상 복원, 미지원 schema·corrupt JSON, backup 선택 취소·부분 쓰기·재읽기 불일치, quota와 memory fallback, 각 단계 crash, B=N, 외부 값 C, commit 전후 취소, autosave/grade의 늦은 응답, 중복 복원, writer 소유 상실·새 앱 인스턴스, 구버전이 새 필드를 무시하는 경우를 다룬다. 각 trace는 B/N/C·generation·admission·backup 확인·primary write·ack·원본 파일 보존을 관찰한다. 배제 미확보면 commit 0, backup 확인 전 commit 0, 늦은 generation 쓰기 0, 결과 불명 시 자동 덮기 0을 필수 불변조건으로 둔다.
+
+`[이력]` 당시 설계 시점에는 독립 시뮬레이션이 미실행이었다. 후속 desktop 가정 모델의 조건부 PASS는 [로드맵 집계](../roadmap.md#남은-작업의-작은-구현-순서와-시뮬레이션)를 따르며 새 소스 브라우저 환경의 재검증은 미실행이다. 계약 식별자는 `INSTALL-DATA-v2`이며 동결 문서 SHA-256은 인계에서 별도로 고정한다. 모델의 단일 키 old/new 교체·파일 확인·프로세스 배제는 시험 가정이고, 실제 Chromium 저장 정책·디스크 flush·전원 손실·Gatekeeper·설치·profile 동일성은 별도 실제 검증이 남는다.
 
 ## 단계적 전환
 
