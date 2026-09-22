@@ -9,6 +9,7 @@
     "build": "node scripts/build.mjs",
     "desktop:bootstrap": "node scripts/desktop-bootstrap.mjs",
     "desktop:build": "node scripts/desktop-build.mjs",
+    "desktop:package": "node scripts/desktop-package.mjs",
     "test": "node scripts/run-tests.mjs",
     "validate:content": "node scripts/validate-content.mjs",
     "check": "npm run validate:content && npm test && npm run build"

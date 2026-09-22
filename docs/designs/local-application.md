@@ -117,6 +117,17 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 
 BAM.dev 화면은 GitHub API 성공을 전제로 진입하거나 진도를 계산하지 않는다.
 
+## 기존 앱의 시험용 DMG 포장
+
+`[확정 결정]` 이미 검증한 `.app`을 시험용 DMG로 포장하는 후속 작업을 승인한다. `[현재 사실]` 포장 CLI를 구현했고 기존 앱의 시험용 DMG 생성·verify를 독립 검증했다. 정식 Electron·지원 OS·배포 형식 채택이나 설치 완료를 뜻하지 않는다.
+
+- CLI는 `npm run desktop:package -- --app <existing.app> --output <new.dmg>`로 한다. macOS의 `hdiutil`을 사용하며 새 의존성을 추가하지 않는다.
+- 입력 앱의 서명·provenance·symlink를 검사한 뒤 임시 위치에 복사하고 hash 동일성을 확인한다. 복사본으로 UDZO 이미지를 생성한 뒤 `hdiutil verify`를 수행한다.
+- 출력 DMG나 receipt가 이미 있으면 거부한다. 실패 시 이번 실행이 만든 산출물만 정리하며 원본 앱·개인 자료는 변경하지 않는다. mount·Java/Electron 실행·bootstrap·네트워크 접근은 수행하지 않는다.
+- receipt에는 앱·DMG의 hash와 identity, 명령 결과를 기록하고 ad-hoc 서명·미공증 상태 및 실제 설치·오프라인·기록 보존 미검증을 명시한다. 기존 기록 보존과 실제 설치 검증은 별도 다음 단계이며 포장 성공으로 PASS 처리하지 않는다.
+
+검증한 packager SHA-256은 `adeed24bcf042761297289aac0eaf8d2abc15a3575761b4edbf7362439416f15`다. focused 21개는 20개 PASS와 테스트의 canonical 기대값 수정 뒤 1개 PASS를 재사용한 결과이며 독립 코드 P2 수정 검토도 PASS했다. 실제 CLI·create·verify는 각각 1회, exit 0이었다. DMG는 305,235,051 bytes, SHA-256 `764a6e5f52074bc9cc33afaeca8f459aa978f280ddeef3b6aabf355f20cd8d7c`다. source·upstream 원본 불변과 staging 정리를 확인했고 Java·Electron·mount·network 실행은 0이다. 로컬 전용 receipt: `/private/tmp/bam-package-validation-v5NRM2/independent-packaging-review.json` (SHA-256 `516f180ce4b00cb34c0b609be99133eee496da4bd51daf880d6b8c6ce8ca3adb`). 시험용 ad-hoc·미공증 상태이며 실제 설치·오프라인 첫 실행·재포장 후 기록 보존·정식 배포는 여전히 미검증이다.
+
 ## 설치·업데이트 계약
 
 최종 패키징 기술과 지원 범위는 위 prototype 증거를 먼저 수집한 뒤 비교하고 `DEC-DESKTOP-01` 및 필요한 ADR로 결정한다.

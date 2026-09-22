@@ -163,7 +163,7 @@ function isInside(parent, candidate) {
   );
 }
 
-async function assertSafeTree(rootPath) {
+export async function assertSafeTree(rootPath) {
   const root = await realpath(rootPath);
   const pending = [root];
   while (pending.length > 0) {
@@ -259,7 +259,7 @@ async function signLocalPrototype(appPath, bundleIdentifier) {
   await run("/usr/bin/codesign", ["--verify", "--deep", "--strict", appPath]);
 }
 
-async function treeHash(rootPath) {
+export async function treeHash(rootPath) {
   const records = [];
   const pending = [rootPath];
   while (pending.length > 0) {
