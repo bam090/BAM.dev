@@ -16,16 +16,16 @@
 - `DEC-FRONTEND-01` 적용: 목표 UI 소스는 HTML·CSS 기반의 React·TypeScript를 사용하고 JavaScript도 유지한다. 현재 Vanilla JavaScript·Worker·도메인 로직은 작은 화면·경계부터 점진 이관하며 설치 shell이나 Java runner와 합치지 않는다.
 - `[현재 사실]` 현재 앱은 정적 HTML·CSS·Vanilla JavaScript지만 설치 프로그램은 아니다. 공개 GitHub Pages 또는 개발용 Node HTTP 서버의 `localhost`를 브라우저에서 연다.
 - `[현재 사실]` 현재 `package.json`에는 React·TypeScript와 전용 프런트엔드 빌드 도구 의존성이 없다.
-- `[현재 사실]` 이 브라우저 게시 작업본에는 Java 제품 소스·Maven/Gradle·로컬 runner를 포함하지 않는다. 별도 미게시 로컬 작업에는 Java runner·감독 코드·SBPL 후보가 있으나 실제 격리 실패로 비활성 상태다.
+- `[현재 사실]` 별도 미게시 로컬 작업에서 Java 제품 runner·감독 코드·SBPL 후보를 추가했고 후속 runtime·Java 미실행 앱 검증을 인수했다. 검증 커널의 로컬 Java Quest prototype 활성 UI 검증은 독립 PASS다. Maven·Gradle 설정은 없다.
 - `[현재 사실]` 현재 검증 장비는 macOS 14.8.3·Apple Silicon(arm64)이다. 이 사실은 지원 OS 약속이 아니다.
-- `[현재 사실]` 이 게시본에는 Electron·DMG와 설치 의존성·산출물이 없다. 별도 로컬 `.app` 생성·ad-hoc 서명은 부분 증거로 보존하며 Java 실행·정식 설치 PASS로 해석하지 않는다. 당시 DMG는 자동 승인 검토 거부로 생성하지 않았다.
+- `[현재 사실]` 이 게시 후보에는 Java Quest runtime과 Electron shell 소스를 포함하며 JDK·Electron 바이너리와 설치 산출물은 포함하지 않는다. 검증 커널의 로컬 `.app` 실행은 독립 PASS지만 정식 설치 지원은 미완료이며 DMG는 미생성이다.
 - `[확인 필요]` 공식 지원 OS, 최종 desktop shell·설치 파일 형식, 서명·업데이트와 백업 방식은 prototype 증거 검토 뒤 정한다.
 
 개발용 localhost와 제품 운영 서버를 구분한다. 개발자가 검증을 위해 로컬 서버를 쓰는 것은 가능하지만, 최종 사용자가 Node, Docker, 포트, 데이터베이스 또는 터미널 명령을 관리해야 한다면 설치형 완료로 보지 않는다.
 
 ## Java 실행을 위한 첫 로컬 prototype
 
-`[현재 사실]` 별도 미게시 로컬 후보는 첫 Java Quest 실행을 목표로 작성됐으나 실제 격리 javac 종료·회수 실패로 **FAIL/BLOCKED**다. 이 브라우저 게시본에는 후보 소스·JDK·Electron·desktop 스크립트를 포함하지 않는다. 정확한 artifact·프로토콜·실패·재개 계약은 [ADR 0005](../decisions/0005-java-quest-local-runtime.md)와 [런타임 작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)를 따른다. 작성용 브라우저 콘텐츠와 정식 Java 실행·설치형 MVP를 구분한다.
+`[확정 결정]` [DEC-JAVA-QUEST-RUNTIME-01](../roadmap.md#2026-09-15-java-실행-지원-결정)은 첫 Java Quest 실제 실행과 그에 필요한 로컬 Electron prototype의 착수를 승인한다. 정식 지원 OS·서명·업데이트·M4/M6 전체 승인은 범위에 포함하지 않는다. 이번 완료 목표는 현재 Mac의 로컬 `.app`에서 번들 JDK로 첫 Quest를 실행하고 공개 결과·초안/진도·격리·취소·오프라인 경계를 검증하는 것이다. **현재 검증 커널의 Java Quest prototype은 활성 UI·취소·창 닫기·재시작 복원을 독립 PASS**했다. 정식 설치본과 공식 지원 OS의 완료를 뜻하지 않는다. 근거는 [runtime 작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-활성-java-quest-앱-검증-pass)를 따른다. 초기 DMG 후보는 자동 승인 검토가 Java 실행 지원과 별도 설치·패키징 범위라고 거부했으므로 재시도하지 않고 필수 완료 gate에서 분리했다.
 
 ## 서버 없음의 의미
 
@@ -50,7 +50,7 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 ├── 공개 로컬 평가기
 │   ├── JavaScript one-shot Worker
 │   └── Java 25 제품 코드인 코딩테스트 로컬 runner 목표(번들 JDK 사용·미구현)
-├── Java 컴파일·실행 도구체인 목표(JDK 25 LTS·정식 Java 25·미구현)
+├── Java 컴파일·실행 도구체인 목표(JDK 25 후보 번들·검증 커널의 Java Quest prototype PASS)
 └── 사용자 데이터 저장 경계
     ├── 진도·설정
     ├── Quest 초안·결과 요약

@@ -55,7 +55,7 @@
 
 새 Java ID·초안·시도·완료는 기존 Quest 전용 저장 배열과 안정 ID 관계를 사용하고 코딩테스트 진도와 합치지 않는다. 첫 앱 origin의 localStorage는 기존 브라우저 origin과 별개이며 브라우저 기록을 자동 이전했다고 주장하지 않는다. 앱 재실행 시 해당 origin의 진도가 보존되는지 확인한다. 전체 공개 테스트 PASS만 완료로 세며 컴파일/실행기 부재·취소는 완료를 만들지 않는다.
 
-`[현재 사실]` Java schema·첫 콘텐츠·브라우저 bridge/adapter와 별도 미게시 로컬 runner 후보를 작성했지만 실제 격리 컴파일이 종료 불능 상태로 실패했다. 실행 capability는 고정 false이고 Java 실행 지원은 미완료다. 후속 배열 편입으로 Java 문제의 등록·작성 범위는 늘었으나 실행 가능한 수량에 합산하지 않는다. 현재 수량은 [README](../../README.md), 등록·작성 흐름의 증거는 아래 편입 카드가 정본이다. 콘텐츠/schema·프런트 정적 검사 PASS는 실제 Java 공개 평가 PASS가 아니다. 추가 Java/JDK 실행을 중지했으며 [실패와 재개 조건](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)을 충족하기 전에는 Java 실행을 활성화하지 않는다. 모바일·SQL·React 이관·Spring·공식 설치 지원과 후속 CT 콘텐츠 전환은 이 첫 runtime pilot과 별도 범위다.
+`[현재 사실]` Java schema·첫 콘텐츠·브라우저 bridge/adapter와 별도 미게시 로컬 runner 후보를 작성했다. 후속 runtime·배열 공개 평가와 Java 미실행 앱 기본 검증은 독립 PASS이며 검증 커널의 로컬 Java Quest prototype 활성 UI 검증은 독립 PASS다. 일반 브라우저의 Java 실행은 계속 제공하지 않는다. 현재 제공 수량은 [README](../../README.md), 등록·작성 흐름은 아래 편입 카드, 실행 증거와 과거 실패·남은 gate는 [runtime 작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-활성-java-quest-앱-검증-pass)가 정본이다. 모바일·SQL·React 이관·Spring·공식 설치 지원과 CT 채점은 별도 범위다.
 
 ### Algorithm Bridge 대표 세 문제 편입
 
@@ -71,7 +71,7 @@ UI 비활성화와 별개로 submit/실행 진입점도 capability를 확인해 
 
 검증은 원본 대비 콘텐츠·A/E/C/T·공개 경계의 독립 검토, schema/입력/직렬화/관찰 비교의 정적 검사, Java 없는 대표 데스크톱에서 목록→상세→편집/저장→재진입·순차 힌트·교안 연결·키보드·실행 차단·완료 불변으로 나눈다. 실제 Java 컴파일·정답/오답·격리·프로세스 종료는 별도 실행 gate가 PASS하기 전까지 `BLOCKED`이며 정적 검사로 대체하지 않는다. 모바일·다른 OS·DMG·원격 게시·새 의존성·교안 원문 재작성은 이번 범위 밖이다.
 
-`[현재 사실]` 대표 세 문제를 등록하고 배열 데이터/비활성 실행 후보·Java 작성/저장 UI를 반영했다. 독립 콘텐츠 검토와 등록 데이터·schema 검사는 PASS이며 실제 Java 실행은 계속 BLOCKED다. 현재 진행·자체/독립 검증·미실행·최종 인수 경계는 [편입 카드](../work-items/2026-09-15-algorithm-bridge-quests.md#검사와-인계-기록)를 따른다. 당시 로컬 미게시 이후 브라우저 변경은 [CT 전환 게시](../work-items/2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)에 포함됐다.
+`[현재 사실]` 대표 세 문제를 등록하고 배열 데이터/비활성 실행 후보·Java 작성/저장 UI를 반영했다. 당시 독립 콘텐츠 검토와 등록 데이터·schema 검사는 PASS였고 실제 Java 실행은 BLOCKED였다. 후속 runtime PASS는 위 실행 후보 기록을 따른다. 현재 진행·자체/독립 검증·미실행·최종 인수 경계는 [편입 카드](../work-items/2026-09-15-algorithm-bridge-quests.md#검사와-인계-기록)를 따른다. 당시 로컬 미게시 이후 브라우저 변경은 [CT 전환 게시](../work-items/2026-09-15-algorithm-bridge-coding-tests.md#최종-독립-검증과-git-게시-결과)에 포함됐다.
 
 ### Algorithm Bridge 전체 문제 편입
 
@@ -120,7 +120,7 @@ Code Quest 화면은 다음 세 단계의 현재 위치를 한 문장과 탐색 
 
 첨부 Code Quest 화면의 보라색 외형이나 원본 React 구성요소 코드를 복사하지 않는다. 채택 대상은 위치, 진도, 탐색과 학습 지도라는 정보 관계다. BAM.dev 자체 구현은 [`DEC-FRONTEND-01`](../roadmap.md#2026-09-04-확정-제품-결정)의 React·TypeScript 점진 이관과 [`visual-design.md`](visual-design.md)의 외형을 따르며, 이는 참고 프로젝트 코드를 가져온다는 뜻이 아니다.
 
-콘텐츠가 없는 과정은 완료 가능한 항목처럼 표시하지 않는다. Java Code Quest의 첫 편입은 `DEC-JAVA-QUEST-RUNTIME-01`로 승인됐으며 등록·작성은 위 [후속 편입 계약](#algorithm-bridge-대표-세-문제-편입)으로 제공하고, 실행은 현재 BLOCKED이며 [재개 조건](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)과 독립 실행 검증을 충족한 뒤에만 활성화한다. Java 코딩테스트가 MVP 목표라는 `DEC-JAVA-CODING-TEST-01`만으로 Java Code Quest나 정식 Java 과정을 자동 포함한 것은 아니다.
+콘텐츠가 없는 과정은 완료 가능한 항목처럼 표시하지 않는다. Java Code Quest의 첫 편입은 `DEC-JAVA-QUEST-RUNTIME-01`로 승인됐으며 등록·작성은 위 [후속 편입 계약](#algorithm-bridge-대표-세-문제-편입)으로 제공하고, 검증 커널의 로컬 prototype 실행은 독립 PASS이며 일반 브라우저의 실행은 제공하지 않는다. 추가 실행은 [재개 조건](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)과 검증한 OS 제한을 따른다. Java 코딩테스트가 MVP 목표라는 `DEC-JAVA-CODING-TEST-01`만으로 Java Code Quest나 정식 Java 과정을 자동 포함한 것은 아니다.
 
 ## 난이도와 학습 지원
 
@@ -242,6 +242,6 @@ draftSourceRevision: positive integer | unknown | none
 - 검증 뒤 `courseId`, `topicId`, `displayOrder`를 실제 스키마에 저장할 이점이 있는지
 - legacy `difficulty`를 UI에 표시할지와 표시 의미
 - 이후 revision별 초안 저장을 도입할지와 기존 초안의 명시적 이전 방식
-- Java Code Quest의 실제 격리 실패에 대한 [재개 조건](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)과 남은 정식 실행 계약
+- Java Code Quest의 검증 커널의 prototype PASS, 과거 실패의 [재개 조건](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)과 남은 정식 실행 계약
 
 결정 상태는 [`../roadmap.md`](../roadmap.md#bam-결정-대기-목록)에서 관리한다.
