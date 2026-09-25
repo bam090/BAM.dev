@@ -181,7 +181,7 @@ function defaultWorkerFactory(workerUrl) {
 
   return new Worker(workerUrl, {
     name: "bam-code-quest-test",
-    type: "module",
+    type: "classic",
   });
 }
 
@@ -286,7 +286,7 @@ function roundDuration(value) {
  */
 export class BrowserCodeQuestRunner {
   constructor({
-    workerUrl = new URL("../workers/javascript-code-runner.worker.js", import.meta.url),
+    workerUrl = new URL("../workers/javascript-code-runner.classic.js", import.meta.url),
     workerFactory = defaultWorkerFactory,
     limits,
     now = defaultNow,

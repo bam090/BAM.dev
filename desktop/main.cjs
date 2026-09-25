@@ -31,7 +31,7 @@ const WORKER_CONTENT_SECURITY_POLICY = CONTENT_SECURITY_POLICY.replace(
   "script-src 'self'",
   "script-src 'self' 'unsafe-eval'",
 );
-const WORKER_PATH = "src/workers/javascript-code-runner.worker.js";
+const WORKER_PATH = "src/workers/javascript-code-runner.classic.js";
 const MIME_TYPES = new Map([
   [".css", "text/css; charset=utf-8"],
   [".gif", "image/gif"],

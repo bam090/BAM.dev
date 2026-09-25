@@ -31,7 +31,7 @@ HTML·CSS·JavaScript부터 Java·Spring·알고리즘까지 지금 필요한 �
 
 - **더 세밀한 복습** — 모름·헷갈림 표시와 문제별 재도전 기능을 확장합니다.
 - **더 넓은 학습 주제** — 컴퓨터 과학 기초(CS), TypeScript, React로 학습 범위를 넓힙니다.
-- **Java 실행 연결과 프로젝트 실습** — 소스로 실행하는 환경의 Java 지원 방식은 별도로 설계합니다. 밤위키 원본 웹과제의 BAM.dev 연결과 공개 검증도 준비합니다.
+- **Java 실행 범위 확대와 프로젝트 실습** — 검증한 로컬 환경에서 Java 연결을 제공하며, 추가 환경은 별도 검증합니다. 밤위키 원본 웹과제의 BAM.dev 연결과 공개 검증도 준비합니다.
 - **학습 기록 보호** — 소스로 실행하는 브라우저 환경에서 기록 백업·복구와 안전한 저장 흐름을 보강합니다.
 
 ## 지금 공부할 수 있는 내용
@@ -55,17 +55,17 @@ Spring 과정에서는 Spring Boot·Spring Security·JPA·Spring Data JPA까지 
 직접 작성하는 연습은 Code Quest와 코딩테스트로 나누어 제공합니다.
 
 - **Code Quest 32개** — JavaScript 함수 12개·HTML 8개·CSS 8개는 브라우저의 공개 검사로 확인합니다.
-- Java 4개는 웹에서 작성·저장하고, 검증된 로컬 prototype에서 실행합니다.
+- Java 4개는 웹에서 작성·저장하며, 별도 로컬 Java 연결을 통해 공개 테스트를 실행할 수 있습니다. 실제 검증 범위는 아래 안내를 참고하세요.
 - **JavaScript 코딩테스트 6문제** — 코드를 작성하고 공개 테스트를 실행해 풀이를 점검합니다.
-- **Java 코딩테스트 72문제** — 문제·예시·공개 테스트를 읽고 코드를 작성·저장합니다. 공개 테스트 실행·제출·완료 기록은 검증된 로컬 prototype에서 제공합니다.
+- **Java 코딩테스트 72문제** — 문제·예시·공개 테스트를 읽고 코드를 작성·저장합니다. 별도 로컬 Java 연결로 공개 테스트 실행·제출·완료 기록을 제공하며, 모든 문제의 실행을 검증한 것은 아닙니다.
 - **HTML·CSS Web Project 1개** — 두 파일을 함께 편집하며 미리보기·공개 검사·자가평가로 결과를 확인합니다.
 
 코딩테스트는 마지막 상세 결과를 저장해 다시 열거나 앱을 재시작해도 이어 볼 수 있습니다.
 코드를 바꾸면 이전 코드의 결과임을 표시하고, 오답·문법·실행 오류·시간 초과·취소·출력 초과에 확인할 점을 안내합니다.
 취소는 오답이나 성공으로 처리하지 않습니다.
 
-**Java 실행은 검증한 macOS 환경의 별도 로컬 prototype에 한정됩니다.** 공개 웹에서는 Java 작성·저장만 가능하며 소스를 브라우저에서 실행해도 Java 실행까지 지원되는 것은 아닙니다. 설치형 앱은 주 전달 방식이 아닙니다.
-자세한 실행·복원 검증 범위는 [Java Quest 기록](docs/work-items/2026-09-15-java-code-quest-runtime.md)과 [Java 코딩테스트 기록](docs/work-items/2026-09-22-java-coding-test-runtime.md)을 참고하세요.
+**기본 `npm run dev`와 공개 GitHub Pages에서는 Java 작성·저장만 가능합니다.** 소스 실행 환경에서는 준비 명령과 `dev:java`로 로컬 Java를 연결할 수 있습니다. 실제 공개 평가·취소 검증은 macOS arm64의 검증한 정확한 커널과 Chrome에 한정되며, 다른 OS·브라우저의 지원 완료를 뜻하지 않습니다. Electron이나 설치형 앱은 이 연결에 필요하지 않습니다.
+소스 연결의 검증 범위는 [아키텍처](docs/architecture.md#소스-java-브라우저-연결--source-java-browser-v1), 기존 prototype의 실행·복원 기록은 [Java Quest 기록](docs/work-items/2026-09-15-java-code-quest-runtime.md)과 [Java 코딩테스트 기록](docs/work-items/2026-09-22-java-coding-test-runtime.md)을 참고하세요.
 
 ## 현재 기능과 남은 범위
 
@@ -75,8 +75,8 @@ Spring 과정에서는 Spring Boot·Spring Security·JPA·Spring Data JPA까지 
 | --- | --- | --- |
 | 학습문서 | 주제·키워드 탐색, 읽기·자기 확인·완료 기록 | 후속 주제 확장과 release 대상 콘텐츠 감사 |
 | 객관식 | 두 보기·두 채점 방식, 해설·문서 왕복, 즉시 재도전 | 모름·헷갈림과 문제별 전체 이력 |
-| Code Quest | 탐색·작성·저장, 웹의 JavaScript·HTML·CSS 공개 검사, macOS prototype의 Java 실행 | 소스 실행 환경의 Java 연결 방식 확정 |
-| 코딩테스트 | 웹의 JavaScript 실행·Java 작성/저장, macOS prototype의 Java 공개 평가, 상세 결과 복원·오류 안내 | 소스 실행 환경의 Java 연결·저장 보호 |
+| Code Quest | 탐색·작성·저장, 웹의 JavaScript·HTML·CSS 공개 검사, 검증 환경의 로컬 Java 연결·공개 평가 | Java 실행의 추가 환경 검증 |
+| 코딩테스트 | 웹의 JavaScript 실행·Java 작성/저장, 검증 환경의 로컬 Java 공개 평가, 상세 결과 복원·오류 안내 | Java 실행의 추가 환경 검증·저장 보호 |
 | 웹과제 | 기존 인앱 HTML·CSS 과제 | 밤위키 원본의 BAM 연결·안내·공개 검증 |
 
 React·TypeScript UI는 작은 화면부터 점진적으로 도입할 계획입니다. 상세 범위는 [웹과제 설계](docs/designs/web-assignments.md)와 [MVP 완료 조건](docs/product-scope.md#mvp-완료-조건)에서 관리합니다.
@@ -102,6 +102,17 @@ BAM_DEV_PORT=4189 npm run dev
 이 경우 [localhost:4189](http://localhost:4189)를 엽니다. 기존 로컬 기록을 이어 쓰려면 이전과 같은 주소·포트를 유지하세요.<br>
 `localhost`와 `127.0.0.1`도 기록을 따로 저장합니다.
 
+### 로컬 Java 연결하기
+
+검증한 macOS arm64 커널과 Chrome에서 사용하는 별도 실행 경로입니다. [runtime lock](desktop/runtime-lock.json)에 고정된 JDK·JUnit 자료를 먼저 확보해야 하며, 자동 다운로드나 시스템 JDK는 사용하지 않습니다. `<고정자료폴더>`는 해당 자료가 있는 폴더, `<새준비폴더>`는 자료 폴더와 분리된 아직 존재하지 않는 출력 경로로 바꾸세요.
+
+```bash
+npm run java:prepare -- --artifacts <고정자료폴더> --runtime <새준비폴더>
+npm run dev:java -- --runtime <새준비폴더>
+```
+
+기존 `npm run dev` 서버가 실행 중이면 먼저 `Ctrl+C`로 종료하세요. 준비가 성공한 뒤 Java 서버가 안내한 `http://localhost:<포트>`를 Chrome 주소창에 직접 열고 Java 문제 화면의 **로컬 Java 연결**을 선택합니다. 기본 포트는 4173이며 Electron은 필요하지 않습니다. 준비·연결 계약과 검증 제한은 [아키텍처](docs/architecture.md#소스-java-브라우저-연결--source-java-browser-v1)를 참고하세요.
+
 개발 중 콘텐츠 연결·테스트·빌드를 확인하려면 다음 명령을 사용합니다.
 
 ```bash
@@ -110,7 +121,7 @@ npm run check
 
 콘텐츠 스키마와 파일 연결 검사, Node 테스트, 정적 빌드를 차례로 실행하고 `dist/`를 생성합니다.<br>
 현재 통합 브랜치는 `dev`이며, 공개 사이트는 `dev`의 정적 파일을 GitHub Pages로 제공합니다.
-위 명령은 브라우저 버전을 실행하며 Java 로컬 prototype을 시작하지 않습니다.
+`npm run check`는 Java 연결 서버를 시작하지 않습니다.
 
 ## 기술과 프로젝트 문서
 

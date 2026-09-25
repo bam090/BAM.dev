@@ -509,6 +509,25 @@ test("Java 상세는 source-first 자료를 보존하고 검증 capability에만
   assert.doesNotMatch(noHintHtml, /data-coding-test-(?:run|submit|cancel|results)/);
 });
 
+test("작성 전용 Java 문제도 로컬 연결을 안내하되 capability 전에는 실행을 숨긴다", () => {
+  const problem = findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-01");
+  assert.equal(problem.executionMode, "draft-only");
+  const html = renderCodingTestView({
+    languageName: "Java",
+    problem,
+    source: problem.starterCode,
+    evaluationKind: javaCodingTests.evaluationKind,
+    executionAvailable: false,
+    javaConnection: {
+      message: "이 탭에서 로컬 Java 연결을 시작하세요.", canConnect: true, needsReload: false,
+    },
+  });
+  assert.match(html, /이 탭에서 로컬 Java 연결을 시작하세요/);
+  assert.match(html, /data-java-connect>로컬 Java 연결/);
+  assert.match(html, /작성 전용/);
+  assert.doesNotMatch(html, /data-coding-test-(?:run|submit|cancel|results)/);
+});
+
 test("legacy 초안은 현재 CT 초안 유무에 따라 가져오기만 숨기고 원문은 따로 보존한다", () => {
   const problem = findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-03");
   const legacyDraft = { source: "public class Solution { /* legacy */ }" };

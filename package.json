@@ -6,13 +6,16 @@
   "description": "개념을 이해하고 직접 구현하며 성장하는 개발 학습 가이드",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
+    "dev:java": "node scripts/dev-java.mjs",
+    "java:prepare": "node scripts/java-prepare.mjs",
     "build": "node scripts/build.mjs",
     "desktop:bootstrap": "node scripts/desktop-bootstrap.mjs",
     "desktop:build": "node scripts/desktop-build.mjs",
     "desktop:package": "node scripts/desktop-package.mjs",
     "test": "node scripts/run-tests.mjs",
     "validate:content": "node scripts/validate-content.mjs",
-    "check": "npm run validate:content && npm test && npm run build"
+    "check:workflow": "node scripts/validate-workflow.mjs",
+    "check": "npm run check:workflow -- docs/roadmap.md && npm run validate:content && npm test && npm run build"
   },
   "engines": {
     "node": ">=20"

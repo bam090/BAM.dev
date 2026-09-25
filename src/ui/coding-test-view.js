@@ -627,6 +627,7 @@ export function renderCodingTestView({
   isSolved = false,
   evaluationKind = null,
   executionAvailable = null,
+  javaConnection = null,
   routeNotice = "",
   relatedQuest = null,
   legacyDraft = null,
@@ -695,6 +696,7 @@ export function renderCodingTestView({
               <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${isJava ? "Solution.java 전체 소스" : `${escapeHtml(problem?.entryPoint ?? "함수")} 함수 코드`}</label>
               <textarea id="coding-test-source" data-coding-test-source aria-labelledby="coding-test-source-label" aria-describedby="coding-test-editor-help coding-test-draft-status" rows="18" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorReadonly}>${escapeHtml(source)}</textarea>
               <p class="coding-test-editor-help" id="coding-test-editor-help">${javaExecutionPending ? "지금은 Java 풀이를 작성하고 저장할 수 있습니다. 실행과 완료 처리는 Java 로컬 실행기가 연결된 뒤 제공됩니다." : isJava ? "빠른 확인과 전체 확인은 이 기기에 포함된 공개 JUnit 메서드 그룹만 실행합니다." : "실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다."}</p>
+              ${javaConnection ? `<div class="coding-test-route-notice" role="status"><p>${escapeHtml(javaConnection.message)}</p>${javaConnection.canConnect ? '<button class="button button--secondary" type="button" data-java-connect>로컬 Java 연결</button>' : ""}${javaConnection.needsReload ? '<button class="button button--secondary" type="button" data-java-reload>초안 저장 후 새로고침</button>' : ""}</div>` : ""}
               <p class="coding-test-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(normalizedDraftStatus)}</p>
               <div class="coding-test-actions">
                 ${javaExecutionPending ? "" : `<button class="button button--secondary" type="button" data-coding-test-run aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : runButtonLabel}</button>

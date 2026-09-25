@@ -395,23 +395,44 @@ test("AbortSignal은 같은 requestId의 native cancel을 한 번만 보낸다",
   const expectedReport = reportFor(execution);
   const cancelCalls = [];
   let finishRun;
+  let runStarted;
   const runPromise = new Promise((resolve) => { finishRun = resolve; });
+  const startedPromise = new Promise((resolve) => { runStarted = resolve; });
   const adapter = new JavaCodingTestRunnerAdapter({
     async capabilities() { return availableCapability(); },
-    run() { return runPromise; },
+    run() { runStarted(); return runPromise; },
     async cancel(request) { cancelCalls.push(request); },
   });
   const controller = new AbortController();
   const running = adapter.run(input("run", { requestId: "ct-cancel" }), {
     signal: controller.signal,
   });
-  await Promise.resolve();
+  await startedPromise;
   controller.abort();
   controller.abort();
   finishRun(expectedReport);
 
   assert.equal(await running, expectedReport);
   assert.deepEqual(cancelCalls, [{ requestId: "ct-cancel" }]);
+});
+
+test("capability 조회 중 취소하면 Java CT 실행은 시작되지 않는다", async () => {
+  let finishCapability;
+  const capabilityPending = new Promise((resolve) => { finishCapability = resolve; });
+  let runCalls = 0;
+  let cancelCalls = 0;
+  const adapter = new JavaCodingTestRunnerAdapter({
+    capabilities() { return capabilityPending; },
+    run() { runCalls += 1; },
+    cancel() { cancelCalls += 1; },
+  });
+  const controller = new AbortController();
+  const pending = adapter.run(input(), { signal: controller.signal });
+  controller.abort();
+  finishCapability(availableCapability());
+  await assert.rejects(pending, /취소한 실행 결과/u);
+  assert.equal(runCalls, 0);
+  assert.equal(cancelCalls, 0);
 });
 
 test("Java CT run은 제출·완료를 만들지 않고 전체 submit만 CT 진도를 기록하며 Quest 진도는 보존한다", async (t) => {
@@ -497,4 +518,68 @@ test("Java CT run은 제출·완료를 만들지 않고 전체 submit만 CT 진�
   }]);
   assert.deepEqual(progress.completedQuestRevisions, questSnapshot);
   assert.deepEqual(progress.completedQuestIds, ["quest-java-total-price"]);
+});
+
+test("Java CT 결과 뒤 fingerprint 대기 중 취소해도 제출·결과를 저장하지 않는다", async (t) => {
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const previousDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  const previousCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  let finishDigest;
+  Object.defineProperty(globalThis, "window", {
+    configurable: true, value: { requestAnimationFrame() {} },
+  });
+  Object.defineProperty(globalThis, "document", {
+    configurable: true, value: { querySelector() { return null; } },
+  });
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    value: { subtle: { digest: () => new Promise((resolve) => { finishDigest = resolve; }) } },
+  });
+  t.after(() => {
+    for (const [name, previous] of [
+      ["window", previousWindow], ["document", previousDocument], ["crypto", previousCrypto],
+    ]) {
+      if (previous) Object.defineProperty(globalThis, name, previous);
+      else delete globalThis[name];
+    }
+  });
+
+  let submissions = 0;
+  let results = 0;
+  let reportReturned;
+  const reportReady = new Promise((resolve) => { reportReturned = resolve; });
+  const app = Object.create(BamLearningApp.prototype);
+  const state = {
+    collection: javaCollection, problem, source: problem.starterCode,
+    isRunning: false, cancelRequested: false, report: null,
+  };
+  Object.assign(app, {
+    currentView: "coding-test", codingTestCollection: javaCollection,
+    codingTestState: state, javaCodingTestCapability: availableCapability(),
+    javaCodingTestRunner: {
+      async capabilities() { return availableCapability(); },
+      async run() {
+        reportReturned();
+        return reportFor(createJavaCodingTestRunnerRequest(input("submit")));
+      },
+    },
+    progressRepository: {
+      recordCodingTestSubmission() { submissions += 1; },
+      saveCodingTestResult() { results += 1; },
+      getPersistenceStatus() { return { isPersistent: true }; },
+    },
+    executionCoordinator: new ExecutionCoordinator(),
+    codingTestRequestSequence: 0,
+    flushPendingCodingTestDraftSave() {}, renderCodingTest() {}, focusCodingTestResults() {},
+  });
+
+  const running = app.executeCurrentCodingTest("submit");
+  await reportReady;
+  await Promise.resolve();
+  app.cancelCodingTestRun({ disabled: false, textContent: "" });
+  finishDigest(new Uint8Array(32));
+  await running;
+  assert.equal(submissions, 0);
+  assert.equal(results, 0);
+  assert.equal(state.report, null);
 });

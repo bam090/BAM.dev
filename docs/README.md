@@ -40,6 +40,7 @@
 | bam이 작성하는 교안의 단위·구조·문체·예제·출처·완료 조건과 제출 교안 관리 경계 | [`lesson-authoring.md`](lesson-authoring.md) | bam이 교안을 작성하거나 `learning_document_manager`가 제출 교안을 관리할 때 |
 | 알고리즘 접근 방식·조합, 새 학습 경험, 반복과 중복 판정 | [`learning-content-design.md`](learning-content-design.md) | 교안·객관식·Code Quest·코딩테스트·웹과제를 만들거나 바꿀 때 |
 | 작업 유형별 파이프라인, 역할, 증거, 완료·실패·통합 조건 | [`development-workflow.md`](development-workflow.md) | 변경을 시작할 때 해당 유형과 역할의 절 확인. 인계·반환 시에는 바뀐 범위와 무효화된 증거 확인 |
+| 복잡한 기존 작업 카드의 선택형 상태·근거 검사 | [`development-workflow.md`](development-workflow.md#복잡한-카드의-선택형-상태-검사) | 카드별 `workflow-state`와 한 문서의 다중 카드 전이·검사 명령 확인 |
 | 사람이 이해하기 쉬운 코드의 구현·검토 기준 | [`development-workflow.md`](development-workflow.md#사람이-이해하기-쉬운-코드-기준) | 제품 코드를 설계·구현·테스트·통합할 때 |
 | 현재 런타임·저장소·평가 안전 경계 | [`architecture.md`](architecture.md) | 제품 코드나 평가 방식을 바꿀 때 |
 | 프런트엔드 현재·목표 기술과 점진 이관 경계 | [`architecture.md`](architecture.md#목표-설치형-구조), [`roadmap.md`](roadmap.md#bam-결정-대기-목록) | UI 구현·의존성·빌드·Worker 경계를 바꿀 때 |
@@ -54,6 +55,7 @@
 | Java Quest 로컬 실행·차단 상태 | [ADR 0005](decisions/0005-java-quest-local-runtime.md), [작업 카드](work-items/2026-09-15-java-code-quest-runtime.md) | 번들 JDK·IPC·격리·종료 계약이나 runtime·앱 검증 증거, 검증 커널의 Java Quest prototype PASS와 과거 실패를 확인할 때 |
 | Algorithm Bridge 대표 Java Quest 편입 | [편입 작업 카드](work-items/2026-09-15-algorithm-bridge-quests.md), [배열 콘텐츠 계약](content-schema.md#algorithm-bridge-java-배열-quest-편입) | ARR-01·ARR-02·QUE-01의 원본 출처·학습 카드·typed 배열 평가 준비·실행 차단 상태의 코드 작성 흐름을 다룰 때 |
 | Java 코딩테스트 원본 JUnit 실행 | [ADR 0006](decisions/0006-java-coding-test-local-runtime.md), [실행 카드](work-items/2026-09-22-java-coding-test-runtime.md) | 고정 JUnit·typed adapter·method별 JVM·CT capability/IPC·집계·검증 전 차단을 다룰 때 |
+| 소스 Java 브라우저 실행·채점·취소 설계 | [구현 승인·착수](roadmap.md#2026-09-24-소스-java-브라우저-구현-승인과-착수), [SOURCE-JAVA-BROWSER-v1](architecture.md#소스-java-브라우저-연결--source-java-browser-v1) | 2026-09-24 구현 착수 승인. 실제 HTTP·브라우저·Java 검증은 선행 gate와 실행 증거에 따라 별도 판정 |
 | 코딩테스트 목적·UI·공개 로컬 평가·진도 | [`designs/coding-test.md`](designs/coding-test.md) | 코딩테스트 제품 흐름이나 평가 표현을 바꿀 때 |
 | 코딩테스트 문제 필드·작성 형식 | [`content-schema.md`](content-schema.md#코딩테스트-컬렉션) | 코딩테스트 문제·공개 테스트·실패 설명을 만들거나 바꿀 때 |
 | Algorithm Bridge 원본72의 코딩테스트 전환 | [제품 계약](designs/coding-test.md#algorithm-bridge-코딩테스트-전환), [draft 데이터](content-schema.md#algorithm-bridge-java-코딩테스트-draft-계약), [전환 카드](work-items/2026-09-15-algorithm-bridge-coding-tests.md) | 전체 Quest 등록의 대체·원본 지원·옛 URL/초안 보존·Java 실행 차단과 실제 검증/게시 상태를 확인할 때 |
@@ -97,7 +99,7 @@
 | 프런트엔드 기술 전환 | [`architecture.md`](architecture.md), `package.json` | [`architecture.md`](architecture.md#목표-설치형-구조), ADR 0001 | React·TypeScript 목표와 점진 이관 확정, 현재 Vanilla JavaScript·무의존성 기준선 유지, 도구체인·prototype·첫 화면 결정 대기 |
 | Code Quest | [`architecture.md`](architecture.md), 현 Quest 스키마·코드 | [`designs/code-quest.md`](designs/code-quest.md) | 분리 유지. [데스크톱 탐색 첫 구현](work-items/2026-09-14-code-quest-navigation.md)의 과정·주제·진도·검색/필터·지도·홈/사이드바 연결 반영, 반환 수정 후 독립 focused·대표 데스크톱 검증 PASS. 최종 독립 문서 재검·통합 PASS이며 영구 스키마·모바일·설치 목표와 구분 |
 | 코딩테스트 | [`architecture.md`](architecture.md), 현 coding-test 스키마·코드 | [`designs/coding-test.md`](designs/coding-test.md) | 분리 유지. JavaScript 실행과 Java 원문 열람·작성/저장·명시 초안 가져오기 구현. 독립 콘텐츠·관련 자동 검사·대표 UI·문서·통합 및 PR #22 CI PASS. PR #22·#23 병합 기준선과 검증 커널의 CT 정상·오류·대표 앱 실행 PASS와 재사용 범위는 [실행 카드](work-items/2026-09-22-java-coding-test-runtime.md)에서 구분 |
-| 소스 전달·로컬 실행 | `README.md`, [`architecture.md`](architecture.md) | [`designs/local-application.md`](designs/local-application.md) | [DEC-SOURCE-DISTRIBUTION-01](roadmap.md#2026-09-22-소스-전달-방식-정정): GitHub clone/다운로드 후 기존 소스 실행. Electron·DMG 증거는 보존하되 설치형은 필수 목표가 아님. 웹 Java는 작성·저장만 지원하며 새 Java 연결·브라우저 writer 계약은 미결정 |
+| 소스 전달·로컬 실행 | `README.md`, [`architecture.md`](architecture.md) | [`designs/local-application.md`](designs/local-application.md) | [DEC-SOURCE-DISTRIBUTION-01](roadmap.md#2026-09-22-소스-전달-방식-정정): GitHub clone/다운로드 후 기존 소스 실행. Electron·DMG 증거는 보존하되 설치형은 필수 목표가 아님. 기본 정적 `npm run dev`·GitHub Pages에는 Java 실행 API가 없고, 별도 portable 준비·`dev:java` opt-in 연결은 검증 커널의 Chrome에서 Quest·CT 공개 평가·취소 PASS. 다른 OS·브라우저의 지원 완료와 브라우저 writer 계약은 별도 판정 |
 | 웹과제 | [`web-project-authoring.md`](web-project-authoring.md), ADR 0004 | [`designs/web-assignments.md`](designs/web-assignments.md) | 밤위키 원본 사용 확정. 기존 인앱 과제 유지, 원본별 고정 시작 버전·BAM 연결·공개 검증·오프라인 계약은 후속 |
 | 저장·평가 안전 | [`architecture.md`](architecture.md), ADR 0002~0005 | 변경 시 해당 ADR | 기존 브라우저 경계와 Java 후보의 OS 제한·활성 UI PASS·과거 실패를 구분 |
 | 개발·검증·Git·CI | [`development-workflow.md`](development-workflow.md) | 같은 문서와 [`roadmap.md`](roadmap.md) | `DEC-GIT-01` 게시 범위 확정·기존 원격 기준선 확인. 로컬·원격 대조와 실제 게시·CI 판정은 [게시 작업 카드](work-items/2026-09-13-github-publication.md) 참조 |

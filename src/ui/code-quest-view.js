@@ -751,6 +751,7 @@ export function renderCodeQuestView({
   isRunning = false,
   cancelRequested = false,
   executionAvailable = true,
+  javaConnection = null,
   draftStatus = "starter",
   uiError = null,
   report = null,
@@ -811,7 +812,7 @@ export function renderCodeQuestView({
           ${catalogItem?.hasDraft ? '<p class="quest-draft-revision-note">저장된 초안의 문제 버전은 확인할 수 없습니다. 코드는 그대로 보존됩니다.</p>' : ""}
         </header>
 
-        ${javaExecutionPending ? isDraftOnly ? '<p class="catalog-notice" role="status"><strong>원본 공개 테스트 읽기 · 앱 실행 미지원</strong><br>문제와 공개 테스트 소스를 확인하고 코드를 저장할 수 있습니다. 이 draft는 실행과 완료 판정을 제공하지 않습니다.</p>' : '<p class="catalog-notice" role="status"><strong>Java 실행 준비 중 · 코드 작성·저장 가능</strong><br>문제와 힌트를 확인하고 코드를 저장할 수 있습니다. 공개 테스트 실행과 완료 판정은 아직 사용할 수 없습니다.</p>' : ""}
+        ${javaExecutionPending ? isDraftOnly ? '<p class="catalog-notice" role="status"><strong>원본 공개 테스트 읽기 · 앱 실행 미지원</strong><br>문제와 공개 테스트 소스를 확인하고 코드를 저장할 수 있습니다. 이 draft는 실행과 완료 판정을 제공하지 않습니다.</p>' : '<p class="catalog-notice" role="status"><strong>Java 연결 필요 · 코드 작성·저장 가능</strong><br>로컬 Java 연결을 선택한 뒤 공개 테스트를 실행할 수 있습니다.</p>' : ""}
 
         ${catalogCourse && catalogTopic ? `<section class="quest-location-summary" aria-label="현재 과정과 주제 진도">
           ${javaExecutionPending ? `<p><strong>${escapeHtml(catalogCourse.name)} Code Quest ${catalogCourse.totalCount}개 등록</strong> · 실행 준비 중</p><p><strong>${escapeHtml(catalogTopic.title)} ${catalogTopic.totalCount}개 등록</strong> · 코드 작성·저장 가능</p>` : `${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}`}
@@ -847,6 +848,7 @@ export function renderCodeQuestView({
               <textarea id="quest-source" data-quest-source aria-labelledby="quest-source-label" aria-describedby="quest-draft-status quest-editor-help" rows="20" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorDisabled}>${escapeHtml(source)}</textarea>
             </div>
             <p class="quest-editor-help" id="quest-editor-help">${escapeHtml(editorCopy.help)}</p>
+            ${javaConnection && !isDraftOnly ? `<div class="catalog-notice" role="status"><p>${escapeHtml(javaConnection.message)}</p>${javaConnection.canConnect ? '<button class="button button--secondary" type="button" data-java-connect>로컬 Java 연결</button>' : ""}${javaConnection.needsReload ? '<button class="button button--secondary" type="button" data-java-reload>초안 저장 후 새로고침</button>' : ""}</div>` : ""}
             ${javaExecutionPending ? `<p class="quest-editor-help" role="status">${isDraftOnly ? "원본 테스트 읽기용 draft · 코드 작성·저장 가능. 앱 실행과 완료 판정은 제공하지 않습니다." : "Java 실행 준비 중 · 코드 작성·저장 가능. 실행과 완료 판정은 차단되어 있습니다."}</p>` : ""}
             <p class="quest-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="quest-draft-status" data-quest-draft-status>${getCodeQuestDraftStatusMessage(normalizedDraftStatus)}</p>
             <div class="quest-run-actions">

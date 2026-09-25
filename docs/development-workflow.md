@@ -105,6 +105,16 @@ bam의 판단이 필요한 항목:
 
 Git 기준선과 PR이 생기기 전에는 총괄이 정한 역할별 작업 카드와 인계 결과를 제품·설계 문서 담당이 하나의 `docs/work-items/<work-id>.md`에 보존한다. PR 흐름이 활성화된 뒤에는 같은 내용을 PR 본문·리뷰에 누적하고, merge 때 장기 상태·결정·학습 커버리지만 해당 정본에 반영한다. 원시 로그를 여러 문서에 복제하지 않는다.
 
+### 복잡한 카드의 선택형 상태 검사
+
+여러 단계의 의존성·승인 대기·실패 후 반환이 있는 **기존 Markdown 문서의 작업 카드(roadmap 절 포함)**에 필요할 때만 `workflow-state` JSON fenced block을 카드마다 하나씩 추가한다. 같은 문서의 여러 블록에는 고유 `id`를 붙인다. 모든 카드의 이관이나 자동 진행은 요구하지 않는다. `scopeRevision`은 카드 작성자가 정한 범위 버전이고 `scopeFiles`는 그 범위를 설명하는 저장소 상대 경로와 실제 SHA-256이다. 범위가 바뀌면 버전을 올리고 이전 근거의 적용 여부를 다시 판단한다. 단순한 동일 버전 표기만으로 근거의 유효성이 증명되지는 않는다.
+
+`stage`는 선행조건이 남은 `prerequisite_pending`, 명시적 승인 대기인 `approval_pending`, `implementation`, `verification`, `complete`다. `prerequisites`는 `{id, status, ref}` 목록이며 `PASS`는 해당 결정·계약·준비조건이 충족됐다는 근거 연결이지 제품 검증 PASS가 아니다. 미충족 선행조건이 있으면 구현 단계로 넘기지 않는다. 이미 승인된 범위는 유효한 기존 승인 근거를 `approval.ref`에 연결하며 재승인하지 않는다. 승인·구현·완료 근거는 각각 `null` 또는 `{ "scopeRevision": "...", "ref": "근거 위치" }`다. 구현 진입에는 적용되는 승인 근거, 검증 진입에는 구현 근거가 필요하다. `verification`은 `status`(`PENDING`/`PASS`/`FAIL`/`BLOCKED`), `checks`, `stop`을 가지며 각 check는 카드의 `requiredChecks` ID와 결과·같은 revision·근거 위치를 기록한다. 검증 PASS에는 선언한 모든 필수 ID의 PASS가 필요하고, `complete`에는 별도의 완료 근거가 필요하다. 중간 검증 PASS는 작업 완료가 아니다.
+
+검증 `FAIL`·`BLOCKED`에는 해당 결과의 check 근거와 `stop: {returnTo, reason, nextAction, attempt, maxAttempts}`를 필수로 남긴다. `returnTo`는 선행조건 대기·승인 대기·구현·검증 중 하나이며 1 ≤ `attempt` ≤ `maxAttempts`다. 한도 초과나 사람의 새 판단이 필요한 경우에는 자동 재시도하지 않는다. 실패 이력은 카드의 기존 서술에 보존하고 현재 블록만 최신 판정으로 갱신한다. `requiredChecks`가 실제 위험을 충분히 덮는지, `ref`가 진짜 승인·실행 증거인지와 도구 권한은 독립 검토자가 판단한다. 검사기는 파일 해시·필드·전이·근거 연결의 형식만 검사한다.
+
+명시한 Markdown 문서의 상태 블록만 `npm run check:workflow -- <문서 경로>`로 검사한다. 현재 `npm run check`는 [로드맵의 Java 승인 대기 카드와 다섯 후속 카드](roadmap.md#남은-작업의-작은-구현-순서와-시뮬레이션)를 함께 검사한다. 다른 카드에 같은 형식을 강제하지 않는다.
+
 ## 역할과 금지 사항
 
 | 역할 | 책임 | 해서는 안 되는 일 |

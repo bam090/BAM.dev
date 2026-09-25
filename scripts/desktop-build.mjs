@@ -66,7 +66,9 @@ export async function buildCodingTestBundle({ resourcesPath, stagingRoot, junitA
     await mkdir(path.join(workRoot, "licenses"));
     for (const notice of lock.junit.notices) {
       if (!/^META-INF\/(?:MANIFEST\.MF|LICENSE[-.A-Za-z0-9]*)$/u.test(notice.entry)) throw new Error("Invalid JUnit notice path");
-      const { stdout } = await run("/usr/bin/unzip", ["-p", junitArtifact, notice.entry], { encoding: "buffer" });
+      const { stdout } = await run("/usr/bin/unzip", ["-p", junitArtifact, notice.entry], {
+        encoding: "buffer", timeout: 10_000, maxBuffer: 1024 * 1024,
+      });
       if (createHash("sha256").update(stdout).digest("hex") !== notice.sha256) throw new Error("JUnit notice hash mismatch");
       await writeFile(path.join(workRoot, "licenses", path.basename(notice.entry)), stdout, { flag: "wx" });
     }
@@ -96,7 +98,7 @@ async function sha256(filePath) {
   return hash.digest("hex");
 }
 
-async function runnerClassHashes(runnerPath) {
+export async function runnerClassHashes(runnerPath) {
   if (!(await lstat(runnerPath)).isDirectory()) throw new Error("Java runner 경로가 일반 디렉터리가 아닙니다.");
   const classes = [];
   for await (const entry of await opendir(runnerPath)) {
@@ -187,12 +189,14 @@ export async function assertSafeTree(rootPath) {
         if (!isInside(root, resolvedTarget)) {
           throw new Error(`bundle 밖에서 해석되는 symlink입니다: ${entryPath}`);
         }
+      } else if (!entryStat.isFile()) {
+        throw new Error(`bundle에는 일반 파일과 내부 symlink만 허용됩니다: ${entryPath}`);
       }
     }
   }
 }
 
-async function verifyArchive(filePath, expectedHash) {
+export async function verifyArchive(filePath, expectedHash) {
   const actualHash = await sha256(filePath);
   if (actualHash !== expectedHash) {
     throw new Error(`${path.basename(filePath)} SHA-256이 runtime lock과 다릅니다.`);
@@ -216,11 +220,15 @@ async function prepareElectron(archivePath, destination) {
   await assertSafeTree(destination);
 }
 
-async function prepareJdk(archivePath, destination) {
-  const { stdout } = await run("/usr/bin/tar", ["-tf", archivePath]);
+export async function prepareJdk(archivePath, destination) {
+  const { stdout } = await run("/usr/bin/tar", ["-tf", archivePath], {
+    timeout: 30_000, maxBuffer: 8 * 1024 * 1024,
+  });
   assertSafeArchiveMembers(stdout, path.basename(archivePath));
   await mkdir(destination, { recursive: true });
-  await run("/usr/bin/tar", ["-xzf", archivePath, "-C", destination]);
+  await run("/usr/bin/tar", ["-xzf", archivePath, "-C", destination], {
+    timeout: 120_000, maxBuffer: 1024 * 1024,
+  });
   await assertSafeTree(destination);
 }
 

@@ -292,6 +292,9 @@ export class JavaCodingTestRunnerAdapter {
     if (!capability.available) {
       throw new Error(capability.reason ?? "Java 코딩테스트 실행기를 사용할 수 없습니다.");
     }
+    if (signal?.aborted) {
+      throw new Error("취소한 실행 결과는 채점이나 완료 기록에 반영하지 않았습니다.");
+    }
 
     let cancelSent = false;
     const cancel = () => {

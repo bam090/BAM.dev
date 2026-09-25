@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { access, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { release as osRelease, tmpdir, version as osVersion } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CT_EVALUATION_KIND, CT_JUNIT, CT_RUNNER_CLASS, createCodingTestArtifacts, verifyCodingTestBundle } from "./coding-test-artifacts.mjs";
 
@@ -364,7 +365,7 @@ function matchesValidatedKernel(release, version) {
     && version === "Darwin Kernel Version 23.6.0: Wed Nov  5 21:50:27 PST 2025; root:xnu-10063.141.1.708.2~1/RELEASE_ARM64_T6020";
 }
 
-async function resolveBundlePaths(bundleRoot) {
+async function resolveBundlePaths(bundleRoot, { requireQuestClass = true } = {}) {
   if (typeof bundleRoot !== "string" || !isAbsolute(bundleRoot)) {
     throw new TypeError("bundleRoot는 절대 경로여야 합니다.");
   }
@@ -386,7 +387,8 @@ async function resolveBundlePaths(bundleRoot) {
   const javaExecutable = await realpath(join(jdkRoot, "bin", "java"));
   const javacExecutable = await realpath(join(jdkRoot, "bin", "javac"));
   const runnerRoot = await realpath(join(resourcesRoot, "runtime", "java-runner"));
-  const runnerClass = await realpath(join(runnerRoot, `${RUNNER_CLASS}.class`));
+  const runnerClass = requireQuestClass
+    ? await realpath(join(runnerRoot, `${RUNNER_CLASS}.class`)) : null;
 
   if (!isWithin(resourcesRoot, jdkRoot) || !isWithin(resourcesRoot, runnerRoot)) {
     throw new Error("bundle Java 경로가 Resources 밖을 가리킵니다.");
@@ -395,7 +397,7 @@ async function resolveBundlePaths(bundleRoot) {
     if (!isWithin(jdkRoot, executable)) throw new Error("bundle JDK 실행 파일이 JDK 밖을 가리킵니다.");
     await access(executable, fsConstants.X_OK);
   }
-  if (!isWithin(runnerRoot, runnerClass)) throw new Error("Java runner class가 runner 경로 밖을 가리킵니다.");
+  if (runnerClass && !isWithin(runnerRoot, runnerClass)) throw new Error("Java runner class가 runner 경로 밖을 가리킵니다.");
   const release = await readFile(join(jdkRoot, "release"), "utf8");
   if (
     process.platform !== "darwin"
@@ -717,6 +719,7 @@ function runSandboxedProcess({
   protocol = false,
   input = null,
   maxProtocolBytes = JAVA_RUNTIME_LIMITS.maxProtocolBytes,
+  onChildSpawn,
 }, dependencies = {}) {
   if (isolationRuntimePoisoned) {
     return Promise.resolve({
@@ -787,6 +790,7 @@ function runSandboxedProcess({
     let reapDeadlineId;
     let timeoutId;
     let monitorId;
+    let spawnRecordPromise;
 
     const finish = async () => {
       if (settled || finishing) return;
@@ -799,6 +803,7 @@ function runSandboxedProcess({
       observerController?.abort();
       try {
         await observerPromise;
+        await spawnRecordPromise;
       } catch {
         // A cancelled or failed observer is already represented by processGroupAbsent.
       }
@@ -1028,6 +1033,15 @@ function runSandboxedProcess({
       if (!terminationStarted) armReapDeadline();
       void confirmTermination();
     });
+
+    if (Number.isSafeInteger(child.pid) && onChildSpawn) {
+      spawnRecordPromise = Promise.resolve().then(() => onChildSpawn(child.pid)).catch(() => {
+        cleanupFailed = true;
+        isolationRuntimePoisoned = true;
+        terminationReason ??= "spawn_record_failed";
+        stop("spawn_record_failed");
+      });
+    }
 
     timeoutId = setTimeoutFn(() => stop("timeout"), timeoutMs);
     monitorId = setIntervalFn(async () => {
@@ -1415,17 +1429,17 @@ export async function getJavaCodingTestCapabilities({ bundleRoot, trustedManifes
   } catch { return { ...base, available: false, reason: "번들 Java 코딩테스트 실행 환경을 사용할 수 없습니다." }; }
 }
 
-export async function runJavaCodingTest(value, { signal, bundleRoot, trustedManifest } = {}) {
+export async function runJavaCodingTest(value, { signal, bundleRoot, trustedManifest, executionGuard } = {}) {
   const request = readCodingTestRequest(value);
   assertAbortSignal(signal);
   const problem = readTrustedCodingTest(trustedManifest, request);
-  return runJavaTask(request, problem, { signal, bundleRoot, trustedManifest });
+  return runJavaTask(request, problem, { signal, bundleRoot, trustedManifest, executionGuard });
 }
 
 // Packaging compilation uses the same bounded child/group supervision as learner javac.
-export async function compileTrustedCodingTestSources({ bundleRoot, workRoot, sourcePaths, signal } = {}) {
+export async function compileTrustedCodingTestSources({ bundleRoot, workRoot, sourcePaths, signal, executionGuard } = {}) {
   assertAbortSignal(signal);
-  const paths = await resolveBundlePaths(bundleRoot);
+  const paths = await resolveBundlePaths(bundleRoot, { requireQuestClass: false });
   const root = await realpath(workRoot);
   if (!Array.isArray(sourcePaths) || sourcePaths.length !== 146 || new Set(sourcePaths).size !== sourcePaths.length) throw new Error("Invalid CT build sources");
   for (const source of sourcePaths) if (!source.endsWith(".java") || !isWithin(root, await realpath(source))) throw new Error("CT build source escaped work root");
@@ -1436,32 +1450,114 @@ export async function compileTrustedCodingTestSources({ bundleRoot, workRoot, so
   const args = ["-J-Xmx128m", `-J-Duser.home=${homeRoot}`, `-J-Djava.io.tmpdir=${tempRoot}`,
     "--release", "25", "-encoding", "UTF-8", "-proc:none", "-implicit:none",
     "-classpath", join(root, CT_JUNIT.file), "-d", classesRoot, ...sourcePaths];
-  const execution = await runSandboxedProcess({
+  const execution = await runSourceGuardedProcess({
     profileName: "compile.sb", parameters: compileSandboxParameters(paths.jdkRoot, paths.javacExecutable, root),
     executable: paths.javacExecutable, args, environment: createEnvironment(homeRoot, tempRoot),
     timeoutMs: JAVA_RUNTIME_LIMITS.compileTimeoutMs, rssLimitBytes: JAVA_RUNTIME_LIMITS.compileRssBytes,
     signal, compileOutputPath: classesRoot,
-  });
+  }, { executionGuard, kind: "prepare-coding-test", workRoot: root });
   const safe = terminationIsSafe(execution);
   if (!safe) isolationRuntimePoisoned = true;
-  return { execution, safe, executable: paths.javacExecutable, args };
+  return { execution, safe, executable: paths.javacExecutable, args: execution.launchedArgs ?? args };
+}
+
+export async function compileTrustedQuestSource({ bundleRoot, workRoot, sourcePath, sourceSha256, signal, executionGuard } = {},
+  { executeProcess = runSandboxedProcess } = {}) {
+  assertAbortSignal(signal);
+  if (typeof executionGuard?.reserve !== "function" || typeof executionGuard?.finish !== "function") {
+    throw new Error("Java 준비 child의 독립 회수 guard가 필요합니다.");
+  }
+  const paths = await resolveBundlePaths(bundleRoot, { requireQuestClass: false });
+  const root = await realpath(workRoot);
+  const source = await realpath(sourcePath);
+  if (source !== join(root, "JavaBamQuestRunner.java")
+    || !/^[a-f0-9]{64}$/u.test(sourceSha256)
+    || createHash("sha256").update(await readFile(source)).digest("hex") !== sourceSha256) {
+    throw new Error("고정 Quest runner 소스가 준비 작업 공간의 예상 바이트와 다릅니다.");
+  }
+  const classesRoot = join(root, "classes");
+  const emptyClasspath = join(root, "empty-classpath");
+  const homeRoot = join(root, "home");
+  const tempRoot = join(root, "tmp");
+  await Promise.all([mkdir(classesRoot), mkdir(emptyClasspath), mkdir(homeRoot), mkdir(tempRoot)]);
+  const args = ["-J-Xmx128m", `-J-Duser.home=${homeRoot}`, `-J-Djava.io.tmpdir=${tempRoot}`,
+    "--release", "25", "-encoding", "UTF-8", "-proc:none", "-implicit:none",
+    "-classpath", emptyClasspath, "-d", classesRoot, source];
+  const execution = await runSourceGuardedProcess({
+    profileName: "compile.sb", parameters: compileSandboxParameters(paths.jdkRoot, paths.javacExecutable, root),
+    executable: paths.javacExecutable, args, environment: createEnvironment(homeRoot, tempRoot),
+    timeoutMs: JAVA_RUNTIME_LIMITS.compileTimeoutMs, rssLimitBytes: JAVA_RUNTIME_LIMITS.compileRssBytes,
+    signal, compileOutputPath: classesRoot,
+  }, { executionGuard, kind: "prepare-quest", workRoot: root, executeProcess });
+  const safe = terminationIsSafe(execution);
+  if (!safe) isolationRuntimePoisoned = true;
+  if (createHash("sha256").update(await readFile(source)).digest("hex") !== sourceSha256) {
+    throw new Error("컴파일 중 Quest runner 소스가 변경됐습니다.");
+  }
+  return { execution, safe, executable: paths.javacExecutable, args: execution.launchedArgs, classesRoot, sourceSha256 };
 }
 
 function terminationIsSafe(execution) {
   const evidence = execution.terminationEvidence;
-  return evidence.childCreated === false || (evidence.exitObserved && evidence.closeObserved
+  return execution.guardSafe !== false && (evidence.childCreated === false || (evidence.exitObserved && evidence.closeObserved
     && evidence.processGroupAbsent === true && evidence.processObserverCloseObserved === true
-    && evidence.observerUnreaped === false && evidence.cleanupFailed === false);
+    && evidence.observerUnreaped === false && evidence.cleanupFailed === false));
 }
 
-export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedManifest } = {}) {
+async function runSourceGuardedProcess(config, { executionGuard, kind, workRoot, executeProcess = runSandboxedProcess } = {}) {
+  if (!executionGuard) return executeProcess(config);
+  if (typeof executionGuard.reserve !== "function" || typeof executionGuard.recordSpawn !== "function"
+    || typeof executionGuard.finish !== "function") {
+    throw new Error("독립 Java 감독이 준비되지 않았습니다.");
+  }
+  let reservation;
+  try {
+    reservation = await executionGuard.reserve({ kind, workRoot, executable: config.executable });
+  } catch (error) {
+    isolationRuntimePoisoned = true;
+    throw error;
+  }
+  if (!/^[a-f0-9]{64}$/u.test(reservation?.attemptId)) {
+    isolationRuntimePoisoned = true;
+    throw new Error("독립 Java 감독 nonce가 유효하지 않습니다.");
+  }
+  let execution;
+  try {
+    const ownedArguments = [
+      `${basename(config.executable) === "javac" ? "-J-D" : "-D"}bam.owner.nonce=${reservation.attemptId}`,
+      ...config.args,
+    ];
+    execution = await executeProcess({
+      ...config,
+      parameters: { BAM_OWNER_NONCE: reservation.attemptId, ...config.parameters },
+      args: ownedArguments,
+      onChildSpawn: (pid) => executionGuard.recordSpawn({ reservation, pid, pgid: pid }),
+    });
+    execution = { ...execution, launchedArgs: ownedArguments };
+  } catch (error) {
+    try { await executionGuard.finish({ reservation, execution: null }); }
+    catch { /* The durable marker remains until independent recovery. */ }
+    isolationRuntimePoisoned = true;
+    throw error;
+  }
+  try {
+    const independentlyReaped = await executionGuard.finish({ reservation, execution });
+    if (independentlyReaped !== true) isolationRuntimePoisoned = true;
+    return { ...execution, guardSafe: independentlyReaped === true };
+  } catch (error) {
+    isolationRuntimePoisoned = true;
+    throw error;
+  }
+}
+
+export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedManifest, executionGuard } = {}) {
   const request = readRequest(requestValue);
   assertAbortSignal(signal);
   const quest = readTrustedQuest(trustedManifest, request);
-  return runJavaTask(request, quest, { signal, bundleRoot });
+  return runJavaTask(request, quest, { signal, bundleRoot, executionGuard });
 }
 
-async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest } = {}) {
+async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest, executionGuard } = {}) {
   const startedAt = performance.now();
   const ctUnavailable = quest.codingTest && !CODING_TEST_PROTOTYPE_VALIDATED;
 
@@ -1523,7 +1619,7 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
     }
 
     const environment = createEnvironment(homeRoot, tempRoot);
-    const compilation = await runSandboxedProcess({
+    const compilation = await runSourceGuardedProcess({
       profileName: "compile.sb",
       parameters: compileSandboxParameters(
         bundlePaths.jdkRoot,
@@ -1548,7 +1644,7 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
       rssLimitBytes: JAVA_RUNTIME_LIMITS.compileRssBytes,
       signal,
       compileOutputPath: classesRoot,
-    });
+    }, { executionGuard, kind: quest.codingTest ? "coding-test" : "quest", workRoot });
     const compilationCleanupIsSafe = observeTermination(compilation);
 
     if (
@@ -1584,7 +1680,7 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
         ? ["--array-v1", quest.entryPoint, quest.signature]
         : [quest.entryPoint, ...test.args.map(String)];
 
-      const execution = await runSandboxedProcess({
+      const execution = await runSourceGuardedProcess({
         profileName: "runtime.sb",
         parameters: {
           ...runtimeSandboxParameters({
@@ -1625,7 +1721,7 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
         maxProtocolBytes: quest.signature
           ? JAVA_RUNTIME_LIMITS.maxArrayProtocolBytes
           : JAVA_RUNTIME_LIMITS.maxProtocolBytes,
-      });
+      }, { executionGuard, kind: quest.codingTest ? "coding-test" : "quest", workRoot });
       const executionCleanupIsSafe = observeTermination(execution);
       const result = executionCleanupIsSafe
         ? quest.codingTest ? codingTestResult(test, execution) : runtimeTestResult(test, execution, quest.signature)
@@ -1649,6 +1745,7 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
       preserveWorkRoot,
     );
   } catch (error) {
+    if (executionGuard) preserveWorkRoot = true;
     const tests = quest.tests.map((test) => ({ ...baseTestResult(test), outcome: "not_run" }));
     return finishJavaRun(
       createReport(
@@ -1687,6 +1784,7 @@ export const __test = Object.freeze({
     isolationRuntimePoisoned = false;
   },
   runSandboxedProcess,
+  runSourceGuardedProcess,
   runtimeSandboxParameters,
   runtimeTestResult,
 });
