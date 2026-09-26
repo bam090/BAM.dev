@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-bam-java-executor-v1' blob: 'wasm-unsafe-eval' 'unsafe-eval'; worker-src blob:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>Java 실행</title>
+</head>
+<body>
+<script nonce="bam-java-executor-v1">
+(() => {
+  const parentOrigin = new URL(location.href).origin;
+  let worker = null;
+  let started = false;
+  const notify = (kind, extra = {}) => parent.postMessage({ kind, ...extra }, parentOrigin);
+
+  addEventListener("message", (event) => {
+    if (event.source !== parent || event.origin !== parentOrigin) return;
+    const data = event.data;
+    if (data?.command === "stop") {
+      worker?.terminate();
+      worker = null;
+      notify("terminated", { runId: data.runId });
+      return;
+    }
+    if (data?.command !== "start" || started || event.ports.length !== 1
+      || !Number.isSafeInteger(data.runId) || typeof data.workerSource !== "string") return;
+    started = true;
+    try {
+      const workerUrl = URL.createObjectURL(new Blob([data.workerSource], { type: "text/javascript" }));
+      worker = new Worker(workerUrl);
+      URL.revokeObjectURL(workerUrl);
+      worker.addEventListener("error", (error) => notify("worker-error", { runId: data.runId, message: String(error.message).slice(0, 500) }));
+      const transfers = [event.ports[0],
+        ...data.assets.map((asset) => asset.bytes.buffer),
+        ...Object.values(data.classes).map((bytes) => bytes.buffer),
+        ...(data.mode === "junit" ? [data.jarBytes.buffer, data.junitJar.buffer] : [])];
+      worker.postMessage({ runId: data.runId, assets: data.assets, classes: data.classes,
+        args: data.args, questKind: data.questKind, mode: data.mode,
+        jarBytes: data.jarBytes, junitJar: data.junitJar, selector: data.selector }, transfers);
+      notify("started", { runId: data.runId });
+    } catch (error) {
+      worker?.terminate();
+      worker = null;
+      notify("worker-error", { runId: data.runId, message: String(error?.message ?? error).slice(0, 500) });
+    }
+  });
+
+  notify("ready");
+})();
+</script>
+</body>
+</html>

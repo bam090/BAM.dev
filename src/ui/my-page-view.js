@@ -293,6 +293,7 @@ export function renderMyPageView({
   webProjectState = {},
   nickname = "",
   javaPreparationState = "unavailable",
+  javaPreparationMessage = "",
   isPersistent = true,
   storageReadErrors = [],
 } = {}) {
@@ -481,7 +482,7 @@ export function renderMyPageView({
         </form>
       </section>
 
-      ${renderJavaBrowserPreparation({ id: "my-page-java", state: javaPreparationState })}
+      ${renderJavaBrowserPreparation({ id: "my-page-java", state: javaPreparationState, message: javaPreparationMessage })}
 
       <section class="my-page-local-status${hasStorageReadError ? " is-error" : isPersistent ? "" : " is-warning"}" aria-labelledby="my-page-storage-title"${hasStorageReadError ? ' role="status"' : ""}>
         <div>

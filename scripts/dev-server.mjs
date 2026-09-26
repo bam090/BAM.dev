@@ -3,10 +3,11 @@ import { readFile, realpath, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCodingTestArtifacts } from "../desktop/runtime/coding-test-artifacts.mjs";
 
 const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const port = Number(process.env.BAM_DEV_PORT ?? 4173);
-const allowedRoots = new Set(["content", "src", "styles"]);
+const allowedRoots = new Set(["content", "src", "styles", "assets", "runtime"]);
 const isolatedWorkerPath = "/src/workers/javascript-code-runner.classic.js";
 const oldWorkerPath = "/src/workers/javascript-code-runner.worker.js";
 const workerPolicy = "default-src 'none'; connect-src 'none'; script-src 'unsafe-eval'; worker-src 'none'";
@@ -69,6 +70,26 @@ export function createDevServer({ javaTransport = null } = {}) {
     if (!request.url || !["GET", "HEAD"].includes(request.method ?? "")) {
       response.writeHead(405, { Allow: "GET, HEAD" });
       response.end("Method Not Allowed");
+      return;
+    }
+
+    if (!javaTransport && request.url === "/runtime/java-browser/compiler/ct-artifacts.json") {
+      try {
+        const collection = JSON.parse(await readFile(path.join(rootDirectory, "content/coding-tests/java.json"), "utf8"));
+        const body = Buffer.from(`${JSON.stringify(createCodingTestArtifacts(collection))}\n`);
+        response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", "Content-Length": body.length });
+        response.end(request.method === "HEAD" ? undefined : body);
+      } catch {
+        response.writeHead(503);
+        response.end();
+      }
+      return;
+    }
+
+    if (!javaTransport && request.url === "/runtime/java-browser/compiler/SolutionInvoker.java") {
+      const body = await readFile(path.join(rootDirectory, "desktop/runtime/SolutionInvoker.java"));
+      response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8", "Content-Length": body.length });
+      response.end(request.method === "HEAD" ? undefined : body);
       return;
     }
 

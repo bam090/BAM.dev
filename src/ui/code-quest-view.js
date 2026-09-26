@@ -289,7 +289,7 @@ function renderQuestReport(report, quest, persistenceStatus, executionAvailable)
     return `
       <section class="quest-results-empty" aria-labelledby="quest-results-empty-title">
         <h3 id="quest-results-empty-title">공개 테스트 결과</h3>
-        <p>${executionAvailable ? `코드를 실행하면 ${quest?.publicTests?.length ?? 0}개의 공개 테스트 결과가 표시됩니다.` : unavailableCopy}</p>
+        <p data-java-results-status>${executionAvailable ? `코드를 실행하면 ${quest?.publicTests?.length ?? 0}개의 공개 테스트 결과가 표시됩니다.` : unavailableCopy}</p>
       </section>
     `;
   }
@@ -455,7 +455,7 @@ export function renderJavaPublicTests(quest, executionAvailable) {
   return `<section class="quest-section" aria-labelledby="quest-public-tests-title">
     <p class="quest-section-label">공개 평가 조건</p>
     <h2 id="quest-public-tests-title">공개 테스트</h2>
-    <p>모든 입력과 반환값·추가 확인 조건을 공개합니다.${executionAvailable ? "" : " Java 실행 준비 중이며 이 데이터는 아직 실행된 결과가 아닙니다."}</p>
+    <p data-java-public-tests-status>모든 입력과 반환값·추가 확인 조건을 공개합니다.${executionAvailable ? "" : " Java 실행 준비 중이며 이 데이터는 아직 실행된 결과가 아닙니다."}</p>
     <details class="quest-public-tests">
       <summary>공개 테스트 ${tests.length}개 보기</summary>
       <div class="quest-public-test-list">
@@ -629,30 +629,31 @@ function getQuestProgressEvidenceCopy(item) {
     : "";
 }
 
-function isCatalogItemExecutionAvailable(item, javaExecutionAvailable) {
+function isCatalogItemExecutionAvailable(item, javaExecutionAvailable, supportedIds = null) {
   return item?.languageId !== "java" || (
     javaExecutionAvailable && item?.executionMode !== "draft-only"
+    && (!supportedIds || supportedIds.includes(item?.id))
   );
 }
 
-function getCourseExecutionCount(course, javaExecutionAvailable) {
+function getCourseExecutionCount(course, javaExecutionAvailable, supportedIds = null) {
   return (course?.items ?? []).filter((item) =>
-    isCatalogItemExecutionAvailable(item, javaExecutionAvailable)).length;
+    isCatalogItemExecutionAvailable(item, javaExecutionAvailable, supportedIds)).length;
 }
 
-function getCourseAvailabilityCopy(course, javaExecutionAvailable, languageId = course?.languageId) {
+function getCourseAvailabilityCopy(course, javaExecutionAvailable, languageId = course?.languageId, supportedIds = null) {
   if (languageId !== "java") return `${course?.completedCount ?? 0}/${course?.totalCount ?? 0} 완료`;
-  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable);
+  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable, supportedIds);
   return executableCount > 0
     ? `${course.totalCount}개 등록 · ${executableCount}개 실행 가능`
     : `${course.totalCount}개 등록 · 실행 준비 중`;
 }
 
-function renderQuestLearningMap(course, javaExecutionAvailable) {
+function renderQuestLearningMap(course, javaExecutionAvailable, supportedIds = null) {
   return `<section class="quest-learning-map" aria-labelledby="quest-map-title">
     <header><p class="eyebrow">실제 콘텐츠 연결</p><h2 id="quest-map-title">학습 지도</h2><p>교안에 선언된 개념과 연결된 Code Quest만 보여 줍니다.</p></header>
     <div class="quest-map-topics">${course.topics.map((topic) => `<article>
-      <div><h3>${escapeHtml(topic.title)}</h3><p>${getCourseAvailabilityCopy(topic, javaExecutionAvailable, course.languageId)}</p><a href="${escapeHtml(topic.items[0]?.lessonHref ?? "#")}">관련 학습문서 읽기</a></div>
+      <div><h3>${escapeHtml(topic.title)}</h3><p>${getCourseAvailabilityCopy(topic, javaExecutionAvailable, course.languageId, supportedIds)}</p><a href="${escapeHtml(topic.items[0]?.lessonHref ?? "#")}">관련 학습문서 읽기</a></div>
       <ul>${topic.items.map((item) => `<li><a href="${escapeHtml(item.href)}"><span>${String(item.displayOrder).padStart(2, "0")}</span><strong>${escapeHtml(item.title)}</strong></a><small>${getQuestProgressEvidenceCopy(item) ? `진행 상태: ${getQuestProgressEvidenceCopy(item)}<br>` : ""}연결 개념: ${item.conceptIds.map((conceptId) => `<code>${escapeHtml(conceptId)}</code>`).join(" · ")}</small></li>`).join("")}</ul>
     </article>`).join("")}</div>
   </section>`;
@@ -665,6 +666,7 @@ export function renderCodeQuestCatalogView({
   filters = {},
   notice = "",
   javaExecutionAvailable = true,
+  javaSupportedQuestIds = null,
 } = {}) {
   const courses = Array.isArray(catalog?.courses) ? catalog.courses : [];
   if (!course) {
@@ -675,12 +677,12 @@ export function renderCodeQuestCatalogView({
   const status = filters.status ?? "all";
   const number = String(filters.number ?? "");
   const resume = course.resumeItem;
-  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable);
-  const draftOnlyCount = course.items.filter((item) => item.executionMode === "draft-only").length;
+  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable, javaSupportedQuestIds);
   const javaExecutionPending = course.languageId === "java" && executableCount < course.totalCount;
   const resumeExecutionAvailable = isCatalogItemExecutionAvailable(
     resume,
     javaExecutionAvailable,
+    javaSupportedQuestIds,
   );
   const statusOptions = [
     ["all", "전체"],
@@ -692,8 +694,8 @@ export function renderCodeQuestCatalogView({
 
   return `<main class="main-area service-main quest-catalog-main" id="lesson-content" tabindex="-1">
     <header class="catalog-header quest-catalog-header"><p class="eyebrow">읽은 개념을 짧은 코드로 확인하세요</p><h1>Code Quest</h1><p>과정과 학습 주제를 확인하고, 공개된 실행 기준으로 직접 작성해 보세요.</p></header>
-    <nav class="quest-course-tabs" aria-label="Code Quest 과정">${courses.map((item) => `<button type="button" data-quest-course="${escapeHtml(item.id)}" aria-pressed="${String(item.id === course.id)}"${item.id === course.id ? ' aria-current="true"' : ""}><strong>${escapeHtml(item.name)}</strong><span>${getCourseAvailabilityCopy(item, javaExecutionAvailable)}</span></button>`).join("")}</nav>
-    ${javaExecutionPending ? draftOnlyCount > 0 ? `<p class="catalog-notice" role="status"><strong>Java Quest ${course.totalCount}개 등록 · ${executableCount}개 실행 가능</strong><br>${draftOnlyCount}개 draft는 원본 문제·힌트·공개 테스트를 읽고 코드를 저장할 수 있으며, 앱 실행과 완료 판정은 제공하지 않습니다.</p>` : `<p class="catalog-notice" role="status"><strong>Java 실행 준비 중 · 코드 작성·저장 가능</strong><br>등록된 ${course.totalCount}개 Quest의 문제·힌트·공개 조건을 읽고 코드를 저장할 수 있습니다. 실행과 완료 판정은 아직 사용할 수 없습니다.</p>` : renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
+    <nav class="quest-course-tabs" aria-label="Code Quest 과정">${courses.map((item) => `<button type="button" data-quest-course="${escapeHtml(item.id)}" aria-pressed="${String(item.id === course.id)}"${item.id === course.id ? ' aria-current="true"' : ""}><strong>${escapeHtml(item.name)}</strong><span>${getCourseAvailabilityCopy(item, javaExecutionAvailable, item.languageId, javaSupportedQuestIds)}</span></button>`).join("")}</nav>
+    ${javaExecutionPending ? `<p class="catalog-notice" role="status"><strong>Java Quest ${course.totalCount}개 등록 · ${executableCount}개 실행 가능</strong><br>나머지 ${course.totalCount - executableCount}개는 문제·힌트·공개 테스트를 읽고 코드를 저장할 수 있습니다. 앱 실행과 완료 판정은 아직 제공하지 않습니다.</p>` : renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
     ${resume ? `<aside class="resume-card quest-resume-card" aria-label="Code Quest 이어서 풀기"><div><strong>${resumeExecutionAvailable ? resume.progress === "in_progress" ? "이어서 풀 수 있어요" : resume.progress === "completed" ? "처음부터 다시 풀어 보세요" : "다음 Quest를 시작하세요" : resume.hasDraft ? "저장한 코드를 이어서 작성하세요" : "코드 작성을 시작하세요"}</strong><p>${resume.displayOrder}. ${escapeHtml(resume.title)} · ${resumeExecutionAvailable ? QUEST_PROGRESS_COPY[resume.progress] : resume.hasDraft ? "초안 저장됨" : resume.executionMode === "draft-only" ? "원본 테스트 읽기" : "실행 준비 중"}${getQuestProgressEvidenceCopy(resume) ? ` · ${getQuestProgressEvidenceCopy(resume)}` : ""}</p></div><a class="button button--primary" href="${escapeHtml(resume.href)}">${resumeExecutionAvailable ? resume.progress === "in_progress" ? "이어서 풀기" : resume.progress === "completed" ? "다시 풀기" : "시작하기" : resume.hasDraft ? "이어서 작성하기" : "코드 작성하기"}</a></aside>` : ""}
     <section class="quest-catalog-tools" aria-labelledby="quest-explorer-title">
       <header><h2 id="quest-explorer-title">문제 탐색기</h2><p>검색과 필터를 함께 사용하거나 과정 안의 번호로 바로 이동할 수 있습니다.</p></header>
@@ -705,8 +707,8 @@ export function renderCodeQuestCatalogView({
       ${query || topicId !== "all" || status !== "all" ? '<button class="text-button" type="button" data-quest-catalog-reset>검색과 필터 초기화</button>' : ""}
       <p class="catalog-count" data-quest-result-count role="status" tabindex="-1">${course.name} · ${items.length}/${course.totalCount}개 Quest</p>
     </section>
-    ${items.length ? `<div class="quest-catalog-list">${items.map((item) => `<a class="quest-catalog-card" href="${escapeHtml(item.href)}"><span class="quest-catalog-number">${String(item.displayOrder).padStart(2, "0")}</span><div><p>${escapeHtml(item.topicTitle)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${item.executionMode === "draft-only" ? '<small>원본 공개 테스트 읽기 · 앱 실행 미지원</small>' : !isCatalogItemExecutionAvailable(item, javaExecutionAvailable) ? '<small>Java 실행 준비 중 · 코드 작성·저장 가능</small>' : ""}${getQuestProgressEvidenceCopy(item) ? `<small>${getQuestProgressEvidenceCopy(item)}</small>` : ""}${item.hasDraft ? '<small>저장된 초안의 문제 버전은 확인할 수 없습니다.</small>' : ""}</div>${renderQuestProgressBadge(item)}</a>`).join("")}</div>` : `<section class="catalog-empty"><h2>조건에 맞는 Quest가 없습니다.</h2><p>검색어 또는 주제·진행 상태 필터를 바꿔 보세요.</p></section>`}
-    ${renderQuestLearningMap(course, javaExecutionAvailable)}
+    ${items.length ? `<div class="quest-catalog-list">${items.map((item) => `<a class="quest-catalog-card" href="${escapeHtml(item.href)}"><span class="quest-catalog-number">${String(item.displayOrder).padStart(2, "0")}</span><div><p>${escapeHtml(item.topicTitle)}</p><h2>${escapeHtml(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${item.executionMode === "draft-only" ? '<small>원본 공개 테스트 읽기 · 앱 실행 미지원</small>' : !isCatalogItemExecutionAvailable(item, javaExecutionAvailable, javaSupportedQuestIds) ? '<small>Java 실행 준비 중 · 코드 작성·저장 가능</small>' : ""}${getQuestProgressEvidenceCopy(item) ? `<small>${getQuestProgressEvidenceCopy(item)}</small>` : ""}${item.hasDraft ? '<small>저장된 초안의 문제 버전은 확인할 수 없습니다.</small>' : ""}</div>${renderQuestProgressBadge(item)}</a>`).join("")}</div>` : `<section class="catalog-empty"><h2>조건에 맞는 Quest가 없습니다.</h2><p>검색어 또는 주제·진행 상태 필터를 바꿔 보세요.</p></section>`}
+    ${renderQuestLearningMap(course, javaExecutionAvailable, javaSupportedQuestIds)}
   </main>`;
 }
 
@@ -754,6 +756,8 @@ export function renderCodeQuestView({
   executionAvailable = true,
   javaConnection = null,
   javaPreparationState = "unavailable",
+  javaPreparationMessage = "",
+  javaPreparationSupport = "",
   draftStatus = "starter",
   uiError = null,
   report = null,
@@ -814,11 +818,11 @@ export function renderCodeQuestView({
           ${catalogItem?.hasDraft ? '<p class="quest-draft-revision-note">저장된 초안의 문제 버전은 확인할 수 없습니다. 코드는 그대로 보존됩니다.</p>' : ""}
         </header>
 
-        ${evaluationKind === "java-static-method-v1" ? renderJavaBrowserPreparation({ id: "quest-java", state: javaPreparationState }) : ""}
+        ${evaluationKind === "java-static-method-v1" ? renderJavaBrowserPreparation({ id: "quest-java", state: javaPreparationState, message: javaPreparationMessage, supportMessage: javaPreparationSupport }) : ""}
         ${javaExecutionPending && isDraftOnly ? '<p class="catalog-notice" role="status"><strong>원본 공개 테스트 읽기 · 앱 실행 미지원</strong><br>문제와 공개 테스트 소스를 확인하고 코드를 저장할 수 있습니다. 이 draft는 실행과 완료 판정을 제공하지 않습니다.</p>' : ""}
 
         ${catalogCourse && catalogTopic ? `<section class="quest-location-summary" aria-label="현재 과정과 주제 진도">
-          ${javaExecutionPending ? `<p><strong>${escapeHtml(catalogCourse.name)} Code Quest ${catalogCourse.totalCount}개 등록</strong> · 실행 준비 중</p><p><strong>${escapeHtml(catalogTopic.title)} ${catalogTopic.totalCount}개 등록</strong> · 코드 작성·저장 가능</p>` : `${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}`}
+          ${javaExecutionPending ? `<p><strong>${escapeHtml(catalogCourse.name)} Code Quest ${catalogCourse.totalCount}개 등록</strong> · 문제별 실행 지원을 확인하세요</p><p><strong>${escapeHtml(catalogTopic.title)} ${catalogTopic.totalCount}개 등록</strong> · 코드 작성·저장 가능</p>` : `${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}`}
           <div class="quest-location-actions"><a href="${escapeHtml(catalogHref)}">문제 탐색기로 돌아가기</a><a href="${escapeHtml(catalogItem?.lessonHref ?? "#")}">관련 학습문서 읽기</a><button class="text-button" type="button" data-quest-map-focus>학습 지도 보기</button></div>
         </section>` : ""}
 
@@ -852,7 +856,7 @@ export function renderCodeQuestView({
             </div>
             <p class="quest-editor-help" id="quest-editor-help">${escapeHtml(editorCopy.help)}</p>
             ${javaConnection && !isDraftOnly ? `<div class="catalog-notice" role="status"><p>${escapeHtml(javaConnection.message)}</p>${javaConnection.canConnect ? '<button class="button button--secondary" type="button" data-java-connect>로컬 Java 연결</button>' : ""}${javaConnection.needsReload ? '<button class="button button--secondary" type="button" data-java-reload>초안 저장 후 새로고침</button>' : ""}</div>` : ""}
-            ${javaExecutionPending ? `<p class="quest-editor-help" role="status">${isDraftOnly ? "원본 테스트 읽기용 draft · 코드 작성·저장 가능. 앱 실행과 완료 판정은 제공하지 않습니다." : "Java 실행 준비 중 · 코드 작성·저장 가능. 실행과 완료 판정은 차단되어 있습니다."}</p>` : ""}
+            ${javaExecutionPending ? `<p class="quest-editor-help" role="status" data-java-quest-pending>${isDraftOnly ? "원본 테스트 읽기용 draft · 코드 작성·저장 가능. 앱 실행과 완료 판정은 제공하지 않습니다." : "Java 실행 준비 중 · 코드 작성·저장 가능. 실행과 완료 판정은 차단되어 있습니다."}</p>` : ""}
             <p class="quest-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="quest-draft-status" data-quest-draft-status>${getCodeQuestDraftStatusMessage(normalizedDraftStatus)}</p>
             <div class="quest-run-actions">
               <button class="button button--primary" type="button" data-quest-run aria-busy="${String(isRunning)}"${runDisabled}>${isRunning ? "실행 중…" : "공개 테스트 실행"}</button>

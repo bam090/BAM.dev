@@ -461,7 +461,7 @@ test("가져오기 버튼을 누르는 순간 생긴 CT 초안을 재확인해 �
   assert.equal(app.codingTestState.hasCodingTestDraft, true);
 });
 
-test("Java 상세는 source-first 자료를 보존하고 검증 capability에만 JUnit 실행 UI를 연다", () => {
+test("Java 상세는 source-first 자료를 보존하고 검증 capability에만 JUnit 실행을 연다", () => {
   const problem = structuredClone(findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-01"));
   const maliciousSource = "</code><script>globalThis.bad = true</script>";
   problem.publicTestSource += maliciousSource;
@@ -486,8 +486,10 @@ test("Java 상세는 source-first 자료를 보존하고 검증 capability에만
   assert.match(html, /관련 준비 연습:/);
   assert.doesNotMatch(html, /작성 전용/);
   assert.match(html, /data-coding-test-run/);
+  assert.doesNotMatch(html, /data-coding-test-run[^>]* disabled/u);
   assert.match(html, /첫 공개 그룹 실행/);
   assert.match(html, /data-coding-test-submit/);
+  assert.doesNotMatch(html, /data-coding-test-submit[^>]* disabled/u);
   assert.match(html, /전체 공개 테스트 확인/);
   assert.match(html, /data-coding-test-results/);
   assert.match(html, /첫 공개 JUnit 메서드 그룹 1개/);
@@ -506,10 +508,13 @@ test("Java 상세는 source-first 자료를 보존하고 검증 capability에만
   });
   assert.doesNotMatch(noHintHtml, /coding-test-support-title|단계 ·|힌트.*(?:button|버튼)/);
   assert.match(noHintHtml, /작성 전용/);
-  assert.doesNotMatch(noHintHtml, /data-coding-test-(?:run|submit|cancel|results)/);
+  assert.match(noHintHtml, /data-coding-test-run[^>]* disabled/u);
+  assert.match(noHintHtml, /data-coding-test-submit[^>]* disabled/u);
+  assert.match(noHintHtml, /data-coding-test-results/u);
+  assert.doesNotMatch(noHintHtml, /data-coding-test-cancel/u);
 });
 
-test("작성 전용 Java 문제도 로컬 연결을 안내하되 capability 전에는 실행을 숨긴다", () => {
+test("작성 전용 Java 문제도 로컬 연결을 안내하되 capability 전에는 실행을 비활성화한다", () => {
   const problem = findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-01");
   assert.equal(problem.executionMode, "draft-only");
   const html = renderCodingTestView({
@@ -525,7 +530,10 @@ test("작성 전용 Java 문제도 로컬 연결을 안내하되 capability 전�
   assert.match(html, /이 탭에서 로컬 Java 연결을 시작하세요/);
   assert.match(html, /data-java-connect>로컬 Java 연결/);
   assert.match(html, /작성 전용/);
-  assert.doesNotMatch(html, /data-coding-test-(?:run|submit|cancel|results)/);
+  assert.match(html, /data-coding-test-run[^>]* disabled/u);
+  assert.match(html, /data-coding-test-submit[^>]* disabled/u);
+  assert.match(html, /data-coding-test-results/u);
+  assert.doesNotMatch(html, /data-coding-test-cancel/u);
 });
 
 test("legacy 초안은 현재 CT 초안 유무에 따라 가져오기만 숨기고 원문은 따로 보존한다", () => {

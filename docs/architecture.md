@@ -2,6 +2,8 @@
 
 ## 현재 브라우저 구현 경계
 
+`[현재 사실]` 2026-09-26 브라우저 Java 17의 실제 준비·취소·실행 UI와 약 47 MiB 자산 수신을 연결했다. 독립 제품 경로에서 Java Quest 4개의 공개 사례 24개, Java CT 72문제의 공개 JUnit 메서드 그룹 168개·호출 501개를 통과해 해당 ID/revision의 지원 gate를 열었다. 42번째 CT의 기준 풀이는 원본의 Java 25 `List.removeLast()`만 Java 17용 파생본으로 바꿔 검증했으며 문제·공개 JUnit 원본은 유지했다. Pages 하위 경로에서는 첫 CT 제출·새로고침 후 결과/진도 복원을, 별도 제품 UI 진단에서는 취소·시간 초과·컴파일/실행 오류를 확인했다. 실제 확인 환경은 macOS의 Chrome이며 공개 사이트 게시·다른 브라우저 지원·임의 Java 코드의 모든 보안 경계 입증은 별도다. 아래 native Java 25 설명은 별도 이력으로 보존한다.
+
 `[현재 사실]` 화면과 도메인 모듈은 HTML·CSS·Vanilla JavaScript ES modules로 구현되어 있으며 `package.json`에는 React·TypeScript 또는 전용 프런트엔드 빌드 도구 의존성이 없다. Java 제품 runner·감독 코드·Electron shell의 로컬 prototype을 구현했고 검증 커널의 Java Quest·CT 실행과 대표 앱 검증을 인수했다. 정식 설치·지원 OS 선택은 현재 필수 범위가 아니다. Maven·Gradle은 추가하지 않았다.
 
 ```text
@@ -12,10 +14,12 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
             ├── quest JSON ──► CodeQuestRunnerRouter ─────────────┤
             │                    ├── JavaScript ─► one-shot Worker │
             │                    ├── HTML ───────► inert DOM 검사  │
-            │                    └── CSS ────────► CSSOM/iframe 검사
+            │                    ├── CSS ────────► CSSOM/iframe 검사
+            │                    └── Java ───────► 브라우저 Java 17 공개 평가
             │
-            ├── coding-test JSON ─► 목록·작성·저장 (Java draft 실행 차단)
-            │                         └── JavaScript 제출 ─► one-shot Worker
+            ├── coding-test JSON ─► 목록·작성·저장
+            │                         ├── JavaScript 제출 ─► one-shot Worker
+            │                         └── Java 공개 JUnit ─► 브라우저 Java 17
             │
             └── web-project JSON ─► 두 파일 편집·안전 미리보기·공개 평가
                                       │
@@ -24,7 +28,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 객관식의 `review-concepts.json` 발췌는 개념 오버레이와 문서 절로 연결되고, 진행 상태는 별도 `LocalStorageReviewSessionRepository`로 저장합니다. 위 `ProgressRepository`의 완료 기록과 다른 제품 진도는 유지합니다.
 
-콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 카테고리 아래 과정(`courseId`)이 교안 순서와 학습 경로를 정하고 언어(`languageId`)가 예제·평가 실행 계약을 정합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. Java는 정적 교안·객관식의 available 과정·언어이며 첫 Quest 데이터도 등록됐지만 실행 capability는 false입니다. 실행 평가 언어는 기존 JavaScript·HTML·CSS 3개입니다.
+콘텐츠는 정적 읽기 전용 데이터이고, 진도는 사용자별 변경 데이터입니다. 카테고리 아래 과정(`courseId`)이 교안 순서와 학습 경로를 정하고 언어(`languageId`)가 예제·평가 실행 계약을 정합니다. 객관식·Quest·코딩테스트·Web Project를 안정적인 `lesson.id`·`conceptId`로 연결하고 실행 문제는 ID와 `revision`으로 식별하여, 콘텐츠 수정이 사용자 상태 형식을 불필요하게 바꾸지 않도록 합니다. Java Quest·코딩테스트의 검증된 ID/revision은 Java 17 환경을 실제로 준비한 세션에서만 실행 가능하다. 저장된 풀이 기록의 유효성은 RAM 준비 상태와 분리한다.
 
 ## 현재 브라우저 앱
 
@@ -36,7 +40,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - JavaScript Quest: 문제 계약, 시작 코드, 입출력 예시, 공개 테스트와 실패 설명을 콘텐츠로 관리합니다. 공개 테스트마다 새 module Worker를 만들고 문법·런타임·시간·출력 제한·취소를 구분합니다.
 - HTML Quest: 학습자가 JavaScript 함수가 아닌 HTML 마크업을 작성합니다. doctype 검사는 source 첫 선언과 `DOMParser` 결과를 함께 사용해 정확한 HTML5 doctype인지 확인하고 나머지 구조 검사는 주 문서에 삽입하지 않은 `<template>`의 inert `DocumentFragment`에서 선택자·개수·속성·텍스트를 관찰합니다. 학습자 마크업의 스크립트는 실행하지 않습니다.
 - CSS Quest: 학습자가 JavaScript 함수가 아닌 CSS 스타일시트를 작성합니다. 최상위 선언과 최상위 미디어 조건 검사는 constructed `CSSStyleSheet`의 CSSOM에서 수행하고, 계산 스타일 검사는 문제에 포함된 고정 HTML fixture와 학습자 스타일만 one-shot sandbox iframe에 넣어 수행합니다. 매 검사 뒤 iframe을 제거합니다.
-- 코딩테스트: JavaScript·Java 별도 컬렉션을 함께 로드한다. Java72는 원본 공개 소스 열람과 초안 저장만 제공하고 UI·handler·adapter에서 실행·제출·완료를 차단한다. 명시된 legacy69 URL만 CT로 안내하고 옛 초안 가져오기는 CT 초안이 없는 경우만 허용한다. 기존 준비3 Quest는 유지한다. 목록 검색과 난이도·언어·유형·풀이 상태 필터를 순수 도메인 함수로 분리합니다. 빠른 실행은 공개 테스트 일부, 제출은 전부를 사용하며 `CodingTestRunnerAdapter`가 기존 Worker DTO에 투영한 뒤 문제 ID와 실행 모드로 결과를 복원합니다.
+- 코딩테스트: JavaScript·Java 별도 컬렉션을 함께 로드한다. Java 72문제는 원본 공개 소스를 보존하고 브라우저 Java 17 준비 뒤 검증된 ID/revision에서 실행·제출·완료를 제공한다. 명시된 legacy69 URL만 CT로 안내하고 옛 초안 가져오기는 CT 초안이 없는 경우만 허용한다. 기존 준비3 Quest는 유지한다. 목록 검색과 난이도·언어·유형·풀이 상태 필터를 순수 도메인 함수로 분리합니다. 빠른 실행은 첫 공개 그룹, 제출은 전체 공개 그룹을 사용하며 별도 Java provider 결과를 `JavaCodingTestRunnerAdapter`가 기존 DTO에 투영한다.
 - Web Project: `index.html`과 `styles.css`를 하나의 제출 snapshot으로 만들고, 보수적인 source preflight 뒤 sandbox 미리보기와 HTML DOM·CSSOM 평가 어댑터에 전달합니다. 공개 자동 기준 70점과 검증되지 않은 자가평가 30점을 별도 결과로 계산하며, 평가기 오류·취소·미실행은 0점으로 확정하지 않습니다.
 - 공개성: 브라우저에 내려가는 Quest·코딩테스트·Web Project의 문제, assertion, 기대값은 개발자 도구로 확인할 수 있습니다. 학습자 결과에는 이 공개 테스트·공개 기준만 사용하며 비공개·숨김 테스트나 원격 추가 채점을 사용하지 않습니다. `tests/fixtures/`의 독립 사례는 제품 콘텐츠를 검증하는 개발 증거일 뿐 설치본의 학습자 결과에는 실행하지 않습니다.
 - 진도: `ProgressRepository` 계약과 `LocalStorageProgressRepository` 구현을 분리합니다. 학습 완료, 객관식 시도·오답 ID, Quest 초안·실행·완료와 코딩테스트 초안·제출·리비전별 완료를 `bam.dev.progress.v1` 안의 독립 배열로 관리합니다. Quest ID의 언어 네임스페이스로 HTML·CSS 상태를 기존 계약 안에서 구분하며 실행·제출 기록에는 사용자 소스를 저장하지 않습니다.
@@ -54,7 +58,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 외부 과제는 [밤위키 원본 활용 계약](designs/web-assignments.md)에 따라 고정 시작 버전과 공개 검증을 확인한 뒤 연결한다. 현재 외부 과제 manifest·BAM 연결은 미구현이며 기존 인앱 Web Project의 데이터·진도와 구분한다.
 
-`[확정 결정]` 주 전달 방식은 GitHub 소스 clone/다운로드 후 기존 Node 정적 서버와 브라우저로 실행하는 것이다. 현재 UI·콘텐츠·Worker·진도 경계를 유지하며 React·TypeScript는 작은 표시 경계부터 이관한다. Java 25 runner의 Electron IPC prototype 증거에 더해, [DEC-SOURCE-JAVA-BROWSER-01](roadmap.md#2026-09-22-소스-java-브라우저-연결-설계)의 명시적 같은 포트 Java 연결을 검증한 macOS 커널·Chrome에서 실행했다. 시스템 JDK fallback은 허용하지 않는다. 구현과 실제 검증의 범위는 [2026-09-24 구현 카드](roadmap.md#2026-09-24-소스-java-브라우저-구현-승인과-착수)에 기록한다.
+`[대체됨]` GitHub 소스 clone/다운로드와 Node 정적 서버를 주 사용 경로로 둔 결정은 [브라우저 직접 실행 결정](roadmap.md#2026-09-26-브라우저-직접-java-실행)으로 대체됐다. 아래 구조와 native Java 25 검증은 기존 구현 이력이며 새 브라우저 runtime의 지원 근거가 아니다. 현재 UI·콘텐츠·Worker·진도 경계를 유지하며 React·TypeScript는 작은 표시 경계부터 이관한다. Java 25 runner의 Electron IPC prototype 증거에 더해, [DEC-SOURCE-JAVA-BROWSER-01](roadmap.md#2026-09-22-소스-java-브라우저-연결-설계)의 명시적 같은 포트 Java 연결을 검증한 macOS 커널·Chrome에서 실행했다. 시스템 JDK fallback은 허용하지 않는다. 구현과 실제 검증의 범위는 [2026-09-24 구현 카드](roadmap.md#2026-09-24-소스-java-브라우저-구현-승인과-착수)에 기록한다.
 
 ```text
 소스 → 기존 정적 서버 → 브라우저
@@ -97,7 +101,94 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 선택된 runtime·정확한 artifact·통신·compile/run protocol·sandbox·timeout/output/memory·cleanup·실제 부정 검증은 [ADR 0005](decisions/0005-java-quest-local-runtime.md), Java 데이터는 [콘텐츠 계약](content-schema.md#java-정적-메서드-quest-pilot), 장기 설치 목표는 [로컬 앱 설계](designs/local-application.md)가 정본이다. 별도 로컬 prototype의 설치 산출물·실패 이력은 위 ADR와 작업 카드에서 확인한다. 이 첫 Quest prototype 범위에서는 Java 코딩테스트 UI·콘텐츠·완료율·Spring·React 이관·원격 서비스를 추가하지 않았다. 이후 승인된 [CT 작성용 전환](designs/coding-test.md#algorithm-bridge-코딩테스트-전환)은 별도 브라우저 범위다.
 
+## 브라우저 직접 Java 실행 — BROWSER-JAVA-v1
+
+`[확정 결정]` [DEC-BROWSER-JAVA-01](roadmap.md#2026-09-26-브라우저-직접-java-실행)에 따라 목표 흐름은 README 시작하기의 GitHub Pages 링크 → 문제 선택 → 코드 작성 → 브라우저 안에서 실행·공개 채점·취소다. clone·Node·JDK 설치·localhost 서버·별도 연결 버튼을 요구하지 않는다. bam의 후속 정정으로 브라우저 학습자 소스·실행 기준은 Java 17로 고정한다. Java 21 후보는 채택하지 않으며 추가 버전 변경을 임의로 하지 않는다. 이 결정은 원본 교안·문제·공개 JUnit 테스트의 재작성이나 native Java 25 이력 변경을 뜻하지 않는다.
+
+`[현재 사실]` 제품은 CheerpJ 4.3·ECJ 3.33과 Java 17용 신뢰 helper로 브라우저 안에서 컴파일·공개 평가를 수행한다. 고정 버전 자산을 준비한 뒤 opaque iframe의 일회용 Worker에서 실행하며 결과는 부모가 검증한 typed DTO로 받는다. 아래 초기 후보·차단점 기록은 당시 단계의 이력이고 현재 지원 범위는 문서 첫머리와 [범위 확장](#java-quest원본-junit-범위-확장)의 검증 결과를 따른다. 미채택 TeaVM Java 21 실험은 후속 구현 경로가 아니다. CheerpJ [공식 라이선스](https://cheerpj.com/docs/licensing)의 Community 조건과 외부 CDN `cjrtnc.leaningtech.com`을 따르며 runtime을 자체 호스팅하지 않는다. 최초 다운로드에는 네트워크가 필요하고 완전 오프라인을 보장하지 않는다.
+
+`[현재 사실]` 2026-09-26 격리된 임시 prototype의 실제 Chrome에서 CheerpJ 4.3 runtime `17.0.19-internal`을 확인했다. `com.sun.tools.javac.Main`은 ClassNotFound, `ToolProvider.getSystemJavaCompiler()`는 null이어서 해당 runtime의 내장 컴파일러는 확인되지 않았다. 별도 ECJ 3.33 임시 로드는 성공했고 `BatchCompiler`·`java.base`를 확인했으나, `-17` 컴파일은 `/lt/17/release` 부재와 JrtFileSystem 관련 오류로 exit -1을 반환했다. 근거는 임시 검증 산출물 `/private/tmp/bam-java17-browser-probe/chrome-ecj-result.json` 및 검증 담당 인계이며 제품 의존성을 추가한 결과가 아니다. 앞선 인앱 브라우저의 약 70초 초기화·컴파일 대기 시간 초과는 지원 부재의 근거로 사용하지 않는다. 원본 JUnit·문제 변경과 학습자 답안 실행은 0이며 컴파일·공개 채점·취소·격리 수용 조건은 아직 충족하지 않았다. 이후 공식 SDK 분리 가능성을 읽기 전용으로 확인했으며, 이 CheerpJ/ECJ 결과는 browser Java 지원·제품 통합·release 완료를 뜻하지 않는다.
+
+`[현재 사실]` Java 17 후속 읽기 전용 검증에서 CheerpJ의 기존 `jrt:/` 파일 시스템으로 실제 `java.base/java/lang/Object.class`(1493 bytes)·`Record.class`(239 bytes)를 읽었고 둘 다 major 61이었다. Java 파일 조회로 `/lt/17/release` 없음·`/lt/17/lib/modules` 존재도 확인했다. ECJ 3.33 공식 JSR199 소스에는 명시 `PLATFORM_CLASS_PATH` JAR를 사용해 기본 JRT 경로를 건너뛰는 분기가 있으므로 다음 검증 가능성이 남아 있지만 컴파일 성공 증거는 아니다. 두 번의 제한된 시도는 ECJ를 포함한 `cheerpjRunLibrary` 준비에서 각각 115초 전체 대기·85초 준비 상한으로 종료돼 실제 클래스 JAR 생성·JSR199 컴파일·고정 소스 실행/stdout 단계에 도달하지 못했다. CDN module range 요청은 계속됐으며 외부 POST는 0이었다. 서버와 브라우저를 닫고 반복 재시도를 중단했다. 근거는 `/private/tmp/bam-java17-browser-probe/receipt.md`(SHA-256 `2475579b0ccc91dab56c9cd993d1d65145e78eaf0fd4ae31759a0d14ed75587a`)와 그 원시 기록이다. Java 17 경로의 가능·불가능을 단정하지 않으며 준비 지연과 미실행 file-manager 동작은 별도 불확실성으로 남긴다. native 실행·원격 컴파일·전체 JDK 다운로드·제품 코드 변경은 없었다.
+
+`[현재 사실]` 이후 단일 ECJ library 준비는 182.3초에 성공했고 같은 Java 17 JRT에서 실제 클래스 25개를 임시 JAR(66,888 bytes)로 만들었다. 진단 catch만 보완한 후속 실행에서는 준비 270.0초 뒤 `EclipseCompiler.getStandardFileManager`의 실제 `java.lang.NullPointerException`을 확인했다. `/lt/17/release` 부재 후 JRT 초기화가 실패하며 명시 platform JAR 설정 전에 중단되는 경로다. 앞선 JS TypeError는 Java 예외 proxy의 문자열 변환 과정에서 생긴 진단 오류였다. 근거는 `/private/tmp/bam-java17-browser-probe/chrome-ecj-jsr-single-bounded-retry-result.json`(SHA-256 `766d6580447c5474c7c19126085ce9c5d06f19f51903237a0a67d175163dc18e`)이다. 따라서 startup 시간 초과를 Java 17 불가능으로 판단하지 않으며, 현재 확인된 차단점은 기본 file manager의 JRT 초기화다. 학습자 컴파일·class 61 출력·실행은 아직 도달하지 못했다.
+
+`[확정 결정]` bam은 실제 Java 17 라이브러리를 직접 전달하는 adapter 방향의 진행을 승인했다. `[제안]` 기본 file manager 생성을 피하고 ECJ의 기존 `FileSystem`에 실제 Java 17 클래스 JAR만 전달해 low-level `Compiler`의 이름 탐색 환경으로 재사용한다. 새 StandardJavaFileManager 구현보다 작은 trusted helper 한 개를 먼저 검증하며, ECJ 3.33의 내부 API 의존과 미검증 module/API 범위를 명시한다. 초기 adapter의 준비 방법은 신뢰된 고정 helper만 ECJ `-source 8 -target 8`과 실제 Java 17 클래스 JAR의 bootclasspath로 컴파일해 Java 17 VM에서 로드하는 가설이다. 이는 Java 8 runtime/API 대체가 아니며 학습자 소스·compliance·target은 Java 17, preview off로 유지한다. helper class 52의 생성·로드와 학습자 class 61/minor 0·실제 stdout을 별도 판정한다. 가짜 release·API stub·class header 패치·native/원격 컴파일은 사용하지 않는다. 이 bootstrap 가설의 최소 fixed-source 실증을 먼저 하고, 추가 custom 구현 확대 전 초기 로딩·유지 비용·격리·취소·라이선스로 후보 채택 여부를 다시 판단한다. 구현·성공·최선의 경로로 확정한 것은 아니다.
+
+`[현재 사실]` 후속 `-proc:none`·no-preload 진단에서 helper compiler는 실행됐으나 기존 25-class JAR의 `IllegalArgumentException`·`IOException` 등 실제 표준 클래스 누락으로 실패했다. 이후 실제 Java 17 JRT 클래스 91개를 담은 231,381-byte JAR(SHA-256 `2127023461f6c1884db3a174f4470512a506651f6660ad30ffc5523d7898c1c4`)를 확보하고 major 61을 확인했다. 이 보완본의 후속 no-preload·`-proc:none` 세션은 300초 준비 상한에서 끝났으며 module 요청 51개 중 49개 완료·ECJ JAR GET 5개 상태였다. helper 컴파일 결과는 없고 학습자 소스도 제공하지 않았으므로 클래스 보완의 충분성·학습자 class 61 생성·실제 Java 실행은 판정하지 않는다. 당시 추가 반복 실행을 중단했고 제품 Java 상태는 unavailable로 유지했다.
+
+`[확정 결정]` bam의 계속 진행 요청에 따라 Java 17 실제 문제 실행 검증을 재개한다. `[제안]` 같은 cold 준비를 300초마다 끊어 반복하지 않고 기존 persistent cache·확인된 91-class JAR를 재사용한 단일 준비를 최대 15분·수신 128 MiB로 관찰한다. 이는 고정된 신뢰 helper의 진단 예산이며 제품 실행 시간 제한이 아니다. 30~60초마다 단계·새로 완료한 range·수신량을 확인하고 시간 상한만으로 불가능을 판정하지 않는다. 기존 JAR로 compiler 결과에 먼저 도달하며 추가 클래스 누락이 확인될 때만 실제 Java 17 java.base 공급 범위를 검토한다. 성공 세션의 `cjGetRuntimeResources()`를 보존해 이후 공식 preload 입력으로 쓰며 현재 세션을 재초기화하지 않는다. 학습자 코드의 실행 제한은 준비 다운로드와 분리하고 네트워크 활동으로 연장하지 않는다. helper class 52 → 고정 학습자 class 61/minor 0·실제 stdout → 원본 첫 Quest 공개 6개 → 오류·취소·격리 → 실제 제품 준비/실행 연결 순서로 증거를 남긴다. 기존 UI preview 서버는 유지하며 해당 runtime 실험을 제품 ready로 표시하지 않는다.
+
+`[현재 사실]` 미채택 TeaVM Java 21 실험은 [공식 teavm-javac](https://github.com/konsoletyper/teavm-javac)의 브라우저 compiler로 class major 65(Java 21)를 생성하고 `generateWebAssembly`로 변환한 WASM을 실제 Chrome Worker에서 실행했다. 이는 Java 21 언어·표준 API 전체 지원이나 Java 17 JVM 호환을 입증하지 않는다. `quest-java-total-price`의 기존 기준답안 소스는 그대로 컴파일하고 별도 신뢰된 정적 wrapper로 호출했으며, 원본 공개 6개를 각각 fresh Worker·WASM 인스턴스에서 실행해 BigInt 기반 10진 정수 비교로 6/6 일치했다. 최댓값 `20001000000`을 포함하며 Worker 6개 종료 후 활성 Worker는 0이었다. 임시 정적 서버에서 해당 실행의 네트워크는 GET 17·POST 0·외부 요청 0이었다. 이는 해당 고정 소스 실행의 관찰이며 임의 학습자 코드의 통신 차단 증거가 아니다.
+
+근거는 `/private/tmp/teavm-javac-probe/RESULT.md`와 `quest-result.json`이다. 검증 compiler WASM SHA-256은 `a79245353ac623df4fde5740bb2bedacedc9c98544253f01aa4b63268f9cb8ba`, 생성된 Quest WASM은 `c6a861c12a29e077f378e152bfe82bcc20000ac719e328dbf44cc0898311f7a8`이며 SDK·runtime·원본 source/publicTests의 정확한 hash는 같은 receipt에 있다. 공식 playground URL은 가변 자산이므로 고정 릴리스로 표현하지 않고 실제 내려받은 바이트로 식별한다. TeaVM compiler의 Apache-2.0 및 포함 OpenJDK의 GPLv2 with Classpath Exception 고지를 보존해야 한다. 제품 의존성·원본 문제·JUnit 변경은 0이며, 대표오답·오류·static 상태 부정 검증·실행 중 취소·interop/네트워크 격리·CT/JUnit·GitHub Pages 게시와 제품 통합은 아직 검증하지 않았다. 정상 종료 후 Worker 폐기를 무한 루프 취소 PASS로 확대하지 않는다.
+
+`[현재 사실]` 후속 고정 `Main` 진단에서 HTTP Worker 응답에 `default-src 'none'; connect-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'none'` CSP를 적용하자 `load(app.wasm)`가 `compiler.wasm-runtime.js:1:8092`의 `new Function`에서 EvalError로 실패했다. stdout 0·GET 3·POST 0·외부 요청 0·종료 후 활성 Worker 0을 확인했다. 근거는 `/private/tmp/teavm-javac-probe/csp-runtime-result.json`이다. 현재 고정된 기본 runtime은 임의 JS 문자열 실행을 허용하지 않는 안전 gate를 통과하지 못해 추가 불신 소스 실행과 제품 활성화를 중단했다. `unsafe-eval`을 열어 우회하지 않는다. 앞선 Quest 6개 PASS는 고정 소스의 기능 증거로 보존하며 이 실패를 Java 브라우저 실행 일반의 불가능으로 확대하지 않는다. 이 Java 21 경로는 미채택 이력으로 보존하며 재개하지 않는다. Java 17 후보는 별도 호환성·안전 검증을 따른다.
+
+### 컴파일·실행 분리와 후속 gate
+
+`[현재 사실]` 후속 Java 17 고정 record의 class 61/minor 0·실제 stdout `17`, 원본 첫 Quest의 공개 6개·대표 int overflow 오답을 확인했다. 예외가 발생해도 CheerpJ 종료 코드가 0인 사례가 있어 exit만으로 성공 판정하지 않는다. typed method 호출은 원본 공개 6개와 `9007199254740993L`을 JS bigint로 정확히 운반했다. 별도 opaque iframe(`allow-scripts`, same-origin 권한 없음)의 Worker에서도 고정 `Solution.class`를 `/str`로 전달하고 `runLibrary('/str/')` 한 번으로 공개 6개 typed 결과가 일치했다. class는 265 bytes·major 61/minor 0·SHA-256 `e7d0b1dd87634c2c0c887c58212956bb521a092577cec4d6cc99653e054f08ae`, opaque 결과는 `/private/tmp/bam-java17-opaque-fs-probe/result-solution.json`(SHA-256 `f2e027b105ac975c4913e6526558d1a146409f28b9f99de840bfde87e1bd2c1d`)이다. 동일 실행에서 serviceWorker 접근 오류가 있어도 결과는 완료됐으므로 그 오류를 앞선 대기 원인으로 확정하지 않는다. 이들은 고정 소스의 기능 증거이며 사례별 fresh 상태·취소·학습자 네트워크/interop 격리·제품 연결은 아직 PASS가 아니다.
+
+`[현재 사실]` 앞선 persistent profile 진단 중 Playwright `context.route`를 등록한 실행은 [공식 문서](https://playwright.dev/docs/api/class-browsercontext#browser-context-route)에 따라 HTTP cache가 비활성화된 계측 조건이다. 기록한 수십 초·수분을 실사용 cold/warm 성능으로 일반화하지 않는다. `responseContentLengthSum`도 응답 헤더의 합이며 실전송량이 아니다. 성능 수치와 byte 상한 판정에는 각 영수증의 실제 계측 방식을 구분한다.
+
+`[현재 사실]` 후속 JRT 이름 탐색 adapter는 기존 `jrt:/modules/java.base`의 실제 class bytes로 record·원본 Solution·List/Map 소스를 Java 17 class 61로 컴파일했고, 별도 compiler Worker에서 학습자 class를 실행하지 않고 부모로 반환했다. bootstrap class 52 helper와 학습자 class 61을 구분한다. Java 21 `String.splitWithDelimiters` API 거부도 확인했다. 다른 module·exports·원본 JUnit 지원을 입증한 것은 아니다. 근거는 `/private/tmp/bam-java17-browser-probe/chrome-jrt-compiler-result.json`, `chrome-compiler-worker-result.json`, `chrome-jrt-api-negative-result.json`이다.
+
+`[현재 사실]` opaque Worker의 유한 Java 호출 Promise pending 중 취소·후발 결과 거부·새 VM의 static/property 초기화를 확인했다(`result-cancel.json`, SHA-256 `71d30263c58f4c738e67bb14a3929f9c3b5279d4c2d922416b903c8b30789eff`). Java sleep 내부 진입까지 관찰한 것은 아니다. 후속 cache-only prototype은 부모가 공식 CDN 자산 11개·42,614,911 bytes를 먼저 준비하고 executor의 `connect-src 'none'` 아래 원본 공개 6개를 private MessagePort의 bigint 결과로 통과했다. raw postMessage 위조는 채점에서 무시했고 실행기 외부 요청은 0이었다. 별도 고정 fetch·WebSocket·external importScripts·dynamic import 부정 검사는 CSP로 차단됐다. 근거는 `/private/tmp/bam-java17-opaque-fs-probe/result-cache-only.json`(SHA-256 `69aa32e5d857d9e33da99d52066f9ba9201568498d1dd0b7688aa16c20673e06`)과 `result-cache-csp-negative.json`(SHA-256 `117d138b29a3f4c81910c4e62eb879fac108f8927c628047fa04bf11d8d9e61d`)이다. 새 cache-only 경로의 취소·중첩 Worker·Java→JS interop와 실제 제품 연결은 후속 검증이며 앞선 취소 PASS를 자동 승계하지 않는다.
+
+`[확정 결정]` 승인된 브라우저 Java 17 제품 연결은 다음 경계를 따른다. 첫 Quest 검증을 다른 Java 문제·CT 전체 완료나 최종 게시 조건 충족으로 확대하지 않는다.
+
+- 준비: `java-browser-assets.js`의 고정 버전·URL·hash·크기 manifest를 한 곳에서 관리한다. 부모가 학습자 입력과 무관한 공식 CDN 자산을 세션 RAM에 준비하고 executor에 전달한다. 실행 중 cache miss는 외부 fallback 없이 engine error다. 임의 URL·query·header·body를 부모 fetch에 전달하는 RPC는 없다. runtime 원본 본문을 변경하거나 저장소에 재배포하지 않는다. 짧은 bootstrap은 CheerpJ 4.3 내부 초기화 API에 의존하므로 버전 변경 때 재검증한다. 실제 사용 메모리와 최초 네트워크 비용을 표시하며 완전 오프라인·재방문 캐시를 보장하지 않는다.
+- 컴파일: `java-browser-compiler.js`와 일회용 compiler Worker는 고정 ECJ 3.33·신뢰 helper만 로드하고 `proc:none`, source/compliance/target 17, preview off로 컴파일한다. 학습자 class는 실행하지 않는다. helper의 `compile(String source)`는 첫 Quest의 고정 `Solution.java`를 받아 `{status, diagnostics, classesBase64}` JSON 문자열을 typed return으로 돌려주고 class output은 메모리에만 모은다. 공개 JS API `compileJava({source,className}, {signal,assets})`는 `{status, diagnostics, classes}`를 반환하며 classes는 binary name별 Uint8Array다. 기본 패키지의 Solution뿐 아니라 nested·추가 package-private class도 빠짐없이 전달하고 compile_error에서는 빈 classes만 반환한다. 콘솔·exit·marker·이전 `/files` 산출물로 성공을 판정하지 않는다. client는 현재 runId·정확한 schema·class 61/minor 0을 검사하고 valid→invalid 요청에서 이전 class를 재사용하지 않는다. 초기 상한은 UTF-8 source 128 KiB, diagnostics 32 KiB/100개, class 합계 8 MiB/256개이며 VM heap 보장과 구분한다. 실제 제한 집행을 검증한다. ECJ 출처·라이선스·helper source/hash를 함께 보존하고 임시 JRT 추출 ZIP은 제품에 넣지 않는다.
+- 실행: `java-browser-provider.js`는 기존 `capabilities/run/cancel` DTO를 제공한다. 검증된 Quest ID·revision만 허용하고 공개 사례마다 새 opaque iframe/Worker VM을 사용한다. iframe은 `allow-scripts`만 갖고 executor는 준비 자산만 읽는다. class bytes는 `/str`에 주입하며 부모가 입력·기대값·test ID를 소유한다. private port는 strict closure에 숨기고 bound send를 사용한다. raw 메시지와 오래된 generation은 채점·진도에 반영하지 않는다. typed primitive 반환·오류를 부모가 비교하며 long은 bigint로 유지한다. compile 오류·runtime 오류·취소·timeout·미지원 상태를 구분하고 종료 시 port·Worker·iframe을 회수한다.
+- UI: 동일 provider 상태를 마이페이지·Quest·CT에 연결한다. 실제 준비는 `idle → preparing → ready | error`, 취소는 준비 요청 abort·generation 폐기 후 idle이다. 중복 준비를 막고 다운로드 중에도 읽기·편집·저장을 유지한다. ready는 해당 세션의 자산·compiler 초기화와 검증된 실행 capability 준비를 뜻하며 localStorage에 저장하지 않는다. 같은 앱의 route 이동은 준비 상태를 유지하지만 새로고침·탭 종료 뒤에는 RAM 자산이 사라져 다시 준비한다. 현재 준비 자산은 약 47 MiB이며 다운로드 상태는 실제 수신량을 표시한다. 개별 문제 지원은 별도이므로 미지원 Quest·CT는 이유를 표시하고 실행을 막는다. 준비 취소·오류·route 이동·재시도에서 초안과 호칭을 보존한다. 상태는 텍스트와 접근 가능한 알림으로 제공하고 가짜 진행률을 만들지 않는다. native와 명시적 opt-in 경로는 우선순위·계약을 보존한다.
+
+`[현재 사실]` cache-only 경로에서 취소·늦은 결과·사례별 fresh 상태, 자산 요청 차단과 부모 저장소 접근 거부를 확인했고 Pages 하위 경로의 실제 풀이·저장·복원도 통과했다. 검증된 Quest 4개·CT 72개만 ID/revision으로 활성화했다. Java→JS 반사 후보 하나는 생성자 접근이 거부됐지만 임의 학습자 코드의 모든 interop·네트워크·저장소 우회 경로가 입증된 것은 아니다. CT 25번째의 연속 검증 컴파일은 180초에 시간 초과했으나 해당 문제 단독 재검은 58.6초에 통과했다. 동시 Chrome 작업과 연속 VM 실행 중 어느 쪽이 원인인지는 확정하지 않았으며 제한 시간을 늘리지 않았다. 준비 예산으로 학습자 실행 제한을 연장하지 않고 opaque runtime의 eval 허용을 main 페이지 정책으로 확대하지 않는다.
+
+### Java Quest·원본 JUnit 범위 확장
+
+`[현재 사실]` 동일 제품 경로의 원본 Quest 4개는 공개 사례 24/24를 통과했다. CT는 원본 72문제의 공개 JUnit 메서드 그룹 168/168·호출 501/501을 확인했다. 단, `coding-test-java-bridge-bkt-01`의 원본 Java 25 기준 풀이에 있는 `List.removeLast()`는 Java 17에서 컴파일되지 않아, 이 문제의 **기준 풀이 검증만** `remove(size - 1)`로 바꾼 파생본을 사용했다. 문제·원본 공개 JUnit 소스와 제품 코드는 바꾸지 않았다. 검증된 ID/revision의 제품 지원 gate를 열었으며 다른 버전의 언어/API·브라우저 지원으로 확대하지 않는다.
+
+`[현재 사실]` 첫 Java CT의 원본 JUnit 6.1.3 parameterized method를 패키지 adapter·기존 SolutionInvoker와 함께 class 61로 컴파일하고, 별도 Worker에서 원본 5 invocation PASS와 대표오답 5개 실패를 확인했다. `/str`의 하위 디렉터리 직접 주입은 지원되지 않아 검증된 class bytes를 메모리 JAR로 묶는 방식으로 실행했다. 근거는 `/private/tmp/bam-java17-product-compiler/ct-execute-receipt.json`(SHA-256 `6391d40177b16ed4f750a605e4761bacfda5577e32521fef07b44dc5d1a01f70`)과 `ct-execute-wrong-receipt.json`(SHA-256 `951db34c7f20152f77edf62aee1dced9c67734c8cb48bbb5516f182cf214bfff`)이다. 이는 원본 JUnit 기능의 대표 증거이며 cache-only opaque 제품 경로·전체 CT 검증을 대체하지 않는다.
+
+`[확정 결정]` 첫 Quest 이후에는 같은 compiler·opaque executor를 다음과 같이 확장한다. 원본 소스·공개 평가·Java 17 기준은 유지한다.
+
+- compiler의 `compileJavaSources({sources:[{path,source}],entryClass,profile}, {signal,assets})`를 기존 내부 구현으로 제공하고 첫 Quest `compileJava` 호출은 작은 wrapper로 유지한다. trusted provider만 `quest` 또는 `junit` 고정 classpath profile을 선택한다. source 경로는 원본 manifest와 고정 adapter 경로에 한정하고 중복·절대경로·상위 이동을 거부한다. 원본 공개 test/provider/helper와 필요한 typed adapter를 함께 컴파일하되 annotation processor·학습자 class 실행은 허용하지 않는다. 기존 source/output 상한은 묶음 전체에 적용한다.
+- 산출물은 검증된 dotted binary name별 bytes다. 패키지·nested class를 빠짐없이 메모리 JAR에 넣고 `/str`의 단일 JAR로 전달한다. JAR 경로는 검증한 이름에서만 생성하고 학습자 산출물이 신뢰 runner/helper를 덮는 이름 충돌을 거부한다. compiler 담당은 작은 class-JAR utility와 신뢰 JUnit runner·정확한 JUnit 6.1.3 자산 출처를 소유하고, 공통 manifest는 provider 담당 한 명이 유지한다. 임의 URL·사용자 classpath·runtime 저장소 재배포는 추가하지 않는다.
+- CT runner는 고정 공개 testClass·method·signature로 원본 JUnit을 선택하고 typed JSON으로 outcome, discovered/started/finished/passed/wrong/runtime/skipped/aborted/infrastructure, planStarted/planFinished, message를 반환한다. 부모는 기존 CT adapter의 invocation 계약으로 엄격히 변환하고 누락·불일치·infrastructure 오류를 PASS로 처리하지 않는다. `run`은 기존 첫 공개 method, `submit`은 전체 공개 method를 선택한다. 각 method는 새 VM을 사용하고 해당 method의 parameterized invocation은 같은 VM에서 실행한다. 기존 배열 identity·입력 불변·tolerance 평가를 바꾸지 않는다.
+- Quest도 원본 signature·typed 반환·필수 배열 관찰을 유지해 기존 Java 문제별로 확대한다. 각 공개 사례의 새 VM, CSP·private port·취소·generation 검사는 공통 executor를 재사용한다. 대표 CT의 정상/오답/오류와 원본 provider·배열·freshness를 먼저 확인한 뒤 설치된 Java Quest와 CT의 문제 ID/revision별 전체 공개 평가 목록을 검증한다. 지원한 문제만 capability에 반영하고, 대표 문제나 첫 Quest만 통과한 상태를 사용자가 요청한 Java 문제 지원 완성·push 조건 충족으로 판정하지 않는다. 통합 경로 취소·늦은 결과·초안 보존과 실제 정적 브라우저 풀이도 검증한다.
+
+### 마이페이지 호칭과 공통 Java 준비 UI
+
+`[확정 결정]` bam은 로그인 없이 `#/my`에서 호칭을 이 브라우저에 저장하고, 마이페이지·Java Quest·Java 코딩테스트 문제 화면에 같은 Java 17 환경 준비 버튼과 상태를 제공하도록 승인했다. 준비 전에도 문제 읽기·코드 작성·초안 저장을 유지한다. 시스템 JDK 설치·탐색, localhost 자동 연결, 계정·서버 전송은 하지 않는다. 기존 [학습 기록](designs/learning-history.md)의 진도·재도전·저장 오류 표현은 유지한다.
+
+- 호칭: `bam.dev.profile.nickname.v1`에 문자열 하나만 저장한다. 기존 BrowserStorage를 주입한 작은 호칭 repository로 읽기·저장·초기화하고 기존 progress 키에 섞지 않는다. 앞뒤 공백을 제거한 최대 20 Unicode 글자를 허용하며 제어문자는 거부한다. 빈 값 저장은 키를 지워 기본 호칭으로 돌아간다. 손상된 저장값은 기본 호칭으로 읽고 자동 덮어쓰지 않는다. 기본 표시는 `학습자`이며 모든 출력은 HTML escape한다. 저장 버튼으로 확정하고 실제 persistent 상태에 따라 `이 브라우저에 저장했습니다` 또는 `현재 화면에서만 유지됩니다`를 알린다. 읽기/렌더만으로 저장하지 않고 다른 origin이나 기기로 이전하지 않는다.
+- 공통 준비 UI: 기존 view에 같은 순수 렌더 함수를 사용하고 앱이 상태 하나를 소유한다. 표제는 `Java 17 실행 환경`, 버튼은 `Java 환경 준비`다. provider 도입 전 상태는 `unavailable`이며 버튼을 disabled로 표시하고 `브라우저에서 Java를 실행하는 기능을 준비하고 있습니다. 지금은 문제를 읽고 코드를 작성·저장할 수 있습니다.`를 바로 옆에 설명한다. 가짜 다운로드·진행률·지연 Promise·준비 완료 표시·준비 클릭을 흉내 내는 이벤트를 만들지 않는다. provider 부재 시 unavailable UI는 임시 중간 산출물이며 사용자의 실제 준비·실행 목표 완료가 아니다. runtime 검증을 통과하면 같은 UI에 실제 준비 동작을 이어 연결한다.
+- 후속 실제 상태: provider가 있을 때만 `idle → preparing → ready | error`로 전이한다. `idle`은 준비 가능, `preparing`은 실제 작업 중 중복 클릭 차단, `error`는 실제 실패 설명·재시도다. `ready`는 현재 세션의 검증된 Java 17 capability가 제공될 때만 인정하며 localStorage에 ready를 저장하지 않는다. 환경 준비와 개별 문제 지원은 별도이므로 ready가 draft-only 문제나 미지원 CT를 실행 가능으로 바꾸지 않는다. 이 전이는 위 제품 연결 단계에서 실제 provider와 함께 구현하며 준비 자산만으로 미검증 문제를 활성화하지 않는다.
+- 기존 native/명시적 opt-in transport 코드는 보존한다. 기본 Pages 화면에서는 기존 `로컬 Java 연결`·Java 서버 주소 안내를 새 browser 준비 패널로 대체하되 runtime capability·실행·완료 gate를 완화하지 않는다. 실제 native/opt-in 환경의 별도 실행 증거를 browser 준비 완료로 사용하지 않는다.
+- 범위와 검증: `src/app.js`, `src/ui/my-page-view.js`, `src/ui/code-quest-view.js`, `src/ui/coding-test-view.js`의 연결과 작은 공통 준비 view·호칭 repository, 필요한 기존 스타일만 변경한다. 레이블·native 버튼·상태 설명의 키보드/스크린리더 흐름과 기존 semantic token을 사용한다. 호칭 저장·초기화·메모리 fallback·재방문·escape, 세 화면의 동일 unavailable 표시, 추가 다운로드/로컬 연결 0, Java 실행 gate 불변·초안 보존을 focused 검사와 대표 실제 브라우저 흐름으로 확인한다. 전체 학습 콘텐츠와 runtime 실험은 이 UI 변경의 검증 범위가 아니다.
+
+`[현재 사실]` 호칭 repository·공통 준비 view와 기존 앱/문제 view·사이드바·스타일을 포함한 제품 파일 8개의 UI 구현을 독립 인수했다. `http://localhost:41746` preview에서 `#/my` 호칭 trim·이모지 포함 저장/새로고침 복원·escape·21글자 거부·빈값 기본 호칭 복귀, Java Quest/CT의 unavailable 표시와 읽기·편집·route 왕복 후 초안 보존이 PASS했다. 작성자의 focused 63개 PASS와 변경 JavaScript syntax 검사를 재사용했다. 브라우저 저장 실패 강제 검사는 실제 화면에서 실행하지 않았으며 native/명시적 opt-in 실행은 기존 코드를 보존했지만 이번에 재검증하지 않았다. 이 기록은 독립 UI 검증 인계이며 문서 작성자가 반복 실행한 결과가 아니다. 당시 unavailable UI는 중간 산출물이었다. 이후 실제 준비 provider를 연결했고 현재 검증 범위는 문서 첫머리의 최신 사실을 따른다.
+
+### 재사용·격리·상태
+
+기존 Quest/CT adapter의 `capabilities/run/cancel`과 요청·결과 DTO를 browser bridge의 접점으로 사용한다. ID/revision·공개 manifest·초안·진도·route·제출 규칙은 유지한다. Quest 공개 사례마다 새 VM 또는 WASM 인스턴스 상태를, CT 공개 method마다 새 VM 상태를 보장하며 parameterized method 내부 invocation은 같은 VM에서 실행한다. CT의 고정 JUnit 6.1.3·원본 test/provider/helper·typed adapter·배열 identity/입력 불변·tolerance를 바꾸지 않는다. 선정 후보에서 소스·표준 API·reflection·JUnit 호환이 입증되지 않은 문제는 지원 완료로 표시하지 않는다. `long`은 JS number로 축소하지 않는다.
+
+브라우저 runtime 자산을 가져오는 권한과 학습자 Java의 네트워크 권한을 분리한다. 학습자 코드는 외부·loopback 통신, JS interop를 통한 UI/저장소 접근, 사용자 파일·프로세스 접근을 얻지 못해야 한다. 사용자 소스·개인 자료를 CDN이나 원격 컴파일/채점 서비스에 전송하지 않는다. WASM/JVM이라는 이름만으로 격리 PASS를 판정하지 않으며 실제 노출 API와 부정 검증을 확인한다. localhost token/session·OS sandbox·process group 종료를 브라우저 보장으로 그대로 인용하지 않는다.
+
+한 번에 한 실행만 허용하고 준비 중·준비 실패·실행 중·취소·결과를 구분한다. 부모가 UI 응답을 유지하면서 learner 실행을 강제로 종료할 수 있어야 하며 종료 후 새 VM으로 재실행한다. 오래된 request 결과는 저장하지 않는다. 정상/오답·컴파일 오류·런타임 오류·timeout·output_limit·cancelled·engine_error·not_run 분류, 전체 공개 평가 PASS만 완료 기록하는 규칙을 유지한다. 준비·실행 실패 때 초안은 보존한다. 기존 native의 10초 compile·사례/CT method 3초·64 MiB heap·32 KiB 출력 수치를 무근거로 브라우저 보장에 복사하지 않는다. prototype에서 초기 다운로드/VM 준비와 compile/run 시간을 분리 측정하고 실제 집행 가능한 시간·출력·메모리 상한 및 차이를 기록한다.
+
+### 최소 prototype 수용과 중단
+
+1. 운영 제품과 분리한 정적 페이지에서 고정된 무해 Java 17 소스를 실제 컴파일·실행하고 버전·출력·시간·네트워크 요청을 확인한다. native Java/javac나 원격 실행을 사용하지 않는다. 이 첫 진단은 임의 학습자 코드 격리 PASS가 아니다.
+2. GitHub Pages와 같은 정적 호스팅 조건에서 첫 `quest-java-total-price`의 공개 6개, 큰 long 정확도, 대표오답·컴파일 오류·예외를 실제 실행한다. 특별한 서버 응답 헤더·로컬 연결을 가정하지 않는다. 최초 준비와 실패 복구는 화면에 보인다.
+3. 강제 종료 경로를 확인한 뒤에만 제한된 loop·출력/메모리 압박을 검사한다. 취소·화면 이동·다시 실행에서 UI 응답·VM 폐기·늦은 결과 차단·거짓 완료 0과 초안 보존을 확인한다. 학습자 네트워크/JS interop·저장소/파일 접근 차단을 실제 브라우저에서 독립 확인한다.
+4. CT 지원은 원본 JUnit의 MethodSource·CsvSource·package-private class·배열/중첩 배열·identity·tolerance·method 간 freshness의 대표 검증부터 진행한다. 72문제 전체 활성화는 공개 168 method 그룹과 실제 invocation의 누락 없는 검증 뒤에만 가능하다. 대표 PASS를 전체 PASS로 확대하지 않는다.
+
+컴파일 부재·원본 평가 호환 실패·강제 종료 불가·학습자 통신/interop 차단 불가·Pages에서 필요한 실행 조건 부재는 해당 후보의 실패다. 실패 증거를 보존하고 제품 활성화를 멈춘다. 원본 테스트 재작성·Java 결과 모사·무격리·원격 채점·유료 라이선스 구매로 우회하지 않는다. 확인된 브라우저와 문제만 지원 범위로 기록하고 공개 배포 완료는 실제 게시·실행 증거로 별도 판정한다.
+
 ## 소스 Java 브라우저 연결 — SOURCE-JAVA-BROWSER-v1
+
+`[대체됨]` 아래의 준비·localhost 연결은 이전 구현과 검증 이력이다. 새 기본 사용자 흐름은 [BROWSER-JAVA-v1](#브라우저-직접-java-실행--browser-java-v1)을 따르며 기존 Java 25 실행 증거는 새 browser runtime 검증을 대신하지 않는다.
 
 `[확정 결정]` [DEC-SOURCE-JAVA-IMPLEMENTATION-01](roadmap.md#2026-09-24-소스-java-브라우저-구현-승인과-착수)은 2026-09-24 bam의 “작업시작해”로 이 설계의 구현 착수를 승인했다. 기존 브라우저 방향과 조건부 모델 근거는 유지한다. source/fake·독립 검토·Java 없는 HTTP/브라우저 부정검증을 먼저 마치며 기존 문제·공개 테스트·평가 의미는 바꾸지 않는다. 실제 listener·준비 compile·Java/UI 검증은 각각의 선행 gate와 실행 증거로 판정한다.
 
