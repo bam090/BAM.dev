@@ -104,11 +104,13 @@ BAM_DEV_PORT=4189 npm run dev
 
 ### 로컬 Java 연결하기
 
-검증한 macOS arm64 커널과 Chrome에서 사용하는 별도 실행 경로입니다. [runtime lock](desktop/runtime-lock.json)에 고정된 JDK·JUnit 자료를 먼저 확보해야 하며, 자동 다운로드나 시스템 JDK는 사용하지 않습니다. `<고정자료폴더>`는 해당 자료가 있는 폴더, `<새준비폴더>`는 자료 폴더와 분리된 아직 존재하지 않는 출력 경로로 바꾸세요.
+검증한 macOS arm64 커널과 Chrome에서 사용하는 별도 실행 경로입니다. [runtime lock](desktop/runtime-lock.json)의 `jdk.url`과 `junit.url`에서 원본 자료를 받아 같은 폴더에 두세요. 파일명은 각각 `jdk.archive`와 `junit.artifact`를 유지하고 JDK 압축은 직접 풀지 않습니다. 준비 명령이 고정된 SHA-256을 확인하며, 자동 다운로드나 시스템 JDK는 사용하지 않습니다.
+
+아래 `<고정자료폴더>`는 받은 두 파일이 있는 폴더, `<새준비폴더>`는 자료 폴더와 분리된 아직 존재하지 않는 출력 경로로 바꾸세요. 출력 경로의 상위 폴더는 미리 있어야 합니다.
 
 ```bash
-npm run java:prepare -- --artifacts <고정자료폴더> --runtime <새준비폴더>
-npm run dev:java -- --runtime <새준비폴더>
+npm run java:prepare -- --artifacts "<고정자료폴더>" --runtime "<새준비폴더>"
+npm run dev:java -- --runtime "<새준비폴더>"
 ```
 
 기존 `npm run dev` 서버가 실행 중이면 먼저 `Ctrl+C`로 종료하세요. 준비가 성공한 뒤 Java 서버가 안내한 `http://localhost:<포트>`를 Chrome 주소창에 직접 열고 Java 문제 화면의 **로컬 Java 연결**을 선택합니다. 기본 포트는 4173이며 Electron은 필요하지 않습니다. 준비·연결 계약과 검증 제한은 [아키텍처](docs/architecture.md#소스-java-브라우저-연결--source-java-browser-v1)를 참고하세요.
