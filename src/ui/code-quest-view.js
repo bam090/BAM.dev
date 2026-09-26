@@ -1,4 +1,5 @@
 import { escapeHtml, renderHighlightedCode } from "./markdown.js";
+import { renderJavaBrowserPreparation } from "./java-browser-preparation-view.js";
 
 const DIFFICULTY_LABELS = Object.freeze({
   beginner: "입문",
@@ -752,6 +753,7 @@ export function renderCodeQuestView({
   cancelRequested = false,
   executionAvailable = true,
   javaConnection = null,
+  javaPreparationState = "unavailable",
   draftStatus = "starter",
   uiError = null,
   report = null,
@@ -812,7 +814,8 @@ export function renderCodeQuestView({
           ${catalogItem?.hasDraft ? '<p class="quest-draft-revision-note">저장된 초안의 문제 버전은 확인할 수 없습니다. 코드는 그대로 보존됩니다.</p>' : ""}
         </header>
 
-        ${javaExecutionPending ? isDraftOnly ? '<p class="catalog-notice" role="status"><strong>원본 공개 테스트 읽기 · 앱 실행 미지원</strong><br>문제와 공개 테스트 소스를 확인하고 코드를 저장할 수 있습니다. 이 draft는 실행과 완료 판정을 제공하지 않습니다.</p>' : '<p class="catalog-notice" role="status"><strong>Java 연결 필요 · 코드 작성·저장 가능</strong><br>로컬 Java 연결을 선택한 뒤 공개 테스트를 실행할 수 있습니다.</p>' : ""}
+        ${evaluationKind === "java-static-method-v1" ? renderJavaBrowserPreparation({ id: "quest-java", state: javaPreparationState }) : ""}
+        ${javaExecutionPending && isDraftOnly ? '<p class="catalog-notice" role="status"><strong>원본 공개 테스트 읽기 · 앱 실행 미지원</strong><br>문제와 공개 테스트 소스를 확인하고 코드를 저장할 수 있습니다. 이 draft는 실행과 완료 판정을 제공하지 않습니다.</p>' : ""}
 
         ${catalogCourse && catalogTopic ? `<section class="quest-location-summary" aria-label="현재 과정과 주제 진도">
           ${javaExecutionPending ? `<p><strong>${escapeHtml(catalogCourse.name)} Code Quest ${catalogCourse.totalCount}개 등록</strong> · 실행 준비 중</p><p><strong>${escapeHtml(catalogTopic.title)} ${catalogTopic.totalCount}개 등록</strong> · 코드 작성·저장 가능</p>` : `${renderCatalogProgress(`${catalogCourse.name} Code Quest 전체`, catalogCourse.completedCount, catalogCourse.totalCount, catalogCourse.percent)}${renderCatalogProgress(catalogTopic.title, catalogTopic.completedCount, catalogTopic.totalCount, catalogTopic.percent)}`}

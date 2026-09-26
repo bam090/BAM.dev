@@ -7,6 +7,7 @@ import {
   buildWebProjectHash,
 } from "../core/navigation.js";
 import { getCurrentCompletedQuestIds } from "../repositories/progress-repository.js";
+import { renderJavaBrowserPreparation } from "./java-browser-preparation-view.js";
 import { escapeHtml } from "./markdown.js";
 
 const OUTCOME_LABELS = Object.freeze({
@@ -290,6 +291,8 @@ export function renderMyPageView({
   codingTestCollections = [],
   webProjectCollection = {},
   webProjectState = {},
+  nickname = "",
+  javaPreparationState = "unavailable",
   isPersistent = true,
   storageReadErrors = [],
 } = {}) {
@@ -461,8 +464,24 @@ export function renderMyPageView({
         <p class="eyebrow">내 학습 기록</p>
         <h1 id="my-page-title">마이페이지</h1>
         <p>완료한 학습과 최근 제출, 다시 도전할 항목을 이 브라우저의 실제 기록에서 확인합니다.</p>
+        <p class="my-page-greeting" data-profile-greeting>안녕하세요, ${escapeHtml(nickname || "학습자")}님.</p>
         ${lastLesson ? `<a class="button button--primary my-page-continue" href="${buildLessonHash(lastLesson.courseId ?? lastLesson.languageId, lastLesson.slug)}">${progress.lastLessonId && lessonById.has(progress.lastLessonId) ? "최근 교안 이어 학습" : "첫 교안 시작"}</a>` : ""}
       </header>
+
+      <section class="my-page-panel my-page-profile" aria-labelledby="my-page-profile-title">
+        <header><p class="eyebrow">이 브라우저의 호칭</p><h2 id="my-page-profile-title">나를 부를 이름</h2></header>
+        <form data-profile-nickname-form>
+          <label for="profile-nickname">호칭</label>
+          <div class="my-page-profile-actions">
+            <input id="profile-nickname" name="nickname" type="text" value="${escapeHtml(nickname)}" autocomplete="off" aria-describedby="profile-nickname-help profile-nickname-status">
+            <button class="button button--secondary" type="submit">호칭 저장</button>
+          </div>
+          <p id="profile-nickname-help">앞뒤 공백을 제외하고 최대 20자까지 저장합니다. 비우면 기본 호칭인 학습자로 돌아갑니다.</p>
+          <p id="profile-nickname-status" data-profile-nickname-status role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      ${renderJavaBrowserPreparation({ id: "my-page-java", state: javaPreparationState })}
 
       <section class="my-page-local-status${hasStorageReadError ? " is-error" : isPersistent ? "" : " is-warning"}" aria-labelledby="my-page-storage-title"${hasStorageReadError ? ' role="status"' : ""}>
         <div>

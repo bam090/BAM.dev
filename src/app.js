@@ -83,6 +83,7 @@ import {
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
 import { renderLearningShell } from "./ui/app-shell.js";
 import { renderMyPageView } from "./ui/my-page-view.js";
+import { LocalStorageNicknameRepository, NICKNAME_STORAGE_KEY } from "./repositories/nickname-repository.js";
 import { createThemeController } from "./ui/theme.js";
 import { escapeHtml, headingId, renderHighlightedCode, renderInlineCodeText, renderMarkdown, splitLessonOverview, splitMarkdownSection } from "./ui/markdown.js";
 import {
@@ -358,6 +359,8 @@ export class BamLearningApp {
     this.quizCollections = new Map();
     this.catalogFilters = { learn: { topicId: null, query: "" }, review: { topicId: null, query: "" } };
     this.reviewSessionRepository = new LocalStorageReviewSessionRepository(createBrowserStorage(window));
+    this.nicknameRepository = new LocalStorageNicknameRepository(createBrowserStorage(window));
+    this.javaBrowserPreparationState = "unavailable";
     this.savedReviewSession = this.reviewSessionRepository.read();
     this.reviewSaveStatus = "saved";
     this.quizConceptId = null;
@@ -542,6 +545,10 @@ export class BamLearningApp {
       if (event.persisted) void this.refreshJavaBrowserConnection();
     });
     window.addEventListener("storage", (event) => {
+      if (event.key === NICKNAME_STORAGE_KEY) {
+        if (this.currentView === "my-page") this.renderMyPage();
+        return;
+      }
       if (event.key === REVIEW_SESSION_STORAGE_KEY) {
         if (this.currentView === "review") {
           this.reviewStorageConflict = true;
@@ -606,6 +613,20 @@ export class BamLearningApp {
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     this.root.addEventListener("submit", (event) => {
+      if (event.target.matches("[data-profile-nickname-form]")) {
+        event.preventDefault();
+        const input = event.target.querySelector("[name=nickname]");
+        const status = event.target.querySelector("[data-profile-nickname-status]");
+        try {
+          const { nickname, persistent } = this.nicknameRepository.save(input.value);
+          input.value = nickname;
+          this.root.querySelector("[data-profile-greeting]").textContent = `안녕하세요, ${nickname || "학습자"}님.`;
+          status.textContent = persistent ? "이 브라우저에 저장했습니다" : "현재 화면에서만 유지됩니다";
+        } catch (error) {
+          status.textContent = error.message;
+        }
+        return;
+      }
       if (event.target.matches("[data-sidebar-search-form]")) {
         event.preventDefault();
         this.root.querySelector("[data-sidebar-result]")?.click();
@@ -1328,6 +1349,8 @@ export class BamLearningApp {
 
     const mainContent = renderMyPageView({
       curriculum: this.curriculum,
+      nickname: this.nicknameRepository?.read() ?? "",
+      javaPreparationState: this.javaBrowserPreparationState,
       progress,
       quizCollections: this.quizCollections,
       codeQuestCollections: new Map(
@@ -4483,7 +4506,8 @@ export class BamLearningApp {
       isRunning: state.isRunning,
       cancelRequested: state.cancelRequested,
       executionAvailable: this.isCodeQuestExecutionAvailable(collection, state.quest),
-      javaConnection: collection.languageId === "java" ? this.javaBrowserTransport : null,
+      javaConnection: collection.languageId === "java" && this.javaBrowserTransport?.status !== "unavailable" ? this.javaBrowserTransport : null,
+      javaPreparationState: this.javaBrowserPreparationState,
       draftStatus: state.draftStatus,
       uiError: state.uiError,
       report: state.report,
@@ -4701,7 +4725,8 @@ export class BamLearningApp {
       isSolved: solvedProblemIds.has(state.problem.id),
       evaluationKind: collection.evaluationKind ?? null,
       executionAvailable: this.isCodingTestExecutionAvailable(collection, state.problem),
-      javaConnection: collection.languageId === "java" ? this.javaBrowserTransport : null,
+      javaConnection: collection.languageId === "java" && this.javaBrowserTransport?.status !== "unavailable" ? this.javaBrowserTransport : null,
+      javaPreparationState: this.javaBrowserPreparationState,
       routeNotice: state.routeNotice,
       relatedQuest: state.relatedQuest,
       legacyDraft: state.legacyDraft,
