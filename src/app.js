@@ -64,6 +64,10 @@ import { BrowserCodeQuestRunner } from "./grading/browser-code-quest-runner.js";
 import { BrowserWebCodeQuestRunner } from "./grading/browser-web-code-quest-runner.js";
 import { CodeQuestRunnerRouter } from "./grading/code-quest-runner-router.js";
 import { JavaCodeQuestRunnerAdapter } from "./grading/java-code-quest-runner-adapter.js";
+import { JavaBrowserTransport, takeJavaBrowserBootstrap } from "./grading/java-browser-transport.js";
+import { JavaBrowserProvider } from "./grading/java-browser-provider.js";
+import { JavaBrowserCodingTestProvider } from "./grading/java-browser-coding-test-provider.js";
+import { renderJavaBrowserPreparation } from "./ui/java-browser-preparation-view.js";
 import { CodingTestRunnerAdapter } from "./grading/coding-test-runner-adapter.js";
 import { JavaCodingTestRunnerAdapter } from "./grading/java-coding-test-runner-adapter.js";
 import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js";
@@ -82,6 +86,7 @@ import {
 import { focusMainContent, getFocusLoopTarget } from "./ui/focus.js";
 import { renderLearningShell } from "./ui/app-shell.js";
 import { renderMyPageView } from "./ui/my-page-view.js";
+import { LocalStorageNicknameRepository, NICKNAME_STORAGE_KEY } from "./repositories/nickname-repository.js";
 import { createThemeController } from "./ui/theme.js";
 import { escapeHtml, headingId, renderHighlightedCode, renderInlineCodeText, renderMarkdown, splitLessonOverview, splitMarkdownSection } from "./ui/markdown.js";
 import {
@@ -357,6 +362,8 @@ export class BamLearningApp {
     this.quizCollections = new Map();
     this.catalogFilters = { learn: { topicId: null, query: "" }, review: { topicId: null, query: "" } };
     this.reviewSessionRepository = new LocalStorageReviewSessionRepository(createBrowserStorage(window));
+    this.nicknameRepository = new LocalStorageNicknameRepository(createBrowserStorage(window));
+    this.javaBrowserPreparationState = "unavailable";
     this.savedReviewSession = this.reviewSessionRepository.read();
     this.reviewSaveStatus = "saved";
     this.quizConceptId = null;
@@ -374,7 +381,20 @@ export class BamLearningApp {
     this.codeQuestCatalogNotice = "";
     this.javascriptCodeQuestRunner = new BrowserCodeQuestRunner();
     this.webCodeQuestRunner = new BrowserWebCodeQuestRunner();
-    this.javaCodeQuestRunner = new JavaCodeQuestRunnerAdapter(window.bamJava);
+    const javaBootstrap = takeJavaBrowserBootstrap();
+    this.javaBrowserTransport = !window.bamJava && !window.bamJavaCodingTest
+      ? new JavaBrowserTransport(javaBootstrap, () => { void this.refreshJavaBrowserConnection(); })
+      : null;
+    this.javaBrowserProvider = !window.bamJava && !window.bamJavaCodingTest && !javaBootstrap
+      ? new JavaBrowserProvider({
+          getQuest: (id) => this.codeQuestCollections.get("java")?.quests.find((quest) => quest.id === id),
+          onChange: () => this.refreshJavaBrowserPreparation(),
+        })
+      : null;
+    if (this.javaBrowserProvider) this.javaBrowserPreparationState = this.javaBrowserProvider.status;
+    this.javaCodeQuestRunner = new JavaCodeQuestRunnerAdapter(
+      window.bamJava ?? (this.javaBrowserProvider ?? this.javaBrowserTransport?.bridge("quest")),
+    );
     this.javaCodeQuestCapability = {
       contractVersion: 1,
       evaluationKind: "java-static-method-v1",
@@ -392,8 +412,14 @@ export class BamLearningApp {
     this.codingTestRunner = new CodingTestRunnerAdapter(
       this.javascriptCodeQuestRunner,
     );
+    this.javaBrowserCodingTestProvider = this.javaBrowserProvider
+      ? new JavaBrowserCodingTestProvider({
+          getCollection: () => this.codingTestCollections.get("java"),
+          getAssets: () => this.javaBrowserProvider.assets,
+        })
+      : null;
     this.javaCodingTestRunner = new JavaCodingTestRunnerAdapter(
-      window.bamJavaCodingTest,
+      window.bamJavaCodingTest ?? (this.javaBrowserCodingTestProvider ?? this.javaBrowserTransport?.bridge("coding-test")),
     );
     this.javaCodingTestCapability = {
       contractVersion: 1,
@@ -457,7 +483,67 @@ export class BamLearningApp {
       collection,
       quest,
       this.javaCodeQuestCapability?.available === true,
-    );
+    ) && (!this.javaBrowserProvider || collection?.languageId !== "java" || this.javaBrowserProvider.supportsQuest(quest));
+  }
+
+  refreshJavaBrowserPreparation() {
+    const provider = this.javaBrowserProvider;
+    if (!provider) return;
+    this.javaBrowserPreparationState = provider.status;
+    this.javaCodeQuestCapability = {
+      contractVersion: 1,
+      evaluationKind: "java-static-method-v1",
+      available: provider.status === "ready" && Boolean(provider.assets),
+    };
+    if (this.javaBrowserCodingTestProvider) this.javaCodingTestCapability = {
+      contractVersion: 1,
+      evaluationKind: "java-junit-method-v1",
+      available: provider.status === "ready" && Boolean(provider.assets),
+    };
+    const panel = this.root.querySelector("[data-java-browser-preparation]");
+    if (panel) {
+      if (panel.dataset.javaBrowserPreparation === provider.status) {
+        const description = panel.querySelector("[data-java-preparation-message]");
+        if (description) description.textContent = provider.message;
+      } else {
+        const id = this.currentView === "my-page" ? "my-page-java" : this.currentView === "coding-test" ? "coding-test-java" : "quest-java";
+        const supportMessage = this.currentView === "coding-test" && !this.javaBrowserCodingTestProvider?.supportsProblem(this.codingTestState?.problem)
+          ? "이 코딩테스트는 아직 브라우저 실행을 지원하지 않습니다. 코드를 작성하고 저장할 수 있습니다."
+          : this.currentView === "quest" && this.codeQuestCollection?.languageId === "java"
+            && !provider.supportsQuest(this.codeQuestState?.quest)
+            ? "이 Quest는 아직 브라우저 실행을 지원하지 않습니다. 코드를 작성하고 저장할 수 있습니다."
+            : "";
+        panel.outerHTML = renderJavaBrowserPreparation({ id, state: provider.status, message: provider.message, supportMessage });
+      }
+    }
+    if (this.currentView === "quest" && this.codeQuestCollection?.languageId === "java" && this.codeQuestState) {
+      const executable = this.isCodeQuestExecutionAvailable(this.codeQuestCollection, this.codeQuestState.quest);
+      this.updateCodeQuestDraftFeedback();
+      const pending = this.root.querySelector("[data-java-quest-pending]");
+      if (pending) {
+        pending.hidden = executable;
+        if (!executable && provider.status === "ready") pending.textContent = "이 Quest는 아직 브라우저 실행을 지원하지 않습니다. 코드를 작성하고 저장할 수 있습니다.";
+      }
+      const publicStatus = this.root.querySelector("[data-java-public-tests-status]");
+      if (publicStatus) publicStatus.textContent = executable
+        ? "모든 입력과 반환값·추가 확인 조건을 공개합니다."
+        : "모든 입력과 반환값·추가 확인 조건을 공개합니다. 이 데이터는 아직 실행된 결과가 아닙니다.";
+      const resultStatus = this.root.querySelector("[data-java-results-status]");
+      if (resultStatus) resultStatus.textContent = executable
+        ? `코드를 실행하면 ${this.codeQuestState.quest.publicTests?.length ?? 0}개의 공개 테스트 결과가 표시됩니다.`
+        : "아직 실행 결과가 없습니다. 공개 입력과 기대값은 문제 영역에서 확인할 수 있습니다.";
+    }
+    if (this.currentView === "coding-test" && this.codingTestState?.collection?.languageId === "java") {
+      const executable = this.isCodingTestExecutionAvailable(this.codingTestState.collection, this.codingTestState.problem);
+      this.updateCodingTestDraftFeedback();
+      const summary = this.root.querySelector("[data-coding-test-run-summary]");
+      if (summary) summary.textContent = executable
+        ? `빠른 확인 1개 그룹 · 전체 ${this.codingTestState.problem.publicTests.length}개 그룹` : "작성 전용";
+      const help = this.root.querySelector("[data-coding-test-editor-help]");
+      if (help) help.textContent = executable
+        ? "빠른 확인과 전체 확인은 이 기기에 포함된 공개 JUnit 메서드 그룹만 실행합니다."
+        : "지금은 Java 풀이를 작성하고 저장할 수 있습니다. 실행과 완료 처리는 Java 실행 환경이 준비된 뒤 제공됩니다.";
+    }
   }
 
   isCodingTestExecutionAvailable(collection, problem) {
@@ -465,7 +551,61 @@ export class BamLearningApp {
       collection,
       problem,
       this.javaCodingTestCapability?.available === true,
-    );
+    ) && (!this.javaBrowserCodingTestProvider || collection?.languageId !== "java" || this.javaBrowserCodingTestProvider.supportsProblem(problem));
+  }
+
+  isCodingTestProgressEligible(collection, problem) {
+    if (this.javaBrowserCodingTestProvider && collection?.languageId === "java") {
+      return canRunCodingTest(collection, problem, true)
+        && this.javaBrowserCodingTestProvider.supportsProblem(problem);
+    }
+    return this.isCodingTestExecutionAvailable(collection, problem);
+  }
+
+  async refreshJavaBrowserConnection() {
+    if (!this.javaBrowserTransport) return;
+    this.javaCodeQuestCapability = await this.javaCodeQuestRunner.capabilities();
+    this.javaCodingTestCapability = await this.javaCodingTestRunner.capabilities();
+    if (this.currentView === "quest" && this.codeQuestCollection?.languageId === "java") {
+      this.renderCodeQuest();
+    } else if (this.currentView === "coding-test"
+      && (this.codingTestState?.collection ?? this.codingTestCollection)?.languageId === "java") {
+      this.renderCodingTest();
+    }
+  }
+
+  async connectJavaBrowser() {
+    if (!this.javaBrowserTransport?.canConnect) return;
+    await this.javaBrowserTransport.connect();
+    await this.refreshJavaBrowserConnection();
+    window.requestAnimationFrame(() => {
+      (document.querySelector("[data-quest-run], [data-coding-test-run], [data-java-connect]"))
+        ?.focus({ preventScroll: true });
+    });
+  }
+
+  reloadJavaBrowser() {
+    if (!this.javaBrowserTransport?.needsReload) return;
+    if (this.currentView === "quest" && this.codeQuestState) {
+      this.flushPendingQuestDraftSave();
+      const state = this.codeQuestState;
+      if (state.draftStatus !== "saved"
+        && !(state.draftStatus === "starter" && state.source === state.quest.starterCode)) {
+        state.uiError = "초안을 이 브라우저에 저장한 뒤 새로고침하세요. 현재 코드는 화면에 남아 있습니다.";
+        this.renderCodeQuest();
+        return;
+      }
+    } else if (this.currentView === "coding-test" && this.codingTestState) {
+      this.flushPendingCodingTestDraftSave();
+      const state = this.codingTestState;
+      if (state.draftStatus !== "saved"
+        && !(state.draftStatus === "starter" && state.source === state.problem.starterCode)) {
+        state.uiError = "초안을 이 브라우저에 저장한 뒤 새로고침하세요. 현재 코드는 화면에 남아 있습니다.";
+        this.renderCodingTest();
+        return;
+      }
+    }
+    window.location.reload();
   }
 
   bindGlobalEvents() {
@@ -478,13 +618,23 @@ export class BamLearningApp {
 
     window.addEventListener("hashchange", () => this.openRoute());
     window.addEventListener("pagehide", () => {
+      this.javaBrowserTransport?.release();
+      this.javaBrowserProvider?.dispose();
+      this.javaBrowserCodingTestProvider?.dispose();
       this.saveReviewSession({ captureViewport: true });
       this.cancelPendingCodingTestSearchRender();
       this.flushPendingQuestDraftSave();
       this.flushPendingCodingTestDraftSave();
       this.flushPendingWebProjectDraftSave();
     });
+    window.addEventListener("pageshow", (event) => {
+      if (event.persisted) void this.refreshJavaBrowserConnection();
+    });
     window.addEventListener("storage", (event) => {
+      if (event.key === NICKNAME_STORAGE_KEY) {
+        if (this.currentView === "my-page") this.renderMyPage();
+        return;
+      }
       if (event.key === REVIEW_SESSION_STORAGE_KEY) {
         if (this.currentView === "review") {
           this.reviewStorageConflict = true;
@@ -549,6 +699,20 @@ export class BamLearningApp {
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     this.root.addEventListener("submit", (event) => {
+      if (event.target.matches("[data-profile-nickname-form]")) {
+        event.preventDefault();
+        const input = event.target.querySelector("[name=nickname]");
+        const status = event.target.querySelector("[data-profile-nickname-status]");
+        try {
+          const { nickname, persistent } = this.nicknameRepository.save(input.value);
+          input.value = nickname;
+          this.root.querySelector("[data-profile-greeting]").textContent = `안녕하세요, ${nickname || "학습자"}님.`;
+          status.textContent = persistent ? "이 브라우저에 저장했습니다" : "현재 화면에서만 유지됩니다";
+        } catch (error) {
+          status.textContent = error.message;
+        }
+        return;
+      }
       if (event.target.matches("[data-sidebar-search-form]")) {
         event.preventDefault();
         this.root.querySelector("[data-sidebar-result]")?.click();
@@ -1077,6 +1241,11 @@ export class BamLearningApp {
       filters: this.codeQuestCatalogFilters,
       notice: this.codeQuestCatalogNotice,
       javaExecutionAvailable: this.javaCodeQuestCapability?.available === true,
+      javaSupportedQuestIds: this.javaBrowserProvider
+        ? this.codeQuestCollections.get(JAVA_CODE_QUEST_LANGUAGE_ID)?.quests
+          .filter((quest) => this.javaBrowserProvider.supportsQuest(quest))
+          .map((quest) => quest.id) ?? []
+        : null,
     });
     this.root.innerHTML = this.renderServiceShell({ current: "quest", mainContent });
     this.syncMenuState();
@@ -1271,20 +1440,25 @@ export class BamLearningApp {
 
     const mainContent = renderMyPageView({
       curriculum: this.curriculum,
+      nickname: this.nicknameRepository?.read() ?? "",
+      javaPreparationState: this.javaBrowserPreparationState,
+      javaPreparationMessage: this.javaBrowserProvider?.message ?? "",
       progress,
       quizCollections: this.quizCollections,
       codeQuestCollections: new Map(
-        [...this.codeQuestCollections].filter(
-          ([languageId]) =>
-            languageId !== JAVA_CODE_QUEST_LANGUAGE_ID ||
-            this.javaCodeQuestCapability?.available === true,
-        ),
+        [...this.codeQuestCollections]
+          .map(([languageId, collection]) => [languageId,
+            languageId === JAVA_CODE_QUEST_LANGUAGE_ID && this.javaBrowserProvider
+              ? { ...collection, quests: collection.quests.filter((quest) => this.javaBrowserProvider.supportsQuest(quest)) }
+              : collection])
+          .filter(([languageId, collection]) => languageId !== JAVA_CODE_QUEST_LANGUAGE_ID
+            || (this.javaBrowserProvider ? collection.quests.length > 0 : this.javaCodeQuestCapability?.available === true)),
       ),
       codingTestCollections: this.getCodingTestCollections()
         .map((collection) => ({
           ...collection,
           problems: collection.problems.filter((problem) =>
-            this.isCodingTestExecutionAvailable(collection, problem),
+            this.isCodingTestProgressEligible(collection, problem),
           ),
         }))
         .filter((collection) => collection.problems.length > 0),
@@ -1815,6 +1989,14 @@ export class BamLearningApp {
   }
 
   handleClick(event) {
+    if (event.target.closest("[data-java-prepare]")) {
+      void this.javaBrowserProvider?.prepare();
+      return;
+    }
+    if (event.target.closest("[data-java-prepare-cancel]")) {
+      this.javaBrowserProvider?.cancelPreparation();
+      return;
+    }
     const serviceLink = event.target.closest("[data-service-link]");
     if (serviceLink && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
       const navigation = this.getServiceNavigation();
@@ -2372,6 +2554,14 @@ export class BamLearningApp {
     }
 
     if (this.currentView !== "coding-test" || !this.codingTestState) return false;
+    if (event.target.closest("[data-java-connect]")) {
+      void this.connectJavaBrowser();
+      return true;
+    }
+    if (event.target.closest("[data-java-reload]")) {
+      this.reloadJavaBrowser();
+      return true;
+    }
     const publicSourceDownload = event.target.closest("[data-quest-public-source-download]");
     if (publicSourceDownload) {
       this.downloadCurrentPublicTestSource(publicSourceDownload);
@@ -2403,6 +2593,15 @@ export class BamLearningApp {
 
   handleCodeQuestClick(event) {
     if (this.currentView !== "quest" || !this.codeQuestState) return false;
+
+    if (event.target.closest("[data-java-connect]")) {
+      void this.connectJavaBrowser();
+      return true;
+    }
+    if (event.target.closest("[data-java-reload]")) {
+      this.reloadJavaBrowser();
+      return true;
+    }
 
     if (event.target.closest("[data-quest-map-focus]")) {
       const map = this.root.querySelector("#quest-detail-map");
@@ -2941,7 +3140,7 @@ export class BamLearningApp {
       this.codeQuestCollection,
       state.quest,
     );
-    if (runButton) runButton.disabled = !executionAvailable || state.source.trim().length === 0;
+    if (runButton) runButton.disabled = !executionAvailable || state.isRunning || state.source.trim().length === 0;
   }
 
   setQuestDraftSaveTimer(callback) {
@@ -3037,7 +3236,8 @@ export class BamLearningApp {
     for (const button of document.querySelectorAll(
       "[data-coding-test-run], [data-coding-test-submit]",
     )) {
-      button.disabled = sourceIsEmpty;
+      button.disabled = sourceIsEmpty || state.isRunning
+        || !this.isCodingTestExecutionAvailable(state.collection ?? this.codingTestCollection, state.problem);
     }
   }
 
@@ -3796,8 +3996,9 @@ export class BamLearningApp {
       if (this.codingTestState !== state || this.currentView !== "coding-test") return;
       state.isRunning = false;
       state.cancelRequested = false;
-      state.uiError =
-        error instanceof Error ? error.message : "코드 실행 결과를 받지 못했습니다.";
+      state.uiError = collection.languageId === "java" && execution.cancellationReason === "user"
+        ? "취소한 실행 결과는 채점이나 완료 기록에 반영하지 않았습니다."
+        : error instanceof Error ? error.message : "코드 실행 결과를 받지 못했습니다.";
       this.renderCodingTest();
       return;
     }
@@ -3814,9 +4015,27 @@ export class BamLearningApp {
       return;
     }
 
+    if (collection.languageId === "java" && execution.cancellationReason === "user") {
+      this.executionCoordinator.finish(execution);
+      state.isRunning = false;
+      state.cancelRequested = false;
+      state.uiError = "취소한 실행 결과는 채점이나 완료 기록에 반영하지 않았습니다.";
+      this.renderCodingTest();
+      return;
+    }
+
     const sourceFingerprint = await sourceFingerprintPromise;
+    if (collection.languageId === "java" && execution.cancellationReason === "user") {
+      this.executionCoordinator.finish(execution);
+      state.isRunning = false;
+      state.cancelRequested = false;
+      state.uiError = "취소한 실행 결과는 채점이나 완료 기록에 반영하지 않았습니다.";
+      this.renderCodingTest();
+      return;
+    }
     if (
       !this.executionCoordinator.isActive(execution) ||
+      execution.cancellationReason === "navigation" ||
       this.codingTestState !== state ||
       this.currentView !== "coding-test"
     ) {
@@ -3965,8 +4184,9 @@ export class BamLearningApp {
       if (this.codeQuestState !== state || this.currentView !== "quest") return;
       state.isRunning = false;
       state.cancelRequested = false;
-      state.uiError =
-        error instanceof Error ? error.message : "코드 실행 결과를 받지 못했습니다.";
+      state.uiError = request.languageId === "java" && execution.cancellationReason === "user"
+        ? "취소한 실행 결과는 채점이나 완료 기록에 반영하지 않았습니다."
+        : error instanceof Error ? error.message : "코드 실행 결과를 받지 못했습니다.";
       this.renderCodeQuest();
       return;
     }
@@ -3980,6 +4200,15 @@ export class BamLearningApp {
         `${request.languageId}:${state.quest.id}:${String(state.quest.revision)}`;
     if (!ownsExecution) {
       this.executionCoordinator.finish(execution);
+      return;
+    }
+
+    if (request.languageId === "java" && execution.cancellationReason === "user") {
+      this.executionCoordinator.finish(execution);
+      state.isRunning = false;
+      state.cancelRequested = false;
+      state.uiError = "취소한 실행 결과는 채점이나 완료 기록에 반영하지 않았습니다.";
+      this.renderCodeQuest();
       return;
     }
 
@@ -4380,6 +4609,12 @@ export class BamLearningApp {
       isRunning: state.isRunning,
       cancelRequested: state.cancelRequested,
       executionAvailable: this.isCodeQuestExecutionAvailable(collection, state.quest),
+      javaConnection: collection.languageId === "java" && this.javaBrowserTransport?.status !== "unavailable" ? this.javaBrowserTransport : null,
+      javaPreparationState: this.javaBrowserPreparationState,
+      javaPreparationMessage: this.javaBrowserProvider?.message ?? "",
+      javaPreparationSupport: this.javaBrowserProvider && !this.javaBrowserProvider.supportsQuest(state.quest)
+        ? "이 Quest는 아직 브라우저 실행을 지원하지 않습니다. 코드를 작성하고 저장할 수 있습니다."
+        : "",
       draftStatus: state.draftStatus,
       uiError: state.uiError,
       report: state.report,
@@ -4484,7 +4719,7 @@ export class BamLearningApp {
     const revisionByProblemId = new Map(
       this.getCodingTestCollections().flatMap((collection) =>
         getCodingTestProblemsInOrder(collection)
-          .filter((problem) => this.isCodingTestExecutionAvailable(collection, problem))
+          .filter((problem) => this.isCodingTestProgressEligible(collection, problem))
           .map((problem) => [problem.id, problem.revision]),
       ),
     );
@@ -4509,7 +4744,7 @@ export class BamLearningApp {
         ...problem,
         languageId: collection.languageId,
         languageName: language?.name ?? collection.languageId,
-        executionAvailable: this.isCodingTestExecutionAvailable(collection, problem),
+        executionAvailable: this.isCodingTestProgressEligible(collection, problem),
       }));
     });
     const progress = this.progressRepository.getProgress();
@@ -4540,7 +4775,7 @@ export class BamLearningApp {
       executableCount: collections.reduce(
         (total, collection) =>
           total + collection.problems.filter((problem) =>
-            this.isCodingTestExecutionAvailable(collection, problem),
+            this.isCodingTestProgressEligible(collection, problem),
           ).length,
         0,
       ),
@@ -4597,6 +4832,12 @@ export class BamLearningApp {
       isSolved: solvedProblemIds.has(state.problem.id),
       evaluationKind: collection.evaluationKind ?? null,
       executionAvailable: this.isCodingTestExecutionAvailable(collection, state.problem),
+      javaConnection: collection.languageId === "java" && this.javaBrowserTransport?.status !== "unavailable" ? this.javaBrowserTransport : null,
+      javaPreparationState: this.javaBrowserPreparationState,
+      javaPreparationMessage: this.javaBrowserProvider?.message ?? "",
+      javaPreparationSupport: this.javaBrowserProvider && !this.javaBrowserCodingTestProvider?.supportsProblem(state.problem)
+        ? "이 코딩테스트는 아직 브라우저 실행을 지원하지 않습니다. 코드를 작성하고 저장할 수 있습니다."
+        : "",
       routeNotice: state.routeNotice,
       relatedQuest: state.relatedQuest,
       legacyDraft: state.legacyDraft,

@@ -1,12 +1,16 @@
 import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
 import { createServer } from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createCodingTestArtifacts } from "../desktop/runtime/coding-test-artifacts.mjs";
 
 const rootDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const port = Number(process.env.BAM_DEV_PORT ?? 4173);
-const allowedRoots = new Set(["content", "src", "styles"]);
+const allowedRoots = new Set(["content", "src", "styles", "assets", "runtime"]);
+const isolatedWorkerPath = "/src/workers/javascript-code-runner.classic.js";
+const oldWorkerPath = "/src/workers/javascript-code-runner.worker.js";
+const workerPolicy = "default-src 'none'; connect-src 'none'; script-src 'unsafe-eval'; worker-src 'none'";
 
 const mimeTypes = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -45,36 +49,100 @@ export function pipeReadableResponse(readable, response) {
   readable.pipe(response);
 }
 
-const server = createServer(async (request, response) => {
-  if (!request.url || !["GET", "HEAD"].includes(request.method ?? "")) {
-    response.writeHead(405, { Allow: "GET, HEAD" });
-    response.end("Method Not Allowed");
-    return;
-  }
+export function createDevServer({ javaTransport = null } = {}) {
+  return createServer(async (request, response) => {
+    if (javaTransport && !javaTransport.hostAllowed(request)) {
+      response.writeHead(403, { "Cache-Control": "no-store" });
+      response.end("Forbidden");
+      return;
+    }
 
-  const filePath = resolveRequestPath(request.url);
-  if (!filePath) {
-    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    response.end("Not Found");
-    return;
-  }
+    if (javaTransport) {
+      try {
+        if (await javaTransport.handle(request, response)) return;
+      } catch {
+        if (!response.headersSent) response.writeHead(503, { "Cache-Control": "no-store" });
+        response.end();
+        return;
+      }
+    }
 
-  try {
-    const fileStat = await stat(filePath);
-    if (!fileStat.isFile()) throw new Error("not a file");
-    response.writeHead(200, {
-      "Cache-Control": "no-store",
-      "Content-Length": fileStat.size,
-      "Content-Type": mimeTypes.get(path.extname(filePath)) ?? "application/octet-stream",
-      "X-Content-Type-Options": "nosniff",
-    });
-    if (request.method === "HEAD") response.end();
-    else pipeReadableResponse(createReadStream(filePath), response);
-  } catch {
-    response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    response.end("Not Found");
-  }
-});
+    if (!request.url || !["GET", "HEAD"].includes(request.method ?? "")) {
+      response.writeHead(405, { Allow: "GET, HEAD" });
+      response.end("Method Not Allowed");
+      return;
+    }
+
+    if (!javaTransport && request.url === "/runtime/java-browser/compiler/ct-artifacts.json") {
+      try {
+        const collection = JSON.parse(await readFile(path.join(rootDirectory, "content/coding-tests/java.json"), "utf8"));
+        const body = Buffer.from(`${JSON.stringify(createCodingTestArtifacts(collection))}\n`);
+        response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json; charset=utf-8", "Content-Length": body.length });
+        response.end(request.method === "HEAD" ? undefined : body);
+      } catch {
+        response.writeHead(503);
+        response.end();
+      }
+      return;
+    }
+
+    if (!javaTransport && request.url === "/runtime/java-browser/compiler/SolutionInvoker.java") {
+      const body = await readFile(path.join(rootDirectory, "desktop/runtime/SolutionInvoker.java"));
+      response.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8", "Content-Length": body.length });
+      response.end(request.method === "HEAD" ? undefined : body);
+      return;
+    }
+
+    const filePath = resolveRequestPath(request.url);
+    if (!filePath) {
+      response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Not Found");
+      return;
+    }
+
+    try {
+      let servedPath = filePath;
+      let canonicalRoot = rootDirectory;
+      if (javaTransport) {
+        canonicalRoot = await realpath(rootDirectory);
+        servedPath = await realpath(filePath);
+        const relativePath = path.relative(rootDirectory, filePath);
+        const firstSegment = relativePath.split(path.sep)[0];
+        const allowed = relativePath === "index.html"
+          ? servedPath === path.join(canonicalRoot, "index.html")
+          : allowedRoots.has(firstSegment)
+            && servedPath.startsWith(`${path.join(canonicalRoot, firstSegment)}${path.sep}`);
+        if (!allowed) throw new Error("path outside static root");
+        if (servedPath === path.join(canonicalRoot, oldWorkerPath.slice(1))) {
+          throw new Error("old learner worker unavailable in Java mode");
+        }
+      }
+      const fileStat = await stat(servedPath);
+      if (!fileStat.isFile()) throw new Error("not a file");
+      const html = javaTransport && request.method === "GET" && filePath === path.join(rootDirectory, "index.html")
+        ? javaTransport.decorateHtml(request, await readFile(servedPath, "utf8"))
+        : null;
+      const body = html ? Buffer.from(html.body) : null;
+      response.writeHead(200, {
+        "Cache-Control": "no-store",
+        "Content-Length": body?.length ?? fileStat.size,
+        "Content-Type": mimeTypes.get(path.extname(filePath)) ?? "application/octet-stream",
+        "X-Content-Type-Options": "nosniff",
+        ...(javaTransport && servedPath === path.join(canonicalRoot, isolatedWorkerPath.slice(1))
+          ? { "Content-Security-Policy": workerPolicy } : {}),
+        ...(html?.headers ?? {}),
+      });
+      if (request.method === "HEAD") response.end();
+      else if (body) response.end(body);
+      else pipeReadableResponse(createReadStream(servedPath), response);
+    } catch {
+      response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      response.end("Not Found");
+    }
+  });
+}
+
+const server = createDevServer();
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   server.listen(port, "127.0.0.1", () => {

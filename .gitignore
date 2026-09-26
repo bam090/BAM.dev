@@ -1,6 +1,7 @@
 dist/
 desktop-dist/
 desktop-validation-dist/
+.bam-java-state/
 node_modules/
 .DS_Store
 *.log

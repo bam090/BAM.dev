@@ -2,15 +2,89 @@
 
 이 문서는 기능 우선순위, 전환 순서와 bam의 결정 대기 항목의 정본이다. 현재와 MVP 목표의 차이 및 제품 범위는 [`product-scope.md`](product-scope.md), 작업 절차는 [`development-workflow.md`](development-workflow.md)가 담당한다.
 
+## 2026-09-26 브라우저 직접 Java 실행
+
+`[현재 사실]` 브라우저 Java 17의 준비·실행·취소 UI와 제품 경로에서 Java Quest 4개 공개 사례 24/24, CT 72문제의 원본 공개 JUnit 메서드 그룹 168/168·호출 501/501을 확인해 해당 ID/revision의 지원 gate를 열었다. CT 42번째 문제의 Java 25 기준 풀이 `List.removeLast()`는 Java 17용 `remove(size - 1)` 파생본으로 검증했고 문제·공개 JUnit 원본은 유지했다. Pages 하위 경로에서는 제출·결과/진도 복원을, 별도 제품 UI 진단에서는 취소·시간 초과·문법/실행 오류를 확인했다. Java→JS 반사 경로 후보 하나는 접근이 거부됐지만 임의 학습자 코드의 모든 우회 경계가 입증된 것은 아니다. MyPage 로컬 commit `c79bd84` 이후 브라우저 runtime 변경과 README는 아직 미게시이며 GitHub Pages의 현재 공개본에 이 지원 범위를 적용했다고 주장하지 않는다.
+
+`[확정 결정]` 첫 Quest 이후 제품 확장은 [Java Quest·원본 JUnit 범위 확장](architecture.md#java-quest원본-junit-범위-확장)을 따른다. 원본 첫 CT의 5 parameterized invocation 정상·대표오답을 임시로 확인했으며, 복수 소스·패키지 class JAR·typed JUnit 결과를 같은 격리 실행기로 연결한다. Java 문제별 전체 공개 평가와 실제 통합 검증 전에는 최종 완료나 push 조건을 충족한 것으로 보지 않는다.
+
+`[현재 사실]` Java 17 JRT 기반 compiler Worker와 opaque cache-only executor의 초기 고정 Quest·bigint·외부 요청 차단 증거는 [컴파일·실행 분리 계약](architecture.md#컴파일실행-분리와-후속-gate)의 선행 기록이다. 현재 제품 연결과 전수 검증은 위 최신 사실을 따른다. 해당 임시 prototype만으로 CT 전체 호환성이나 임의 코드의 보편적 안전을 주장하지 않는다.
+
+`[확정 결정]` **DEC-BROWSER-JAVA-01** — bam은 README 시작하기의 GitHub Pages 링크에서 문제로 이동해 바로 Java를 실행하는 흐름을 원하며, “브라우저 안에서 Java를 실행”을 선택했다. 후속 정정에서 Java 17만을 기준으로 진행하도록 확정했으며 Java 21 후보는 채택하지 않았다. 브라우저 학습자 소스·실행 버전을 임의로 변경하지 않는다. 소스 clone·Node/JDK 준비·localhost 연결을 기본 사용 조건으로 둔 `DEC-SOURCE-DISTRIBUTION-01`·`DEC-SOURCE-JAVA-BROWSER-01`의 해당 부분을 대체한다. 기존 native Java 25 코드·안전 계약·검증 기록은 이력으로 보존하며 브라우저 지원 완료로 사용하지 않는다.
+
+`[현재 사실]` 제품의 Java 17 경로는 CheerpJ 4.3·ECJ 3.33으로 구현했고 현재 확인된 문제별 범위는 위 전수 결과와 [BROWSER-JAVA-v1](architecture.md#브라우저-직접-java-실행--browser-java-v1)을 따른다. 미채택 TeaVM Java 21 실험은 원본 첫 Quest 공개 6개를 fresh Worker에서 실행했지만 제한 CSP에서 runtime의 `new Function`이 실패해 제품 경로로 채택하지 않았다. 이 실패는 Java 브라우저 실행 일반의 불가능 근거가 아니다. 원본 교안·문제·JUnit 6.1.3 공개 테스트와 Quest/CT 분리를 보존하고, 라이선스 지출·학습자 소스의 원격 컴파일/채점 전송은 하지 않는다. 완전 오프라인·다른 브라우저·공개 게시 완료는 주장하지 않는다.
+
+`[현재 사실]` 초기 JRT 진단에서는 기본 file manager가 `/lt/17/release` 부재 뒤 NPE를 내어 학습자 컴파일에 도달하지 못했다. bam이 승인한 별도 Java 17 JRT 이름 탐색 helper와 고정 ECJ 경로로 이 차단점을 우회한 뒤 실제 class 61 출력·제품 공개 평가를 확인했다. 초기 실패는 [BROWSER-JAVA-v1](architecture.md#브라우저-직접-java-실행--browser-java-v1)에 이력으로 남긴다.
+
+`[확정 결정]` **DEC-BROWSER-JAVA-PREPARATION-UI-01** — bam은 로그인 없는 마이페이지 호칭의 브라우저 저장, 마이페이지와 Java Quest·코딩테스트 문제의 공통 Java 17 준비 버튼/상태 구현을 승인했다. provider 도입 전에는 unavailable 상태와 비활성 버튼을 정확히 보여 주고 가짜 다운로드·ready를 만들지 않도록 했다. 현재는 실제 다운로드·초기 컴파일/실행 확인 뒤 세션 RAM의 ready로 전이하며 읽기·작성·저장을 유지한다. 시스템 JDK 설치·탐색은 하지 않는다. [최소 UI 계약](architecture.md#마이페이지-호칭과-공통-java-준비-ui)은 이 경계를 기록하며 이 결정 자체가 Git 게시 증거는 아니다.
+
+`[현재 사실]` 마이페이지 호칭 저장과 세 화면의 공통 unavailable 준비 UI는 focused 63개·syntax 및 독립 실제 브라우저의 저장/복원·입력·초안 보존 검증을 인수했다. 실제 브라우저 저장 실패 강제와 native/opt-in 실행 재검증은 하지 않았다. 이는 provider 도입 전 UI 검증 이력이며 실제 연결의 최신 상태는 위 현재 사실을 따른다.
+
+- 작업 범위: 설계 담당은 `docs/architecture.md`·`docs/roadmap.md`의 최신 결정과 prototype 조건을 기록한다. 구현 담당은 제품과 분리한 정적 prototype을 맡고, 독립 검증은 해당 후보의 실제 compile·공개 평가·취소·격리 증거를 판단한다. 원본 학습 콘텐츠는 수정하지 않는다.
+- 완료 기준: 첫 문제를 브라우저 안에서 실제 컴파일·공개 채점하고 취소 후 다시 실행하는 증거와 직접 영향 검사를 남긴다. 초기 무해 소스 진단, 독립 격리 검증, 제품 통합·게시를 구분한다. 실패 시 근거를 보존하고 해당 후보의 제품 활성화를 중단한다.
+
 ## 2026-09-22 소스 전달 방식 정정
 
-`[확정 결정]` **DEC-SOURCE-DISTRIBUTION-01** — bam의 최신 정정 “설치형 앱이 아니야 그냥 내 깃허브에서 가져다가쓰는걸 말한거야”에 따라 주 전달 방식은 GitHub에서 소스를 clone/다운로드하여 기존 소스 실행 흐름을 사용하는 것이다. 현재 명령은 Node.js 20 이상에서 `npm run dev`이며 브라우저로 접속한다. 설치형을 필수 목표로 해석한 이전 방향은 대체한다. 이는 영구적인 브라우저 전용이나 모든 shell 폐기 결정은 아니다. 로컬 실행·서버/계정 없는 사용·개인 자료 보호 원칙은 유지하고, 최초 소스·의존성 다운로드와 이후 네트워크 요구를 구분한다. 오프라인 품질 목표의 폐기를 확정하지 않으며 소스 전달 방식에서 범위를 재정의하고 실제 검증 전 완전 오프라인을 보장하지 않는다.
+`[대체됨]` **DEC-SOURCE-DISTRIBUTION-01** — bam의 최신 정정 “설치형 앱이 아니야 그냥 내 깃허브에서 가져다가쓰는걸 말한거야”에 따라 주 전달 방식은 GitHub에서 소스를 clone/다운로드하여 기존 소스 실행 흐름을 사용하는 것이다. 현재 명령은 Node.js 20 이상에서 `npm run dev`이며 브라우저로 접속한다. 설치형을 필수 목표로 해석한 이전 방향은 대체한다. 이는 영구적인 브라우저 전용이나 모든 shell 폐기 결정은 아니다. 로컬 실행·서버/계정 없는 사용·개인 자료 보호 원칙은 유지하고, 최초 소스·의존성 다운로드와 이후 네트워크 요구를 구분한다. 오프라인 품질 목표의 폐기를 확정하지 않으며 소스 전달 방식에서 범위를 재정의하고 실제 검증 전 완전 오프라인을 보장하지 않는다.
 
 `[대체됨]` DEC-DELIVERY-01의 설치형 필수 해석, 설치 후 오프라인 필수, Electron·DMG·공증·공식 OS 선택을 release gate로 둔 계획은 현재 완료 조건이 아니다. 이전 prototype 코드·시험용 포장·PR #24~#26과 검증 이력은 보존하지만 설치 작업을 기본 후속 계획으로 계속하지 않는다. 과거 날짜별 결정·M1/M4/M6 표의 설치 조건은 이 정정에 종속된 이력이며 완료로 전환한 것이 아니다.
 
-공개 테스트·Java 25/preview 금지·실행 격리·개인 자료 보호·제품별 진도 분리는 유지한다. 웹/소스 브라우저의 Java는 작성·저장만 지원한다. Java 실행 PASS는 Electron IPC를 사용하는 검증 커널 prototype의 결과이며 새 소스 배포에서의 Java 연결 방식은 미결정이다. 시스템 JDK나 새 Node HTTP 실행 API를 승인한 것으로 해석하지 않는다. 기존 정적 서버의 역할도 Java 실행 서버로 확대하지 않는다.
+당시 native 경로의 공개 테스트·Java 25/preview 금지·실행 격리·개인 자료 보호·제품별 진도 분리 계약은 보존한다. 새 브라우저 경로의 Java 버전 후보는 위 최신 결정을 따른다. 기본 `npm run dev`는 정적 서버로 유지하며, 명시적 준비와 `dev:java` 연결을 사용한 검증 커널의 Chrome에서 실제 Java Quest·CT 공개 평가를 확인했다. 검증한 macOS 커널·Chrome 외 지원, 정식 배포와 Git 게시 완료는 아니다. 시스템 JDK fallback은 허용하지 않는다.
 
 데이터 보호·복습·외부 웹과제·점진 UI 이관 설계는 유효한 부분을 보존한다. desktop admission에 의존한 writer/backup·quizHistory 제안은 소스 실행 브라우저 환경에 맞춰 다시 설계·검증하기 전 구현 준비 완료가 아니다. 기존 논리 모델 PASS를 브라우저 다중 탭의 안전 보장으로 사용하지 않는다.
+
+## 2026-09-22 소스 Java 브라우저 연결 설계
+
+`[대체됨]` **DEC-SOURCE-JAVA-BROWSER-01** — bam이 기존 브라우저를 유지하는 권장 방향을 인수했다. GitHub clone/ZIP → 고정 runtime의 명시적 portable 준비 → 기존 `127.0.0.1` 정적 서버와 같은 단일 포트의 opt-in Java 연결 → 기존 브라우저 UI 흐름을 설계·모델 검증한다. Electron·앱 설치·DMG 생성은 이 경로의 필수가 아니다. 당시 단계는 설계·모델만 승인했으며 후속 구현은 2026-09-24 `DEC-SOURCE-JAVA-IMPLEMENTATION-01`에서 승인됐다. 이유는 사용자 소스 실행 흐름과 기존 진도를 유지하면서 검증한 Java 엔진의 안전 경계를 재사용하기 위해서다.
+
+`[제안]` 권한·API·token·owner/ID·수명주기·오류와 검증 계약의 정본은 [SOURCE-JAVA-BROWSER-v1](architecture.md#소스-java-브라우저-연결--source-java-browser-v1)이다. 기본 웹 명령은 유지한다. 새 준비·연결 명령과 API의 소스는 작성됐으며 runtime 폴더·자동 다운로드·지원 브라우저/lease 수치의 운영 계약은 아직 검증되지 않았다. 기존 `http://localhost:<port>` origin을 유지하고 포트 충돌을 자동 우회하지 않는다. 학습자 same-origin Worker는 신뢰 UI가 아니다. [비권한 Worker 경계](architecture.md#학습자-worker의-비권한-경계와-활성화-gate)의 CSP·top-level navigation 전용 일회용 capability와 실제 브라우저 우회 부정검증을 Java 활성화 선행 gate로 둔다. GitHub Pages의 로컬 자동 연결, 시스템 JDK fallback, sandbox·리소스 제한 완화, 사용자 요청으로 임의 path/command를 실행하는 API는 범위 밖이다.
+
+작은 순서는 ① 독립 상태/실패 모델 → ② portable 준비·같은 listener의 opt-in transport·기존 adapter 연결을 source/fake로 구현·검토 → ③ 준비 compile/HTTP 권한/서버 종료·외부 회수의 독립 preflight → ④ 명시 승인된 후보에서 새 경계의 최소 실제 실행이다. 원래 engine·공개 tests·JDK/profile가 같은 부분의 검증만 재사용하며 새 source 경로·HTTP·브라우저 저장 결과를 과거 Electron PASS로 대체하지 않는다. 단계별 실제 결과와 남은 검증은 아래 구현 카드에 기록한다.
+
+## 2026-09-24 소스 Java 브라우저 구현 승인과 착수
+
+`[확정 결정]` **DEC-SOURCE-JAVA-IMPLEMENTATION-01** — bam은 문서 승인 뒤 Java 작업을 시작하라고 했고, 2026-09-24 이 대화에서 “작업시작해”로 [SOURCE-JAVA-BROWSER-v1](architecture.md#소스-java-브라우저-연결--source-java-browser-v1)의 구현 착수를 승인했다. Git 기준은 PR #27 merge `c1eb8da2dd2992073c5d001c4d1cf5ba41423418`이다. `[현재 사실]` 후속 명시 승인과 독립 검증으로 검증 커널의 실제 Java 준비·Chrome 평가를 진행했다. 이는 정식 지원·최종 통합 완료 판정이 아니다.
+
+- 승인 범위: [SOURCE-JAVA-BROWSER-v1](architecture.md#소스-java-브라우저-연결--source-java-browser-v1)의 portable 준비, 같은 포트의 opt-in HTTP transport와 기존 문제 화면의 Java 실행·공개 채점·취소를 연결한다. 기본 정적 실행과 Quest/CT 분리는 유지하고 시스템 JDK fallback·격리 완화·임의 명령 API는 제외한다.
+- 구현 순서: source/fake 구현 → 독립 코드·계약 검토 → 실제 HTTP/브라우저 부정검증(Java child 0) → 감독·회수 preflight를 통과한 portable 준비 compile 및 최소 실제 Java/UI 영향 검증 → 독립 최종 통합. 각 단계의 실제 결과는 별도 증거로 판정한다.
+- 제안 활성화 조건: Worker 응답 CSP·하위 실행/import 차단, navigation capability·token 비노출·owner/lease·오래된 요청 거부의 실제 브라우저 증거 전 Java gate는 false다. 기존 모델 PASS로 실제 격리 PASS를 대신하지 않는다.
+- 제안 완료 기준: 소스 준비/실행 안내와 실제 문제 화면의 정상 공개 결과·제출 규칙·취소·종료/재시작 stale 거부, 실패 시 초안 보존·거짓 성공/완료 0·자식/그룹/observer 회수·원본 불변을 독립 확인한다. 실제 실행·유효한 기존 증거 재사용·미실행을 구분하고 실제 완료 후 README를 갱신한다.
+- 비범위: 기존 문제·정답·공개 테스트·학습 내용 변경, 모바일·SQL·일반 백업 기능·설치형/DMG 작업. Git 게시도 별도 검증·권한에 따른다.
+
+아래 세 단락의 `현재 사실`은 각 검증 시점의 이력이다. 최신 상태는 뒤의 2026-09-25 준비·실제 브라우저 결과로 판정한다.
+
+`[현재 사실]` 2026-09-24 독립 `java_client_review`의 실제 Chrome 검증 인계와 도구 출력에서 같은 개발 서버·transport·인증·client를 사용한 학습자 Worker의 네트워크·import·하위 Worker 차단, 오래된 Worker의 API 403/실행 0, navigation 외 요청의 capability 0, Service Worker 부재, 정상 UI의 fake Quest·취소·owner/reload 흐름을 확인했다. 첫 브라우저 harness는 동기 throw assertion에서 실패했으며 후속 격리·오래된 Worker probe 결과로 해당 경계를 판정했다. 확인된 소스 SHA-256은 `scripts/dev-server.mjs` `31084e7656c3f69416f4f0f208c8e9587631791ffc2e6f884339f3c84b14b68a`, `scripts/java-browser-transport.mjs` `d02094b3e7be2a8b191cf56c4169e8ca473a461a256c3c144a54a0125df6f3b6`, `src/workers/javascript-code-runner.classic.js` `46a8a2bb53836cd07858365c318b57f0c204ed4927820077d0750f47d61bd183`, `src/grading/java-browser-transport.js` `a8894b3b1d1c72837bb52c8e16d68929f78baefae1c9403178617c9433b1ad74`, `src/app.js` `5fc1d254e0bde3486b194e6641a1076bd97ed9804d4f15eb71c542cec10a5a1b`이다. 이 기록은 기존 독립 검증을 인수한 것이며 현재 작성자가 재실행하지 않았다. Chrome 외 브라우저·실제 Java child·준비 compile·독립 감독 preflight의 PASS는 아니다.
+
+`[현재 사실]` 준비·연결 명령과 감독 코드는 작성됐으나 제품 Java gate는 false이며 고정 JDK/JUnit 원본 archive는 lock hash로 확보했다. native Node fixture의 TERM 회수는 `bam-node-guard-preflight-4ynjcQ/final.json`에서 PASS, IPC host 종료 후 KILL·재시작 absence는 `bam-guard-ipc-preflight-woyno7/{host-exit-recovery,restart-recovered}.json`에서 확인됐다. 당시 IPC preflight의 `final.json`은 정상 `channel.close` 종료 확인 실패로 FAIL이었다. 이후 guard 수정본 `c95a9e52e680af6dde261d2a8dc4642db70bda7f89794d386cbbe3739303c171`에서 25개 테스트와 native 정상 close(`bam-guard-close-preflight-dje4kr/final.json`, SHA-256 `d76127f984cef2c2ec3e5dca32d6475b192fa4b422939dec13021af04154c1bf`), 빈 그룹 shutdown(`bam-guard-shutdown-preflight-MBeGgx/final.json`, SHA-256 `58c760214847cef02a7ef8009a41b0e2794f2e12f86ce5c01e770c949912f825`)이 PASS했다. owned-child shutdown(`bam-guard-owned-shutdown-ZP5oLh/final.json`, SHA-256 `4a7f327910c4628196d62762257a58ac0707866732c6f2fd2187950f505d62ee`)도 worker·owned child의 exit/close code 0, 독립 관찰 `absent_after_term`·PGID 부재를 확인했다. 이 검사에서는 active/spawn marker를 보존했고 완료 receipt를 만들지 않았다. 이 Node fixture 증거는 실제 Java·준비 compile·Java listener·문제 화면 실행/채점/취소의 PASS가 아니다. 이 Node fixture 검증 당시 실제 Java·커밋·push는 0이었다.
+
+`[현재 사실]` 2026-09-25 승인 범위의 검증 전용 `/private/tmp/bam-java-first-compile-lsz09j`에서 고정 JDK의 `compileTrustedQuestSource`를 정확히 1회 실행해 독립 PASS했다. 실행 harness SHA-256은 `b6d7b9393b4949aa334511100c5013c22bcb065169d7f657d35ebece80114d81`, 검증 전용 guard 소스 SHA-256은 `376256e979f2b9f26ab72b0c411cb0d7a32b572d9e94daf7506f1d8bb8ae532c`, 결과 `compile-result.json` SHA-256은 `6b10488a9409e30fbd23250d7c27a6639db8bf6cc1fe256f3ba526fef5a5d5c4`다. javac child PID=PGID 3138의 exit 0·close, local/independent 그룹 부재와 guard confirm/close의 독립 `absent` 관찰, guard worker 종료와 최종 ps 부재를 확인했다. raw argv/env·PID/PGID·종료 영수증을 보존했고 class 2개의 major version 69·hash를 확인했다. active/host marker는 제거되고 1회 ticket·검증 receipt는 남았다. 이는 전체 portable 준비 완료나 CT compile·listener·브라우저 문제 실행/채점/취소 PASS가 아니다. 제품 Java gate는 false이며 추가 Java 실행·커밋·push는 하지 않았다.
+
+`[현재 사실]` 사용자가 로컬 Java 실행 플래그와 전체 준비·브라우저 검증을 승인한 뒤 production guard gate를 열고 검증 전용 one-shot 모드를 제거했다. 연속 reserve 결함 수정 후 첫 전체 준비의 CT 미시작 marker는 독립 확인·회수했으며, 그 실패 stage와 원본 증거는 보존했다. 첫 완료본 `runtime-first`는 실제 Quest Chrome 검증에 사용했으나, CT capability에서 신뢰 소스 경로 누락이 발견됐다. `scripts/java-prepare.mjs`가 CT runner 소스 2개와 artifact helper를 `Resources/runtime`에도 복제·검증하도록 수정한 뒤 새 `/private/tmp/bam-java-portable-runtime-second`에 정식 준비 명령을 1회 실행했다. Quest·CT trusted compile은 각각 exit 0·close·그룹 부재·guard safe이며 완료 receipt SHA-256은 `9039652b727eeb7a2525dd59fed3b48aee609e7e03b08aac77aa04f882ac1dae`다. 준비본 검증과 번들 Quest·CT capability는 모두 available, CT manifest는 72문제다. 기존 완료본·실패 stage는 덮어쓰지 않았다. 일반 사용자는 `npm run java:prepare -- --artifacts <고정자료폴더> --runtime <전용새폴더>` 뒤 `npm run dev:java -- --runtime <준비폴더>`를 명시적으로 실행한다. `/private/tmp` 경로는 이번 검증 자료일 뿐 기본 제품 경로가 아니다.
+
+`[현재 사실]` 검증한 macOS 커널의 실제 Chrome에서 `runtime-first` Quest는 공개 테스트 6/6·취소 결과 미반영·reload 초안 보존을 PASS했다(`/private/tmp/bam-java-real-quest-browser-HyViHT/evidence.jsonl`, SHA-256 `5903c79e7010d860fb177a34df567b3f626070665c6c8ef8427e23898ea50861`). `runtime-second` CT `bridge-arr-01`은 빠른 공개 JUnit 1/1 그룹·전체 제출 2/2 그룹(호출 6건) PASS, 빠른 취소 결과 미반영·reload 초안 보존·서버 종료 뒤 관련 프로세스 부재를 확인했다(`/private/tmp/bam-java-real-coding-test-browser-F1t6yq/evidence.jsonl`, SHA-256 `c533146a8d71ace526b865c6aa63f2b732d3ed41e4dc7ad9ffc17b3d2d9d3d23`). 추가 CT active child 취소에서 번들 JDK `java` PID=PGID 8208을 확인한 뒤 UI로 취소했고, child exit/close·그룹 부재·독립 observer·결과 미반영·서버 종료/최종 관련 프로세스 부재를 PASS했다(`/private/tmp/bam-java-real-ct-active-cancel-WCjC3I/evidence.jsonl`, SHA-256 `3d894a8e89e46ca29dd0ed89fe55cb2031ff06f6111882712b9ba988f3a8cf4c`). 이 결과는 확인한 커널·Chrome·선택한 문제에 한정하며 다른 OS/브라우저 지원, GitHub Pages Java 실행, 전체 문제·정식 배포·Git 게시 완료를 뜻하지 않는다.
+
+```workflow-state
+{
+  "version": 1,
+  "id": "source-java-browser",
+  "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922",
+  "scopeFiles": [
+    { "path": "docs/architecture.md", "sha256": "53e17403d345bc17833afc22737e5f94c3095ac0da0dae214d57455ce6f8ab52" }
+  ],
+  "stage": "implementation",
+  "requiredChecks": [
+    "browser-worker-boundary",
+    "http-no-java-negative",
+    "runtime-preflight",
+    "java-quest-ct-flow",
+    "independent-integration"
+  ],
+  "approval": { "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922", "ref": "현재 Codex 대화 / bam 2026-09-24: 작업시작해" },
+  "implementation": null,
+  "verification": null,
+  "completion": null
+}
+```
 
 ## 조사 기준 상태
 
@@ -294,12 +368,125 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 
 | 순서 | 입력·작은 구현 | 완료 근거와 실패 경계 |
 | --- | --- | --- |
+| 구현 착수 승인 | 소스 Java 브라우저 연결·문제 화면 실행/공개 채점/취소 | `DEC-SOURCE-JAVA-IMPLEMENTATION-01`을 2026-09-24 승인했다. 제품·listener·compile·Java의 실제 결과는 아직 없으며 독립 preflight와 브라우저 격리 gate를 먼저 충족 |
 | 1 | 소스 실행 환경의 로컬 데이터 보호 | [데이터 보호 정본](designs/local-application.md)의 유효한 보존 원칙을 유지하고 브라우저 writer·backup 계약을 재설계. desktop admission 가정을 그대로 적용하지 않음 |
 | 2 | 객관식 모름·헷갈림·문제별 제출, 기존 탐색/복귀 연결 | [전이·ack·eviction 계약](designs/lesson-review.md#후속-최소-구현과-시뮬레이션-계약). 안정 ID·revision·중복 제출·중간 종료·quota·기존 기록 보존 |
 | 3 | 밤위키 원본 외부 과제 1개 | [단일 pilot](designs/web-assignments.md#단일-원본-pilot의-최소-구현-제안)의 고정 시작점·공개 검증·자기 보고 구분. 원본과 사용자 풀이 보존 |
 | 4 | 읽기 전용 목록 React/TS 시범 | [최소 표시 경계](architecture.md#첫-react-표시-경계와-rollback-제안). 도구체인 결정 후 작은 화면, 저장/runner 불변·rollback |
 | 5 | release 콘텐츠 완료 감사 | [기존 감사 기준](learning-content-design.md#소급-감사-완료-증거)으로 release ID/revision·증거를 지도하고 차단 gap만 별도 반환. 오래된 증거를 신규 PASS로 쓰지 않음 |
 | 후속 | CS → TypeScript → React 콘텐츠의 필요 범위 검토 | MVP 차단 gap·선수 관계·새 학습 행동을 먼저 확인. 제품 이관과 교안 추가는 별개이며 SQL은 사용자의 재요청 전 보류 |
+
+### 소스 실행 데이터 보호 작업 카드
+
+`[현재 사실]` desktop 전제의 보호 모델만 조건부 검증됐고 소스 브라우저 writer·복원 계약은 미설계·미검증이다. 기존 진도 보호 원칙을 유지한 브라우저 계약을 먼저 확정한다.
+
+```workflow-state
+{
+  "version": 1,
+  "id": "source-data-protection",
+  "scopeRevision": "SOURCE-DATA-PROTECTION-v1",
+  "scopeFiles": [{ "path": "docs/designs/local-application.md", "sha256": "de4b809fdb7e98633a56d01f41fe82614c9068cf7f85f4212e2412cc42b2745f" }],
+  "stage": "prerequisite_pending",
+  "prerequisites": [
+    { "id": "browser-writer-recovery-contract", "status": "PENDING", "ref": "docs/designs/local-application.md#설치기록-보호-상세-설계--install-data-v2" }
+  ],
+  "requiredChecks": ["source-record-preservation", "browser-writer-recovery", "independent-source-smoke"],
+  "approval": null,
+  "implementation": null,
+  "verification": null,
+  "completion": null
+}
+```
+
+### 객관식 문제별 기록 작업 카드
+
+`[현재 사실]` 기존 복습 UI는 유지 중이다. 새 모름·헷갈림·문제별 영구 기록은 보관 정책과 브라우저 writer·backup 호환 계약이 남은 `[제안]`이다.
+
+```workflow-state
+{
+  "version": 1,
+  "id": "review-history",
+  "scopeRevision": "REVIEW-HISTORY-v1",
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "e0070b894ad90eb6eaaee5a436a2de015ccb4deaec6c977229d4bdd1cfdfa8e1" }],
+  "stage": "prerequisite_pending",
+  "prerequisites": [
+    { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
+    { "id": "browser-writer-backup-contract", "status": "PENDING", "ref": "docs/designs/lesson-review.md#후속-최소-구현과-시뮬레이션-계약" }
+  ],
+  "requiredChecks": ["history-transition", "storage-failure-retry", "legacy-revision-preservation", "independent-review-flow"],
+  "approval": null,
+  "implementation": null,
+  "verification": null,
+  "completion": null
+}
+```
+
+### 밤위키 외부 웹과제 pilot 작업 카드
+
+`[확정 결정]` 밤위키 원본 활용 방향은 유지한다. `[현재 사실]` 첫 원본의 고정 시작점·공개 검증·오프라인 전달 계약은 아직 결정·실측되지 않았다.
+
+```workflow-state
+{
+  "version": 1,
+  "id": "web-assignment-pilot",
+  "scopeRevision": "WEB-ASSIGNMENT-PILOT-v1",
+  "scopeFiles": [{ "path": "docs/designs/web-assignments.md", "sha256": "48d9a27820d19cf745b37ab9ac1c657cf616df4eb2832ddc83e958f5e16755b6" }],
+  "stage": "prerequisite_pending",
+  "prerequisites": [
+    { "id": "DEC-WEB-REPO-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
+    { "id": "DEC-WEB-OFFLINE-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
+  ],
+  "requiredChecks": ["fixed-source-manifest", "public-local-check", "progress-isolation", "independent-pilot-flow"],
+  "approval": null,
+  "implementation": null,
+  "verification": null,
+  "completion": null
+}
+```
+
+### React 목록 시범 작업 카드
+
+`[확정 결정]` React·TypeScript의 점진 이관 목표는 유지한다. `[현재 사실]` 도구체인·CSP·첫 이관 범위는 `DEC-FRONTEND-MIGRATION-01` 결정 대기이며 목록 시범은 미구현이다.
+
+```workflow-state
+{
+  "version": 1,
+  "id": "react-list-pilot",
+  "scopeRevision": "REACT-LIST-PILOT-v1",
+  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "53e17403d345bc17833afc22737e5f94c3095ac0da0dae214d57455ce6f8ab52" }],
+  "stage": "prerequisite_pending",
+  "prerequisites": [
+    { "id": "DEC-FRONTEND-MIGRATION-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
+  ],
+  "requiredChecks": ["static-build-csp", "route-url-preservation", "keyboard-focus", "rollback"],
+  "approval": null,
+  "implementation": null,
+  "verification": null,
+  "completion": null
+}
+```
+
+### release 콘텐츠 완료 감사 작업 카드
+
+`[현재 사실]` 기존 승인 범위의 콘텐츠 현황 지도와 묶음 감사 준비는 병행할 수 있다. release 전체 완료 판정에는 `DEC-MVP-01`의 차단 ID·핵심 행동 범위가 먼저 필요하며, 시범 batch나 과거 증거를 전체 PASS로 전환하지 않는다.
+
+```workflow-state
+{
+  "version": 1,
+  "id": "release-content-audit",
+  "scopeRevision": "RELEASE-CONTENT-AUDIT-v1",
+  "scopeFiles": [{ "path": "docs/learning-content-design.md", "sha256": "fca73fb02fafb9f6c5f0db30a53dc51f4af047239d10c08546ac787aca8751a2" }],
+  "stage": "prerequisite_pending",
+  "prerequisites": [
+    { "id": "DEC-MVP-01-release-manifest", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
+  ],
+  "requiredChecks": ["release-id-coverage", "depth-and-evidence", "content-validation", "independent-integration"],
+  "approval": null,
+  "implementation": null,
+  "verification": null,
+  "completion": null
+}
+```
 
 퀴즈의 새 영구 기록은 [writer 배제·복구 계약](designs/lesson-review.md#후속-최소-구현과-시뮬레이션-계약)을 소스 실행 브라우저 환경에 맞춰 재설계·검증한 뒤 구현한다. 기존 웹 객관식은 유지하며 desktop admission은 브라우저에 구현된 보장이 아니다.
 

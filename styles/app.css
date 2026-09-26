@@ -5211,6 +5211,19 @@ article.lesson-body > h3 {
 .catalog-card-action { margin-top: auto; color: var(--color-primary); font-size: 13px; font-weight: 600; }
 .catalog-empty { padding: 30px 0; color: var(--color-text-muted); }
 .my-page-header .my-page-continue { display: inline-flex; margin-top: 18px; text-decoration: none; }
+.my-page-greeting { color: var(--color-text); font-weight: 700; }
+.my-page-profile { margin-top: 24px; }
+.my-page-profile form { margin-top: 16px; }
+.my-page-profile label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 700; }
+.my-page-profile-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.my-page-profile input { flex: 1 1 220px; min-width: 0; min-height: 44px; padding: 10px 12px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-bg); color: var(--color-text); }
+.my-page-profile form p { margin: 8px 0 0; color: var(--color-text-muted); font-size: 12px; }
+.my-page-profile form [role="status"] { min-height: 1.5em; }
+.java-browser-preparation { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px 24px; align-items: center; margin-top: 16px; padding: 20px 22px; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.java-browser-preparation :is(.eyebrow, h2, p) { margin: 0; }
+.java-browser-preparation h2 { margin-top: 4px; font-size: 18px; }
+.java-browser-preparation-action { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.java-browser-preparation-action p { max-width: 42em; color: var(--color-text-muted); font-size: 13px; line-height: 1.5; }
 .my-page-local-status { display: flex; gap: 20px; align-items: center; justify-content: space-between; padding: 18px 20px; margin-top: 28px; border: 1px solid var(--color-success-text); border-radius: var(--radius-md); background: var(--color-success-bg); }
 .my-page-local-status.is-warning { border-color: var(--color-warning-text); background: var(--color-warning-bg); }
 .my-page-local-status.is-error { border-color: var(--color-danger); background: var(--color-danger-bg); }
