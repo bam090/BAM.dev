@@ -1468,6 +1468,14 @@ export async function compileTrustedQuestSource({ bundleRoot, workRoot, sourcePa
     throw new Error("Java 준비 child의 독립 회수 guard가 필요합니다.");
   }
   const paths = await resolveBundlePaths(bundleRoot, { requireQuestClass: false });
+  return compileTrustedQuestSourceWithPaths({
+    workRoot, sourcePath, sourceSha256, signal, executionGuard,
+  }, paths, { executeProcess });
+}
+
+// 공개 진입점의 커널·bundle 검증을 통과한 뒤에만 호출한다.
+async function compileTrustedQuestSourceWithPaths({ workRoot, sourcePath, sourceSha256, signal, executionGuard },
+  paths, { executeProcess = runSandboxedProcess } = {}) {
   const root = await realpath(workRoot);
   const source = await realpath(sourcePath);
   if (source !== join(root, "JavaBamQuestRunner.java")
@@ -1765,6 +1773,7 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
 }
 
 export const __test = Object.freeze({
+  compileTrustedQuestSourceWithPaths,
   readCodingTestRequest,
   readTrustedCodingTest,
   parseCodingTestProtocol,

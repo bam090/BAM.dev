@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { chmod, mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
+import { release as osRelease, tmpdir, version as osVersion } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
 import {
-  JAVA_RUNTIME_LIMITS, compileTrustedQuestSource, getJavaQuestCapabilities,
+  JAVA_RUNTIME_LIMITS, __test as supervisorTest, compileTrustedQuestSource, getJavaQuestCapabilities,
 } from "../desktop/runtime/supervisor.mjs";
 
 async function fixture(t) {
@@ -28,6 +28,14 @@ async function fixture(t) {
   await writeFile(sourcePath, "class BamQuestRunner {}\n");
   const sourceSha256 = createHash("sha256").update(await readFile(sourcePath)).digest("hex");
   return { root, bundleRoot, workRoot, sourcePath, sourceSha256, jdkHome };
+}
+
+async function compileWithFakeValidatedBundle(input, dependencies) {
+  const jdkRoot = await realpath(input.jdkHome);
+  return supervisorTest.compileTrustedQuestSourceWithPaths(input, {
+    jdkRoot,
+    javacExecutable: path.join(jdkRoot, "bin", "javac"),
+  }, dependencies);
 }
 
 const safeExecution = {
@@ -56,12 +64,12 @@ test("고정 source 경로와 hash가 틀리면 reservation·fake child가 모�
     finish() { return true; },
   };
   const executeProcess = () => { childCalls += 1; return safeExecution; };
-  await assert.rejects(compileTrustedQuestSource({
+  await assert.rejects(compileWithFakeValidatedBundle({
     ...input, sourceSha256: "0".repeat(64), executionGuard,
   }, { executeProcess }), /예상 바이트/u);
   const alias = path.join(input.workRoot, "alias.java");
   await writeFile(alias, await readFile(input.sourcePath));
-  await assert.rejects(compileTrustedQuestSource({
+  await assert.rejects(compileWithFakeValidatedBundle({
     ...input, sourcePath: alias, executionGuard,
   }, { executeProcess }), /예상 바이트/u);
   assert.equal(reservations, 0);
@@ -77,7 +85,7 @@ test("fake compile은 고정 profile·Java 25 argv·한도와 독립 회수 ACK�
     recordSpawn(details) { events.push(["recordSpawn", details]); return true; },
     finish(details) { events.push(["finish", details]); return true; },
   };
-  const result = await compileTrustedQuestSource({ ...input, executionGuard }, {
+  const result = await compileWithFakeValidatedBundle({ ...input, executionGuard }, {
     async executeProcess(options) {
       events.push(["execute", options]);
       await options.onChildSpawn(1234);
@@ -112,7 +120,7 @@ test("fake compile은 고정 profile·Java 25 argv·한도와 독립 회수 ACK�
 
 test("독립 회수 ACK 실패는 unsafe와 runtime poison으로 이어진다", async (t) => {
   const input = await fixture(t);
-  const result = await compileTrustedQuestSource({
+  const result = await compileWithFakeValidatedBundle({
     ...input,
     executionGuard: { reserve() { return { attemptId: "b".repeat(64) }; },
       recordSpawn() { return true; }, finish() { return false; } },
@@ -125,7 +133,7 @@ test("fake 프로세스 예외는 null 실행 증거로 guard 회수를 시도�
   const input = await fixture(t);
   const finishCalls = [];
   const originalError = new Error("fake launch failed");
-  await assert.rejects(compileTrustedQuestSource({
+  await assert.rejects(compileWithFakeValidatedBundle({
     ...input,
     executionGuard: {
       reserve() { return { attemptId: "c".repeat(64) }; },
@@ -135,4 +143,25 @@ test("fake 프로세스 예외는 null 실행 증거로 guard 회수를 시도�
   }, { executeProcess() { throw originalError; } }), (error) => error === originalError);
   assert.deepEqual(finishCalls, [{ reservation: { attemptId: "c".repeat(64) }, execution: null }]);
   assert.equal((await getJavaQuestCapabilities({ bundleRoot: input.bundleRoot })).available, false);
+});
+
+test("검증되지 않은 호스트의 공개 trusted compile은 fake child 전에 닫힌다", async (t) => {
+  if (supervisorTest.matchesValidatedKernel(osRelease(), osVersion())) {
+    t.skip("검증된 macOS 커널에서는 이 거부 경로가 적용되지 않습니다.");
+    return;
+  }
+  const input = await fixture(t);
+  let reservations = 0;
+  let childCalls = 0;
+  await assert.rejects(compileTrustedQuestSource({
+    ...input,
+    executionGuard: {
+      reserve() { reservations += 1; return {}; },
+      finish() { return true; },
+    },
+  }, { executeProcess() { childCalls += 1; return safeExecution; } }), {
+    code: "java_environment_mismatch",
+  });
+  assert.equal(reservations, 0);
+  assert.equal(childCalls, 0);
 });
