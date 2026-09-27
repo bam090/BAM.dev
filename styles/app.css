@@ -2509,7 +2509,8 @@ article.lesson-body > h3 {
   border-radius: var(--radius-md);
 }
 
-.quest-source-highlight {
+.quest-source-highlight,
+.coding-test-source-highlight {
   --syntax-gutter: 16px;
 
   position: absolute;
@@ -2531,7 +2532,8 @@ article.lesson-body > h3 {
   white-space: pre;
 }
 
-.quest-source-highlight code {
+.quest-source-highlight code,
+.coding-test-source-highlight code {
   display: block;
   width: max-content;
   min-width: 100%;
@@ -2540,7 +2542,8 @@ article.lesson-body > h3 {
   line-height: inherit;
 }
 
-.quest-editor-shell.is-readonly .quest-source-highlight {
+.quest-editor-shell.is-readonly .quest-source-highlight,
+.coding-test-editor-shell.is-readonly .coding-test-source-highlight {
   opacity: 1;
 }
 
@@ -2578,6 +2581,56 @@ article.lesson-body > h3 {
 #quest-source[readonly] {
   cursor: wait;
   opacity: 1;
+}
+
+.code-editor-assist {
+  margin: 8px 0 14px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.code-editor-assist-actions,
+.code-editor-assist-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.code-editor-assist button {
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--color-code);
+  color: var(--color-text-soft);
+  padding: 5px 9px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.code-editor-assist button:hover,
+.code-editor-assist button[aria-selected="true"] {
+  border-color: var(--color-primary-strong);
+  color: var(--color-primary-strong);
+}
+
+.code-editor-assist button:focus-visible {
+  outline: 2px solid var(--color-primary-strong);
+  outline-offset: 2px;
+}
+
+.code-editor-assist-list {
+  margin-top: 8px;
+}
+
+.code-editor-assist-list[hidden] {
+  display: none;
+}
+
+.code-editor-assist-status {
+  margin: 4px 0 0;
+}
+
+.code-editor-assist-status:empty {
+  display: none;
 }
 
 .quest-editor-help,
@@ -3369,7 +3422,16 @@ article.lesson-body > h3 {
   font-weight: 800;
 }
 
+.coding-test-editor-shell {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
 #coding-test-source {
+  position: relative;
+  z-index: 1;
   display: block;
   width: 100%;
   max-width: 100%;
@@ -3379,13 +3441,14 @@ article.lesson-body > h3 {
   padding: 16px;
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
-  background: var(--color-code);
-  color: var(--color-text-soft);
+  background: transparent;
+  color: transparent;
   caret-color: var(--color-primary-strong);
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.65;
   tab-size: 2;
+  -webkit-text-fill-color: transparent;
   white-space: pre;
 }
 

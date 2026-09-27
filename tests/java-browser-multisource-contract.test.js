@@ -1,9 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { JAVA_BROWSER_ASSET_MANIFEST } from "../src/grading/java-browser-assets.js";
 import { compileJavaSources } from "../src/grading/java-browser-compiler.js";
 
 const assets = {
+  runtime: JAVA_BROWSER_ASSET_MANIFEST.runtime.map((spec, index) => ({
+    url: spec.url, status: spec.status, bytes: new Uint8Array([index + 1]),
+  })),
+  runtimeBootstrap: new Uint8Array([7, 8, 9]),
   compiler: {
     ecjJar: new Uint8Array([1]),
     junitJar: new Uint8Array([1]),

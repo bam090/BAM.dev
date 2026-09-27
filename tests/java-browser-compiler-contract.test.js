@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { JAVA_BROWSER_ASSET_MANIFEST } from "../src/grading/java-browser-assets.js";
 import { compileJava } from "../src/grading/java-browser-compiler.js";
+import { initializeJavaRuntime } from "../src/workers/java-browser-runtime.js";
 
 const assets = {
+  runtime: JAVA_BROWSER_ASSET_MANIFEST.runtime.map((spec, index) => ({
+    url: spec.url, status: spec.status, bytes: new Uint8Array([index + 1]),
+  })),
+  runtimeBootstrap: new Uint8Array([7, 8, 9]),
   compiler: {
     ecjJar: new Uint8Array([1]),
     helperClasses: {
@@ -21,8 +27,9 @@ function installWorker(t, reply) {
   const workers = [];
   class FakeWorker {
     constructor() { this.terminated = false; workers.push(this); }
-    postMessage(request) {
+    postMessage(request, transfer) {
       this.request = request;
+      this.transfer = transfer;
       queueMicrotask(() => reply?.(this, request));
     }
     terminate() { this.terminated = true; }
@@ -105,4 +112,45 @@ test("합법적인 __proto__ class도 누락 없이 own class entry로 전달한
   const result = await compileJava({ source: "class Solution {} class __proto__ {}" }, { assets });
   assert.equal(Object.hasOwn(result.classes, "__proto__"), true);
   assert.ok(result.classes.__proto__ instanceof Uint8Array);
+});
+
+
+test("검증된 runtime 13개와 bootstrap 바이트를 compiler Worker에 전달하고 원본을 보존한다", async (t) => {
+  const workers = installWorker(t, (worker) => worker.send({
+    status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class },
+  }));
+  await compileJava({ source: "class Solution {}" }, { assets });
+  const worker = workers[0];
+  assert.deepEqual(worker.request.runtimeAssets.map(({ url }) => url),
+    JAVA_BROWSER_ASSET_MANIFEST.runtime.map(({ url }) => url));
+  assert.deepEqual(worker.request.runtimeBootstrap, new Uint8Array([7, 8, 9]));
+  assert.equal(worker.transfer, undefined, "원본 ArrayBuffer를 Worker로 이전하지 않아야 합니다.");
+  assert.equal(assets.runtime[0].bytes.byteLength, 1);
+  assert.equal(assets.runtimeBootstrap.byteLength, 3);
+});
+
+test("런타임 자산 누락은 Worker 생성 전에 거부하고 bootstrap 실패는 typed error로 닫는다", async (t) => {
+  const workers = installWorker(t, (worker, request) => worker.onmessage({ data: {
+    type: "compiler-error", runId: request.runId, message: "Java runtime asset is missing",
+  } }));
+  assert.throws(() => compileJava({ source: "class Solution {}" }, {
+    assets: { ...assets, runtime: assets.runtime.slice(1) },
+  }), { code: "engine_error" });
+  assert.throws(() => compileJava({ source: "class Solution {}" }, {
+    assets: { ...assets, runtimeBootstrap: null },
+  }), { code: "engine_error" });
+  assert.equal(workers.length, 0);
+  await assert.rejects(compileJava({ source: "class Solution {}" }, { assets }),
+    { code: "engine_error" });
+  assert.equal(workers.length, 1);
+  assert.equal(workers[0].terminated, true);
+});
+
+test("공통 bootstrap은 누락·중복·query가 있는 runtime cache를 설치 전에 거부한다", async () => {
+  const validShape = assets.runtime.map((asset) => ({ ...asset }));
+  await assert.rejects(initializeJavaRuntime(validShape.slice(1)), /누락/u);
+  await assert.rejects(initializeJavaRuntime(validShape.map((asset, index) =>
+    index === 1 ? { ...asset, url: validShape[0].url } : asset)), /올바르지/u);
+  await assert.rejects(initializeJavaRuntime(validShape.map((asset, index) =>
+    index === 1 ? { ...asset, url: `${asset.url}?bypass=1` } : asset)), /올바르지/u);
 });

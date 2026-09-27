@@ -113,10 +113,15 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
     throw compilerError("invalid_input", "Java sources must use canonical paths and stay within 128 KiB.");
   }
   const compiler = assets?.compiler;
+  const runtimeAssets = assets?.runtime;
+  const runtimeBootstrap = assets?.runtimeBootstrap;
   if (!(compiler?.ecjJar instanceof Uint8Array) || !plainRecord(compiler.helperClasses)
       || Object.keys(compiler.helperClasses).length !== 3
       || !Object.values(compiler.helperClasses).every((value) => value instanceof Uint8Array)
-      || (profile === "junit" && !(compiler.junitJar instanceof Uint8Array))) {
+      || (profile === "junit" && !(compiler.junitJar instanceof Uint8Array))
+      || !Array.isArray(runtimeAssets) || runtimeAssets.length !== 13
+      || !runtimeAssets.every((asset) => typeof asset?.url === "string" && asset.bytes instanceof Uint8Array)
+      || !(runtimeBootstrap instanceof Uint8Array)) {
     throw compilerError("engine_error", "Java compiler assets are unavailable.");
   }
   if (signal?.aborted) return Promise.reject(compilerError("cancelled", "Java compilation was cancelled."));
@@ -161,6 +166,7 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
       onAbort();
       return;
     }
-    worker.postMessage({ type: "compile", runId, sources, entryClass, profile, compiler });
+    worker.postMessage({ type: "compile", runId, sources, entryClass, profile, compiler,
+      runtimeAssets, runtimeBootstrap });
   });
 }

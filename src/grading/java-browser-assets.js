@@ -1,6 +1,8 @@
 const CDN = "https://cjrtnc.leaningtech.com/4.3/";
 const LOCAL = new URL("../../", import.meta.url);
 const MAX_BYTES = 128 * 1024 * 1024;
+const MODULES_URL = CDN + "17/lib/modules";
+const MODULES_CACHE = "bam.dev.java-modules-v1";
 
 const RUNTIME = [
   ["loader.js", 200, 7521, "5b0ec873d1ae97d184928041b5f97ecf36eb990dac3baec5836a90bd87fa7a9f"],
@@ -33,23 +35,21 @@ export const JAVA_BROWSER_ASSET_MANIFEST = Object.freeze({
   runtime: RUNTIME.map(([path, status, size, sha256]) => Object.freeze({ url: CDN + path, status, size, sha256 })),
   compiler: COMPILER.map(([name, path, size, sha256]) => Object.freeze({ name, url: new URL(path, LOCAL).href, status: 200, size, sha256 })),
   executor: Object.freeze({ url: new URL("src/workers/java-browser-executor.worker.js", LOCAL).href, status: 200, size: 11057, sha256: "05e6704a227fb8366bbe8fe9c5f0085adbbfd7790e4875dd11eed9a1657f5f49" }),
+  runtimeBootstrap: Object.freeze({ url: new URL("src/workers/java-browser-runtime.js", LOCAL).href, status: 200, size: 4987, sha256: "a949fdc94e431bc0647dba0bef67561df2c3dfb1f264497fcd1aa690ce1cf4dc" }),
 });
 
-export const JAVA_BROWSER_ASSET_BYTES = [...JAVA_BROWSER_ASSET_MANIFEST.runtime, ...JAVA_BROWSER_ASSET_MANIFEST.compiler, JAVA_BROWSER_ASSET_MANIFEST.executor]
+export const JAVA_BROWSER_ASSET_BYTES = [...JAVA_BROWSER_ASSET_MANIFEST.runtime, ...JAVA_BROWSER_ASSET_MANIFEST.compiler,
+  JAVA_BROWSER_ASSET_MANIFEST.executor, JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap]
   .reduce((total, asset) => total + asset.size, 0);
 
-async function readVerifiedAsset(asset, signal, onChunk) {
-  const response = await fetch(asset.url, {
-    method: "GET", mode: "cors", credentials: "omit", cache: "no-store",
-    redirect: "error", referrerPolicy: "no-referrer", signal,
-  });
-  if (response.url !== asset.url || response.status !== asset.status) throw new Error(`Java 자산 응답이 일치하지 않습니다: ${asset.url}`);
+async function verifyAssetResponse(response, asset, signal, onChunk) {
   const chunks = [];
   let length = 0;
   if (response.body) {
     const reader = response.body.getReader();
     while (true) {
       const { done, value } = await reader.read();
+      signal?.throwIfAborted();
       if (done) break;
       length += value.byteLength;
       if (length > asset.size) { await reader.cancel(); throw new Error(`Java 자산 크기가 초과됐습니다: ${asset.url}`); }
@@ -62,24 +62,116 @@ async function readVerifiedAsset(asset, signal, onChunk) {
   let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
   const digest = await crypto.subtle.digest("SHA-256", bytes);
+  signal?.throwIfAborted();
   const sha256 = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
   if (sha256 !== asset.sha256) throw new Error(`Java 자산 해시가 일치하지 않습니다: ${asset.url}`);
   return { url: asset.url, status: asset.status, bytes, lastModified: response.headers.get("Last-Modified") ?? "" };
 }
 
+async function readVerifiedAsset(asset, signal, onChunk) {
+  signal?.throwIfAborted();
+  const response = await fetch(asset.url, {
+    method: "GET", mode: "cors", credentials: "omit",
+    cache: asset.url.startsWith(CDN) ? "default" : "no-cache",
+    redirect: "error", referrerPolicy: "no-referrer", signal,
+  });
+  if (response.url !== asset.url || response.status !== asset.status) throw new Error(`Java 자산 응답이 일치하지 않습니다: ${asset.url}`);
+  return verifyAssetResponse(response, asset, signal, onChunk);
+}
+
+function modulesCacheKey(asset) {
+  return `${asset.url}?bam-sha256=${asset.sha256}`;
+}
+
+async function readCachedModules(asset, signal) {
+  if (!globalThis.caches?.open) return null;
+  const key = modulesCacheKey(asset);
+  let cache;
+  let response;
+  try {
+    cache = await globalThis.caches.open(MODULES_CACHE);
+    signal.throwIfAborted();
+    response = await cache.match(key);
+    signal.throwIfAborted();
+  } catch {
+    signal.throwIfAborted();
+    return null;
+  }
+  if (!response) return null;
+  try {
+    if (response.headers.get("X-Bam-Original-URL") !== asset.url
+      || response.headers.get("Content-Length") !== String(asset.size)
+      || response.status !== asset.status || (response.url && response.url !== asset.url)) {
+      throw new Error("Java modules cache 항목이 일치하지 않습니다.");
+    }
+    return await verifyAssetResponse(response, asset, signal, () => {});
+  } catch {
+    signal.throwIfAborted();
+    try { await cache.delete(key); } catch { /* 저장소 오류는 네트워크 fallback으로 처리한다. */ }
+    signal.throwIfAborted();
+    return null;
+  }
+}
+
+async function storeVerifiedModules(asset, spec, signal) {
+  if (!globalThis.caches?.open) return;
+  signal.throwIfAborted();
+  try {
+    const cache = await globalThis.caches.open(MODULES_CACHE);
+    signal.throwIfAborted();
+    const response = new Response(asset.bytes, { status: asset.status, headers: {
+      "X-Bam-Original-URL": asset.url,
+      "Content-Length": String(asset.bytes.byteLength),
+      "Last-Modified": asset.lastModified,
+    } });
+    await cache.put(modulesCacheKey(spec), response);
+    signal.throwIfAborted();
+  } catch {
+    signal.throwIfAborted();
+  }
+}
+
 export async function prepareJavaBrowserAssets({ signal, onProgress = () => {} } = {}) {
-  const specs = [...JAVA_BROWSER_ASSET_MANIFEST.runtime, ...JAVA_BROWSER_ASSET_MANIFEST.compiler, JAVA_BROWSER_ASSET_MANIFEST.executor];
+  const specs = [...JAVA_BROWSER_ASSET_MANIFEST.runtime, ...JAVA_BROWSER_ASSET_MANIFEST.compiler,
+    JAVA_BROWSER_ASSET_MANIFEST.executor, JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap];
   if (JAVA_BROWSER_ASSET_BYTES > MAX_BYTES) throw new Error("Java 자산 제한을 초과했습니다.");
+  signal?.throwIfAborted();
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  signal?.addEventListener("abort", abort, { once: true });
   let receivedBytes = 0;
   const loaded = new Map();
-  for (const spec of specs) {
+  let next = 0;
+  let firstError = null;
+  const loadNext = async () => {
+    while (!controller.signal.aborted && next < specs.length) {
+      const spec = specs[next++];
+      try {
+        const reportBytes = (bytes) => {
+          if (controller.signal.aborted) return;
+          receivedBytes += bytes;
+          if (receivedBytes > MAX_BYTES) throw new Error("Java 자산 제한을 초과했습니다.");
+          onProgress({ receivedBytes, totalBytes: JAVA_BROWSER_ASSET_BYTES, asset: spec.url });
+        };
+        let asset = spec.url === MODULES_URL ? await readCachedModules(spec, controller.signal) : null;
+        if (asset) reportBytes(asset.bytes.byteLength);
+        else {
+          asset = await readVerifiedAsset(spec, controller.signal, reportBytes);
+          if (spec.url === MODULES_URL) await storeVerifiedModules(asset, spec, controller.signal);
+        }
+        if (!controller.signal.aborted) loaded.set(spec.url, asset);
+      } catch (error) {
+        if (!firstError && !signal?.aborted) firstError = error;
+        controller.abort();
+      }
+    }
+  };
+  try {
+    await Promise.all(Array.from({ length: Math.min(3, specs.length) }, loadNext));
     signal?.throwIfAborted();
-    const asset = await readVerifiedAsset(spec, signal, (bytes) => {
-      receivedBytes += bytes;
-      if (receivedBytes > MAX_BYTES) throw new Error("Java 자산 제한을 초과했습니다.");
-      onProgress({ receivedBytes, totalBytes: JAVA_BROWSER_ASSET_BYTES, asset: spec.url });
-    });
-    loaded.set(spec.url, asset);
+    if (firstError) throw firstError;
+  } finally {
+    signal?.removeEventListener("abort", abort);
   }
   return {
     runtime: JAVA_BROWSER_ASSET_MANIFEST.runtime.map((spec) => loaded.get(spec.url)),
@@ -93,6 +185,7 @@ export async function prepareJavaBrowserAssets({ signal, onProgress = () => {} }
     },
     ctArtifacts: JSON.parse(new TextDecoder().decode(loaded.get(JAVA_BROWSER_ASSET_MANIFEST.compiler[6].url).bytes)),
     executorSource: new TextDecoder().decode(loaded.get(JAVA_BROWSER_ASSET_MANIFEST.executor.url).bytes),
+    runtimeBootstrap: loaded.get(JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap.url).bytes,
     receivedBytes,
   };
 }

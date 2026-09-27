@@ -68,6 +68,7 @@ import { JavaBrowserTransport, takeJavaBrowserBootstrap } from "./grading/java-b
 import { JavaBrowserProvider } from "./grading/java-browser-provider.js";
 import { JavaBrowserCodingTestProvider } from "./grading/java-browser-coding-test-provider.js";
 import { renderJavaBrowserPreparation } from "./ui/java-browser-preparation-view.js";
+import { attachCodeEditorAssist, isCodeEditorComposing, patchConnectedEditor } from "./ui/code-editor-assist.js";
 import { CodingTestRunnerAdapter } from "./grading/coding-test-runner-adapter.js";
 import { JavaCodingTestRunnerAdapter } from "./grading/java-coding-test-runner-adapter.js";
 import { BrowserWebProjectRunner } from "./grading/browser-web-project-runner.js";
@@ -348,6 +349,11 @@ export function createWebProjectRequestId(
 export class BamLearningApp {
   constructor(root) {
     this.root = root;
+    this.editorAssistDispose = null;
+    this.renderedEditor = null;
+    this.assistedTextarea = null;
+    this.editorRefreshBlocked = false;
+    this.editorRefreshPendingTextarea = null;
     this.curriculum = null;
     this.currentLesson = null;
     this.currentMarkdown = "";
@@ -745,7 +751,9 @@ export class BamLearningApp {
       const previousIndex = this.quizSession?.currentIndex;
       if (this.activateQuizQuestionForElement(event.target) && previousIndex !== this.quizSession.currentIndex) this.saveReviewSession();
     });
-    this.root.addEventListener("input", (event) => this.handleInput(event));
+    this.root.addEventListener("input", (event) => {
+      if (event.target !== this.assistedTextarea) this.handleInput(event);
+    });
     this.root.addEventListener("toggle", (event) => this.handleCodeQuestDetailsToggle(event), true);
     this.root.addEventListener("scroll", (event) => this.handleScroll(event), true);
   }
@@ -947,6 +955,12 @@ export class BamLearningApp {
     this.flushPendingQuestDraftSave();
     this.flushPendingCodingTestDraftSave();
     this.flushPendingWebProjectDraftSave();
+    this.editorAssistDispose?.();
+    this.editorAssistDispose = null;
+    this.renderedEditor = null;
+    this.assistedTextarea = null;
+    this.editorRefreshBlocked = false;
+    this.editorRefreshPendingTextarea = null;
     return this.executionCoordinator?.cancelActive(reason) ?? false;
   }
 
@@ -2372,6 +2386,7 @@ export class BamLearningApp {
       !codingTestState.isRunning
     ) {
       codingTestState.source = codingTestEditor.value;
+      this.syncCodingTestEditorHighlight(codingTestEditor);
       codingTestState.hasCodingTestDraft = true;
       codingTestState.uiError = null;
       void this.updateCodingTestResultSourceStatus(codingTestState);
@@ -2392,8 +2407,10 @@ export class BamLearningApp {
   }
 
   handleScroll(event) {
-    const editor = event.target.closest?.("[data-quest-source]");
-    if (editor) this.syncCodeQuestEditorHighlight(editor);
+    const questEditor = event.target.closest?.("[data-quest-source]");
+    if (questEditor) this.syncCodeQuestEditorHighlight(questEditor);
+    const codingTestEditor = event.target.closest?.("[data-coding-test-source]");
+    if (codingTestEditor) this.syncCodingTestEditorHighlight(codingTestEditor);
   }
 
   handleCodeQuestDetailsToggle(event) {
@@ -2483,6 +2500,18 @@ export class BamLearningApp {
     if (highlightViewport) {
       highlightViewport.scrollTop = editor.scrollTop;
       highlightViewport.scrollLeft = editor.scrollLeft;
+    }
+  }
+
+  syncCodingTestEditorHighlight(editor = this.root?.querySelector?.("[data-coding-test-source]")) {
+    const highlight = this.root?.querySelector?.("[data-coding-test-source-highlight]");
+    if (!editor || !highlight) return;
+    const languageId = (this.codingTestState?.collection ?? this.codingTestCollection)?.languageId ?? "javascript";
+    highlight.innerHTML = renderHighlightedCode(editor.value, languageId);
+    const viewport = highlight.closest(".coding-test-source-highlight");
+    if (viewport) {
+      viewport.scrollTop = editor.scrollTop;
+      viewport.scrollLeft = editor.scrollLeft;
     }
   }
 
@@ -3134,13 +3163,15 @@ export class BamLearningApp {
       );
     }
     const error = document.querySelector("[data-quest-error]");
-    if (error) error.textContent = state.uiError ?? "";
+    if (error) error.textContent = this.editorRefreshBlocked
+      ? "편집 화면을 갱신하지 못했습니다. 코드는 유지됩니다. 문제를 다시 열어 주세요."
+      : state.uiError ?? "";
     const runButton = document.querySelector("[data-quest-run]");
     const executionAvailable = this.isCodeQuestExecutionAvailable(
       this.codeQuestCollection,
       state.quest,
     );
-    if (runButton) runButton.disabled = !executionAvailable || state.isRunning || state.source.trim().length === 0;
+    if (runButton) runButton.disabled = this.editorRefreshBlocked || !executionAvailable || state.isRunning || state.source.trim().length === 0;
   }
 
   setQuestDraftSaveTimer(callback) {
@@ -3231,12 +3262,14 @@ export class BamLearningApp {
       );
     }
     const error = document.querySelector("[data-coding-test-error]");
-    if (error) error.textContent = state.uiError ?? "";
+    if (error) error.textContent = this.editorRefreshBlocked
+      ? "편집 화면을 갱신하지 못했습니다. 코드는 유지됩니다. 문제를 다시 열어 주세요."
+      : state.uiError ?? "";
     const sourceIsEmpty = state.source.trim().length === 0;
     for (const button of document.querySelectorAll(
       "[data-coding-test-run], [data-coding-test-submit]",
     )) {
-      button.disabled = sourceIsEmpty || state.isRunning
+      button.disabled = this.editorRefreshBlocked || sourceIsEmpty || state.isRunning
         || !this.isCodingTestExecutionAvailable(state.collection ?? this.codingTestCollection, state.problem);
     }
   }
@@ -3545,6 +3578,7 @@ export class BamLearningApp {
         "편집기는 초기 코드로 되돌렸지만 저장된 초안을 지우지 못했습니다.";
     }
 
+    this.renderedEditor = null;
     this.renderCodeQuest();
     window.requestAnimationFrame(() => {
       document.querySelector("[data-quest-source]")?.focus({ preventScroll: true });
@@ -3626,6 +3660,7 @@ export class BamLearningApp {
       state.draftStatus = persistence.isPersistent ? "starter" : "memory";
     }
 
+    this.renderedEditor = null;
     this.renderCodingTest();
     window.requestAnimationFrame(() => {
       document.querySelector("[data-coding-test-source]")?.focus({ preventScroll: true });
@@ -3658,6 +3693,7 @@ export class BamLearningApp {
     if (currentDraft) {
       this.cancelPendingCodingTestDraftSave();
       state.source = currentDraft.source;
+      this.renderedEditor = null;
       void this.updateCodingTestResultSourceStatus(state);
       state.hasCodingTestDraft = true;
       state.draftStatus = "saved";
@@ -3686,6 +3722,7 @@ export class BamLearningApp {
       state.uiError =
         "이전 코드를 편집기에 복사했지만 코딩테스트 초안으로 저장하지 못했습니다.";
     }
+    this.renderedEditor = null;
     this.renderCodingTest();
     window.requestAnimationFrame(() => {
       document.querySelector("[data-coding-test-source]")?.focus({ preventScroll: true });
@@ -4581,6 +4618,58 @@ export class BamLearningApp {
     this.syncMenuState();
   }
 
+  renderEditorScreen({ kind, state, id, revision, source, languageId, selector, html }) {
+    const previous = this.renderedEditor;
+    const sameOwner = previous?.kind === kind && previous.state === state
+      && previous.id === id && previous.revision === revision
+      && previous.textarea?.isConnected && this.root.contains(previous.textarea);
+    if (sameOwner) {
+      if (previous.textarea.value !== source || !patchConnectedEditor(this.root, html, selector)) {
+        this.deferEditorScreenRefresh(kind, state, previous.textarea);
+        return;
+      }
+    }
+    this.editorAssistDispose?.();
+    if (!sameOwner) this.root.innerHTML = html;
+    const textarea = this.root.querySelector(selector);
+    if (!textarea) return;
+    this.assistedTextarea = textarea;
+    this.editorAssistDispose = attachCodeEditorAssist(textarea, {
+      languageId,
+      onChange: (event) => this.handleInput(event),
+    });
+    this.renderedEditor = { kind, state, id, revision, textarea };
+    this.editorRefreshBlocked = false;
+    this.editorRefreshPendingTextarea = null;
+    if (kind === "quest") this.syncCodeQuestEditorHighlight(textarea);
+    else this.syncCodingTestEditorHighlight(textarea);
+    this.syncMenuState();
+  }
+
+  deferEditorScreenRefresh(kind, state, textarea) {
+    this.editorRefreshBlocked = true;
+    const status = this.root.querySelector(kind === "quest"
+      ? "[data-quest-draft-status]" : "[data-coding-test-draft-status]");
+    const composing = isCodeEditorComposing(textarea);
+    if (status) status.textContent = composing
+      ? "입력 조합이 끝나면 화면 상태를 갱신합니다. 코드는 유지됩니다."
+      : "화면 상태를 갱신하지 못했습니다. 코드는 유지됩니다. 문제를 다시 열어 주세요.";
+    for (const button of this.root.querySelectorAll(
+      "[data-quest-run], [data-coding-test-run], [data-coding-test-submit]",
+    )) button.disabled = true;
+    if (composing && this.editorRefreshPendingTextarea !== textarea) {
+      this.editorRefreshPendingTextarea = textarea;
+      textarea.addEventListener("compositionend", () => window.setTimeout(() => {
+        if (this.editorRefreshPendingTextarea !== textarea) return;
+        this.editorRefreshPendingTextarea = null;
+        if (kind === "quest" && this.codeQuestState === state) this.renderCodeQuest();
+        if (kind === "coding-test" && this.codingTestState === state) this.renderCodingTest();
+      }, 0), { once: true });
+    } else if (state.isRunning) {
+      textarea.readOnly = true;
+    }
+  }
+
   renderCodeQuest() {
     const state = this.codeQuestState;
     const collection = this.codeQuestCollection;
@@ -4643,11 +4732,11 @@ export class BamLearningApp {
           },
     });
 
-    this.root.innerHTML = this.renderServiceShell({
-      current: "quest",
-      mainContent,
+    this.renderEditorScreen({
+      kind: "quest", state, id: state.quest.id, revision: state.quest.revision,
+      source: state.source, languageId: collection.languageId, selector: "[data-quest-source]",
+      html: this.renderServiceShell({ current: "quest", mainContent }),
     });
-    this.syncMenuState();
   }
 
   renderWebProjectList() {
@@ -4843,7 +4932,11 @@ export class BamLearningApp {
       legacyDraft: state.legacyDraft,
       hasCodingTestDraft: state.hasCodingTestDraft,
     });
-    this.renderCodingTestShell(mainContent, progress, solvedProblemIds);
+    this.renderEditorScreen({
+      kind: "coding-test", state, id: state.problem.id, revision: state.problem.revision,
+      source: state.source, languageId: collection.languageId, selector: "[data-coding-test-source]",
+      html: this.renderServiceShell({ current: "coding-test", mainContent }),
+    });
   }
 
   renderCodingTestShell(mainContent) {

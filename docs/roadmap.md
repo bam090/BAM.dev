@@ -69,7 +69,7 @@
   "id": "source-java-browser",
   "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922",
   "scopeFiles": [
-    { "path": "docs/architecture.md", "sha256": "53e17403d345bc17833afc22737e5f94c3095ac0da0dae214d57455ce6f8ab52" }
+    { "path": "docs/architecture.md", "sha256": "2922aa8c85895731792e84c6cbee8fbc0707671da69355a7e5e638f0e00747d2" }
   ],
   "stage": "implementation",
   "requiredChecks": [
@@ -453,7 +453,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "react-list-pilot",
   "scopeRevision": "REACT-LIST-PILOT-v1",
-  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "53e17403d345bc17833afc22737e5f94c3095ac0da0dae214d57455ce6f8ab52" }],
+  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "2922aa8c85895731792e84c6cbee8fbc0707671da69355a7e5e638f0e00747d2" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-FRONTEND-MIGRATION-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }

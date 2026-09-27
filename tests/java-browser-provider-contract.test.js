@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { BamLearningApp } from "../src/app.js";
-import { JAVA_BROWSER_ASSET_MANIFEST, prepareJavaBrowserAssets } from "../src/grading/java-browser-assets.js";
+import { JAVA_BROWSER_ASSET_BYTES, JAVA_BROWSER_ASSET_MANIFEST, prepareJavaBrowserAssets } from "../src/grading/java-browser-assets.js";
 import { JavaBrowserProvider } from "../src/grading/java-browser-provider.js";
 
 const class17 = Uint8Array.from([0xca, 0xfe, 0xba, 0xbe, 0, 0, 0, 61]);
@@ -120,21 +120,28 @@ test("준비 progress와 상태 전환은 편집기 DOM·미저장 값·커서�
   assert.equal(editor.selectionEnd, 12);
 });
 
-test("준비 자산은 고정 URL 응답의 변경·해시 불일치에서 첫 fetch만 하고 실패한다", async (t) => {
+test("준비 자산은 고정 URL 변경·해시 불일치에서 나머지 요청을 취소한다", async (t) => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, "fetch");
   const spec = JAVA_BROWSER_ASSET_MANIFEST.runtime[0];
   const calls = [];
   let redirected = true;
+  let cancelled = 0;
   Object.defineProperty(globalThis, "fetch", {
     configurable: true,
-    value: async (url, options) => {
+    value: (url, options) => {
       calls.push({ url, options });
-      return {
+      if (url !== spec.url) return new Promise((_resolve, reject) => {
+        options.signal.addEventListener("abort", () => {
+          cancelled++;
+          reject(new DOMException("cancelled", "AbortError"));
+        }, { once: true });
+      });
+      return Promise.resolve({
         url: redirected ? `${url}?redirected=1` : url,
-        status: 200,
+        status: spec.status,
         body: new ReadableStream({ start(controller) { controller.enqueue(new Uint8Array(spec.size)); controller.close(); } }),
         headers: { get: () => null },
-      };
+      });
     },
   });
   t.after(() => {
@@ -144,7 +151,229 @@ test("준비 자산은 고정 URL 응답의 변경·해시 불일치에서 첫 f
   await assert.rejects(prepareJavaBrowserAssets(), /응답이 일치하지 않습니다/u);
   redirected = false;
   await assert.rejects(prepareJavaBrowserAssets(), /해시가 일치하지 않습니다/u);
-  assert.equal(calls.length, 2);
-  assert.ok(calls.every(({ url }) => url === spec.url));
+  const firstThree = JAVA_BROWSER_ASSET_MANIFEST.runtime.slice(0, 3).map(({ url }) => url);
+  assert.deepEqual(calls.slice(0, 3).map(({ url }) => url), firstThree);
+  assert.deepEqual(calls.slice(3).map(({ url }) => url), firstThree);
+  assert.equal(cancelled, 4);
   assert.ok(calls.every(({ options }) => options.credentials === "omit" && options.redirect === "error"));
+});
+
+test("자산 준비는 manifest 앞 세 요청만 시작하고 사용자 취소 후 진행률을 내지 않는다", async (t) => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "fetch");
+  const calls = [];
+  let abortedRequests = 0;
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    value: (url, options) => new Promise((_resolve, reject) => {
+      calls.push({ url, options });
+      options.signal.addEventListener("abort", () => {
+        abortedRequests++;
+        reject(new DOMException("cancelled", "AbortError"));
+      }, { once: true });
+    }),
+  });
+  t.after(() => {
+    if (previous) Object.defineProperty(globalThis, "fetch", previous);
+    else delete globalThis.fetch;
+  });
+  const controller = new AbortController();
+  const progress = [];
+  const preparing = prepareJavaBrowserAssets({ signal: controller.signal, onProgress: (value) => progress.push(value) });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(calls.map(({ url }) => url), JAVA_BROWSER_ASSET_MANIFEST.runtime.slice(0, 3).map(({ url }) => url));
+  assert.ok(calls.every(({ options }) => options.cache === "default"));
+  controller.abort();
+  await assert.rejects(preparing, { name: "AbortError" });
+  assert.equal(abortedRequests, 3);
+  assert.deepEqual(progress, []);
+});
+
+test("검증된 자산은 cache 정책과 manifest 순서를 지키고 읽은 byte만 진행률에 반영한다", async (t) => {
+  const previousFetch = Object.getOwnPropertyDescriptor(globalThis, "fetch");
+  const previousCrypto = Object.getOwnPropertyDescriptor(globalThis, "crypto");
+  const previousCaches = Object.getOwnPropertyDescriptor(globalThis, "caches");
+  const specs = [...JAVA_BROWSER_ASSET_MANIFEST.runtime,
+    ...JAVA_BROWSER_ASSET_MANIFEST.compiler, JAVA_BROWSER_ASSET_MANIFEST.executor,
+    JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap];
+  const byUrl = new Map(specs.map((spec) => [spec.url, spec]));
+  const bySize = new Map(specs.map((spec) => [spec.size, spec]));
+  const calls = [];
+  const moduleSpec = JAVA_BROWSER_ASSET_MANIFEST.runtime.find(({ url }) => url.endsWith("/17/lib/modules"));
+  const cacheKey = `${moduleSpec.url}?bam-sha256=${moduleSpec.sha256}`;
+  let storedModule = null;
+  let puts = 0;
+  let deletes = 0;
+  let failPut = false;
+  let waitOnMatch = null;
+  let putMeta;
+  let moduleHashes = 0;
+  Object.defineProperty(globalThis, "caches", {
+    configurable: true,
+    value: { async open(name) {
+      assert.equal(name, "bam.dev.java-modules-v1");
+      return {
+        async match(key) {
+          assert.equal(key, cacheKey);
+          if (waitOnMatch) return waitOnMatch();
+          return storedModule?.clone() ?? null;
+        },
+        async delete(key) { assert.equal(key, cacheKey); deletes++; storedModule = null; return true; },
+        async put(key, response) {
+          puts++;
+          if (failPut) throw new DOMException("quota", "QuotaExceededError");
+          putMeta = { key, url: response.headers.get("X-Bam-Original-URL"),
+            length: response.headers.get("Content-Length") };
+          storedModule = response;
+        },
+      };
+    } },
+  });
+  Object.defineProperty(globalThis, "crypto", {
+    configurable: true,
+    value: { subtle: { async digest(_algorithm, bytes) {
+      const spec = bySize.get(bytes.byteLength);
+      assert.ok(spec, "manifest에 없는 자산을 해시했습니다.");
+      if (spec === moduleSpec) {
+        moduleHashes++;
+        if (bytes[0] !== 0) return new Uint8Array(32).buffer;
+      }
+      return Uint8Array.from(Buffer.from(spec.sha256, "hex")).buffer;
+    } } },
+  });
+  Object.defineProperty(globalThis, "fetch", {
+    configurable: true,
+    value: async (url, options) => {
+      const spec = byUrl.get(url);
+      assert.ok(spec, "manifest 밖 URL을 요청했습니다.");
+      calls.push({ url, options });
+      const bytes = new Uint8Array(spec.size);
+      if (spec.name === "ctArtifacts") {
+        bytes.fill(0x20);
+        bytes[0] = 0x7b;
+        bytes[1] = 0x7d;
+      }
+      return {
+        url, status: spec.status,
+        body: new ReadableStream({ start(controller) { if (bytes.length) controller.enqueue(bytes); controller.close(); } }),
+        headers: { get: () => null },
+      };
+    },
+  });
+  t.after(() => {
+    if (previousFetch) Object.defineProperty(globalThis, "fetch", previousFetch);
+    else delete globalThis.fetch;
+    if (previousCrypto) Object.defineProperty(globalThis, "crypto", previousCrypto);
+    else delete globalThis.crypto;
+    if (previousCaches) Object.defineProperty(globalThis, "caches", previousCaches);
+    else delete globalThis.caches;
+  });
+  const progress = [];
+  const result = await prepareJavaBrowserAssets({ onProgress: (value) => progress.push(value) });
+  assert.equal(calls.length, specs.length);
+  assert.deepEqual(calls.map(({ url }) => url), specs.map(({ url }) => url));
+  assert.ok(calls.every(({ url, options }) => options.cache ===
+    (url.startsWith("https://cjrtnc.leaningtech.com/4.3/") ? "default" : "no-cache")));
+  assert.deepEqual(result.runtime.map(({ url }) => url), JAVA_BROWSER_ASSET_MANIFEST.runtime.map(({ url }) => url));
+  assert.equal(result.receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(result.runtimeBootstrap.byteLength, JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap.size);
+  assert.ok(calls.some(({ url }) => url === JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap.url));
+  assert.equal(progress.at(-1).receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.ok(progress.every(({ receivedBytes, totalBytes }) =>
+    receivedBytes <= totalBytes && totalBytes === JAVA_BROWSER_ASSET_BYTES));
+  assert.ok(progress.every((value, index) => index === 0 || value.receivedBytes >= progress[index - 1].receivedBytes));
+  assert.equal(puts, 1);
+  assert.deepEqual(putMeta, { key: cacheKey, url: moduleSpec.url, length: String(moduleSpec.size) });
+  calls.length = 0;
+  const cachedProgress = [];
+  const cached = await prepareJavaBrowserAssets({ onProgress: (value) => cachedProgress.push(value) });
+  assert.equal(calls.some(({ url }) => url === moduleSpec.url), false);
+  assert.equal(calls.length, specs.length - 1);
+  assert.equal(cached.receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(cachedProgress.at(-1).receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(puts, 1);
+  assert.equal(moduleHashes, 2, "cache hit에서도 SHA 검증을 다시 해야 합니다.");
+
+  const corruptBytes = new Uint8Array(moduleSpec.size);
+  corruptBytes[0] = 1;
+  storedModule = new Response(corruptBytes, { status: moduleSpec.status, headers: {
+    "X-Bam-Original-URL": moduleSpec.url, "Content-Length": String(moduleSpec.size),
+  } });
+  calls.length = 0;
+  const recoveredProgress = [];
+  const recovered = await prepareJavaBrowserAssets({ onProgress: (value) => recoveredProgress.push(value) });
+  assert.equal(deletes, 1);
+  assert.equal(calls.filter(({ url }) => url === moduleSpec.url).length, 1);
+  assert.equal(recovered.receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(recoveredProgress.at(-1).receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(puts, 2);
+
+  storedModule = null;
+  failPut = true;
+  calls.length = 0;
+  const withoutStorage = await prepareJavaBrowserAssets();
+  assert.equal(withoutStorage.receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(calls.filter(({ url }) => url === moduleSpec.url).length, 1);
+  assert.equal(puts, 3);
+
+  const mockedCaches = globalThis.caches;
+  delete globalThis.caches;
+  calls.length = 0;
+  const withoutCacheApi = await prepareJavaBrowserAssets();
+  assert.equal(withoutCacheApi.receivedBytes, JAVA_BROWSER_ASSET_BYTES);
+  assert.equal(calls.filter(({ url }) => url === moduleSpec.url).length, 1);
+  Object.defineProperty(globalThis, "caches", { configurable: true, value: mockedCaches });
+
+  let enteredMatch;
+  let releaseMatch;
+  const matching = new Promise((resolve) => { enteredMatch = resolve; });
+  waitOnMatch = () => { enteredMatch(); return new Promise((resolve) => { releaseMatch = resolve; }); };
+  const controller = new AbortController();
+  const lateProgress = [];
+  calls.length = 0;
+  const cancelled = prepareJavaBrowserAssets({ signal: controller.signal,
+    onProgress: (value) => lateProgress.push(value) });
+  await matching;
+  controller.abort();
+  const progressAtAbort = lateProgress.length;
+  releaseMatch(null);
+  await assert.rejects(cancelled, { name: "AbortError" });
+  assert.equal(lateProgress.length, progressAtAbort);
+  assert.equal(calls.some(({ url }) => url === moduleSpec.url), false);
+});
+
+test("provider는 자산 읽기·컴파일러 확인·실행 확인을 분리해 ready를 표시한다", async () => {
+  let finishCompile;
+  let finishExecute;
+  let compileStarted;
+  let executeStarted;
+  const enteredCompile = new Promise((resolve) => { compileStarted = resolve; });
+  const enteredExecute = new Promise((resolve) => { executeStarted = resolve; });
+  const messages = [];
+  const provider = new JavaBrowserProvider({
+    onChange() { messages.push(provider.message); },
+    prepareAssets: async ({ onProgress }) => {
+      onProgress({ receivedBytes: 1_048_576, totalBytes: 2_097_152 });
+      return { runtime: [] };
+    },
+    compile() {
+      compileStarted();
+      return new Promise((resolve) => { finishCompile = resolve; });
+    },
+    execute() {
+      executeStarted();
+      return new Promise((resolve) => { finishExecute = resolve; });
+    },
+  });
+  const preparing = provider.prepare();
+  await enteredCompile;
+  assert.equal(provider.status, "preparing");
+  assert.ok(messages.some((message) => message.includes("자산 읽기·검증 중") && message.includes("1.0 / 2.0 MiB")));
+  assert.match(provider.message, /컴파일러를 확인/u);
+  finishCompile(compiled);
+  await enteredExecute;
+  assert.equal(provider.status, "preparing");
+  assert.match(provider.message, /실행 환경을 확인/u);
+  finishExecute({ kind: "result", actual: 17n });
+  assert.equal(await preparing, true);
+  assert.equal(provider.status, "ready");
 });
