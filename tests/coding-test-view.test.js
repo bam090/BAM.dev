@@ -184,6 +184,8 @@ test("상세 화면은 좌측 문제와 우측 편집기·결과의 접근성 �
   assert.match(html, /예제와 설명/);
   assert.match(html, /<label[^>]*for="coding-test-source"/);
   assert.match(html, /<textarea[^>]*id="coding-test-source"[^>]*data-coding-test-source/);
+  assert.match(html, /<pre class="coding-test-source-highlight syntax-code" aria-hidden="true">/);
+  assert.match(html, /data-coding-test-source-highlight/);
   assert.match(html, /&lt;\/textarea&gt;&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);
   assert.equal((html.match(/data-coding-test-results/g) ?? []).length, 1);

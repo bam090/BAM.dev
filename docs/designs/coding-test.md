@@ -2,6 +2,10 @@
 
 이 문서는 Code Quest와 분리된 코딩테스트의 학습 목적, 사용자 흐름, 공개 로컬 평가, 진도와 완료 조건의 정본이다. 필드·스키마는 [`../content-schema.md`](../content-schema.md#코딩테스트-컬렉션), 학습 경험 필요성은 [`../learning-content-design.md`](../learning-content-design.md), 실행 안전 경계는 [`../architecture.md`](../architecture.md)와 [ADR 0002](../decisions/0002-browser-code-execution-boundary.md)가 담당한다. 결정 문구·이유·날짜는 [`DEC-QUEST-SEPARATE-01`과 `DEC-PUBLIC-EVALUATION-01`](../roadmap.md#2026-08-29-확정-제품-결정), [`DEC-LOCAL-EVALUATION-01`·`DEC-JAVA-CODING-TEST-01`·`DEC-JAVA-RUNTIME-01`](../roadmap.md#2026-09-02-확정-제품-결정), [`DEC-JAVA-VERSION-02`·`DEC-SPRING-BOOT-01`·`DEC-JAVA-IMPLEMENTATION-01`](../roadmap.md#2026-09-04-확정-제품-결정)이 정본이다.
 
+## 코딩테스트 편집 보조
+
+`[확정 결정]` JavaScript·Java의 기존 textarea·초안·이전 코드 결과 표시를 유지하고 Code Quest에서 쓰는 구문 강조 함수를 함께 사용한다. 후보·들여쓰기 동작은 공통 모듈을 사용하되 route·진도·실행/제출 의미는 Code Quest와 분리한다. 실행 중 readonly와 준비 중 편집·저장을 유지한다. 공통 키보드·IME·undo·커서 보존·접근성·검증과 역할 경계는 [EDITOR-ASSIST-v1](../architecture.md#quest코딩테스트-공통-편집-보조)을 따른다. 이 변경은 일반 제품 기능이며 문제·공개 평가·학습 내용은 수정하지 않는다. 구현과 Chrome 150의 독립 편집 검증을 인수했으며 정확한 PASS·미실행 범위는 위 공통 정본의 현재 사실을 따른다. 새 Git 게시 완료를 뜻하지 않는다.
+
 ## 결정 적용과 현재 상태
 
 - `DEC-QUEST-SEPARATE-01` 적용: 코딩테스트는 Code Quest의 `심화` 경로나 하위 유형이 아니라 별도의 목적·route·콘텐츠·UI·진도를 가진다.

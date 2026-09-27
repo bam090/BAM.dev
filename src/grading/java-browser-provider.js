@@ -245,7 +245,7 @@ export class JavaBrowserProvider {
     this.compileSources = compileSources;
     this.execute = execute;
     this.status = "idle";
-    this.message = `브라우저에서 Java 17 실행 환경을 준비할 수 있습니다. 처음에는 약 ${(JAVA_BROWSER_ASSET_BYTES / 1048576).toFixed(0)}MB의 자산을 내려받습니다.`;
+    this.message = `브라우저에서 Java 17 실행 환경을 준비할 수 있습니다. 약 ${(JAVA_BROWSER_ASSET_BYTES / 1048576).toFixed(0)} MiB의 자산을 읽고 검증합니다. 브라우저 캐시가 있으면 다시 사용할 수 있습니다.`;
     this.progress = { receivedBytes: 0, totalBytes: JAVA_BROWSER_ASSET_BYTES };
     this.assets = null;
     this.prepareAbort = null;
@@ -278,18 +278,19 @@ export class JavaBrowserProvider {
     const controller = new AbortController();
     this.prepareAbort = controller;
     this.progress = { receivedBytes: 0, totalBytes: JAVA_BROWSER_ASSET_BYTES };
-    this.setStatus("preparing", "Java 자산을 내려받고 있습니다…");
+    this.setStatus("preparing", "Java 자산을 읽고 검증하고 있습니다…");
     try {
       const assets = await this.prepareAssets({ signal: controller.signal, onProgress: (progress) => {
         if (generation !== this.prepareGeneration) return;
         this.progress = progress;
-        this.setStatus("preparing", `Java 자산을 내려받는 중… ${(progress.receivedBytes / 1048576).toFixed(1)} / ${(progress.totalBytes / 1048576).toFixed(1)} MB`);
+        this.setStatus("preparing", `Java 자산 읽기·검증 중… ${(progress.receivedBytes / 1048576).toFixed(1)} / ${(progress.totalBytes / 1048576).toFixed(1)} MiB`);
       } });
       controller.signal.throwIfAborted();
-      this.setStatus("preparing", "Java 컴파일러와 실행 환경을 확인하고 있습니다…");
+      this.setStatus("preparing", "Java 컴파일러를 확인하고 있습니다…");
       const smoke = await this.compile({ source: SMOKE_SOURCE, className: "Solution" }, { signal: controller.signal, assets });
       if (smoke.status !== "compiled") throw new Error("Java 컴파일러를 시작하지 못했습니다.");
       validateClasses(smoke.classes);
+      this.setStatus("preparing", "Java 실행 환경을 확인하고 있습니다…");
       const proof = await this.execute({ assets, classes: smoke.classes, args: [0, 0, 0], signal: controller.signal });
       if (proof.kind !== "result" || proof.actual !== 17n) throw new Error("Java 실행 환경을 확인하지 못했습니다.");
       if (generation !== this.prepareGeneration || controller.signal.aborted) return false;

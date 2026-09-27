@@ -376,7 +376,7 @@ test("코드 스포트라이트는 키보드 포커스·가로 스크롤·reduce
 test("Quest 편집기 강조는 입력을 가리지 않고 모바일·고대비 모드를 보존한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
   const shellRule = css.match(/\.quest-editor-shell\s*\{([^}]*)\}/)?.[1] ?? "";
-  const highlightRule = css.match(/\.quest-source-highlight\s*\{([^}]*)\}/)?.[1] ?? "";
+  const highlightRule = css.match(/\.quest-source-highlight\s*,\s*\.coding-test-source-highlight\s*\{([^}]*)\}/)?.[1] ?? "";
   const editorRule = css.match(/#quest-source\s*\{([^}]*)\}/)?.[1] ?? "";
 
   assert.match(shellRule, /position:\s*relative/);
