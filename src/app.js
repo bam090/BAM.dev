@@ -4470,8 +4470,6 @@ export class BamLearningApp {
                 <span>${escapeHtml(course.name)}</span>
                 <span aria-hidden="true">·</span>
                 <span>${readingPosition}/${lessons.length}단원</span>
-                <span aria-hidden="true">·</span>
-                <span>약 ${lesson.estimatedMinutes}분</span>
               </div>
               <h1>${escapeHtml(lesson.title)}</h1>
               ${overview.objectives || metadataObjectives.length || summaryHtml ? `<div class="essential-question"><div><h2 id="학습-목표">학습 목표</h2>
@@ -4979,7 +4977,7 @@ export class BamLearningApp {
       <li>
         <a class="lesson-link${isCurrent ? " is-current" : ""}" href="${buildLessonHash(lesson.courseId, lesson.slug)}"${isCurrent ? ' aria-current="page"' : ""}>
           <span class="lesson-number${isComplete ? " is-complete" : ""}" aria-hidden="true">${isComplete ? "✓" : lesson.order}</span>
-          <span><strong>${escapeHtml(lesson.title)}</strong><small>${lesson.estimatedMinutes}분</small></span>
+          <span><strong>${escapeHtml(lesson.title)}</strong></span>
         </a>
       </li>
     `;

@@ -126,6 +126,7 @@ test("완료 기록과 무관하게 실제 핵심 질문을 보여 주고 확인
     const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
     const button = html.match(/<button\b[^>]*data-toggle-complete[^>]*>/)?.[0] ?? "";
     assert.match(html, /<h2 id="completion-title">언제 답변을 보여 줄까요\?<\/h2>/);
+    assert.doesNotMatch(html, /(?:약\s*)?5분|예상\s*소요/, "교안 메타데이터의 예상 시간은 상세 화면에 표시하지 않는다.");
     assert.match(answer, /<summary[^>]*>답변 예시 확인하기<\/summary>/);
     assert.match(answer, /id="면접-답변-예시"/);
     assert.match(answer, /기존에 작성된 답변 예시입니다\./);
