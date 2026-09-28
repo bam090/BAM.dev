@@ -4438,15 +4438,29 @@ export class BamLearningApp {
       relatedQuestions.some((question) => question.lessonId === concept.lessonId && question.conceptId === concept.id))
       .map((concept) => {
         const scope = getKeywordReviewScope(this.curriculum, collection, this.reviewConcepts, concept.lessonId, concept.id);
-        return { title: concept.title, href: buildKeywordReviewHash(lesson.languageId, scope.lessonId, concept.id) };
+        return {
+          title: concept.title,
+          href: buildKeywordReviewHash(lesson.languageId, scope.lessonId, concept.id),
+          ownedByLesson: concept.lessonId === lesson.id && scope.questions.length > 0 &&
+            scope.questions.every((question) => question.lessonId === lesson.id)
+        };
       }).filter((link) => {
         if (seenReviewLinks.has(link.href)) return false;
         seenReviewLinks.add(link.href);
         return true;
       });
+    const mergedTitles = new Set();
+    const reviewButtons = reviewLinks.flatMap((link) => {
+      if (!link.ownedByLesson || reviewLinks.filter((item) => item.ownedByLesson && item.title === link.title).length < 2) {
+        return [link];
+      }
+      if (mergedTitles.has(link.title)) return [];
+      mergedTitles.add(link.title);
+      return [{ ...link, href: buildReviewHash(lesson.languageId, lesson.id) }];
+    });
     const reviewLinkHtml = lesson.answerHeading
-      ? reviewLinks.length
-        ? reviewLinks.map((link) => `<p class="lesson-review-link"><a class="button button--primary" href="${escapeHtml(link.href)}">${escapeHtml(link.title)} 객관식으로 복습하기</a></p>`).join("")
+      ? reviewButtons.length
+        ? reviewButtons.map((link) => `<p class="lesson-review-link"><a class="button button--primary" href="${escapeHtml(link.href)}">${escapeHtml(link.title)} 객관식으로 복습하기</a></p>`).join("")
         : `<p class="lesson-review-link" role="status">${this.lessonQuizLoadFailed || this.reviewConceptsLoadFailed ? "관련 문제를 불러오지 못했습니다. 새로고침하여 다시 확인해 주세요." : "이 문서의 관련 객관식 문제는 아직 준비 중입니다."}</p>`
       : `<p class="lesson-review-link"><a class="button button--primary" href="${buildReviewHash(lesson.languageId, lesson.id)}">읽은 내용 객관식으로 복습하기</a></p>`;
     // Read only headings emitted by our Markdown renderer; fenced code is escaped.

@@ -940,6 +940,20 @@ test("공유 키워드에 새 문항이 추가되면 안내 후 사용자가 새
   assert.deepEqual(errors, []);
 });
 
+test("합쳐진 CSS 문서 복습 링크는 각 문서의 공개 질문을 모두 연다", async (t) => {
+  browser(t);
+  const cssQuestions = JSON.parse(await readFile(new URL("../content/quizzes/css.json", import.meta.url), "utf8")).questions;
+  for (const [ownerId, expectedCount] of [["css-notes-css-basics", 2], ["css-notes-states", 2], ["css-notes-layout-review", 4]]) {
+    window.location.hash = `#/review/css/${ownerId}`;
+    const { app, errors } = harness();
+    await app.openRoute();
+    assert.deepEqual(app.quizSession.questions.map((question) => question.id).sort(),
+      cssQuestions.filter((question) => question.lessonId === ownerId).map((question) => question.id).sort(), ownerId);
+    assert.equal(app.quizSession.questions.length, expectedCount, ownerId);
+    assert.deepEqual(errors, []);
+  }
+});
+
 test("CSS Flexbox의 글쓰기 조건 보완은 해당 풀이만 새 시작을 요구하고 미변경 문항·완료 기록을 보존한다", async (t) => {
   browser(t);
   const currentFetch = globalThis.fetch;
