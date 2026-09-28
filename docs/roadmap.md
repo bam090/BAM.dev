@@ -69,7 +69,7 @@
   "id": "source-java-browser",
   "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922",
   "scopeFiles": [
-    { "path": "docs/architecture.md", "sha256": "e8d0e1ca8ef56a0f2f3e44a3283ead99f79a17a6a86746c530b7a91f2e7123d5" }
+    { "path": "docs/architecture.md", "sha256": "daa360ca72d59636dc78b37b413f783f3d80ddcbc9f9a57a2ee2477e2957297d" }
   ],
   "stage": "implementation",
   "requiredChecks": [
@@ -407,7 +407,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "review-history",
   "scopeRevision": "REVIEW-HISTORY-v1",
-  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "e0070b894ad90eb6eaaee5a436a2de015ccb4deaec6c977229d4bdd1cfdfa8e1" }],
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "a288cd6223bd3edf859f81dc47cf2568e37dc65c60a8fb758665a6899aa4ddcc" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
@@ -453,7 +453,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "react-list-pilot",
   "scopeRevision": "REACT-LIST-PILOT-v1",
-  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "e8d0e1ca8ef56a0f2f3e44a3283ead99f79a17a6a86746c530b7a91f2e7123d5" }],
+  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "daa360ca72d59636dc78b37b413f783f3d80ddcbc9f9a57a2ee2477e2957297d" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-FRONTEND-MIGRATION-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
@@ -475,7 +475,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "release-content-audit",
   "scopeRevision": "RELEASE-CONTENT-AUDIT-v1",
-  "scopeFiles": [{ "path": "docs/learning-content-design.md", "sha256": "fca73fb02fafb9f6c5f0db30a53dc51f4af047239d10c08546ac787aca8751a2" }],
+  "scopeFiles": [{ "path": "docs/learning-content-design.md", "sha256": "51e0a2632b9f61039a19a4b4c1ba10c1d493e6d720bdaece6f8d6218804a8525" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-MVP-01-release-manifest", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
