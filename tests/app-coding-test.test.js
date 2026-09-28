@@ -1026,3 +1026,144 @@ test("코딩테스트 목록은 한 번 읽은 진도 스냅샷을 셸과 완료
   assert.equal(shellArguments[1], progress);
   assert.equal(shellArguments[2].has(codingTestCollection.problems[0].id), true);
 });
+
+test("코딩테스트 줄번호와 강조는 입력 줄 수·스크롤을 편집기와 맞춘다", () => {
+  const viewport = { scrollTop: 0, scrollLeft: 0 };
+  const highlight = { innerHTML: "", closest: () => viewport };
+  const lineNumbers = { dataset: {}, textContent: "", scrollTop: 0 };
+  const editor = { value: "a\nb", scrollTop: 24, scrollLeft: 8 };
+  const app = Object.create(BamLearningApp.prototype);
+  app.root = { querySelector(selector) {
+    return selector === "[data-coding-test-source-highlight]" ? highlight
+      : selector === "[data-coding-test-line-numbers]" ? lineNumbers : null;
+  } };
+  app.codingTestCollection = { languageId: "javascript" };
+
+  app.syncCodingTestEditorHighlight(editor);
+  assert.equal(lineNumbers.textContent.split("\n").length, 15);
+  assert.equal(lineNumbers.scrollTop, 24);
+  assert.equal(viewport.scrollTop, 24);
+  assert.equal(viewport.scrollLeft, 8);
+  assert.match(highlight.innerHTML, /a/);
+
+  editor.value = Array.from({ length: 20 }, (_, index) => `line${index + 1}`).join("\n");
+  editor.scrollTop = 180;
+  editor.scrollLeft = 12;
+  app.handleScroll({ target: { closest(selector) { return selector === "[data-coding-test-source]" ? editor : null; } } });
+  assert.equal(lineNumbers.textContent.split("\n").length, 20);
+  assert.equal(lineNumbers.textContent.split("\n").at(-1), "20");
+  assert.equal(lineNumbers.scrollTop, 180);
+  assert.equal(viewport.scrollTop, 180);
+  assert.equal(viewport.scrollLeft, 12);
+  assert.equal(editor.value.split("\n").length, 20, "동기화는 실제 편집 값을 바꾸지 않는다.");
+});
+
+test("코딩테스트 분할선은 키보드·포인터와 크기 변경에서 두 영역을 범위 안에 유지한다", (t) => {
+  const observers = [];
+  const previous = Object.getOwnPropertyDescriptor(globalThis, "ResizeObserver");
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const windowListeners = new Map();
+  globalThis.window = {
+    innerHeight: 930,
+    matchMedia: () => ({ matches: true }),
+    addEventListener(type, callback) { windowListeners.set(type, callback); },
+    removeEventListener(type, callback) {
+      if (windowListeners.get(type) === callback) windowListeners.delete(type);
+    },
+  };
+  t.after(() => previousWindow ? Object.defineProperty(globalThis, "window", previousWindow) : delete globalThis.window);
+  globalThis.ResizeObserver = class {
+    constructor(callback) { this.callback = callback; observers.push(this); }
+    observe(node) { this.observed = node; }
+    disconnect() { this.disconnected = true; }
+  };
+  t.after(() => previous ? Object.defineProperty(globalThis, "ResizeObserver", previous) : delete globalThis.ResizeObserver);
+  const bounds = { width: 1200, left: 0, top: 314 };
+  const listeners = () => {
+    const callbacks = new Map();
+    const attributes = new Map();
+    return {
+      addEventListener(type, callback) { callbacks.set(type, callback); },
+      dispatch(type, event) { callbacks.get(type)?.(event); },
+      setAttribute(name, value) { attributes.set(name, value); },
+      getAttribute(name) { return attributes.get(name); },
+      focus() { this.focused = true; },
+      setPointerCapture(id) { this.captured = id; },
+    };
+  };
+  const columns = listeners();
+  const rows = listeners();
+  const runColumn = {
+    style: { setProperty(name, value) { this[name] = value; } },
+    getBoundingClientRect() { return { height: parseFloat(workspace.style["--coding-test-workspace-height"]), top: bounds.top }; },
+  };
+  const workspace = {
+    style: {
+      setProperty(name, value) { this[name] = value; },
+      removeProperty(name) { delete this[name]; },
+    },
+    getBoundingClientRect() { return { width: bounds.width, left: bounds.left, top: bounds.top }; },
+    querySelector(selector) {
+      if (selector === ".coding-test-run-column") return runColumn;
+      if (selector === '[data-coding-test-splitter="columns"]') return columns;
+      if (selector === '[data-coding-test-splitter="rows"]') return rows;
+      return null;
+    },
+  };
+  const app = Object.create(BamLearningApp.prototype);
+  app.root = { querySelector(selector) { return selector === "[data-coding-test-workspace]" ? workspace : null; } };
+  app.attachCodingTestSplitters();
+  assert.equal(observers[0].observed, workspace);
+  assert.equal(workspace.style["--coding-test-workspace-height"], "569px");
+  const key = (handle, name, shiftKey = false) => {
+    let prevented = false;
+    handle.dispatch("keydown", { key: name, shiftKey, preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+  };
+  const columnWidth = () => parseFloat(workspace.style["--coding-test-problem-width"]);
+  const rowHeight = () => parseFloat(runColumn.style["--coding-test-editor-height"]);
+  assert.equal(Math.round(rowHeight() / 557 * 100), 64, "기본 코딩 영역 비율을 실제 분할 높이에 적용한다.");
+  const initialWidth = columnWidth();
+  key(columns, "ArrowRight");
+  assert.equal(columnWidth(), initialWidth + 12);
+  key(columns, "ArrowLeft", true);
+  assert.equal(columnWidth(), initialWidth - 28);
+  key(columns, "Home");
+  assert.equal(columnWidth(), 320);
+  key(columns, "End");
+  assert.equal(columnWidth(), 808);
+  key(rows, "Home");
+  assert.equal(rowHeight(), 300);
+  key(rows, "End");
+  assert.equal(rowHeight(), 397);
+  let prevented = false;
+  columns.dispatch("pointerdown", { button: 0, pointerId: 7, preventDefault() { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(columns.captured, 7);
+  assert.equal(columns.focused, true);
+  columns.dispatch("pointermove", { pointerId: 7, clientX: 5000 });
+  assert.equal(columnWidth(), 808);
+  columns.dispatch("pointerup", { pointerId: 7 });
+  columns.dispatch("pointermove", { pointerId: 7, clientX: 10 });
+  assert.equal(columnWidth(), 808, "드래그가 끝나면 후속 이동은 무시한다.");
+  bounds.width = 900;
+  window.innerHeight = 861;
+  observers[0].callback();
+  assert.equal(workspace.style["--coding-test-workspace-height"], "500px");
+  assert.equal(columnWidth(), 508);
+  assert.equal(rowHeight(), 328);
+  window.innerHeight = 700;
+  windowListeners.get("resize")();
+  assert.equal(workspace.style["--coding-test-workspace-height"], "472px");
+  assert.equal(rowHeight(), 300);
+  for (const handle of [columns, rows]) {
+    const minimum = Number(handle.getAttribute("aria-valuemin"));
+    const current = Number(handle.getAttribute("aria-valuenow"));
+    const maximum = Number(handle.getAttribute("aria-valuemax"));
+    assert.ok(minimum <= current && current <= maximum);
+  }
+  app.attachCodingTestSplitters();
+  assert.equal(observers[0].disconnected, true);
+  assert.equal(observers.length, 2);
+  assert.equal(windowListeners.size, 1, "다시 연결할 때 이전 resize listener를 제거한다.");
+});

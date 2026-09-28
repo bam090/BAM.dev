@@ -296,7 +296,7 @@ export class JavaBrowserProvider {
       if (proof.kind !== "result" || proof.actual !== 17n) throw new Error("Java 실행 환경을 확인하지 못했습니다.");
       if (generation !== this.prepareGeneration || controller.signal.aborted) return false;
       this.assets = assets;
-      this.setStatus("ready", "Java 17 실행 환경이 준비됐습니다. Java Quest 4개와 Java 코딩테스트 72개의 공개 테스트를 실행할 수 있습니다.");
+      this.setStatus("ready", "Java 17 실행 환경이 준비됐습니다. Java Quest 4개와 Java 코딩테스트 84개의 공개 테스트를 실행할 수 있습니다.");
       return true;
     } catch (error) {
       if (generation !== this.prepareGeneration || controller.signal.aborted) return false;

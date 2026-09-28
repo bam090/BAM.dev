@@ -7,6 +7,45 @@ import {
   renderCodingTestNavigationLink,
   renderCodingTestView,
 } from "../src/ui/coding-test-view.js";
+import { renderJavaBrowserPreparation } from "../src/ui/java-browser-preparation-view.js";
+
+test("Java compact 준비 표시는 실제 상태에 맞게 필요·진행·완료·오류를 구분한다", () => {
+  const render = (state) => renderJavaBrowserPreparation({
+    id: "test-java", state, message: "실제 상태 메시지", supportMessage: "지원 안내", compact: true,
+  });
+  const idle = render("idle");
+  assert.match(idle, /data-java-browser-preparation="idle"[\s\S]*?Java 17 준비 필요/);
+  assert.match(idle, /data-java-prepare aria-describedby/);
+  assert.match(idle, /<details[^>]*><summary>환경 안내<\/summary>/);
+  assert.doesNotMatch(idle, /Java 17 준비 오류|data-java-prepare disabled/);
+
+  const unavailable = render("unavailable");
+  assert.match(unavailable, /Java 17 준비 필요/);
+  assert.match(unavailable, /data-java-prepare disabled/);
+  assert.match(unavailable, /<details[^>]*><summary>환경 안내<\/summary>/);
+  assert.doesNotMatch(unavailable, /Java 17 준비 오류/);
+
+  const ready = render("ready");
+  assert.match(ready, /Java 17 준비 완료/);
+  assert.match(ready, /class="java-browser-preparation-ready">준비 완료/);
+  assert.doesNotMatch(ready, /<button/);
+
+  const preparing = render("preparing");
+  assert.match(preparing, /Java 17 준비 중/);
+  assert.match(preparing, /data-java-prepare-cancel>준비 취소/);
+  assert.match(preparing, /data-java-preparation-message[^>]*>실제 상태 메시지/);
+  assert.doesNotMatch(preparing, /<details/);
+
+  const error = render("error");
+  assert.match(error, /Java 17 준비 오류/);
+  assert.match(error, /data-java-prepare[^>]*>Java 환경 준비 다시 시도/);
+  assert.match(error, /data-java-preparation-message[^>]*>실제 상태 메시지/);
+  assert.doesNotMatch(error, /<details/);
+
+  const quest = renderJavaBrowserPreparation({ id: "quest-java", state: "idle", message: "설명" });
+  assert.match(quest, /<h2 id="quest-java-title">Java 17 실행 환경<\/h2>/);
+  assert.doesNotMatch(quest, /is-compact|<details/);
+});
 
 const problem = {
   id: "coding-test-javascript-cart-total",
@@ -171,11 +210,39 @@ test("상세 화면은 좌측 문제와 우측 편집기·결과의 접근성 �
     source: '</textarea><script>globalThis.bad = true</script>',
   });
 
+  const workspaceIndex = html.indexOf("data-coding-test-workspace");
   const problemPanelIndex = html.indexOf('class="coding-test-problem-panel"');
   const editorPanelIndex = html.indexOf('class="coding-test-editor-panel"');
   const resultPanelIndex = html.indexOf('class="coding-test-results-panel"');
-  assert.ok(problemPanelIndex >= 0 && editorPanelIndex > problemPanelIndex);
-  assert.ok(resultPanelIndex > editorPanelIndex);
+  const publicTestsIndex = html.indexOf("data-coding-test-public-tests");
+  assert.ok(workspaceIndex >= 0 && problemPanelIndex > workspaceIndex);
+  assert.ok(editorPanelIndex > problemPanelIndex && resultPanelIndex > editorPanelIndex);
+  assert.ok(publicTestsIndex > resultPanelIndex, "공개 테스트 원문은 작업 영역 아래의 별도 구역에 둔다.");
+  assert.match(html, /data-coding-test-problem-scroll/);
+  for (const [axis, orientation] of [["columns", "vertical"], ["rows", "horizontal"]]) {
+    const splitter = html.match(new RegExp(`<[^>]+data-coding-test-splitter="${axis}"[^>]*>`))?.[0] ?? "";
+    assert.match(splitter, /role="separator"/);
+    assert.match(splitter, new RegExp(`aria-orientation="${orientation}"`));
+    assert.match(splitter, /tabindex="0"/);
+    for (const attribute of ["valuemin", "valuemax", "valuenow"]) assert.match(splitter, new RegExp(`aria-${attribute}="[0-9]+"`));
+    if (axis === "rows") assert.match(splitter, /aria-valuenow="64"/, "초기 코드 영역 비율을 접근성 값에도 반영한다.");
+  }
+  const problemBarIndex = html.indexOf("data-coding-test-problem-bar");
+  const problemScrollIndex = html.indexOf("data-coding-test-problem-scroll");
+  const filebarIndex = html.indexOf("data-coding-test-filebar");
+  const sourceIndex = html.indexOf("data-coding-test-source aria-labelledby");
+  const actionbarIndex = html.indexOf("data-coding-test-actionbar");
+  const resultsBarIndex = html.indexOf("data-coding-test-results-bar");
+  assert.ok(problemBarIndex < problemScrollIndex && filebarIndex < sourceIndex);
+  assert.ok(actionbarIndex > sourceIndex && actionbarIndex < resultPanelIndex);
+  assert.ok(resultsBarIndex > resultPanelIndex);
+  assert.match(html, /data-coding-test-line-numbers aria-hidden="true">1\n2\n3/);
+  assert.match(html, /class="coding-test-results-empty"/);
+  assert.match(html, /data-coding-test-filebar[\s\S]*?data-coding-test-reset[\s\S]*?<\/header>/);
+  const publicTests = html.match(/<details\b[^>]*data-coding-test-public-tests[^>]*>/)?.[0] ?? "";
+  assert.ok(publicTests, "공개 테스트 원문은 별도 details로 둔다.");
+  assert.doesNotMatch(publicTests, /\sopen(?:\s|>|=)/);
+
   assert.match(html, /id="coding-test-title" tabindex="-1"/);
   assert.match(html, /문제 설명/);
   assert.match(html, /제한사항/);
@@ -188,7 +255,7 @@ test("상세 화면은 좌측 문제와 우측 편집기·결과의 접근성 �
   assert.match(html, /data-coding-test-source-highlight/);
   assert.match(html, /&lt;\/textarea&gt;&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);
-  assert.equal((html.match(/data-coding-test-results/g) ?? []).length, 1);
+  assert.equal((html.match(/data-coding-test-results(?=[\s>])/g) ?? []).length, 1);
   assert.match(
     html,
     /data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title"/,
@@ -210,7 +277,7 @@ test("실행 중에는 편집·실행·제출을 막고 취소 상태를 명확�
   assert.match(runHtml, /coding-test-editor-panel[^>]*aria-busy="true"/);
   assert.match(runHtml, /data-coding-test-source[^>]*readonly/);
   assert.match(runHtml, /data-coding-test-run[^>]*aria-busy="true"[^>]*disabled>실행 중…/);
-  assert.match(runHtml, /data-coding-test-submit[^>]*disabled>제출 및 채점/);
+  assert.match(runHtml, /data-coding-test-submit[^>]*disabled>전체 채점/);
   assert.match(runHtml, /data-coding-test-cancel>실행 취소/);
   assert.doesNotMatch(runHtml, /data-coding-test-reset/);
   assert.match(submitHtml, /data-coding-test-submit[^>]*aria-busy="true"[^>]*disabled>채점 중…/);
