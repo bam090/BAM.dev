@@ -4,6 +4,19 @@ const MAX_DIAGNOSTIC_BYTES = 32 * 1024;
 const MAX_CLASSES = 256;
 const MAX_CLASS_BYTES = 8 * 1024 * 1024;
 const COMPILE_TIMEOUT_MS = 180_000;
+let recentCompile = null;
+let cacheGeneration = 0;
+
+export function clearJavaCompileCache() {
+  recentCompile = null;
+  cacheGeneration++;
+}
+
+function copyClasses(classes) {
+  const copy = Object.create(null);
+  for (const [name, bytes] of Object.entries(classes)) copy[name] = bytes.slice();
+  return copy;
+}
 
 function compilerError(code, message) {
   const error = new Error(message);
@@ -125,6 +138,21 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
     throw compilerError("engine_error", "Java compiler assets are unavailable.");
   }
   if (signal?.aborted) return Promise.reject(compilerError("cancelled", "Java compilation was cancelled."));
+  const sourceSnapshot = sources.map(({ path, source }) => ({ path, source }));
+  if (recentCompile && recentCompile.assets !== assets) clearJavaCompileCache();
+  if (recentCompile && recentCompile.profile === profile && recentCompile.entryClass === entryClass
+      && recentCompile.sources.length === sourceSnapshot.length
+      && recentCompile.sources.every((unit, index) => unit.path === sourceSnapshot[index].path && unit.source === sourceSnapshot[index].source)) {
+    const hit = recentCompile;
+    const hitGeneration = cacheGeneration;
+    return Promise.resolve().then(() => {
+      if (signal?.aborted || hitGeneration !== cacheGeneration) throw compilerError("cancelled", "Java compilation was cancelled.");
+      const result = { status: "compiled", diagnostics: [], classes: copyClasses(hit.classes) };
+      if (signal?.aborted || hitGeneration !== cacheGeneration) throw compilerError("cancelled", "Java compilation was cancelled.");
+      return result;
+    });
+  }
+  const generation = cacheGeneration;
 
   return new Promise((resolve, reject) => {
     const worker = new Worker(new URL("../workers/java-browser-compiler.worker.js", import.meta.url));
@@ -143,6 +171,7 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
     const onAbort = () => finish(compilerError("cancelled", "Java compilation was cancelled."));
     signal?.addEventListener("abort", onAbort, { once: true });
     worker.onmessage = (event) => {
+      if (settled || signal?.aborted) return;
       const reply = event.data;
       if (hasKeys(reply, ["type", "runId", "message"])
           && reply.type === "compiler-error" && reply.runId === runId
@@ -155,8 +184,15 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
         finish(compilerError("engine_error", "Java compiler reply did not match this run."));
         return;
       }
-      try { finish(null, decodeResult(reply.result, entryClass,
-        profile === "quest" && sources.length === 2)); }
+      try {
+        const result = decodeResult(reply.result, entryClass, profile === "quest" && sourceSnapshot.length === 2);
+        if (result.status === "compiled" && generation === cacheGeneration) {
+          recentCompile = { assets, profile, entryClass,
+            sources: sourceSnapshot,
+            classes: copyClasses(result.classes) };
+        }
+        finish(null, result);
+      }
       catch (error) { finish(error); }
     };
     worker.onerror = () => finish(compilerError("engine_error", "Java compiler Worker failed."));
@@ -166,7 +202,7 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
       onAbort();
       return;
     }
-    worker.postMessage({ type: "compile", runId, sources, entryClass, profile, compiler,
+    worker.postMessage({ type: "compile", runId, sources: sourceSnapshot, entryClass, profile, compiler,
       runtimeAssets, runtimeBootstrap });
   });
 }

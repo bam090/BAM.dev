@@ -83,6 +83,49 @@ test("지원 밖 Quest는 ready에서도 거부하고 취소된 공개 결과는
   assert.equal(provider.activeRun, null);
 });
 
+test("Java 결과 표시는 큰 long을 정확히 보존하고 number·array를 유지한다", async () => {
+  const longValues = [9007199254740993n, 9223372036854775807n];
+  const longQuest = { ...quest, publicTests: quest.publicTests.map((item, index) => ({
+    ...item, expected: String(longValues[index % longValues.length]),
+  })) };
+  let call = 0;
+  const longProvider = readyProvider({
+    getQuest: () => longQuest,
+    compile: async () => compiled,
+    execute: async () => ({ kind: "result", actual: longValues[call++ % longValues.length] }),
+  });
+  const longReport = await longProvider.run(request);
+  assert.equal(longReport.outcome, "passed");
+  assert.deepEqual(longReport.tests.slice(0, 2).map(({ actualDisplay }) => actualDisplay),
+    ["9007199254740993", "9223372036854775807"]);
+
+  const numberQuest = { id: "quest-java-bridge-arr-02", revision: 1,
+    publicTests: Array.from({ length: 6 }, (_, index) => ({
+      id: `number-${index}`, label: `숫자 ${index}`, args: [[1, 2], 1, 2], expected: 2,
+    })) };
+  const numberProvider = readyProvider({
+    getQuest: () => numberQuest, compile: async () => compiled,
+    execute: async () => ({ kind: "result", actual: 2 }),
+  });
+  const numberReport = await numberProvider.run({ ...request, questId: numberQuest.id });
+  assert.equal(numberReport.outcome, "passed");
+  assert.equal(numberReport.tests[0].actualDisplay, "2");
+
+  const arrayQuest = { id: "quest-java-bridge-arr-01", revision: 1,
+    publicTests: Array.from({ length: 6 }, (_, index) => ({
+      id: `array-${index}`, label: `배열 ${index}`, args: [[1], 0, 2], expected: [2],
+      observations: { argument0Unchanged: true, returnNotArgument0: true },
+    })) };
+  const arrayProvider = readyProvider({
+    getQuest: () => arrayQuest, compileSources: async () => compiled,
+    execute: async () => ({ kind: "result", actual: [2],
+      observations: { argument0Unchanged: true, returnNotArgument0: true } }),
+  });
+  const arrayReport = await arrayProvider.run({ ...request, questId: arrayQuest.id });
+  assert.equal(arrayReport.outcome, "passed");
+  assert.equal(arrayReport.tests[0].actualDisplay, "[2]");
+});
+
 test("준비 progress와 상태 전환은 편집기 DOM·미저장 값·커서를 보존한다", () => {
   const editor = { value: "class Solution { /* unsaved */ }", selectionStart: 12, selectionEnd: 12 };
   const description = { textContent: "" };

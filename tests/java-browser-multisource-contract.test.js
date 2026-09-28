@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { JAVA_BROWSER_ASSET_MANIFEST } from "../src/grading/java-browser-assets.js";
-import { compileJavaSources } from "../src/grading/java-browser-compiler.js";
+import { clearJavaCompileCache, compileJavaSources } from "../src/grading/java-browser-compiler.js";
 
 const assets = {
   runtime: JAVA_BROWSER_ASSET_MANIFEST.runtime.map((spec, index) => ({
@@ -29,6 +29,8 @@ const originalSources = () => [
 ];
 
 function installWorker(t, reply) {
+  clearJavaCompileCache();
+  t.after(clearJavaCompileCache);
   const previous = Object.getOwnPropertyDescriptor(globalThis, "Worker");
   const requests = [];
   class FakeWorker {

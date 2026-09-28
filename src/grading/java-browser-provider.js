@@ -1,4 +1,4 @@
-import { compileJava, compileJavaSources } from "./java-browser-compiler.js";
+import { clearJavaCompileCache, compileJava, compileJavaSources } from "./java-browser-compiler.js";
 import { JAVA_BROWSER_ASSET_BYTES, prepareJavaBrowserAssets } from "./java-browser-assets.js";
 
 const QUEST_KIND = Object.freeze({
@@ -45,7 +45,7 @@ function aborted() {
 
 function displayValue(value) {
   if (value === null) return "null";
-  const text = typeof value === "string" ? value : JSON.stringify(value);
+  const text = typeof value === "string" || typeof value === "bigint" ? String(value) : JSON.stringify(value);
   return text.length > 4_000 ? `${text.slice(0, 4_000)}… (전체 ${text.length}자)` : text;
 }
 
@@ -275,6 +275,7 @@ export class JavaBrowserProvider {
   async prepare() {
     if (this.status === "preparing" || this.status === "ready") return this.status === "ready";
     const generation = ++this.prepareGeneration;
+    clearJavaCompileCache();
     const controller = new AbortController();
     this.prepareAbort = controller;
     this.progress = { receivedBytes: 0, totalBytes: JAVA_BROWSER_ASSET_BYTES };
@@ -300,6 +301,7 @@ export class JavaBrowserProvider {
     } catch (error) {
       if (generation !== this.prepareGeneration || controller.signal.aborted) return false;
       this.assets = null;
+      clearJavaCompileCache();
       this.setStatus("error", `Java 준비에 실패했습니다. ${String(error?.message ?? error).slice(0, 300)}`);
       return false;
     } finally {
@@ -313,6 +315,7 @@ export class JavaBrowserProvider {
     this.prepareAbort?.abort();
     this.prepareAbort = null;
     this.assets = null;
+    clearJavaCompileCache();
     this.progress = { receivedBytes: 0, totalBytes: JAVA_BROWSER_ASSET_BYTES };
     this.setStatus("idle", "Java 환경 준비를 취소했습니다. 코드는 계속 작성하고 저장할 수 있습니다.");
   }
@@ -402,6 +405,7 @@ export class JavaBrowserProvider {
     this.cancelPreparation();
     this.activeRun?.controller.abort();
     this.assets = null;
+    clearJavaCompileCache();
     if (this.status === "ready") this.setStatus("idle", "Java 환경을 다시 준비해 주세요.");
   }
 }
