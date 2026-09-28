@@ -420,7 +420,15 @@ test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topicId }, disabled: false }));
     if (documentHash) {
       const documentLesson = app.curriculum.lessons.find((lesson) => `#/learn/${lesson.courseId}/${lesson.slug}` === documentHash);
+      let focusOptions = null;
+      const querySelector = app.root.querySelector;
+      app.root.querySelector = (selector) => selector === '[data-catalog-keyword][aria-pressed="true"]'
+        ? { focus(options) { focusOptions = options; } } : querySelector(selector);
       app.handleClick(click("[data-catalog-keyword]", { dataset: { catalogKeyword: documentLesson.id } }));
+      app.root.querySelector = querySelector;
+      assert.equal(app.catalogFilters.learn.keywordId, documentLesson.id);
+      assert.deepEqual(focusOptions, { preventScroll: true });
+      assert.ok(app.root.innerHTML.includes(`data-catalog-keyword="${documentLesson.id}" aria-pressed="true"`));
       assert.ok(app.root.innerHTML.includes(`class="catalog-card" href="${documentHash}"`));
       window.location.hash = documentHash;
       await app.openRoute();
