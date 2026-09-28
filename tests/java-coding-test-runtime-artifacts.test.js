@@ -55,12 +55,12 @@ test("CT manifest는 Java72의 원본 168개 공개 method를 고정 selector로
       evaluationKind: "java-junit-method-v1",
     },
   );
-  assert.equal(manifest.problems.length, 72);
-  assert.equal(manifest.problems.reduce((sum, problem) => sum + problem.tests.length, 0), 168);
+  assert.equal(manifest.problems.length, 84);
+  assert.equal(manifest.problems.slice(0, 72).reduce((sum, problem) => sum + problem.tests.length, 0), 168);
 
   const selectors = new Set();
   const usedTypes = new Set();
-  for (const [index, problem] of collection.problems.entries()) {
+  for (const [index, problem] of collection.problems.slice(0, 72).entries()) {
     const generated = manifest.problems[index];
     assert.equal(generated.id, problem.id);
     assert.equal(generated.revision, problem.revision);
@@ -108,10 +108,38 @@ test("CT manifest는 Java72의 원본 168개 공개 method를 고정 selector로
   );
 });
 
+test("authored 12문제는 공개 JUnit 원문만 문제별 asset으로 보존하고 원본72 selector를 유지한다", () => {
+  const { manifest, sources } = createCodingTestArtifacts(collection);
+  const authored = collection.problems.slice(72);
+  const generated = manifest.problems.slice(72);
+  assert.equal(authored.length, 12);
+  assert.deepEqual(generated.map(({ id }) => id), authored.map(({ id }) => id));
+  assert.deepEqual(
+    Object.keys(sources).filter((path) => path.startsWith("sources/authored/")).sort(),
+    authored.map(({ id }) => `sources/authored/${id}/SolutionPublicTest.java`).sort(),
+  );
+  for (const [index, problem] of authored.entries()) {
+    const entry = generated[index];
+    const path = `sources/authored/${problem.id}/SolutionPublicTest.java`;
+    assert.equal(entry.origin, "bam-authored");
+    assert.equal(entry.solutionClass, "Solution");
+    assert.equal(sources[path], problem.publicTestSource, problem.id);
+    assert.equal(Object.hasOwn(sources, `sources/authored/${problem.id}/Solution.java`), false);
+    assert.deepEqual(entry.tests.map(({ id }) => id), problem.publicTests.map(({ id }) => id));
+    assert.deepEqual(entry.runTestIds, [problem.publicTests[0].id]);
+    for (const testCase of entry.tests) {
+      assert.equal(testCase.testClass, "SolutionPublicTest", problem.id);
+      assert.ok(problem.publicTestSource.includes(testCase.assertionSource), `${problem.id}: 원문 테스트 메서드`);
+      assert.match(testCase.assertionSource, /@(?:ParameterizedTest|Test)\b/u, problem.id);
+      assert.match(testCase.assertionSource, new RegExp(`\\bvoid\\s+${testCase.method}\\s*\\(`, "u"), problem.id);
+    }
+  }
+});
+
 test("typed adapter는 Solution.solve 서명을 직접 전달하고 JSON 변환을 만들지 않는다", () => {
   const { manifest, sources } = createCodingTestArtifacts(collection);
 
-  for (const generated of manifest.problems) {
+  for (const generated of manifest.problems.slice(0, 72)) {
     const adapterPath = `sources/${generated.solutionClass.replaceAll(".", "/")}.java`;
     const adapter = sources[adapterPath];
     assert.equal(typeof adapter, "string", generated.id);
@@ -148,6 +176,6 @@ test("artifact 생성은 원본 source와 public group의 불일치를 닫힌 �
   missingProblem.problems.pop();
   assert.throws(
     () => createCodingTestArtifacts(missingProblem),
-    /approved Java72/u,
+    /approved Java84/u,
   );
 });

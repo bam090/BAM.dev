@@ -16,87 +16,49 @@ function conceptIdsFrom(text) {
   );
 }
 
-test("알고리즘 과정 교안은 선언한 conceptId를 선행·후속 흐름에 연결한다", async () => {
+test("알고리즘 교안의 선수 링크는 앞 키워드만 가리키고 개념 ID는 문서 하나에만 속한다", async () => {
   assert.ok(algorithmLessons.length > 0);
+  const unitOrderOf = (lesson) => (lesson.parentLessonId === undefined
+    ? lesson
+    : curriculum.lessons.find((candidate) => candidate.id === lesson.parentLessonId)).order;
 
   for (const lesson of algorithmLessons) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
-    const connection = markdown.match(/\n## 개념 연결\n([\s\S]*?)(?=\n## |$)/);
-
-    assert.ok(connection, `${lesson.id}: 개념 연결 섹션이 필요합니다.`);
 
     const objectiveSection = markdown.match(/\n## 학습 목표\n([\s\S]*?)(?=\n## |$)/);
     const objectives = objectiveSection?.[1]
       .split("\n")
       .filter((line) => line.startsWith("- "))
       .map((line) => line.slice(2));
-
     assert.deepEqual(objectives, lesson.objectives, `${lesson.id}: 학습 목표가 다릅니다.`);
 
-    const prerequisiteLine = connection[1].match(/^- 선행:\s*(.+)$/m);
-    const currentLine = connection[1].match(/^- 이 단원:\s*(.+)$/m);
-    const followupLine = connection[1].match(/^- 후속:\s*(.+)$/m);
-
-    assert.ok(prerequisiteLine, `${lesson.id}: 선행 conceptId가 필요합니다.`);
-    assert.ok(currentLine, `${lesson.id}: 이 단원 conceptId가 필요합니다.`);
-    assert.ok(followupLine, `${lesson.id}: 후속 conceptId 안내가 필요합니다.`);
-
-    const previousIds = new Set(
-      curriculum.lessons
-        .filter(
-          (candidate) =>
-            candidate.languageId === lesson.languageId &&
-            (candidate.courseId !== lesson.courseId || candidate.order < lesson.order),
-        )
-        .flatMap((candidate) => candidate.conceptIds),
-    );
-    const laterIds = new Set(
-      curriculum.lessons
-        .filter(
-          (candidate) =>
-            candidate.courseId === lesson.courseId && candidate.order > lesson.order,
-        )
-        .flatMap((candidate) => candidate.conceptIds),
-    );
-    const prerequisiteIds = conceptIdsFrom(prerequisiteLine[1]);
-    const currentIds = conceptIdsFrom(currentLine[1]);
-    const followupIds = conceptIdsFrom(followupLine[1]);
-
-    assert.ok(prerequisiteIds.length > 0, `${lesson.id}: 선행 conceptId가 비어 있습니다.`);
-    assert.deepEqual(currentIds, lesson.conceptIds, `${lesson.id}: 현재 conceptId가 다릅니다.`);
-    assert.ok(
-      prerequisiteIds.every((conceptId) => previousIds.has(conceptId)),
-      `${lesson.id}: 앞 단원에 없는 선행 conceptId가 있습니다.`,
-    );
-    if (lesson === algorithmLessons.at(-1)) {
-      assert.equal(followupIds.length, 0, `${lesson.id}: 마지막 단원 뒤에 conceptId가 있습니다.`);
-      assert.match(
-        followupLine[1],
-        /마지막 단원이므로 새 후속 conceptId는 없습니다/,
-        `${lesson.id}: 과정이 끝났다는 안내가 필요합니다.`,
-      );
-    } else {
-      assert.ok(followupIds.length > 0, `${lesson.id}: 후속 conceptId가 비어 있습니다.`);
-      assert.ok(
-        followupIds.every((conceptId) => laterIds.has(conceptId)),
-        `${lesson.id}: 뒤 단원에 없는 후속 conceptId가 있습니다.`,
-      );
+    // 학습자가 실제로 누르는 선수 링크로 배우는 순서를 검사한다. 같은 키워드의 문서끼리는 서로 가리킬 수 있다.
+    const prerequisites = splitMarkdownSection(markdown, "먼저 확인할 개념").section;
+    assert.ok(prerequisites, `${lesson.id}: 먼저 확인할 개념 절이 필요합니다.`);
+    for (const [, slug] of prerequisites.matchAll(/\(#\/learn\/algorithm\/([a-z0-9-]+)\)/g)) {
+      const target = algorithmLessons.find((candidate) => candidate.slug === slug);
+      assert.ok(target, `${lesson.id}: 없는 알고리즘 문서 ${slug}를 가리킵니다.`);
+      assert.ok(unitOrderOf(target) <= unitOrderOf(lesson), `${lesson.id}: 뒤 키워드의 ${slug}를 선수로 가리킵니다.`);
     }
   }
+
+  const conceptIds = algorithmLessons.flatMap((lesson) => lesson.conceptIds);
+  assert.equal(new Set(conceptIds).size, conceptIds.length, "개념 ID는 알고리즘 과정의 문서 하나에만 속합니다.");
 });
 
-test("알고리즘 14개 교안은 Java 예제·예상 출력과 명시한 직접답을 제공한다", async () => {
-  assert.equal(algorithmLessons.length, 14);
+test("알고리즘 교안은 Java 예제·실행 가능한 전체 프로그램·예상 출력과 명시한 직접답을 제공한다", async () => {
+  assert.equal(algorithmLessons.filter((lesson) => lesson.parentLessonId === undefined).length, 14);
   for (const lesson of algorithmLessons) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const javaExamples = [...markdown.matchAll(/```java\n([\s\S]*?)```/g)];
     assert.equal(lesson.languageId, "java", lesson.id);
     assert.ok(javaExamples.length > 0, `${lesson.id}: Java 예제가 필요합니다.`);
     assert.doesNotMatch(markdown, /^```(?:js|javascript)\b/m, lesson.id);
-    for (const [, source] of javaExamples) {
-      assert.match(source, /public class \w+/, `${lesson.id}: 파일로 저장할 클래스가 필요합니다.`);
-      assert.match(source, /public static void main\(String\[\] \w+\)/, `${lesson.id}: 실행 진입점이 필요합니다.`);
-    }
+    // 본문에는 읽기 쉬운 코드 조각을 두고 저장해 실행할 수 있는 전체 프로그램은 하나 이상 둔다(예: "전체 코드 보기" 토글).
+    assert.ok(
+      javaExamples.some(([, source]) => /public class \w+/.test(source) && /public static void main\(String\[\] \w+\)/.test(source)),
+      `${lesson.id}: 파일로 저장해 실행할 수 있는 전체 프로그램이 필요합니다.`,
+    );
     assert.match(markdown, /```text\n\S[\s\S]*?```/, `${lesson.id}: 비교할 예상 출력이 필요합니다.`);
     assert.equal(lesson.answerHeading, "핵심 질문 답", lesson.id);
     assert.ok(lesson.essentialQuestion?.trim(), `${lesson.id}: 핵심 질문이 필요합니다.`);
@@ -104,30 +66,39 @@ test("알고리즘 14개 교안은 Java 예제·예상 출력과 명시한 직�
   }
 });
 
-test("분리한 알고리즘 기초 세 문서는 개념 소유와 Java 전환 순서를 보존한다", () => {
-  assert.deepEqual(
-    algorithmLessons.slice(0, 3).map(({ id, slug, conceptIds }) => [id, slug, conceptIds]),
-    [
-      ["algo-list-conditions", "list-and-conditions", ["algo.list", "algo.condition"]],
-      ["algo-dictionary", "dictionary", ["algo.dictionary"]],
-      ["js-10-stack-queue", "stack-and-queue", ["algo.stack", "algo.queue"]],
-    ],
-  );
-  assert.deepEqual(algorithmLessons.map(({ order }) => order), Array.from({ length: 14 }, (_, index) => index + 1));
-  assert.deepEqual(
-    algorithmLessons.slice(3).map(({ id, conceptIds }) => [id, conceptIds]),
-    [
-      ["algo-hash-map-set", ["algo.hashing", "algo.map-collection", "algo.set-collection"]],
-      ["js-14-heap-greedy", ["algo.heap", "algo.priority-queue", "algo.greedy"]],
-      ["js-11-sorting-window", ["algo.sorting", "algo.two-pointers", "algo.sliding-window"]],
-      ["js-12-brute-force-backtracking", ["algo.brute-force", "algo.recursion", "algo.backtracking"]],
-      ["algo-06-number-theory-geometry", ["algo.number-theory", "algo.geometry"]],
-      ["js-15-binary-search-dp", ["algo.binary-search", "algo.dynamic-programming"]],
-      ["js-13-bfs-dfs", ["algo.graph-representation", "algo.bfs", "algo.dfs", "algo.grid-traversal"]],
-      ["algo-09-tree", ["algo.tree", "algo.tree-traversal"]],
-      ["js-08-implementation-simulation", ["algo.simulation", "algo.string-processing"]],
-      ["algo-11-dynamic-programming-advanced", ["algo.dynamic-programming-advanced"]],
-      ["algo-12-dijkstra", ["algo.weighted-graph", "algo.shortest-path", "algo.dijkstra"]],
-    ],
-  );
+test("알고리즘 과정은 0~13 키워드 구조를 따르고 옛 교안 ID·주소는 같은 개념을 잇는 문서에 남는다", () => {
+  const unitLessons = algorithmLessons.filter((lesson) => lesson.parentLessonId === undefined);
+  assert.deepEqual(unitLessons.map(({ order }) => order), Array.from({ length: 14 }, (_, index) => index + 1));
+  assert.deepEqual(unitLessons.map(({ id, keyword }) => [id, keyword]), [
+    ["algo-00-data-structures-algorithms", "자료구조와 알고리즘"],
+    ["algo-01-array", "배열"],
+    ["js-10-stack-queue", "스택"],
+    ["algo-03-queue", "큐"],
+    ["algo-hash-map-set", "해시"],
+    ["algo-09-tree", "트리"],
+    ["algo-06-union-find", "집합"],
+    ["js-13-bfs-dfs", "그래프"],
+    ["js-12-brute-force-backtracking", "백트래킹"],
+    ["js-11-sorting-window", "정렬"],
+    ["js-08-implementation-simulation", "시뮬레이션"],
+    ["js-15-binary-search-dp", "동적 계획법"],
+    ["js-14-heap-greedy", "그리디"],
+    ["algo-06-number-theory-geometry", "수학"],
+  ]);
+  // 키워드마다 개념과 활용 문서가 모두 있다(bam 확정).
+  for (const unit of unitLessons) {
+    const kinds = algorithmLessons.filter((lesson) => lesson.parentLessonId === unit.id).map((lesson) => lesson.documentKind);
+    assert.ok(kinds.includes("application"), `${unit.keyword}: 활용문서가 필요합니다.`);
+  }
+  // 옛 교안은 URL과 완료 기록을 지키려고 같은 개념을 이어받는 문서에 그대로 남는다.
+  const preserved = [
+    ["algo-list-conditions", "list-and-conditions", "algo-01-array"],
+    ["algo-dictionary", "dictionary", "algo-hash-map-set"],
+    ["algo-12-dijkstra", "weighted-graphs-dijkstra", "js-13-bfs-dfs"],
+    ["algo-11-dynamic-programming-advanced", "dynamic-programming-advanced", "js-15-binary-search-dp"],
+  ];
+  for (const [id, slug, parentLessonId] of preserved) {
+    const lesson = algorithmLessons.find((candidate) => candidate.id === id);
+    assert.deepEqual([lesson?.slug, lesson?.parentLessonId], [slug, parentLessonId], id);
+  }
 });

@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { lstat, readdir, readFile } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { JAVA_AUTHORED_CODING_TEST_IDS, isApprovedAuthoredJavaCodingTest } from "../../src/core/coding-test.js";
 
 const moduleRoot = dirname(fileURLToPath(import.meta.url));
 export const CT_EVALUATION_KIND = "java-junit-method-v1";
@@ -32,13 +33,20 @@ function parameterType(value) {
 
 // Only the installed public collection supplies selectors and adapter signatures.
 export function createCodingTestArtifacts(collection) {
-  if (collection?.languageId !== "java" || collection.contractVersion !== 1 || !Array.isArray(collection.problems) || collection.problems.length !== 72) {
-    throw new Error("CT collection must contain the approved Java72 problems");
+  if (collection?.languageId !== "java" || collection.contractVersion !== 1 || !Array.isArray(collection.problems)
+      || collection.problems.length !== 72 + JAVA_AUTHORED_CODING_TEST_IDS.length
+      || collection.problems.slice(72).some((problem) => !isApprovedAuthoredJavaCodingTest(problem))) {
+    throw new Error("CT collection must contain the approved Java84 problems");
   }
   const sources = {};
   const seenIds = new Set();
-  const problems = collection.problems.map((problem) => {
+  const problems = collection.problems.map((problem, index) => {
     if (!idPattern.test(problem.id) || !problem.id.startsWith("coding-test-java-") || seenIds.has(problem.id) || !Number.isSafeInteger(problem.revision) || problem.revision < 1) throw new Error("Invalid CT problem identity");
+    const authored = index >= 72;
+    if (authored !== (problem.origin === "bam-authored")
+        || (!authored && (!/^coding-test-java-bridge-[a-z]{3}-\d{2}$/u.test(problem.id) || problem.order !== index + 1))) {
+      throw new Error("Unapproved CT problem origin or order");
+    }
     seenIds.add(problem.id);
     if (problem.entryPoint !== "solve" || problem.javaContract?.sourceFile !== "Solution.java" || problem.javaContract.className !== "Solution") throw new Error("Invalid CT learner contract");
     const parameters = problem.functionContract.parameters;
@@ -46,10 +54,11 @@ export function createCodingTestArtifacts(collection) {
     if (!types.has(returnType) || !Array.isArray(parameters) || parameters.some((p) => !types.has(p.type) || !identifier.test(p.name))) throw new Error("Invalid CT typed signature");
     const source = problem.publicTestSource;
     if (typeof source !== "string" || Buffer.byteLength(source) > 12 * 1024) throw new Error("Invalid CT public source");
-    const testPackage = oneMatch(source, /^package\s+([\w.]+);/gmu, problem.id)[1];
     const testName = oneMatch(source, /^(?:public\s+)?(?:final\s+)?class\s+(\w+)\s*\{/gmu, problem.id)[1];
-    const solutionClass = oneMatch(source, /^import\s+(bridge\.[\w.]+\.solution\.\w+);/gmu, problem.id)[1];
-    const testClass = `${testPackage}.${testName}`;
+    const testPackage = authored ? "" : oneMatch(source, /^package\s+([\w.]+);/gmu, problem.id)[1];
+    const solutionClass = authored ? "Solution" : oneMatch(source, /^import\s+(bridge\.[\w.]+\.solution\.\w+);/gmu, problem.id)[1];
+    const testClass = authored ? testName : `${testPackage}.${testName}`;
+    if (authored && (testName !== "SolutionPublicTest" || /^package\s+/mu.test(source))) throw new Error("Invalid authored CT test class");
     if (![testClass, solutionClass].every((name) => name.split(".").every((part) => identifier.test(part)))) throw new Error("Invalid CT class name");
     if (!Array.isArray(problem.publicTests) || problem.publicTests.length < 1 || problem.publicTests.length > 6) throw new Error("Invalid CT public groups");
     const methodNames = new Set();
@@ -63,13 +72,13 @@ export function createCodingTestArtifacts(collection) {
       return { id: test.id, label: test.label, testClass, method: method[1], parameterTypes: method[2].trim() ? method[2].split(",").map(parameterType) : [], assertionSource: test.assertionSource };
     });
     const dot = solutionClass.lastIndexOf(".");
-    const adapter = `package ${solutionClass.slice(0, dot)};\n\npublic final class ${solutionClass.slice(dot + 1)} {\n    private ${solutionClass.slice(dot + 1)}() {}\n    public static ${returnType} solve(${parameters.map((p) => `${p.type} ${p.name}`).join(", ")}) {\n        return (${returnType}) dev.bam.runtime.SolutionInvoker.invoke(\n            ${returnType}.class, new Class<?>[]{${parameters.map((p) => `${p.type}.class`).join(", ")}},\n            new Object[]{${parameters.map((p) => p.name).join(", ")}});\n    }\n}\n`;
-    for (const [name, text] of [[testClass, source], [solutionClass, adapter]]) {
-      const file = `sources/${name.replaceAll(".", "/")}.java`;
+    const adapter = authored ? null : `package ${solutionClass.slice(0, dot)};\n\npublic final class ${solutionClass.slice(dot + 1)} {\n    private ${solutionClass.slice(dot + 1)}() {}\n    public static ${returnType} solve(${parameters.map((p) => `${p.type} ${p.name}`).join(", ")}) {\n        return (${returnType}) dev.bam.runtime.SolutionInvoker.invoke(\n            ${returnType}.class, new Class<?>[]{${parameters.map((p) => `${p.type}.class`).join(", ")}},\n            new Object[]{${parameters.map((p) => p.name).join(", ")}});\n    }\n}\n`;
+    for (const [name, text] of authored ? [[testClass, source]] : [[testClass, source], [solutionClass, adapter]]) {
+      const file = authored ? `sources/authored/${problem.id}/SolutionPublicTest.java` : `sources/${name.replaceAll(".", "/")}.java`;
       if (Object.hasOwn(sources, file)) throw new Error("Duplicate CT source path");
       sources[file] = text;
     }
-    return { id: problem.id, revision: problem.revision, entryPoint: "solve", parameters: parameters.map(({ name, type }) => ({ name, type })), returnType, solutionClass, publicSourceSha256: hash(source), runTestIds: [tests[0].id], tests };
+    return { id: problem.id, revision: problem.revision, ...(authored ? { origin: "bam-authored" } : {}), entryPoint: "solve", parameters: parameters.map(({ name, type }) => ({ name, type })), returnType, solutionClass, publicSourceSha256: hash(source), runTestIds: [tests[0].id], tests };
   });
   return { manifest: { schemaVersion: 1, contractVersion: 1, languageId: "java", evaluationKind: CT_EVALUATION_KIND, collectionSha256: hash(JSON.stringify(collection)), problems }, sources };
 }
@@ -119,7 +128,7 @@ export async function verifyCodingTestBundle(root, collection, sourceRoot = modu
   }
   const junit = files.find((file) => file.path === CT_JUNIT.file);
   if (junit?.sha256 !== CT_JUNIT.sha256 || (await lstat(join(root, CT_JUNIT.file))).size !== CT_JUNIT.size) throw new Error("CT JUnit artifact mismatch");
-  for (const name of [CT_RUNNER_CLASS, "dev.bam.runtime.SolutionInvoker", ...manifest.problems.flatMap((p) => [p.solutionClass, p.tests[0].testClass])]) {
+  for (const name of [CT_RUNNER_CLASS, "dev.bam.runtime.SolutionInvoker", ...manifest.problems.filter((p) => p.origin !== "bam-authored").flatMap((p) => [p.solutionClass, p.tests[0].testClass])]) {
     if (!files.some((file) => file.path === `classes/${name.replaceAll(".", "/")}.class`)) throw new Error(`CT class missing: ${name}`);
   }
   return manifest;

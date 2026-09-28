@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "assignmentId": "web-assignment-study-meetup-pin",
+  "revision": 1,
+  "sourceId": "study-meetup-20260910-pin",
+  "sourceVersion": "v1",
+  "sourceCommit": "313b5be982bdc2296326cbed5319733fad5b05fe",
+  "bundlePath": "content/web-assignments/assets/study-meetup-pin-v1-313b5be.zip",
+  "bundleSha256": "b8b8a2529ad95e93559399ab21cac4bba2abb65c41fa399e2473ce65b72be16a",
+  "prefix": "study-meetup-pin-v1/",
+  "files": [
+    {
+      "path": ".editorconfig",
+      "bytes": 150,
+      "sha256": "5bb6af5c1cb3ff400f70200e1fb5ffd0b00883907940949747ef7702b4293212",
+      "mode": "100644"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 52,
+      "sha256": "85b3d0373e4e5e00b08555c360212cb3808e25774971a1868c8ffb0d07fe18d4",
+      "mode": "100644"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7404,
+      "sha256": "2a54387e43d9839263910c9da01e291789db4fa4590237b6f511bedab39beea2",
+      "mode": "100644"
+    },
+    {
+      "path": "build.gradle",
+      "bytes": 468,
+      "sha256": "1f1a2477fffc76875d4eacf0b4fa56a3e81bd225a3c21d66e55f4f1a9694b064",
+      "mode": "100644"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "bytes": 47505,
+      "sha256": "7a9ce74cff467ca1bf60a4fcd9f05185acceda4d0f382434d393e17864262c5d",
+      "mode": "100644"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "bytes": 281,
+      "sha256": "d01b41913834fb3cb14e71f69a08898e6a47e663b08f5c9b8c7e0772c38889d2",
+      "mode": "100644"
+    },
+    {
+      "path": "gradlew",
+      "bytes": 8656,
+      "sha256": "a5a5c199ba02189ae8c46a334223371a20599d9c298ef65e7540ede4a3f72d59",
+      "mode": "100755"
+    },
+    {
+      "path": "gradlew.bat",
+      "bytes": 2766,
+      "sha256": "59328c7a17f673b1a63040bfb380a0c749e5d6df3406f7f18641060314cd9aa1",
+      "mode": "100644"
+    },
+    {
+      "path": "hints.md",
+      "bytes": 1138,
+      "sha256": "e1d155f92b1fd1303a93f6925b61493bccfa3e828966591a5f73f168945a26ec",
+      "mode": "100644"
+    },
+    {
+      "path": "settings.gradle",
+      "bytes": 37,
+      "sha256": "c916e43747d33055fb6657a87c0f587381428a39cbd43c1e86c9eff9f9ce0a6d",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/java/com/bam/meetup/StudyBoardApplication.java",
+      "bytes": 325,
+      "sha256": "8d26ccc0470ce7e84f78b2184180122d6a4ef50cc31b5479ee45fd9b7a45becb",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/java/com/bam/meetup/controller/NoticeController.java",
+      "bytes": 985,
+      "sha256": "2127ab059655fd7d642c0f5abf93cbeae97b137740f98532b2f74190f6c4bb97",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/java/com/bam/meetup/model/Notice.java",
+      "bytes": 782,
+      "sha256": "a37cddd75389a908acb0600d8bc72ed3dca1200fdaea7b56bba507ad69d7e428",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/java/com/bam/meetup/repository/NoticeRepository.java",
+      "bytes": 1679,
+      "sha256": "58da521b110affa0a4f756716d8bc09f359f73c9687facedbcbe93dc6243fb85",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/resources/application.properties",
+      "bytes": 82,
+      "sha256": "825c0cdbf67b93cbd28633b1ae1b92a466449703807cdd72313a4fe44df7c8fd",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/resources/static/style.css",
+      "bytes": 2654,
+      "sha256": "27d69fc85d441cd2f739e837d5e23e83037bb11e93f9faa37b16a3077388e4e3",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/resources/templates/error.html",
+      "bytes": 830,
+      "sha256": "efdf582bdcaffaa0f01d0ecf5fed3eee3e31bda158648124e2b87bb903137617",
+      "mode": "100644"
+    },
+    {
+      "path": "src/main/resources/templates/notices/index.html",
+      "bytes": 2718,
+      "sha256": "aad151bff44a2fc391dc53e7aa5babc91a797d229fa826445038d41adfdea3c0",
+      "mode": "100644"
+    },
+    {
+      "path": "verify.py",
+      "bytes": 4037,
+      "sha256": "4320ca7b31c35b61ea211df4dfe37ef17874f8a8a8d364a84af4e76d45db4559",
+      "mode": "100644"
+    }
+  ]
+}

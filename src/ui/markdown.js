@@ -596,6 +596,16 @@ export function renderMarkdown(
         quote.push(lines[index].replace(/^>\s?/, ""));
         index += 1;
       }
+      // Obsidian의 접히는 콜아웃 `> [!종류]- 제목`은 눌러서 펼치는 토글로 보여 준다. `+`는 처음부터 펼친다.
+      const toggle = quote[0].match(/^\[![\w-]+\]([+-])\s+(.+)$/);
+      if (toggle) {
+        const [, openMarker, title] = toggle;
+        const toggleBody = renderMarkdown(quote.slice(1).join("\n"), { preserveParagraphLineBreaks });
+        output.push(
+          `<details class="lesson-toggle"${openMarker === "+" ? " open" : ""}><summary>${renderInline(title)}</summary><div class="lesson-toggle-body">${toggleBody}</div></details>`,
+        );
+        continue;
+      }
       output.push(`<blockquote>${quote.map(renderInline).join("<br>")}</blockquote>`);
       continue;
     }

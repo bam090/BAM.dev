@@ -365,7 +365,7 @@ Quest 순서, ID·slug·공개 테스트 ID의 전역 고유성, 교안·개념 
 
 `테스트 실행`은 `runTestIds`가 가리키는 사례만, `제출 및 채점`은 `publicTests` 전체를 실행합니다. 둘 다 같은 브라우저 공개 데이터이고 이것이 학습자 결과에 쓰이는 전체 집합입니다. 비공개·숨김 테스트나 원격 추가 채점은 사용하지 않습니다. 기준 풀이, 공개 테스트와 중복되지 않는 독립 사례, 대표 오답은 `tests/coding-test-content.test.js`에서 실제 JavaScript 런타임으로 검증합니다. 이 개발 fixture는 설치본의 학습자 답안에는 실행하지 않고 결과·완료에 영향을 주지 않습니다.
 
-`[확정 결정]` `DEC-JAVA-CODING-TEST-01`에 따라 Java 코딩테스트 계약을 별도 언어 컬렉션으로 추가하는 것은 MVP 목표다. 안정 ID·revision·교안·개념 연결, `publicTests`만 완료에 사용하는 원칙과 Code Quest와의 분리는 유지한다. 승인된 Java 교안·개념 ID는 현재 커리큘럼에 존재한다. `DEC-MVP-01`이 실제 Java 코딩테스트 문제 묶음과 근거 연결을 정하기 전에 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. Java 학습자 소스·공개 테스트 계약은 `DEC-JAVA-VERSION-02`에 따라 정식 Java 25 언어·표준 API와 preview 금지를 전제로 한다. Java의 소스 단위, 진입점, 인수·반환 직렬화, 컴파일·호출 결과와 오류 DTO도 현재 JavaScript `functionContract`를 그대로 복사하지 않는다. 실행 schemaVersion·결과 필드는 `DEC-JAVA-RUNNER-01`, 별도 격리 ADR과 prototype 증거 후 결정한다. 승인된 정적 draft72의 필드는 아래 계약으로 구현했다.
+`[확정 결정]` `DEC-JAVA-CODING-TEST-01`에 따라 Java 코딩테스트 계약을 별도 언어 컬렉션으로 추가하는 것은 MVP 목표다. 안정 ID·revision·교안·개념 연결, `publicTests`만 완료에 사용하는 원칙과 Code Quest와의 분리는 유지한다. 승인된 Java 교안·개념 ID는 현재 커리큘럼에 존재한다. `DEC-MVP-01`이 실제 Java 코딩테스트 문제 묶음과 근거 연결을 정하기 전에 미승인 코딩테스트 문제 ID·근거 연결·실행 계약을 지어내지 않는다. `DEC-JAVA-VERSION-02`의 Java 25 학습자 소스·공개 테스트 기준은 당시 설치형 Java 25 계약의 이력이다. 현재 교안·객관식은 Java 25로 설명하며 실제 풀이용 시작 코드·기준 풀이·공개 테스트·대표 오답은 [최신 승인](roadmap.md#2026-09-28-알고리즘-교안코딩테스트-확장-결정)에 따라 preview 없는 Java 17·25 공통 문법·API 범위를 따른다. 기존 원본 72개는 보존하고 이번 신규 12개의 양쪽 버전 실행 검증은 [새 문제 계약](#새로-만든-java-코딩테스트)으로 확인한다. Java의 소스 단위, 진입점, 인수·반환 직렬화, 컴파일·호출 결과와 오류 DTO도 현재 JavaScript `functionContract`를 그대로 복사하지 않는다. 실행 schemaVersion·결과 필드는 `DEC-JAVA-RUNNER-01`, 별도 격리 ADR과 prototype 증거 후 결정한다. 승인된 정적 draft72의 필드는 아래 계약으로 구현했다.
 
 ### Algorithm Bridge Java 코딩테스트 draft 계약
 
@@ -410,3 +410,40 @@ Quest의 기존 `id`, `revision`, `difficulty`, route와 진도는 보존한다.
 ### 외부 Git 웹과제
 
 `[제안]` 외부 과제 데이터는 기존 인앱 Web Project와 다른 도메인이며 아직 구현되지 않았다. [밤위키 원본 활용 계약](designs/web-assignments.md#과제-메타데이터-계약)에 따라 선정한 과제의 안정 ID·revision·선수 연결, 원본 버전·시작 브랜치/commit·루트 README·허용 파일·AI 제공 범위·도구·공개 검증·전달/공개 범위를 최소 매핑한다. 중앙 저장소·일률 starter/solution ref를 필수 필드로 가정하지 않는다. 구체 schemaVersion·파일 경로는 원본별 연결 계약에서 확정하고 `content/web-projects/index.json`을 외부 manifest로 재해석하지 않는다.
+
+### 키워드별 개념·활용·심화 문서
+
+`[확정 결정]` 2026-09-26 bam 결정에 따라 학습문서는 **주제 → 키워드 → 개념·활용·심화 문서**의 계층으로 묶는다. 키워드는 지금의 단원이며 그 키워드를 처음 설명하는 **개념문서**가 대표한다. 수학처럼 개념문서가 여러 개인 키워드는 첫 개념문서가 대표하고 나머지 개념문서는 대표 문서를 부모로 가리킨다. **활용문서**는 개념을 실제 코드·라이브러리에 적용하는 문서이고 **심화문서**는 개념을 더 깊이 다루는 문서다. 단원 번호는 개념문서에만 붙인다. 첫 사례는 알고리즘 `트리`(개념)와 `Java에서 트리 활용하기: TreeMap·TreeSet`(활용)이다. 목록은 한 페이지에서 주제 카드 → 키워드 카드 → 문서 카드로 펼쳐진다.
+
+`[현재 사실]` 2026-09-26 `documentKind`·`parentLessonId`·`keyword`의 검증(`src/core/content.js`·`content/schema/curriculum.schema.json`), 읽는 순서, 첫 사례인 트리 개념·활용 문서가 구현됐다. 과정의 `unitNumberStart`(알고리즘은 `0`)와 0번 `자료구조와 알고리즘`의 개념·활용 문서도 같은 날 구현됐다. 2026-09-27 알고리즘 전환을 마쳐 키워드마다 활용문서가 있는지 `tests/algorithm-lessons.test.js`에서 검사한다.
+
+아래는 데이터 계약이다.
+
+| 필드 | 의미 |
+| --- | --- |
+| `documentKind` | 선택. `concept`·`application`·`advanced` 중 하나. 생략하면 `concept`으로 본다 |
+| `parentLessonId` | 하위 문서에 필수. 같은 과정 안에서 키워드를 대표하는 개념문서 `id`를 가리킨다. 활용·심화 문서와 키워드의 두 번째 이후 개념문서가 하위 문서다 |
+| `keyword` | 개념문서에 필수. 목록의 키워드 카드에 보일 짧은 이름(예: `배열` · `스택` · `트리`). 하위 문서에는 쓰지 않고 부모의 값을 따른다 |
+
+과정에는 선택 필드 `unitNumberStart`(기본 `1`)를 둔다. 알고리즘 과정처럼 `0 자료구조와 알고리즘`으로 시작하는 과정은 `0`으로 정해 화면의 단원 번호를 `order - 1`로 보여 준다. `order` 자체는 지금처럼 1부터 연속한다.
+
+- **번호와 순서:** 대표 개념문서의 `order`는 지금처럼 과정 안에서 1부터 연속하는 단원 번호다. 활용·심화 문서의 `order`는 과정 전체 번호가 아니라 **부모 개념문서 안의 순서**이며 부모마다 1부터 연속한다. 그래서 활용·심화 문서를 추가해도 다른 단원 번호가 바뀌지 않는다. 과정별 `order` 연속성 검사는 대표 개념문서 묶음과 부모별 하위 문서 묶음으로 나누어 적용한다. 부모 안의 하위 문서는 `개념` · `활용` · `심화` 순서로 보여 주고 같은 종류 안에서는 `order` 순서다.
+- **검증:** `documentKind` 값이 셋 중 하나인지 확인한다. 하위 문서는 `parentLessonId`가 같은 과정의 개념문서를 가리켜야 하고 하위 문서 아래에 다시 하위 문서를 둘 수 없다. 키워드를 대표하는 개념문서에는 `parentLessonId`를 쓰지 않고 같은 키워드의 두 번째 이후 개념문서는 대표 문서를 가리킨다. `slug`는 지금처럼 과정 안에서 고유하다.
+- **ID와 진도:** 하위 문서도 자기 `id`·`slug`·URL(`#/learn/<courseId>/<slug>`)·완료 기록을 가진다. 과정의 `N/전체 단원` 표시와 단원 수는 개념문서만 센다. 하위 문서의 완료는 문서별로만 표시하고 단원 진도에 더하지 않는다.
+- **호환:** 두 필드가 없는 기존 교안은 모두 개념문서로 해석되므로 기존 `lessonId`·`slug`·URL·진도·저장 키에는 마이그레이션이 없다. 퀴즈·Quest·코딩테스트의 `lessonId` 연결도 그대로다. 하위 문서의 `conceptIds`는 새 개념 ID를 가질 수 있고 부모의 개념 ID를 공유할 수도 있다.
+- **필수 문서:** 알고리즘 과정은 키워드마다 개념문서와 활용문서가 모두 있어야 한다. 과정 전체의 키워드 구성은 [알고리즘 과정의 키워드 구성](designs/lesson-review.md#알고리즘-과정의-키워드-구성)을 따른다.
+- **알고리즘 `개념 연결` 절:** 새 문서에는 두지 않는다. `[확정 결정]` 2026-09-26 bam 승인에 따라 테스트(`tests/algorithm-lessons.test.js`)는 이 절 대신 `## 먼저 확인할 개념`의 알고리즘 링크가 같거나 앞 키워드만 가리키는지와 개념 ID가 문서 하나에만 속하는지를 검사한다. Java 코드 블록은 모두 완전한 프로그램일 필요가 없고 실행 가능한 전체 프로그램(예: `전체 코드 보기` 토글)을 문서마다 하나 이상 둔다.
+
+화면 흐름은 [키워드별 문서 묶음의 화면 흐름](designs/lesson-review.md#키워드별-문서-묶음의-화면-흐름)을 따른다.
+
+### 새로 만든 Java 코딩테스트
+
+`[확정 결정]` [최신 승인](roadmap.md#2026-09-28-알고리즘-교안코딩테스트-확장-결정)에 따라 원본 72개 뒤에 승인된 12개만 추가한다. collection/schemaVersion·contractVersion·콘텐츠 evaluationKind와 typed signature는 기존 계약을 유지한다.
+
+- `origin: "bam-authored"`, ID `coding-test-java-algo-<이름>`, slug `algo-<이름>`, order 73~84, revision 1이다. 원본 72개 ID·순서·공개 소스·fixture·기존 사용자 상태는 보존한다. 예비 문제 슬롯을 위한 100개 확장은 하지 않는다.
+- 신규 문제에 `relatedQuestId`·`legacyQuestId`는 없다. `lessonId`·`conceptIds`는 실제 교안으로 연결하며 원본과 신규 문제의 지원 문구는 각각 "원본 학습 지원"·"학습 지원"으로 구분한다.
+- `publicTestSource`는 기본 패키지의 `SolutionPublicTest`가 `Solution.solve`를 호출하는 JUnit 원문이다. 문제마다 같은 클래스 이름을 쓰므로 실행 자산은 문제별로 분리한다. 원본 bridge package/import 계약을 신규 소스에 강요하거나 공개 소스를 임의로 바꾸지 않는다. 신규 원문은 문제별 자산으로 보존하고 브라우저는 학습자 `Solution.java`와 `SolutionPublicTest.java`를 함께 ECJ 컴파일한다. 로컬 runner도 실행마다 두 소스를 고정 JUnit classpath에서 함께 javac 컴파일한다. 공용 runner 클래스 경로에는 신규 `Solution` placeholder나 `SolutionPublicTest`를 선컴파일하지 않아 학습자 클래스 가림과 문제 간 충돌을 막는다. 기존 72개의 선컴파일·typed adapter 경로와 소스/문제/revision/도구체인을 구분하는 기존 컴파일 캐시 경계는 유지한다.
+- 콘텐츠의 기존 `executionMode: "draft-only"` 값은 호환 데이터로 유지한다. 실제 지원 여부는 승인 ID·revision·공개 소스와 자산 일치·provider capability로 결정하며 신규 12개의 실행을 이 문자열만으로 차단하지 않는다. 실행 DTO는 기존 `java-junit-method-v1`을 사용한다.
+- `run`은 첫 공개 method 그룹, `submit`은 전체 공개 그룹이다. 그룹 안 parameterized invocation은 모두 집계하고 0실행·skip·abort·누락을 성공으로 만들지 않는다. 전체 공개 submit PASS만 기존 CT revision 완료에 반영한다. Quest 기록과 합치지 않는다.
+- 시작 코드·기준 풀이·공개 테스트·대표 오답은 Java 17·25 공통 범위이며 두 버전의 실제 검증이 필요하다. 기존 고정 JUnit 6.1.3을 재사용한다. `tests/fixtures/java-coding-test-authored-solutions.json`의 독립 사례는 개발 검증용이며 학습자 채점에 숨은 테스트로 사용하지 않는다.
+- 기준 풀이의 전체 공개 PASS, 시작 코드·대표 오답의 공개 실패, 새 12개 실행 자산 연결과 브라우저 평가·저장, 직접 영향 오류·취소·재사용 경로를 검증한다. 상세 실행 명령·대상 버전·실행/재사용/미실행 범위는 독립 검증 인계에 남긴다.

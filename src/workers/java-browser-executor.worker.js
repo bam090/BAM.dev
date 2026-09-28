@@ -31,7 +31,7 @@ function installRuntimeCache(assets) {
       || cache.has(asset.url)) throw new Error("Java 실행 자산이 올바르지 않습니다.");
     cache.set(asset.url, asset);
   }
-  if (cache.size !== 13) throw new Error("Java 실행 자산이 누락됐습니다.");
+  if (cache.size !== 14) throw new Error("Java 실행 자산이 누락됐습니다.");
   let misses = 0;
   let lastMiss = "";
   const get = (url) => {

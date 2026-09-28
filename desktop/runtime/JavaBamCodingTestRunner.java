@@ -2,7 +2,9 @@ import dev.bam.runtime.SolutionInvoker.LearnerFailure;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.ArrayDeque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Set;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
@@ -16,11 +18,14 @@ import org.opentest4j.MultipleFailuresError;
 
 /** One original public method group in one supervised JVM, including its provider. */
 final class BamCodingTestRunner implements TestExecutionListener {
+    private static final int MAX_FAILURES = 32;
+    private static final int MAX_FRAMES = 256;
     private final Set<String> discovered = new HashSet<>();
     private final Set<String> started = new HashSet<>();
     private final Set<String> finished = new HashSet<>();
     private int passed, wrong, runtime, skipped, aborted, infrastructure;
     private boolean planStarted, planFinished;
+    private boolean authored;
     private String message = "";
 
     public static void main(String[] args) throws Exception {
@@ -28,6 +33,7 @@ final class BamCodingTestRunner implements TestExecutionListener {
         String testId = args.length == 4 ? args[3] : "invalid";
         try {
             if (args.length != 4 || !testId.matches("[a-z][a-z0-9-]*")) throw new IllegalArgumentException("Invalid CT invocation");
+            listener.authored = "SolutionPublicTest".equals(args[0]);
             var request = LauncherDiscoveryRequestBuilder.request()
                     .selectors(DiscoverySelectors.selectMethod(args[0], args[1], args[2]))
                     .filters(EngineFilter.includeEngines("junit-jupiter"))
@@ -69,12 +75,36 @@ final class BamCodingTestRunner implements TestExecutionListener {
         if (message.isEmpty()) message = reason;
     }
 
-    private static boolean learnerFailure(Throwable error) {
-        if (error instanceof LearnerFailure) return true;
-        if (error instanceof MultipleFailuresError multiple) {
-            return multiple.getFailures().stream().anyMatch(BamCodingTestRunner::learnerFailure);
+    // 1 = learner runtime failure, 0 = other failure, -1 = traversal limit exceeded.
+    private static int learnerFailure(Throwable error, boolean authored) {
+        if (error == null) return 0;
+        var pending = new ArrayDeque<Throwable>();
+        var seen = new IdentityHashMap<Throwable, Boolean>();
+        pending.add(error);
+        boolean solutionFrame = false;
+        int frames = 0;
+        while (!pending.isEmpty()) {
+            Throwable current = pending.removeFirst();
+            if (seen.put(current, Boolean.TRUE) != null) continue;
+            if (seen.size() > MAX_FAILURES) return -1;
+            if (current instanceof LearnerFailure) return 1;
+            if (authored) {
+                for (StackTraceElement frame : current.getStackTrace()) {
+                    if (++frames > MAX_FRAMES) return -1;
+                    String name = frame.getClassName();
+                    if (name.equals("Solution") || name.startsWith("Solution$")) solutionFrame = true;
+                }
+            }
+            Throwable cause = current.getCause();
+            if (cause != null) pending.addLast(cause);
+            if (current instanceof MultipleFailuresError multiple) {
+                for (Throwable failure : multiple.getFailures()) {
+                    if (failure != null) pending.addLast(failure);
+                    if (pending.size() + seen.size() > MAX_FAILURES) return -1;
+                }
+            }
         }
-        return false;
+        return solutionFrame ? 1 : 0;
     }
 
     @Override public void executionFinished(TestIdentifier test, TestExecutionResult result) {
@@ -86,16 +116,23 @@ final class BamCodingTestRunner implements TestExecutionListener {
             return;
         }
         if (!started.contains(test.getUniqueId()) || !finished.add(test.getUniqueId())) infrastructure++;
-        switch (result.getStatus()) {
-            case SUCCESSFUL -> passed++;
-            case ABORTED -> aborted++;
-            case FAILED -> {
-                Throwable error = result.getThrowable().orElse(null);
-                if (learnerFailure(error)) runtime++;
-                else if (error instanceof AssertionError) wrong++;
-                else infrastructure++;
-                if (error != null) describe(error);
+        try {
+            switch (result.getStatus()) {
+                case SUCCESSFUL -> passed++;
+                case ABORTED -> aborted++;
+                case FAILED -> {
+                    Throwable error = result.getThrowable().orElse(null);
+                    int learner = learnerFailure(error, authored);
+                    if (learner > 0) runtime++;
+                    else if (learner < 0) infrastructure++;
+                    else if (error instanceof AssertionError) wrong++;
+                    else infrastructure++;
+                    if (error != null) describe(error);
+                }
             }
+        } catch (Throwable classificationError) {
+            infrastructure++;
+            describe(classificationError);
         }
     }
 

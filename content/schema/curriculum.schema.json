@@ -53,7 +53,8 @@
           "shortName": { "type": "string", "minLength": 1 },
           "status": { "enum": ["available", "sample", "planned"] },
           "accent": { "enum": ["javascript", "html", "css", "java"] },
-          "description": { "type": "string", "minLength": 1 }
+          "description": { "type": "string", "minLength": 1 },
+          "unitNumberStart": { "enum": [0, 1] }
         },
         "additionalProperties": false
       }
@@ -75,6 +76,9 @@
           "essentialQuestion": { "type": "string", "minLength": 1 },
           "answerHeading": { "type": "string", "minLength": 1 },
           "archivedFromCatalog": { "type": "boolean" },
+          "documentKind": { "enum": ["concept", "application", "advanced"] },
+          "parentLessonId": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "keyword": { "type": "string", "minLength": 1 },
           "objectives": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
           "estimatedMinutes": { "type": "integer", "minimum": 1 },
           "conceptIds": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$" } },

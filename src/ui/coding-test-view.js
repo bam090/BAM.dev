@@ -465,14 +465,15 @@ function renderJavaSupport(problem) {
     ? problem.commonMistakes
     : [];
   if (hints.length === 0 && commonMistakes.length === 0) return "";
+  const authored = problem?.origin === "bam-authored";
 
   return `
     <section class="coding-test-section" aria-labelledby="coding-test-support-title">
-      <p class="coding-test-section-label">원본 지원</p>
+      <p class="coding-test-section-label">${authored ? "학습 지원" : "원본 지원"}</p>
       <h2 id="coding-test-support-title">필요할 때 확인하기</h2>
-      <p>힌트와 대표 실수는 원본 자료를 보존한 읽기 자료입니다. 먼저 직접 풀이한 뒤 필요한 항목만 펼쳐 보세요.</p>
+      <p>${authored ? "힌트와 대표 실수는 막혔을 때 보는 읽기 자료입니다." : "힌트와 대표 실수는 원본 자료를 보존한 읽기 자료입니다."} 먼저 직접 풀이한 뒤 필요한 항목만 펼쳐 보세요.</p>
       ${hints.map((hint) => `<details class="quest-console"><summary>${safeInteger(hint?.level, 1)}단계 · ${escapeHtml(hint?.title ?? "힌트")}</summary><p>${renderQuestProse(hint?.content)}</p></details>`).join("")}
-      ${commonMistakes.length > 0 ? `<details class="quest-console"><summary>원본의 대표 실수 ${commonMistakes.length}개</summary><ul class="quest-constraints">${commonMistakes.map((mistake) => `<li><strong>${escapeHtml(mistake?.title ?? "대표 실수")}</strong><p>${renderQuestProse(mistake?.explanation)}</p></li>`).join("")}</ul></details>` : ""}
+      ${commonMistakes.length > 0 ? `<details class="quest-console"><summary>${authored ? "" : "원본의 "}대표 실수 ${commonMistakes.length}개</summary><ul class="quest-constraints">${commonMistakes.map((mistake) => `<li><strong>${escapeHtml(mistake?.title ?? "대표 실수")}</strong><p>${renderQuestProse(mistake?.explanation)}</p></li>`).join("")}</ul></details>` : ""}
     </section>
   `;
 }

@@ -118,12 +118,13 @@ test("합법적인 __proto__ class도 누락 없이 own class entry로 전달한
 });
 
 
-test("검증된 runtime 13개와 bootstrap 바이트를 compiler Worker에 전달하고 원본을 보존한다", async (t) => {
+test("검증된 runtime 14개와 bootstrap 바이트를 compiler Worker에 전달하고 원본을 보존한다", async (t) => {
   const workers = installWorker(t, (worker) => worker.send({
     status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class },
   }));
   await compileJava({ source: "class Solution {}" }, { assets });
   const worker = workers[0];
+  assert.equal(worker.request.runtimeAssets.length, 14);
   assert.deepEqual(worker.request.runtimeAssets.map(({ url }) => url),
     JAVA_BROWSER_ASSET_MANIFEST.runtime.map(({ url }) => url));
   assert.deepEqual(worker.request.runtimeBootstrap, new Uint8Array([7, 8, 9]));
@@ -137,7 +138,7 @@ test("런타임 자산 누락은 Worker 생성 전에 거부하고 bootstrap 실
     type: "compiler-error", runId: request.runId, message: "Java runtime asset is missing",
   } }));
   assert.throws(() => compileJava({ source: "class Solution {}" }, {
-    assets: { ...assets, runtime: assets.runtime.slice(1) },
+    assets: { ...assets, runtime: assets.runtime.filter(({ url }) => !url.endsWith("/17/lib/tzdb.dat")) },
   }), { code: "engine_error" });
   assert.throws(() => compileJava({ source: "class Solution {}" }, {
     assets: { ...assets, runtimeBootstrap: null },
@@ -151,7 +152,7 @@ test("런타임 자산 누락은 Worker 생성 전에 거부하고 bootstrap 실
 
 test("공통 bootstrap은 누락·중복·query가 있는 runtime cache를 설치 전에 거부한다", async () => {
   const validShape = assets.runtime.map((asset) => ({ ...asset }));
-  await assert.rejects(initializeJavaRuntime(validShape.slice(1)), /누락/u);
+  await assert.rejects(initializeJavaRuntime(validShape.filter(({ url }) => !url.endsWith("/17/lib/tzdb.dat"))), /누락/u);
   await assert.rejects(initializeJavaRuntime(validShape.map((asset, index) =>
     index === 1 ? { ...asset, url: validShape[0].url } : asset)), /올바르지/u);
   await assert.rejects(initializeJavaRuntime(validShape.map((asset, index) =>

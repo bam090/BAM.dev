@@ -1617,6 +1617,22 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
     ]);
     const sourcePath = join(workRoot, SOURCE_FILE);
     await writeFile(sourcePath, request.source, { encoding: "utf8", flag: "wx", mode: 0o600 });
+    let authoredTestPath = null;
+    if (quest.codingTest && quest.origin === "bam-authored") {
+      const bundledTestPath = join(bundlePaths.runnerRoot, "sources", "authored", quest.id, "SolutionPublicTest.java");
+      if (!isWithin(bundlePaths.runnerRoot, bundledTestPath)) throw new Error("CT public source escaped the bundle");
+      const testBytes = await readFile(bundledTestPath);
+      if (createHash("sha256").update(testBytes).digest("hex") !== quest.publicSourceSha256) {
+        throw new Error("CT public source changed after bundle verification");
+      }
+      authoredTestPath = join(workRoot, "SolutionPublicTest.java");
+      await writeFile(authoredTestPath, testBytes, { flag: "wx", mode: 0o600 });
+      const junitBytes = await readFile(join(bundlePaths.runnerRoot, CT_JUNIT.file));
+      if (createHash("sha256").update(junitBytes).digest("hex") !== CT_JUNIT.sha256) {
+        throw new Error("CT JUnit changed after bundle verification");
+      }
+      await writeFile(join(workRoot, CT_JUNIT.file), junitBytes, { flag: "wx", mode: 0o600 });
+    }
 
     if (signal?.aborted) {
       const tests = [
@@ -1643,9 +1659,10 @@ async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest
         "-encoding", "UTF-8",
         "-proc:none",
         "-implicit:none",
-        "-classpath", emptyClasspath,
+        "-classpath", authoredTestPath ? join(workRoot, CT_JUNIT.file) : emptyClasspath,
         "-d", classesRoot,
         sourcePath,
+        ...(authoredTestPath ? [authoredTestPath] : []),
       ],
       environment,
       timeoutMs: JAVA_RUNTIME_LIMITS.compileTimeoutMs,

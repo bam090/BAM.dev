@@ -102,6 +102,7 @@ function canonicalSourcePath(path) {
 
 function junitSourcePaths(paths) {
   const bridge = /^bridge\/(?:[A-Za-z_$][A-Za-z0-9_$]*\/)+(?:solution|test)\/[A-Za-z_$][A-Za-z0-9_$]*\.java$/;
+  if (paths.length === 2) return paths[0] === "Solution.java" && paths[1] === "SolutionPublicTest.java";
   return paths.length === 4 && paths.includes("dev/bam/runtime/SolutionInvoker.java")
     && paths.filter((path) => bridge.test(path) && path.includes("/solution/")).length === 1
     && paths.filter((path) => bridge.test(path) && path.includes("/test/")).length === 1;
@@ -132,7 +133,7 @@ export function compileJavaSources({ sources, entryClass = "Solution", profile }
       || Object.keys(compiler.helperClasses).length !== 3
       || !Object.values(compiler.helperClasses).every((value) => value instanceof Uint8Array)
       || (profile === "junit" && !(compiler.junitJar instanceof Uint8Array))
-      || !Array.isArray(runtimeAssets) || runtimeAssets.length !== 13
+      || !Array.isArray(runtimeAssets) || runtimeAssets.length !== 14
       || !runtimeAssets.every((asset) => typeof asset?.url === "string" && asset.bytes instanceof Uint8Array)
       || !(runtimeBootstrap instanceof Uint8Array)) {
     throw compilerError("engine_error", "Java compiler assets are unavailable.");

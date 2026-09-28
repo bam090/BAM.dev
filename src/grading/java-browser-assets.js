@@ -11,6 +11,7 @@ const RUNTIME = [
   ["cheerpOS.js", 200, 90871, "549c7074a761720b09e5a6526fdb53b686958ffa5f157f16d60ebd0b4a154be3"],
   ["cj3n17.wasm", 200, 3227431, "ea4763c1a69ae5c9fcfb59643d2b5e6fcd0c97667222b10732d2cfd5f33cd954"],
   ["17/lib/modules", 200, 38145733, "f121f2dd8164921c36ece441d0ad17043ad3067a698a35ff0b58328cabe93ff7"],
+  ["17/lib/tzdb.dat", 200, 102820, "36cf71e63ce2816fe4456e9195e6c27fa7c9cd431c89ba762eba394ec2c7a1e3"],
   ["etc/users", 200, 39, "ba22ff21f2d73daf148452051c728541389dc0f91420b4f3bb371bd025362810"],
   ["etc/localtime", 204, 0, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
   ["17/jre/lib/cheerpj-handlers.jar", 200, 6145, "aee6bb2716976235f49358d509bd863dd9050b6d3460d5aae26fa2c9af22a4b4"],
@@ -26,16 +27,16 @@ const COMPILER = [
   ["JrtCompiler$JrtNames", "runtime/java-browser/compiler/JrtCompiler$JrtNames.class", 4463, "943cc4fe7caea186c9857b5a0fe4a3f74be71a75ac3d508c73f6288a1cffcfde"],
   ["JrtCompiler$1", "runtime/java-browser/compiler/JrtCompiler$1.class", 3411, "964d4182e7ec5f297f153a2f8fee9527f7d808b849dde13868c8a3c881b4bd5b"],
   ["junitJar", "assets/java-browser/compiler/junit-platform-console-standalone-6.1.3.jar", 2997949, "e62b96ac475dbcde8599ea905d088f65d90778f86e259b856a49fa5c4ea256ec"],
-  ["ctRunnerClass", "runtime/java-browser/compiler/CtBrowserRunner.class", 8398, "c5973d28cb64f9a71b897c4cbba3bdff3068489878b966cfe05f52f59196f6bb"],
-  ["ctArtifacts", "runtime/java-browser/compiler/ct-artifacts.json", 448346, "e18b11eb41cb02e1498c7437eca79853e2df378b6c95b153cc0b0200fb03f33e"],
+  ["ctRunnerClass", "runtime/java-browser/compiler/CtBrowserRunner.class", 9725, "b9796c99bd61745b081146b849007bfb463215b99a1c1d71a810d0093b273552"],
+  ["ctArtifacts", "runtime/java-browser/compiler/ct-artifacts.json", 515762, "6660ab6c1f7875fdf740093e10c5b9f545685ee9b1e375f250939ec95dd4fc50"],
   ["solutionInvokerSource", "runtime/java-browser/compiler/SolutionInvoker.java", 1281, "22bc673851ad7bf799d0b2a0600f1043114dc62287bbd236380638a1d56cbdf8"],
 ];
 
 export const JAVA_BROWSER_ASSET_MANIFEST = Object.freeze({
   runtime: RUNTIME.map(([path, status, size, sha256]) => Object.freeze({ url: CDN + path, status, size, sha256 })),
   compiler: COMPILER.map(([name, path, size, sha256]) => Object.freeze({ name, url: new URL(path, LOCAL).href, status: 200, size, sha256 })),
-  executor: Object.freeze({ url: new URL("src/workers/java-browser-executor.worker.js", LOCAL).href, status: 200, size: 11057, sha256: "05e6704a227fb8366bbe8fe9c5f0085adbbfd7790e4875dd11eed9a1657f5f49" }),
-  runtimeBootstrap: Object.freeze({ url: new URL("src/workers/java-browser-runtime.js", LOCAL).href, status: 200, size: 4987, sha256: "a949fdc94e431bc0647dba0bef67561df2c3dfb1f264497fcd1aa690ce1cf4dc" }),
+  executor: Object.freeze({ url: new URL("src/workers/java-browser-executor.worker.js", LOCAL).href, status: 200, size: 11057, sha256: "6b07f3519a82cfe10114b1705c72e0c19cb7c2e9b6c46e7b1c99ab3b3e555b35" }),
+  runtimeBootstrap: Object.freeze({ url: new URL("src/workers/java-browser-runtime.js", LOCAL).href, status: 200, size: 4987, sha256: "028e2285a091d17866b3078ce0a09d91d8be37c074b89ed9294f764e879dc8bb" }),
 });
 
 export const JAVA_BROWSER_ASSET_BYTES = [...JAVA_BROWSER_ASSET_MANIFEST.runtime, ...JAVA_BROWSER_ASSET_MANIFEST.compiler,

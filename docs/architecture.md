@@ -186,7 +186,7 @@ B의 기존 assets/provider 경로와 별도 테스트 소유를 유지한다. �
 
 `[현재 사실]` 단일 modules CacheStorage의 후속 독립 Chrome 검증에서 cold/warm ready와 정상 reload 뒤 prepare 단계 전체 modules GET 0을 확인했다. 그러나 warm 준비에도 compiler 내부 CDN Range 54건·명목 약 9.88 MiB가 남았다. 해당 진단의 cold 295.6초·warm 68.9초는 그 네트워크 조건의 기록이며 보편적 속도나 개선율이 아니다. 근거는 `/private/tmp/bam-java-modules-cache-perf-result.json`(SHA-256 `365f7f1c94c958e8ed0920ce418afcd8743a87978d65056f4b5b6ece520433b9`)이다.
 
-`[확정 결정]` bam은 compiler 전용 축소안으로 최적화를 계속하도록 승인했다. 앞선 양 Worker 공통 모듈 추출안은 이번 범위에서 대체한다. executor Worker·private MessagePort closure·학습자 호출·constructor lock·CSP는 그대로 두고, 검증된 runtime bytes를 compiler에 전달해 중복 CDN 초기화 요청만 제거한다. `src/workers/java-browser-runtime.js`의 메모리 fetch/Range/XHR/importScripts·Blob 초기화는 compiler만 사용한다. executor와 같은 자산 shim의 중복은 기존 실행 격리 경계를 변경하지 않기 위한 의도적 선택이며 이번에 공통화하지 않는다. compiler용 모듈은 같은-origin 정적 자산으로 SHA/크기를 검증하고 `assets.runtimeBootstrap` bytes로 전달한다. 기존 runtime 13개나 compiler 자산 인덱스를 이 항목 때문에 재해석하지 않으며 compiler의 누락 자산 네트워크 fallback은 허용하지 않는다.
+`[확정 결정]` bam은 compiler 전용 축소안으로 최적화를 계속하도록 승인했다. 앞선 양 Worker 공통 모듈 추출안은 이번 범위에서 대체한다. executor Worker·private MessagePort closure·학습자 호출·constructor lock·CSP는 그대로 두고, 검증된 runtime bytes를 compiler에 전달해 중복 CDN 초기화 요청만 제거한다. `src/workers/java-browser-runtime.js`의 메모리 fetch/Range/XHR/importScripts·Blob 초기화는 compiler만 사용한다. executor와 같은 자산 shim의 중복은 기존 실행 격리 경계를 변경하지 않기 위한 의도적 선택이며 이번에 공통화하지 않는다. compiler용 모듈은 같은-origin 정적 자산으로 SHA/크기를 검증하고 `assets.runtimeBootstrap` bytes로 전달한다. 당시 runtime 13개나 compiler 자산 인덱스를 이 항목 때문에 재해석하지 않으며 compiler의 누락 자산 네트워크 fallback은 허용하지 않는다.
 
 compiler client는 기존 `assets.compiler`와 함께 검증된 `assets.runtime`·compiler 초기화 module bytes를 한 번 전달한다. 부모 자산은 다음 실행에도 필요하므로 transfer로 detach하지 않고 structured clone하며 이 복사 메모리 비용을 인정한다. 새 캐시 계층·SharedArrayBuffer·Worker pool·별도 VM 프로토콜은 만들지 않는다. compiler는 기존 일회용 Worker·runId·시간/출력 상한·취소/terminate를 유지하고 Java 17·ECJ·JRT 이름 탐색·annotation processor 금지·학습자 class 실행 0을 바꾸지 않는다. 실행기의 통신·하위 Worker·저장소 제한을 컴파일러 성능 때문에 완화하지 않는다.
 
@@ -195,6 +195,16 @@ B의 이번 허용 경로는 compiler용 runtime 모듈, compiler client/Worker,
 `[현재 사실]` compiler-only 구현의 독립 Chrome 검증을 인수했다. 정상 HTTP cache·route interception 없는 같은 브라우저 프로필에서 cold ready는 62.4초(전체 modules GET 1회·해당 전송 약 50.7초), reload 후 warm ready는 9.04초였다. warm 전체 modules GET은 0이고 compiler CDN Range는 cold/warm 모두 0이었다. 별도 smoke는 자산 준비 약 210ms, plain Solution과 nested class의 class 61 출력, compile 취소 약 67ms, 원본 첫 CT 공개 JUnit 1그룹·5 invocation PASS와 page error 0을 확인했다. focused 19/19 PASS를 인수했고 executor는 변경하지 않았다. Java 72문제 전수는 기존 증거를 재사용해 추가 실행하지 않았다.
 
 근거는 `/private/tmp/bam-java-compiler-reuse-perf-result.json`(SHA-256 `14a10b76cdb96d20778746e16c147aea4c3d04bf8f5c43790c6b2c2b89c9605c`)과 `bam-java-compiler-reuse-smoke-result.json`(`9d07b113be731ebde37983e5aa8b22114bfd1994eb25c9baad0e06d41a0ac133`)이다. 이전 cold 295.6초·warm 68.9초는 다른 시점의 네트워크 조건이므로 개선율을 계산하지 않는다. 약 47 MiB의 최초 준비와 CDN 전송 속도 한계, 브라우저 저장소 퇴거 가능성은 남으며 9.04초를 모든 환경의 보장 시간으로 제시하지 않는다. 2026-09-28 후속 게시 인계에서 편집 보조와 성능 변경의 [PR #29](https://github.com/bam090/BAM.dev/pull/29) 병합(`badaf27c71d83211d1b89bc5fe9a6654a1262861`), [dev CI 36305541175](https://github.com/bam090/BAM.dev/actions/runs/36305541175)·[Pages 36305540781](https://github.com/bam090/BAM.dev/actions/runs/36305540781) 성공과 공개 자산 3개 파일의 SHA 일치를 확인했다. 문서 작성자는 독립 인계를 재사용했고 제품 측정을 반복 실행하지 않았다.
+
+### 신규 알고리즘 코딩테스트의 공개 실행과 실패 분류
+
+`[현재 사실]` 2026-09-28 신규 authored 12개를 기존 Java CT provider에 연결했다. 원본 72개의 선컴파일·typed adapter는 보존하고 새 문제는 문제별 공개 `SolutionPublicTest.java`와 학습자 `Solution.java`를 함께 컴파일한다. 기본 패키지의 공용 placeholder를 넣지 않는다. 승인 집합 84개·ID/revision·공개 소스/자산 일치 gate와 기존 DTO·컴파일 재사용·fresh 실행·취소·진도 경계를 유지한다.
+
+공식 `https://cjrtnc.leaningtech.com/4.3/17/lib/tzdb.dat`(102,820 bytes, SHA-256 `36cf71e63ce2816fe4456e9195e6c27fa7c9cd431c89ba762eba394ec2c7a1e3`)를 고정 manifest에 추가했다. 기존 13개 runtime 자산의 bytes/hash는 보존하고 현재 runtime은 14개다. compiler client/Worker와 두 cache shim의 정확 개수 검사도 14로 맞췄으며 cache miss 때 네트워크 fallback을 허용하지 않는다. 현재 준비 자산 합계는 49,503,879 bytes(약 47.2 MiB)이며 과거 측정값을 소급 변경하지 않는다.
+
+현재 신뢰 `CtBrowserRunner.class`는 9,725 bytes·SHA-256 `b9796c99bd61745b081146b849007bfb463215b99a1c1d71a810d0093b273552`다. optional bridge 타입의 직접 링크를 제거하고 정확 binary name으로 기존 `LearnerFailure`를 식별한다. authored selector에서만 예외·cause·집계 예외의 정확 `Solution`/`Solution$…` frame을 확인해 학습자 실행 오류로 분류한다. identity 방문 기록·예외 32개/stack frame 256개 상한을 적용하고 초과·분류 실패는 infrastructure 오류로 닫는다. 실제 테스트의 AssertionError 오답과 JUnit container/발견 오류는 구분한다. 브라우저와 native가 같은 판정 계약을 사용하며 이 진단 분류를 보안 증명이나 성공 승격에 사용하지 않는다. 0실행·누락·skip·abort·집계 불일치가 PASS가 되는 일도 허용하지 않는다.
+
+`[현재 사실]` 신규 12개 Java 17·25 공개 실행과 선택 오답, 대표 제품 UI·취소·복원 검증을 인수했다. 실제 범위·최초 실패·재사용·receipt hash는 [통합 검증 기록](problem-verification.md#2026-09-28-pr-32-알고리즘-교안java-코딩테스트-통합-검증)을 따른다. 기존 72개 전수·전체 대표 오답·정식 설치·게시 완료로 확대하지 않는다.
 
 ### 같은 소스의 컴파일 결과 재사용
 

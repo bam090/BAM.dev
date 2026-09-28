@@ -205,7 +205,9 @@ test("현재 교안의 이전과 다음을 계산한다", () => {
   for (const courseId of ["javascript", "algorithm"]) {
     const lessons = getLessonsForCourse(curriculum, courseId);
     assert.equal(getAdjacentLessons(lessons, lessons[0].id).previous, null);
-    assert.equal(getAdjacentLessons(lessons, lessons[0].id).next?.order ?? null, 2);
+    // 첫 단원 다음은 그 단원의 하위 문서가 있으면 하위 문서, 없으면 두 번째 단원이다.
+    const next = getAdjacentLessons(lessons, lessons[0].id).next;
+    assert.ok(next?.parentLessonId === lessons[0].id || next?.order === 2, courseId);
     assert.equal(getAdjacentLessons(lessons, lessons.at(-1).id).next, null);
   }
 });

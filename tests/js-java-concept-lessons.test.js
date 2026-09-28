@@ -9,6 +9,7 @@ import { splitLessonOverview, splitMarkdownSection } from "../src/ui/markdown.js
 const load = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
 const curriculum = await load("../content/curriculum.json");
 const { concepts } = await load("../content/review-concepts.json");
+const REWRITTEN_LESSON_IDS = new Set(["js-concept-async-await"]);
 const contracts = [
   {
     language: "javascript", prefix: "js", firstOrder: 8, sourceFolder: "03 JavaScript", verifiedAt: "2026-09-02", newQuestionCount: 42,
@@ -42,12 +43,17 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
       assert.ok(lesson.summary.trim());
       assert.ok(lesson.essentialQuestion.trim());
       assert.equal(lesson.answerHeading, "핵심 질문 답");
-      assert.equal(lesson.source.kind, "user-authored");
-      assert.equal(lesson.source.importMode, "derived");
-      assert.ok(lesson.source.originalPath.startsWith(`wiki/학습자료/밤데브 학습문서/${contract.sourceFolder}/`));
-      assert.match(lesson.source.sha256, /^[a-f0-9]{64}$/);
-      assert.equal(lesson.source.verifiedAt, contract.verifiedAt);
-      assert.equal(lesson.source.importedAt, "2026-09-14");
+      if (REWRITTEN_LESSON_IDS.has(lesson.id)) {
+        // 2026-09-26 문체·구성 규칙으로 새로 쓴 교안은 밤위키 반입본이 아니다.
+        assert.deepEqual(lesson.source, { kind: "bam-authored", verifiedAt: "2026-09-26" });
+      } else {
+        assert.equal(lesson.source.kind, "user-authored");
+        assert.equal(lesson.source.importMode, "derived");
+        assert.ok(lesson.source.originalPath.startsWith(`wiki/학습자료/밤데브 학습문서/${contract.sourceFolder}/`));
+        assert.match(lesson.source.sha256, /^[a-f0-9]{64}$/);
+        assert.equal(lesson.source.verifiedAt, contract.verifiedAt);
+        assert.equal(lesson.source.importedAt, "2026-09-14");
+      }
       const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
       const overview = splitLessonOverview(markdown);
       assert.equal(overview.objectives, lesson.objectives[0], `${lesson.id}: 목표 불일치`);

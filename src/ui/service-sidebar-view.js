@@ -1,4 +1,4 @@
-import { CATALOG_TOPICS } from "./learning-catalog-view.js";
+import { CATALOG_TOPICS, DOCUMENT_KIND_LABELS } from "./learning-catalog-view.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
 import { buildMyPageHash } from "../core/navigation.js";
 
@@ -50,7 +50,15 @@ export function renderSidebarContext({ current = "home", items = [], topicId = n
       return `<option value="${topic.id}"${topic.id === topicId ? " selected" : ""}${!topicItems.length && topic.id !== "all" ? " disabled" : ""}>${topic.title}${sample ? " · 샘플" : !topicItems.length && topic.id !== "all" ? topic.planned ? " · 준비 중" : loading && isReview ? " · 불러오는 중" : " · 자료 없음" : ""}</option>`;
     }).join("")}</select>
     ${topicId === null ? '<p class="sidebar-nav-empty">주제를 고르면 바로 이동할 수 있어요.</p>' : `<div class="sidebar-context-heading"><span>${isReview ? "문제 범위" : "학습문서"}</span><span>${selectedItems.length}${isReview ? "개 묶음" : "개 문서"}</span></div>
-    <nav aria-label="${escapeHtml(topicTitle)} ${isReview ? "문제 바로가기" : "문서 바로가기"}"><ol class="sidebar-document-list">${nearby.map((item, index) => `<li><a href="${escapeHtml(item.href)}"${item.href === activeHref ? ' aria-current="page"' : ""}><span class="sidebar-document-number" aria-hidden="true">${String(start + index + 1).padStart(2, "0")}</span><span>${renderInlineCodeText(item.title)}</span></a></li>`).join("")}</ol></nav>
+    <nav aria-label="${escapeHtml(topicTitle)} ${isReview ? "문제 바로가기" : "문서 바로가기"}"><ol class="sidebar-document-list">${nearby.map((item, index) => {
+      // 번호는 키워드를 대표하는 문서만 센다. 활용·심화 문서는 번호 대신 종류를 붙여 부모 아래에 들여 쓴다.
+      const isChild = item.isUnit === false;
+      // 보관 문서로 비는 order가 있어도 목록에 보이는 순서대로 세고 0번으로 시작하는 과정만 한 칸 당긴다.
+      const shownUnits = selectedItems.slice(0, start + index + 1).filter((candidate) => candidate.isUnit !== false).length;
+      const number = shownUnits - 1 + (item.unitNumberStart ?? 1);
+      const marker = isChild ? DOCUMENT_KIND_LABELS[item.documentKind] : String(number).padStart(2, "0");
+      return `<li${isChild ? ' class="is-child"' : ""}><a href="${escapeHtml(item.href)}"${item.href === activeHref ? ' aria-current="page"' : ""}><span class="sidebar-document-number" aria-hidden="true">${marker}</span><span>${renderInlineCodeText(item.title)}</span></a></li>`;
+    }).join("")}</ol></nav>
     ${!nearby.length ? `<p class="sidebar-nav-empty">${loading && isReview ? "문제를 불러오고 있어요…" : "이 주제의 자료가 없습니다."}</p>` : ""}
     <button type="button" class="sidebar-all" data-sidebar-catalog="${current}">${escapeHtml(topicTitle)} ${isReview ? "문제" : "문서"} 모두 보기 <span aria-hidden="true">→</span></button>`}`;
 }

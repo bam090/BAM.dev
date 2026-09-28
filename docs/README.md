@@ -133,3 +133,7 @@
 - bam의 교안 작성과 제출 교안 관리·검증은 [`lesson-authoring.md`](lesson-authoring.md)의 저작 경계, 의미 구조와 완료 조건을 따른다.
 - 역할별 PASS는 [`development-workflow.md`](development-workflow.md)의 증거 묶음으로 남긴다. 역할 이름은 책임을 뜻하며 Custom Agent 파일 생성을 요구하지 않는다.
 - 새 문서를 만들기 전에 이 지도에서 기존 정본에 추가할 수 있는지 확인한다.
+
+## 알고리즘 교안·신규 코딩테스트 통합
+
+알고리즘 40편의 키워드·문서 계층은 [문서 화면 계약](designs/lesson-review.md#키워드별-문서-묶음의-화면-흐름), 신규 Java 12개의 모델·공개 실행은 [데이터 계약](content-schema.md#새로-만든-java-코딩테스트), 학습 기여는 [경험 근거](learning-content-design.md#알고리즘-신규-코딩테스트-12개-경험-근거)를 따른다. 최신 Java 25 설명 기준과 Java 17·25 공통 실행 기준은 [9월 28일 결정](roadmap.md#2026-09-28-알고리즘-교안코딩테스트-확장-결정)이 정본이다.

@@ -121,6 +121,24 @@ test("CT renderer 요청은 다섯 필드만 허용하고 신뢰 manifest가 run
   );
 });
 
+test("authored Java CT는 승인된 원문 JUnit class의 첫 그룹·전체 그룹만 선택한다", () => {
+  const authored = collection.problems.slice(72);
+  assert.equal(authored.length, 12);
+  for (const problem of authored) {
+    const base = { requestId: `authored-${problem.id}`, problemId: problem.id,
+      revision: problem.revision, source: problem.starterCode };
+    const quick = supervisorTest.readTrustedCodingTest(collection,
+      supervisorTest.readCodingTestRequest({ ...base, mode: "run" }));
+    const all = supervisorTest.readTrustedCodingTest(collection,
+      supervisorTest.readCodingTestRequest({ ...base, mode: "submit" }));
+    assert.equal(all.origin, "bam-authored", problem.id);
+    assert.equal(all.solutionClass, "Solution", problem.id);
+    assert.deepEqual(quick.tests.map(({ id }) => id), [problem.publicTests[0].id]);
+    assert.deepEqual(all.tests.map(({ id }) => id), problem.publicTests.map(({ id }) => id));
+    assert.ok(all.tests.every(({ testClass }) => testClass === "SolutionPublicTest"), problem.id);
+  }
+});
+
 test("JUnit protocol은 parameterized invocation 수와 오류 종류를 구조적으로 집계한다", () => {
   assert.deepEqual(supervisorTest.parseCodingTestProtocol(protocolFrame(), firstProblem.publicTests[0].id), {
     outcome: "passed",

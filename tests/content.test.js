@@ -32,7 +32,9 @@ test("과정 조회와 실행 언어별 평가 조회를 분리한다", () => {
   const javascriptAssessmentLessons = getLessonsForLanguage(curriculum, "javascript");
 
   assert.equal(algorithm.languageId, "java");
-  assert.equal(algorithmLessons.length, 14);
+  // 알고리즘은 0~13번 키워드의 대표 개념문서 14개와 그 하위 문서 26개다.
+  assert.equal(algorithmLessons.filter((lesson) => lesson.parentLessonId === undefined).length, 14);
+  assert.equal(algorithmLessons.length, 40);
   assert.ok(algorithmLessons.every((lesson) => lesson.courseId === "algorithm" && lesson.languageId === "java"));
   assert.ok(javascriptAssessmentLessons.length > algorithmLessons.length);
   assert.ok(javascriptAssessmentLessons.every((lesson) => lesson.languageId === "javascript"));
@@ -70,10 +72,18 @@ test("탐색 가능한 과정의 교안은 과정별로 1부터 순서대로 제
   for (const course of curriculum.courses.filter((item) => item.status !== "planned")) {
     const lessons = getLessonsForCourse(curriculum, course.id);
     assert.ok(lessons.length > 0, `${course.id}: 교안이 필요합니다.`);
+    // 단원 번호는 대표 개념문서의 order이고 하위 문서의 order는 부모 안의 순서다.
+    const unitLessons = lessons.filter((lesson) => lesson.parentLessonId === undefined);
     assert.deepEqual(
-      lessons.map((lesson) => lesson.order),
-      Array.from({ length: lessons.length }, (_, index) => index + 1),
+      unitLessons.map((lesson) => lesson.order),
+      Array.from({ length: unitLessons.length }, (_, index) => index + 1),
     );
+    for (const unit of unitLessons) {
+      const children = lessons.filter((lesson) => lesson.parentLessonId === unit.id);
+      assert.deepEqual(children.map((lesson) => lesson.order), Array.from({ length: children.length }, (_, index) => index + 1));
+      const unitIndex = lessons.indexOf(unit);
+      assert.deepEqual(lessons.slice(unitIndex + 1, unitIndex + 1 + children.length), children, `${unit.id}: 하위 문서는 부모 바로 뒤에 읽는다`);
+    }
     assert.ok(lessons.every((lesson) => lesson.objectives.length > 0));
   }
 });

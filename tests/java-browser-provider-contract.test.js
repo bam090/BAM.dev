@@ -241,6 +241,14 @@ test("검증된 자산은 cache 정책과 manifest 순서를 지키고 읽은 by
   const byUrl = new Map(specs.map((spec) => [spec.url, spec]));
   const bySize = new Map(specs.map((spec) => [spec.size, spec]));
   const calls = [];
+  const tzdb = JAVA_BROWSER_ASSET_MANIFEST.runtime.find(({ url }) => url.endsWith("/17/lib/tzdb.dat"));
+  assert.equal(JAVA_BROWSER_ASSET_MANIFEST.runtime.length, 14);
+  assert.deepEqual(tzdb, {
+    url: "https://cjrtnc.leaningtech.com/4.3/17/lib/tzdb.dat",
+    status: 200, size: 102820,
+    sha256: "36cf71e63ce2816fe4456e9195e6c27fa7c9cd431c89ba762eba394ec2c7a1e3",
+  });
+  assert.equal(JAVA_BROWSER_ASSET_BYTES, 49503879);
   const moduleSpec = JAVA_BROWSER_ASSET_MANIFEST.runtime.find(({ url }) => url.endsWith("/17/lib/modules"));
   const cacheKey = `${moduleSpec.url}?bam-sha256=${moduleSpec.sha256}`;
   let storedModule = null;
@@ -317,6 +325,7 @@ test("검증된 자산은 cache 정책과 manifest 순서를 지키고 읽은 by
   assert.ok(calls.every(({ url, options }) => options.cache ===
     (url.startsWith("https://cjrtnc.leaningtech.com/4.3/") ? "default" : "no-cache")));
   assert.deepEqual(result.runtime.map(({ url }) => url), JAVA_BROWSER_ASSET_MANIFEST.runtime.map(({ url }) => url));
+  assert.equal(result.runtime.find(({ url }) => url === tzdb.url).bytes.byteLength, tzdb.size);
   assert.equal(result.receivedBytes, JAVA_BROWSER_ASSET_BYTES);
   assert.equal(result.runtimeBootstrap.byteLength, JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap.size);
   assert.ok(calls.some(({ url }) => url === JAVA_BROWSER_ASSET_MANIFEST.runtimeBootstrap.url));

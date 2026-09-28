@@ -15,7 +15,7 @@ self.onmessage = async ({ data }) => {
         || !compiler.helperClasses || Object.keys(compiler.helperClasses).length !== HELPER_NAMES.length
         || !HELPER_NAMES.every((name) => compiler.helperClasses[name] instanceof Uint8Array)
         || (data.profile === "junit" && !(compiler.junitJar instanceof Uint8Array))
-        || !Array.isArray(data.runtimeAssets) || data.runtimeAssets.length !== 13
+        || !Array.isArray(data.runtimeAssets) || data.runtimeAssets.length !== 14
         || !(data.runtimeBootstrap instanceof Uint8Array)) {
       throw new Error("Invalid Java compiler request");
     }

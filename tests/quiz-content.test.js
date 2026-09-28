@@ -340,8 +340,9 @@ test("새 문항끼리 또는 기존 확인 문제와 문구가 중복되지 않
   for (const lesson of curriculum.lessons.filter((item) => item.languageId === quiz.languageId)) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const confirmationSections = markdown.split(/\n## (?:최종 )?확인 문제\n/);
-    // 반입본은 원문 구조를 유지한다. 확인 문제 절이 있으면 기존과 동일하게 중복을 검사한다.
-    if (lesson.source?.originalPath && confirmationSections.length === 1) continue;
+    // 반입본은 원문 구조를 유지하고 핵심 질문 답을 쓰는 새 형식 교안에는 확인 문제 절이 없다.
+    // 확인 문제 절이 있으면 기존과 동일하게 중복을 검사한다.
+    if ((lesson.source?.originalPath || lesson.answerHeading) && confirmationSections.length === 1) continue;
     assert.ok(
       confirmationSections.length > 1,
       `${lesson.id}: 확인 문제 섹션을 찾을 수 없습니다.`,

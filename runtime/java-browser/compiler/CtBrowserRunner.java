@@ -1,5 +1,6 @@
-import dev.bam.runtime.SolutionInvoker.LearnerFailure;
+import java.util.ArrayDeque;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Set;
 import org.junit.platform.engine.TestExecutionResult;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
@@ -12,16 +13,20 @@ import org.junit.platform.launcher.core.LauncherFactory;
 import org.opentest4j.MultipleFailuresError;
 
 public final class CtBrowserRunner implements TestExecutionListener {
+  private static final int MAX_FAILURES = 32;
+  private static final int MAX_FRAMES = 256;
   private final Set<String> discovered = new HashSet<>();
   private final Set<String> started = new HashSet<>();
   private final Set<String> finished = new HashSet<>();
   private int passed, wrong, runtime, skipped, aborted, infrastructure;
   private boolean planStarted, planFinished;
+  private boolean authored;
   private String message = "";
 
   public static String run(String testClass, String method, String signature) {
     CtBrowserRunner listener = new CtBrowserRunner();
     try {
+      listener.authored = "SolutionPublicTest".equals(testClass);
       var request = LauncherDiscoveryRequestBuilder.request()
           .selectors(DiscoverySelectors.selectMethod(testClass, method, signature))
           .filters(EngineFilter.includeEngines("junit-jupiter"))
@@ -58,12 +63,38 @@ public final class CtBrowserRunner implements TestExecutionListener {
     skipped++;
     if (message.isEmpty()) message = reason;
   }
-  private static boolean learnerFailure(Throwable error) {
-    if (error instanceof LearnerFailure) return true;
-    if (error instanceof MultipleFailuresError multiple) {
-      return multiple.getFailures().stream().anyMatch(CtBrowserRunner::learnerFailure);
+  // 1 = learner runtime failure, 0 = other failure, -1 = traversal limit exceeded.
+  private static int learnerFailure(Throwable error, boolean authored) {
+    if (error == null) return 0;
+    var pending = new ArrayDeque<Throwable>();
+    var seen = new IdentityHashMap<Throwable, Boolean>();
+    pending.add(error);
+    boolean solutionFrame = false;
+    int frames = 0;
+    while (!pending.isEmpty()) {
+      Throwable current = pending.removeFirst();
+      if (seen.put(current, Boolean.TRUE) != null) continue;
+      if (seen.size() > MAX_FAILURES) return -1;
+      for (Class<?> type = current.getClass(); type != null; type = type.getSuperclass()) {
+        if (type.getName().equals("dev.bam.runtime.SolutionInvoker$LearnerFailure")) return 1;
+      }
+      if (authored) {
+        for (StackTraceElement frame : current.getStackTrace()) {
+          if (++frames > MAX_FRAMES) return -1;
+          String name = frame.getClassName();
+          if (name.equals("Solution") || name.startsWith("Solution$")) solutionFrame = true;
+        }
+      }
+      Throwable cause = current.getCause();
+      if (cause != null) pending.addLast(cause);
+      if (current instanceof MultipleFailuresError multiple) {
+        for (Throwable failure : multiple.getFailures()) {
+          if (failure != null) pending.addLast(failure);
+          if (pending.size() + seen.size() > MAX_FAILURES) return -1;
+        }
+      }
     }
-    return false;
+    return solutionFrame ? 1 : 0;
   }
   @Override public void executionFinished(TestIdentifier test, TestExecutionResult result) {
     if (!test.isTest()) {
@@ -74,20 +105,30 @@ public final class CtBrowserRunner implements TestExecutionListener {
       return;
     }
     if (!started.contains(test.getUniqueId()) || !finished.add(test.getUniqueId())) infrastructure++;
-    switch (result.getStatus()) {
-      case SUCCESSFUL -> passed++;
-      case ABORTED -> aborted++;
-      case FAILED -> {
-        Throwable error = result.getThrowable().orElse(null);
-        if (learnerFailure(error)) runtime++;
-        else if (error instanceof AssertionError) wrong++;
-        else infrastructure++;
-        if (error != null) describe(error);
+    try {
+      switch (result.getStatus()) {
+        case SUCCESSFUL -> passed++;
+        case ABORTED -> aborted++;
+        case FAILED -> {
+          Throwable error = result.getThrowable().orElse(null);
+          int learner = learnerFailure(error, authored);
+          if (learner > 0) runtime++;
+          else if (learner < 0) infrastructure++;
+          else if (error instanceof AssertionError) wrong++;
+          else infrastructure++;
+          if (error != null) describe(error);
+        }
       }
+    } catch (Throwable classificationError) {
+      infrastructure++;
+      describe(classificationError);
     }
   }
   private void describe(Throwable error) {
-    if (message.isEmpty()) message = error.getClass().getSimpleName() + ": " + String.valueOf(error.getMessage());
+    if (message.isEmpty()) {
+      String detail = error.getClass().getSimpleName() + ": " + String.valueOf(error.getMessage());
+      message = detail.substring(0, Math.min(detail.length(), 512));
+    }
   }
   private static String quoted(String value) {
     StringBuilder out = new StringBuilder("\"");

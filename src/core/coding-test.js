@@ -53,6 +53,28 @@ const COMPLEXITY_FIELDS = new Set(["time", "space"]);
 const EXAMPLE_FIELDS = new Set(["args", "expected", "explanation"]);
 const PUBLIC_TEST_FIELDS = new Set(["id", "label", "args", "expected"]);
 const FAILURE_EXPLANATION_FIELDS = new Set(["testId", "message"]);
+const JAVA_AUTHORED_ORIGIN = "bam-authored";
+const JAVA_BRIDGE_PROBLEM_COUNT = 72;
+const JAVA_TOTAL_PROBLEM_COUNT = 84;
+export const JAVA_AUTHORED_CODING_TEST_IDS = Object.freeze([
+  "coding-test-java-algo-tree-map-01",
+  "coding-test-java-algo-bellman-ford-01",
+  "coding-test-java-algo-binary-search-01",
+  "coding-test-java-algo-topological-sort-01",
+  "coding-test-java-algo-string-01",
+  "coding-test-java-algo-gcd-01",
+  "coding-test-java-algo-prime-01",
+  "coding-test-java-algo-combinatorics-01",
+  "coding-test-java-algo-bits-01",
+  "coding-test-java-algo-geometry-01",
+  "coding-test-java-algo-integer-01",
+  "coding-test-java-algo-fast-power-01",
+]);
+export function isApprovedAuthoredJavaCodingTest(problem) {
+  const index = JAVA_AUTHORED_CODING_TEST_IDS.indexOf(problem?.id);
+  return index >= 0 && problem.origin === JAVA_AUTHORED_ORIGIN
+    && problem.order === JAVA_BRIDGE_PROBLEM_COUNT + index + 1 && problem.revision === 1;
+}
 const JAVA_PROBLEM_FIELDS = new Set([
   "id",
   "slug",
@@ -79,10 +101,11 @@ const JAVA_PROBLEM_FIELDS = new Set([
   "commonMistakes",
   "relatedQuestId",
   "legacyQuestId",
+  "origin",
 ]);
 const JAVA_PROBLEM_REQUIRED_FIELDS = new Set(
   [...JAVA_PROBLEM_FIELDS].filter(
-    (field) => !["commonMistakes", "relatedQuestId", "legacyQuestId"].includes(field),
+    (field) => !["commonMistakes", "relatedQuestId", "legacyQuestId", "origin"].includes(field),
   ),
 );
 const JAVA_FUNCTION_CONTRACT_REQUIRED_FIELDS = new Set([
@@ -110,7 +133,6 @@ const JAVA_LONG_MAX = 2n ** 63n - 1n;
 const CANONICAL_DECIMAL_PATTERN = /^(?:0|-?[1-9][0-9]*)$/;
 const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*tests?|hidden\s*tests?/iu;
 const JAVA_EVALUATION_KIND = "java-static-method-v1";
-
 export async function createCodingTestSourceFingerprint(
   source,
   crypto = globalThis.crypto,
@@ -673,20 +695,26 @@ function validateJavaProblem(problemValue, index, lessonMap, allTestIds, errors)
   );
   if (!problem) return;
 
+  // origin이 없으면 Algorithm Bridge 원본 문제이고 bam-authored는 원본 없이 새로 만든 문제다.
+  const isAuthored = problem.origin === JAVA_AUTHORED_ORIGIN;
+  if (Object.hasOwn(problem, "origin") && !isAuthored) {
+    errors.push(`${label}.origin은 ${JAVA_AUTHORED_ORIGIN}이어야 합니다.`);
+  }
+  const namespace = isAuthored ? "algo" : "bridge";
   if (
     !isNonEmptyString(problem.id) ||
-    !/^coding-test-java-bridge-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(problem.id)
+    !new RegExp(`^coding-test-java-${namespace}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(problem.id)
   ) {
-    errors.push(`${label}.id는 coding-test-java-bridge 네임스페이스여야 합니다.`);
+    errors.push(`${label}.id는 coding-test-java-${namespace} 네임스페이스여야 합니다.`);
   }
-  if (!isNonEmptyString(problem.slug) || !/^bridge-[a-z0-9]+(?:-[a-z0-9]+)*$/.test(problem.slug)) {
-    errors.push(`${label}.slug는 원본 bridge slot이어야 합니다.`);
+  if (!isNonEmptyString(problem.slug) || !new RegExp(`^${namespace}-[a-z0-9]+(?:-[a-z0-9]+)*$`).test(problem.slug)) {
+    errors.push(isAuthored ? `${label}.slug는 algo-로 시작해야 합니다.` : `${label}.slug는 원본 bridge slot이어야 합니다.`);
   } else if (problem.id !== `coding-test-java-${problem.slug}`) {
-    errors.push(`${label}.id와 slug의 원본 slot이 일치해야 합니다.`);
+    errors.push(`${label}.id와 slug가 일치해야 합니다.`);
   }
   if (problem.revision !== 1) errors.push(`${label}.revision은 1이어야 합니다.`);
   if (problem.order !== index + 1) {
-    errors.push(`${label}.order는 원본 72문제 순서대로 1부터 이어져야 합니다.`);
+    errors.push(`${label}.order는 원본 72문제 뒤에 새 문제를 이어 1부터 순서대로 매겨야 합니다.`);
   }
 
   const lesson = lessonMap.get(problem.lessonId);
@@ -725,7 +753,9 @@ function validateJavaProblem(problemValue, index, lessonMap, allTestIds, errors)
   }
 
   const linkFields = ["relatedQuestId", "legacyQuestId"].filter((field) => Object.hasOwn(problem, field));
-  if (linkFields.length !== 1) {
+  if (isAuthored && linkFields.length > 0) {
+    errors.push(`${label}: 새로 만든 문제에는 원본 Quest 연결을 두지 않습니다.`);
+  } else if (!isAuthored && linkFields.length !== 1) {
     errors.push(`${label}에는 relatedQuestId 또는 legacyQuestId 중 하나만 필요합니다.`);
   }
   for (const field of linkFields) {
@@ -843,7 +873,7 @@ function validateJavaCodingTestCollectionInternal(collectionValue, curriculum) {
   const lessonMap = new Map(
     (Array.isArray(curriculum?.lessons) ? curriculum.lessons : []).map((lesson) => [lesson.id, lesson]),
   );
-  const problems = inspectArray(collection.problems, "Java 코딩테스트 컬렉션.problems", errors, 72, 72);
+  const problems = inspectArray(collection.problems, "Java 코딩테스트 컬렉션.problems", errors, JAVA_TOTAL_PROBLEM_COUNT, JAVA_TOTAL_PROBLEM_COUNT);
   const problemIds = new Set();
   const slugs = new Set();
   const allTestIds = new Set();
@@ -862,6 +892,17 @@ function validateJavaCodingTestCollectionInternal(collectionValue, curriculum) {
   }
   if (relatedCount !== 3 || legacyCount !== 69) {
     errors.push("Java 코딩테스트는 준비 Quest 3개와 legacy Quest 69개에 정확히 대응해야 합니다.");
+  }
+  // 원본 72문제는 순서와 URL을 지키려고 늘 앞에 두고 새로 만든 문제는 그 뒤에만 붙인다.
+  const firstAuthoredIndex = problems.findIndex((problem) => problem?.origin === JAVA_AUTHORED_ORIGIN);
+  if (firstAuthoredIndex !== JAVA_BRIDGE_PROBLEM_COUNT) {
+    errors.push(`새로 만든 Java 코딩테스트는 원본 ${JAVA_BRIDGE_PROBLEM_COUNT}문제 뒤에 이어져야 합니다.`);
+  }
+  if (problems.slice(JAVA_BRIDGE_PROBLEM_COUNT).some((problem) => problem?.origin !== JAVA_AUTHORED_ORIGIN)) {
+    errors.push("원본 Java 코딩테스트는 새로 만든 문제 뒤에 올 수 없습니다.");
+  }
+  if (problems.slice(JAVA_BRIDGE_PROBLEM_COUNT).some((problem) => !isApprovedAuthoredJavaCodingTest(problem))) {
+    errors.push("새로 만든 Java 코딩테스트의 승인된 ID·순서·revision이 일치하지 않습니다.");
   }
   return errors;
 }

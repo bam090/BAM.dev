@@ -413,3 +413,33 @@ test("표의 코드 span과 이스케이프된 파이프를 열 구분자로 해
   assert.ok(result.includes("왼쪽 | 오른쪽"));
   assert.ok(!result.includes(String.raw`왼쪽 \| 오른쪽`));
 });
+
+test("Obsidian 접히는 콜아웃은 접힌 토글로, 일반 인용은 인용으로 렌더링한다", () => {
+  const result = renderMarkdown(
+    [
+      "> [!question]- 사이클이란?",
+      "> 출발한 노드로 다시 돌아오는 길입니다.",
+      "> 트리에는 이런 길이 없습니다.",
+      "",
+      "> [!note]+ 펼친 설명",
+      "> 처음부터 보입니다.",
+      "",
+      "> 일반 인용",
+    ].join("\n"),
+    { preserveParagraphLineBreaks: true },
+  );
+
+  assert.match(
+    result,
+    /<details class="lesson-toggle"><summary>사이클이란\?<\/summary><div class="lesson-toggle-body"><p>출발한 노드로 다시 돌아오는 길입니다\.<br>트리에는 이런 길이 없습니다\.<\/p><\/div><\/details>/,
+  );
+  assert.match(result, /<details class="lesson-toggle" open><summary>펼친 설명<\/summary>/);
+  assert.match(result, /<blockquote>일반 인용<\/blockquote>/);
+});
+
+test("교안 코드 카드는 줄 사이 줄바꿈 문자를 빈 줄로 보이지 않게 한다", async () => {
+  const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
+
+  assert.match(css, /\.code-card code\s*\{[^}]*white-space:\s*normal/s);
+  assert.match(css, /\.code-card \.code-line\s*\{[^}]*white-space:\s*pre/s);
+});

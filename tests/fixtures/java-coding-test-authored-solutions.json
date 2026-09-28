@@ -1,0 +1,962 @@
+[
+  {
+    "problemId": "coding-test-java-algo-tree-map-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "independentCases": [
+      {
+        "args": [
+          [
+            5,
+            1,
+            9
+          ],
+          [
+            3,
+            7,
+            9,
+            2
+          ]
+        ],
+        "expected": [
+          1,
+          5,
+          9,
+          1
+        ],
+        "reason": "3과 7은 앞뒤 예약과의 거리가 2로 같아 이른 예약을 고르고 9는 같은 시각 예약이며 2는 1이 더 가깝습니다."
+      },
+      {
+        "args": [
+          [
+            1000000000,
+            1000000000
+          ],
+          [
+            0,
+            999999999
+          ]
+        ],
+        "expected": [
+          1000000000,
+          1000000000
+        ],
+        "reason": "앞쪽 후보가 없어 null이 되는 경우 뒤쪽 예약만으로 답을 정합니다."
+      },
+      {
+        "args": [
+          [
+            0,
+            6,
+            10
+          ],
+          [
+            8,
+            9,
+            3
+          ]
+        ],
+        "expected": [
+          6,
+          10,
+          0
+        ],
+        "reason": "8은 6과 10의 거리가 같아 6이고 9는 10이 더 가까우며 3은 0과 6의 거리가 같아 0입니다."
+      }
+    ],
+    "referenceSolution": "import java.util.TreeSet;\n\npublic class Solution {\n    public static int[] solve(int[] reservations, int[] queries) {\n        // 예약 시각을 TreeSet에 넣으면 입력 순서와 관계없이 작은 순서로 정렬되고 같은 시각은 하나로 합쳐진다.\n        TreeSet<Integer> times = new TreeSet<>();\n        for (int time : reservations) {\n            times.add(time);\n        }\n\n        int[] answer = new int[queries.length];\n        for (int index = 0; index < queries.length; index++) {\n            int query = queries[index];\n            // floor는 질의 시각과 같거나 이른 마지막 예약이고 ceiling은 같거나 늦은 첫 예약이다.\n            // 가장 가까운 예약은 반드시 이 두 후보 중 하나이므로 트리 높이만큼만 내려가서 찾는다.\n            Integer before = times.floor(query);\n            Integer after = times.ceiling(query);\n            if (before == null && after == null) {\n                answer[index] = -1;\n            } else if (before == null) {\n                answer[index] = after;\n            } else if (after == null) {\n                answer[index] = before;\n            } else {\n                // 거리가 같으면 이른 예약을 고르므로 before가 이기는 조건에 등호를 넣는다.\n                answer[index] = query - before <= after - query ? before : after;\n            }\n        }\n        return answer;\n    }\n}\n",
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "floor-only",
+        "misconception": "floor 결과가 있으면 뒤쪽 예약과 비교하지 않고 바로 답으로 씁니다.",
+        "wrongSolution": "import java.util.TreeSet;\n\npublic class Solution {\n    public static int[] solve(int[] reservations, int[] queries) {\n        TreeSet<Integer> times = new TreeSet<>();\n        for (int time : reservations) {\n            times.add(time);\n        }\n        int[] answer = new int[queries.length];\n        for (int index = 0; index < queries.length; index++) {\n            Integer before = times.floor(queries[index]);\n            if (before != null) {\n                answer[index] = before;\n            } else {\n                Integer after = times.ceiling(queries[index]);\n                answer[index] = after == null ? -1 : after;\n            }\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "strict-neighbors",
+        "misconception": "lower·higher를 써서 질의와 같은 시각의 예약을 후보에서 뺍니다.",
+        "wrongSolution": "import java.util.TreeSet;\n\npublic class Solution {\n    public static int[] solve(int[] reservations, int[] queries) {\n        TreeSet<Integer> times = new TreeSet<>();\n        for (int time : reservations) {\n            times.add(time);\n        }\n        int[] answer = new int[queries.length];\n        for (int index = 0; index < queries.length; index++) {\n            int query = queries[index];\n            Integer before = times.lower(query);\n            Integer after = times.higher(query);\n            if (before == null && after == null) {\n                answer[index] = -1;\n            } else if (before == null) {\n                answer[index] = after;\n            } else if (after == null) {\n                answer[index] = before;\n            } else {\n                answer[index] = query - before <= after - query ? before : after;\n            }\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "tie-later",
+        "misconception": "거리 비교에 등호를 빼서 동점일 때 늦은 예약을 고릅니다.",
+        "wrongSolution": "import java.util.TreeSet;\n\npublic class Solution {\n    public static int[] solve(int[] reservations, int[] queries) {\n        TreeSet<Integer> times = new TreeSet<>();\n        for (int time : reservations) {\n            times.add(time);\n        }\n        int[] answer = new int[queries.length];\n        for (int index = 0; index < queries.length; index++) {\n            int query = queries[index];\n            Integer before = times.floor(query);\n            Integer after = times.ceiling(query);\n            if (before == null && after == null) {\n                answer[index] = -1;\n            } else if (before == null) {\n                answer[index] = after;\n            } else if (after == null) {\n                answer[index] = before;\n            } else {\n                answer[index] = query - before < after - query ? before : after;\n            }\n        }\n        return answer;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-bellman-ford-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "independentCases": [
+      {
+        "args": [
+          3,
+          [
+            [
+              0,
+              1,
+              -1000000000
+            ],
+            [
+              1,
+              2,
+              -1000000000
+            ],
+            [
+              0,
+              2,
+              5
+            ]
+          ],
+          0
+        ],
+        "expected": [
+          "0",
+          "-1000000000",
+          "-2000000000"
+        ],
+        "reason": "두 음수 간선을 이어 지나는 길이 바로 가는 길보다 싸고 -20억은 long으로 그대로 반환합니다."
+      },
+      {
+        "args": [
+          3,
+          [
+            [
+              1,
+              0,
+              -3
+            ],
+            [
+              0,
+              2,
+              1
+            ],
+            [
+              2,
+              1,
+              1
+            ]
+          ],
+          0
+        ],
+        "expected": [],
+        "reason": "0 → 2 → 1 → 0을 돌면 1 + 1 + (-3) = -1이고 출발점을 지나는 음수 사이클입니다."
+      },
+      {
+        "args": [
+          3,
+          [
+            [
+              0,
+              0,
+              4
+            ],
+            [
+              1,
+              2,
+              -1
+            ]
+          ],
+          1
+        ],
+        "expected": [
+          "9223372036854775807",
+          "0",
+          "-1"
+        ],
+        "reason": "출발점 1에서 창고 0에 닿지 않으므로 Long.MAX_VALUE이고 양수 자기 간선은 답에 영향이 없습니다."
+      }
+    ],
+    "referenceSolution": "import java.util.Arrays;\n\npublic class Solution {\n    // 아직 닿지 않은 정점의 거리입니다. 반환 배열에서도 같은 값으로 알립니다.\n    static final long INF = Long.MAX_VALUE;\n\n    public static long[] solve(int n, int[][] edges, int start) {\n        long[] distance = new long[n];\n        Arrays.fill(distance, INF);\n        distance[start] = 0;\n\n        // 음수 사이클이 없으면 최단 길은 간선을 최대 n - 1개 지나므로 n - 1번 완화하면 충분하다.\n        for (int round = 1; round <= n - 1; round++) {\n            boolean changed = false;\n            for (int[] edge : edges) {\n                int from = edge[0];\n                int to = edge[1];\n                int cost = edge[2];\n                // 닿지 않은 정점에서 나가는 간선을 완화하면 INF에 비용을 더해 가짜 거리가 생긴다.\n                if (distance[from] == INF) continue;\n                // 거리 합은 int 범위를 넘을 수 있으므로 long으로 더한다.\n                if (distance[from] + cost < distance[to]) {\n                    distance[to] = distance[from] + cost;\n                    changed = true;\n                }\n            }\n            if (!changed) break;\n        }\n\n        // n - 1번 뒤에도 줄어드는 거리가 있으면 출발점에서 닿는 음수 사이클이 있다.\n        for (int[] edge : edges) {\n            int from = edge[0];\n            if (distance[from] == INF) continue;\n            if (distance[from] + edge[2] < distance[edge[1]]) {\n                return new long[0];\n            }\n        }\n        return distance;\n    }\n}\n",
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "no-inf-skip",
+        "misconception": "닿지 않은 정점의 거리가 Long.MAX_VALUE인지 확인하지 않고 모든 간선을 완화합니다.",
+        "wrongSolution": "import java.util.Arrays;\n\npublic class Solution {\n    static final long INF = Long.MAX_VALUE;\n\n    public static long[] solve(int n, int[][] edges, int start) {\n        long[] distance = new long[n];\n        Arrays.fill(distance, INF);\n        distance[start] = 0;\n        for (int round = 1; round <= n - 1; round++) {\n            for (int[] edge : edges) {\n                if (distance[edge[0]] + edge[2] < distance[edge[1]]) {\n                    distance[edge[1]] = distance[edge[0]] + edge[2];\n                }\n            }\n        }\n        for (int[] edge : edges) {\n            if (distance[edge[0]] + edge[2] < distance[edge[1]]) {\n                return new long[0];\n            }\n        }\n        return distance;\n    }\n}\n"
+      },
+      {
+        "id": "int-distance",
+        "misconception": "거리를 int 배열에 저장해 큰 비용의 합이 넘칩니다.",
+        "wrongSolution": "import java.util.Arrays;\n\npublic class Solution {\n    static final int INF = Integer.MAX_VALUE;\n\n    public static long[] solve(int n, int[][] edges, int start) {\n        int[] distance = new int[n];\n        Arrays.fill(distance, INF);\n        distance[start] = 0;\n        for (int round = 1; round <= n - 1; round++) {\n            for (int[] edge : edges) {\n                if (distance[edge[0]] == INF) continue;\n                if (distance[edge[0]] + edge[2] < distance[edge[1]]) {\n                    distance[edge[1]] = distance[edge[0]] + edge[2];\n                }\n            }\n        }\n        for (int[] edge : edges) {\n            if (distance[edge[0]] == INF) continue;\n            if (distance[edge[0]] + edge[2] < distance[edge[1]]) {\n                return new long[0];\n            }\n        }\n        long[] answer = new long[n];\n        for (int index = 0; index < n; index++) {\n            answer[index] = distance[index] == INF ? Long.MAX_VALUE : distance[index];\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "too-few-rounds",
+        "misconception": "완화 반복을 n - 2번만 해서 마지막 간선이 반영되지 않습니다.",
+        "wrongSolution": "import java.util.Arrays;\n\npublic class Solution {\n    static final long INF = Long.MAX_VALUE;\n\n    public static long[] solve(int n, int[][] edges, int start) {\n        long[] distance = new long[n];\n        Arrays.fill(distance, INF);\n        distance[start] = 0;\n        for (int round = 1; round < n - 1; round++) {\n            for (int[] edge : edges) {\n                if (distance[edge[0]] == INF) continue;\n                if (distance[edge[0]] + edge[2] < distance[edge[1]]) {\n                    distance[edge[1]] = distance[edge[0]] + edge[2];\n                }\n            }\n        }\n        for (int[] edge : edges) {\n            if (distance[edge[0]] == INF) continue;\n            if (distance[edge[0]] + edge[2] < distance[edge[1]]) {\n                return new long[0];\n            }\n        }\n        return distance;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-binary-search-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "independentCases": [
+      {
+        "args": [
+          [
+            1,
+            2,
+            2,
+            2,
+            3
+          ],
+          [
+            [
+              2,
+              2
+            ],
+            [
+              1,
+              3
+            ],
+            [
+              0,
+              1
+            ]
+          ]
+        ],
+        "expected": [
+          3,
+          5,
+          1
+        ],
+        "reason": "가운데 몰린 같은 값의 첫 위치 1과 끝 다음 위치 4의 차이가 3이고 전체 구간은 배열 끝까지 셉니다."
+      },
+      {
+        "args": [
+          [
+            -7,
+            -7,
+            0,
+            6
+          ],
+          [
+            [
+              -10,
+              -8
+            ],
+            [
+              -7,
+              5
+            ],
+            [
+              6,
+              1000000000
+            ]
+          ]
+        ],
+        "expected": [
+          0,
+          3,
+          1
+        ],
+        "reason": "모든 점수보다 작은 구간은 두 경계가 모두 0이고 마지막 구간의 끝 경계는 배열 끝 다음 칸 4입니다."
+      }
+    ],
+    "referenceSolution": "public class Solution {\n    public static int[] solve(int[] scores, int[][] ranges) {\n        int[] answer = new int[ranges.length];\n        for (int index = 0; index < ranges.length; index++) {\n            int low = ranges[index][0];\n            int high = ranges[index][1];\n            // low 이상이 처음 나오는 위치부터 high보다 큰 값이 처음 나오는 위치 앞까지가 구간 안의 점수다.\n            answer[index] = upperBound(scores, high) - lowerBound(scores, low);\n        }\n        return answer;\n    }\n\n    // target 이상인 값이 처음 나오는 위치입니다. 모든 값이 작으면 배열 끝인 scores.length를 돌려줍니다.\n    static int lowerBound(int[] scores, int target) {\n        int lo = 0;\n        int hi = scores.length;\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (scores[mid] < target) lo = mid + 1;\n            else hi = mid;\n        }\n        return lo;\n    }\n\n    // target보다 큰 값이 처음 나오는 위치입니다. target과 같은 값은 왼쪽에 남겨야 하므로 <=로 비교합니다.\n    static int upperBound(int[] scores, int target) {\n        int lo = 0;\n        int hi = scores.length;\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (scores[mid] <= target) lo = mid + 1;\n            else hi = mid;\n        }\n        return lo;\n    }\n}\n",
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "upper-strict",
+        "misconception": "끝 경계도 lower bound와 같은 < 비교로 찾아 high와 같은 점수를 빼고 셉니다.",
+        "wrongSolution": "public class Solution {\n    public static int[] solve(int[] scores, int[][] ranges) {\n        int[] answer = new int[ranges.length];\n        for (int index = 0; index < ranges.length; index++) {\n            answer[index] = bound(scores, ranges[index][1]) - bound(scores, ranges[index][0]);\n        }\n        return answer;\n    }\n\n    static int bound(int[] scores, int target) {\n        int lo = 0;\n        int hi = scores.length;\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (scores[mid] < target) lo = mid + 1;\n            else hi = mid;\n        }\n        return lo;\n    }\n}\n"
+      },
+      {
+        "id": "hi-last-index",
+        "misconception": "hi를 scores.length - 1에서 시작해 경계가 배열 끝 다음 칸인 경우를 돌려주지 못합니다.",
+        "wrongSolution": "public class Solution {\n    public static int[] solve(int[] scores, int[][] ranges) {\n        int[] answer = new int[ranges.length];\n        if (scores.length == 0) return answer;\n        for (int index = 0; index < ranges.length; index++) {\n            answer[index] = upperBound(scores, ranges[index][1]) - lowerBound(scores, ranges[index][0]);\n        }\n        return answer;\n    }\n\n    static int lowerBound(int[] scores, int target) {\n        int lo = 0;\n        int hi = scores.length - 1;\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (scores[mid] < target) lo = mid + 1;\n            else hi = mid;\n        }\n        return lo;\n    }\n\n    static int upperBound(int[] scores, int target) {\n        int lo = 0;\n        int hi = scores.length - 1;\n        while (lo < hi) {\n            int mid = lo + (hi - lo) / 2;\n            if (scores[mid] <= target) lo = mid + 1;\n            else hi = mid;\n        }\n        return lo;\n    }\n}\n"
+      },
+      {
+        "id": "arrays-binary-search",
+        "misconception": "Arrays.binarySearch가 같은 값 중 첫 위치나 끝 위치를 돌려준다고 믿고 결과를 경계로 씁니다.",
+        "wrongSolution": "import java.util.Arrays;\n\npublic class Solution {\n    public static int[] solve(int[] scores, int[][] ranges) {\n        int[] answer = new int[ranges.length];\n        for (int index = 0; index < ranges.length; index++) {\n            int start = Arrays.binarySearch(scores, ranges[index][0]);\n            if (start < 0) start = -start - 1;\n            int end = Arrays.binarySearch(scores, ranges[index][1]);\n            end = end >= 0 ? end + 1 : -end - 1;\n            answer[index] = end - start;\n        }\n        return answer;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-topological-sort-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "independentCases": [
+      {
+        "args": [
+          5,
+          [
+            [
+              3,
+              1
+            ],
+            [
+              4,
+              1
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              2,
+              0
+            ]
+          ]
+        ],
+        "expected": [
+          2,
+          3,
+          4,
+          1,
+          0
+        ],
+        "reason": "처음 준비된 2·3·4를 번호 순서로 꺼내고 1은 3과 4가 모두 끝난 뒤에 풀리며 0은 1과 2가 끝난 뒤에 풀립니다."
+      },
+      {
+        "args": [
+          3,
+          [
+            [
+              0,
+              1
+            ],
+            [
+              1,
+              2
+            ],
+            [
+              2,
+              0
+            ]
+          ]
+        ],
+        "expected": [],
+        "reason": "세 작업이 모두 사이클 안에 있어 처음부터 시작할 수 있는 작업이 없습니다."
+      },
+      {
+        "args": [
+          4,
+          [
+            [
+              3,
+              2
+            ],
+            [
+              0,
+              1
+            ]
+          ]
+        ],
+        "expected": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "reason": "0이 끝나 풀린 1이 처음부터 기다리던 3보다 작으므로 먼저 옵니다."
+      }
+    ],
+    "referenceSolution": "import java.util.ArrayList;\nimport java.util.List;\nimport java.util.PriorityQueue;\n\npublic class Solution {\n    public static int[] solve(int n, int[][] prerequisites) {\n        // next.get(a)는 a가 끝나야 시작할 수 있는 작업 목록이고 inDegree[b]는 b 전에 끝나야 하는 작업 수다.\n        List<List<Integer>> next = new ArrayList<>();\n        for (int task = 0; task < n; task++) next.add(new ArrayList<>());\n        int[] inDegree = new int[n];\n        for (int[] rule : prerequisites) {\n            next.get(rule[0]).add(rule[1]);\n            inDegree[rule[1]]++;\n        }\n\n        // 지금 시작할 수 있는 작업이 여러 개이면 번호가 작은 작업부터 꺼내야 하므로\n        // 넣은 순서대로 꺼내는 큐 대신 가장 작은 값을 먼저 꺼내는 PriorityQueue를 쓴다.\n        PriorityQueue<Integer> ready = new PriorityQueue<>();\n        for (int task = 0; task < n; task++) {\n            if (inDegree[task] == 0) ready.add(task);\n        }\n\n        int[] order = new int[n];\n        int count = 0;\n        while (!ready.isEmpty()) {\n            int now = ready.poll();\n            order[count++] = now;\n            for (int after : next.get(now)) {\n                inDegree[after]--;\n                if (inDegree[after] == 0) ready.add(after);\n            }\n        }\n\n        // 사이클 안의 작업은 진입 차수가 0이 되지 않아 꺼내지지 못하므로 꺼낸 수가 n보다 적다.\n        if (count < n) return new int[0];\n        return order;\n    }\n}\n",
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "fifo-queue",
+        "misconception": "교안의 ArrayDeque를 그대로 써서 번호가 작은 작업부터라는 규칙을 지키지 않습니다.",
+        "wrongSolution": "import java.util.ArrayDeque;\nimport java.util.ArrayList;\nimport java.util.List;\nimport java.util.Queue;\n\npublic class Solution {\n    public static int[] solve(int n, int[][] prerequisites) {\n        List<List<Integer>> next = new ArrayList<>();\n        for (int task = 0; task < n; task++) next.add(new ArrayList<>());\n        int[] inDegree = new int[n];\n        for (int[] rule : prerequisites) {\n            next.get(rule[0]).add(rule[1]);\n            inDegree[rule[1]]++;\n        }\n        Queue<Integer> ready = new ArrayDeque<>();\n        for (int task = 0; task < n; task++) {\n            if (inDegree[task] == 0) ready.add(task);\n        }\n        int[] order = new int[n];\n        int count = 0;\n        while (!ready.isEmpty()) {\n            int now = ready.poll();\n            order[count++] = now;\n            for (int after : next.get(now)) {\n                inDegree[after]--;\n                if (inDegree[after] == 0) ready.add(after);\n            }\n        }\n        if (count < n) return new int[0];\n        return order;\n    }\n}\n"
+      },
+      {
+        "id": "no-cycle-check",
+        "misconception": "꺼낸 작업 수를 n과 비교하지 않아 사이클이 있어도 일부 순서를 반환합니다.",
+        "wrongSolution": "import java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.List;\nimport java.util.PriorityQueue;\n\npublic class Solution {\n    public static int[] solve(int n, int[][] prerequisites) {\n        List<List<Integer>> next = new ArrayList<>();\n        for (int task = 0; task < n; task++) next.add(new ArrayList<>());\n        int[] inDegree = new int[n];\n        for (int[] rule : prerequisites) {\n            next.get(rule[0]).add(rule[1]);\n            inDegree[rule[1]]++;\n        }\n        PriorityQueue<Integer> ready = new PriorityQueue<>();\n        for (int task = 0; task < n; task++) {\n            if (inDegree[task] == 0) ready.add(task);\n        }\n        int[] order = new int[n];\n        int count = 0;\n        while (!ready.isEmpty()) {\n            int now = ready.poll();\n            order[count++] = now;\n            for (int after : next.get(now)) {\n                inDegree[after]--;\n                if (inDegree[after] == 0) ready.add(after);\n            }\n        }\n        return Arrays.copyOf(order, count);\n    }\n}\n"
+      },
+      {
+        "id": "reversed-direction",
+        "misconception": "{before, after}를 거꾸로 읽어 before의 진입 차수를 올립니다.",
+        "wrongSolution": "import java.util.ArrayList;\nimport java.util.List;\nimport java.util.PriorityQueue;\n\npublic class Solution {\n    public static int[] solve(int n, int[][] prerequisites) {\n        List<List<Integer>> next = new ArrayList<>();\n        for (int task = 0; task < n; task++) next.add(new ArrayList<>());\n        int[] inDegree = new int[n];\n        for (int[] rule : prerequisites) {\n            next.get(rule[1]).add(rule[0]);\n            inDegree[rule[0]]++;\n        }\n        PriorityQueue<Integer> ready = new PriorityQueue<>();\n        for (int task = 0; task < n; task++) {\n            if (inDegree[task] == 0) ready.add(task);\n        }\n        int[] order = new int[n];\n        int count = 0;\n        while (!ready.isEmpty()) {\n            int now = ready.poll();\n            order[count++] = now;\n            for (int after : next.get(now)) {\n                inDegree[after]--;\n                if (inDegree[after] == 0) ready.add(after);\n            }\n        }\n        if (count < n) return new int[0];\n        return order;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-string-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Solution {\n    public static String[] solve(String script) {\n        // 파싱: |는 정규식에서 \"또는\"을 뜻하므로 \\\\|로 적어야 글자 그대로의 막대로 나뉜다.\n        String[] pieces = script.split(\"\\\\|\");\n\n        // 적용: 여러 번 고칠 전광판은 String 대신 StringBuilder 하나에 담아 그 자리에서 바꾼다.\n        StringBuilder board = new StringBuilder();\n        List<String> shown = new ArrayList<>();\n        for (String piece : pieces) {\n            String command = piece.trim();\n            // 막대가 연달아 오거나 공백만 있는 조각은 명령이 아니므로 건너뛴다.\n            if (command.isEmpty()) continue;\n\n            // 이름과 인자 사이 공백이 여러 칸일 수 있어 \"공백 한 칸 이상\"을 구분자로 쓴다.\n            String[] parts = command.split(\" +\");\n            switch (parts[0]) {\n                case \"ADD\" -> board.append(parts[1]);\n                case \"CUT\" -> {\n                    int count = Integer.parseInt(parts[1]);\n                    // 지울 글자가 현재 글자 수보다 많으면 0글자까지만 줄인다.\n                    board.setLength(Math.max(0, board.length() - count));\n                }\n                case \"FLIP\" -> board.reverse();\n                // SHOW 시점의 내용을 새 String으로 꺼내 두어야 뒤 명령이 기록을 바꾸지 않는다.\n                case \"SHOW\" -> shown.add(board.toString());\n                default -> throw new IllegalArgumentException(\"알 수 없는 명령: \" + parts[0]);\n            }\n        }\n        return shown.toArray(new String[0]);\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          "  SHOW  |ADD q|FLIP|FLIP|SHOW"
+        ],
+        "expected": [
+          "",
+          "q"
+        ],
+        "reason": "빈 전광판을 먼저 기록하고 한 글자를 두 번 뒤집어 그대로인 q를 기록하는지 확인합니다."
+      },
+      {
+        "args": [
+          "ADD abc|ADD 12|CUT 3|FLIP|SHOW|CUT 2|SHOW"
+        ],
+        "expected": [
+          "ba",
+          ""
+        ],
+        "reason": "abc12에서 세 글자를 지운 ab를 뒤집은 ba와 정확히 남은 글자 수만큼 지운 빈 문자열을 확인합니다."
+      },
+      {
+        "args": [
+          "|ADD x|  |SHOW|"
+        ],
+        "expected": [
+          "x"
+        ],
+        "reason": "스크립트의 맨 앞과 맨 끝에 막대가 있어도 빈 조각을 건너뛰는지 확인합니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-string-01-wrong-regex-bar",
+        "misconception": "split(\"|\")가 막대 기호 그대로 나눈다고 생각해 모든 글자를 조각으로 나눕니다.",
+        "wrongSolution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Solution {\n    public static String[] solve(String script) {\n        // 파싱: |는 정규식에서 \"또는\"을 뜻하므로 \\\\|로 적어야 글자 그대로의 막대로 나뉜다.\n        String[] pieces = script.split(\"|\");\n\n        // 적용: 여러 번 고칠 전광판은 String 대신 StringBuilder 하나에 담아 그 자리에서 바꾼다.\n        StringBuilder board = new StringBuilder();\n        List<String> shown = new ArrayList<>();\n        for (String piece : pieces) {\n            String command = piece.trim();\n            // 막대가 연달아 오거나 공백만 있는 조각은 명령이 아니므로 건너뛴다.\n            if (command.isEmpty()) continue;\n\n            // 이름과 인자 사이 공백이 여러 칸일 수 있어 \"공백 한 칸 이상\"을 구분자로 쓴다.\n            String[] parts = command.split(\" +\");\n            switch (parts[0]) {\n                case \"ADD\" -> board.append(parts[1]);\n                case \"CUT\" -> {\n                    int count = Integer.parseInt(parts[1]);\n                    // 지울 글자가 현재 글자 수보다 많으면 0글자까지만 줄인다.\n                    board.setLength(Math.max(0, board.length() - count));\n                }\n                case \"FLIP\" -> board.reverse();\n                // SHOW 시점의 내용을 새 String으로 꺼내 두어야 뒤 명령이 기록을 바꾸지 않는다.\n                case \"SHOW\" -> shown.add(board.toString());\n                default -> throw new IllegalArgumentException(\"알 수 없는 명령: \" + parts[0]);\n            }\n        }\n        return shown.toArray(new String[0]);\n    }\n}\n"
+      },
+      {
+        "id": "algo-string-01-wrong-single-space",
+        "misconception": "명령 이름과 인자 사이 공백이 늘 한 칸이라고 보고 split(\" \")로 나눕니다.",
+        "wrongSolution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Solution {\n    public static String[] solve(String script) {\n        // 파싱: |는 정규식에서 \"또는\"을 뜻하므로 \\\\|로 적어야 글자 그대로의 막대로 나뉜다.\n        String[] pieces = script.split(\"\\\\|\");\n\n        // 적용: 여러 번 고칠 전광판은 String 대신 StringBuilder 하나에 담아 그 자리에서 바꾼다.\n        StringBuilder board = new StringBuilder();\n        List<String> shown = new ArrayList<>();\n        for (String piece : pieces) {\n            String command = piece.trim();\n            // 막대가 연달아 오거나 공백만 있는 조각은 명령이 아니므로 건너뛴다.\n            if (command.isEmpty()) continue;\n\n            // 이름과 인자 사이 공백이 여러 칸일 수 있어 \"공백 한 칸 이상\"을 구분자로 쓴다.\n            String[] parts = command.split(\" \");\n            switch (parts[0]) {\n                case \"ADD\" -> board.append(parts[1]);\n                case \"CUT\" -> {\n                    int count = Integer.parseInt(parts[1]);\n                    // 지울 글자가 현재 글자 수보다 많으면 0글자까지만 줄인다.\n                    board.setLength(Math.max(0, board.length() - count));\n                }\n                case \"FLIP\" -> board.reverse();\n                // SHOW 시점의 내용을 새 String으로 꺼내 두어야 뒤 명령이 기록을 바꾸지 않는다.\n                case \"SHOW\" -> shown.add(board.toString());\n                default -> throw new IllegalArgumentException(\"알 수 없는 명령: \" + parts[0]);\n            }\n        }\n        return shown.toArray(new String[0]);\n    }\n}\n"
+      },
+      {
+        "id": "algo-string-01-wrong-negative-cut",
+        "misconception": "CUT의 k가 남은 글자 수보다 클 수 있다는 조건을 놓치고 길이에서 그대로 뺍니다.",
+        "wrongSolution": "import java.util.ArrayList;\nimport java.util.List;\n\npublic class Solution {\n    public static String[] solve(String script) {\n        // 파싱: |는 정규식에서 \"또는\"을 뜻하므로 \\\\|로 적어야 글자 그대로의 막대로 나뉜다.\n        String[] pieces = script.split(\"\\\\|\");\n\n        // 적용: 여러 번 고칠 전광판은 String 대신 StringBuilder 하나에 담아 그 자리에서 바꾼다.\n        StringBuilder board = new StringBuilder();\n        List<String> shown = new ArrayList<>();\n        for (String piece : pieces) {\n            String command = piece.trim();\n            // 막대가 연달아 오거나 공백만 있는 조각은 명령이 아니므로 건너뛴다.\n            if (command.isEmpty()) continue;\n\n            // 이름과 인자 사이 공백이 여러 칸일 수 있어 \"공백 한 칸 이상\"을 구분자로 쓴다.\n            String[] parts = command.split(\" +\");\n            switch (parts[0]) {\n                case \"ADD\" -> board.append(parts[1]);\n                case \"CUT\" -> {\n                    int count = Integer.parseInt(parts[1]);\n                    // 지울 글자가 현재 글자 수보다 많으면 0글자까지만 줄인다.\n                    board.setLength(board.length() - count);\n                }\n                case \"FLIP\" -> board.reverse();\n                // SHOW 시점의 내용을 새 String으로 꺼내 두어야 뒤 명령이 기록을 바꾸지 않는다.\n                case \"SHOW\" -> shown.add(board.toString());\n                default -> throw new IllegalArgumentException(\"알 수 없는 명령: \" + parts[0]);\n            }\n        }\n        return shown.toArray(new String[0]);\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-gcd-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    public static long solve(int[] periods) {\n        // 두 주기가 처음 겹치는 때는 최소공배수이고 셋 이상이면 앞에서부터 이어서 구한다.\n        long common = periods[0];\n        for (int i = 1; i < periods.length; i++) {\n            long next = periods[i];\n            // 곱하기 전에 최대공약수로 먼저 나누어 중간값이 답보다 커지지 않게 한다.\n            common = common / gcd(common, next) * next;\n        }\n        return common;\n    }\n\n    // 유클리드 호제법: gcd(a, b) = gcd(b, a % b)를 나머지가 0이 될 때까지 반복한다.\n    private static long gcd(long a, long b) {\n        while (b != 0) {\n            long remainder = a % b;\n            a = b;\n            b = remainder;\n        }\n        return a;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          [
+            6,
+            10,
+            15
+          ]
+        ],
+        "expected": "30",
+        "reason": "세 주기의 곱은 900이지만 6과 10의 최소공배수 30이 이미 15로도 나누어떨어지는지 확인합니다."
+      },
+      {
+        "args": [
+          [
+            999983,
+            999979
+          ]
+        ],
+        "expected": "999962000357",
+        "reason": "서로 다른 두 소수의 최소공배수가 두 수의 곱이고 int 범위를 넘는 값을 확인합니다."
+      },
+      {
+        "args": [
+          [
+            1,
+            1000000,
+            8,
+            125
+          ]
+        ],
+        "expected": "1000000",
+        "reason": "뒤의 주기가 앞의 값을 나누는 경우 최소공배수가 더 커지지 않는지 확인합니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-gcd-01-wrong-int",
+        "misconception": "주기가 int이므로 최소공배수도 int에 담긴다고 생각합니다.",
+        "wrongSolution": "public class Solution {\n    public static long solve(int[] periods) {\n        int common = periods[0];\n        for (int i = 1; i < periods.length; i++) {\n            int next = periods[i];\n            common = common / gcd(common, next) * next;\n        }\n        return common;\n    }\n\n    private static int gcd(int a, int b) {\n        while (b != 0) {\n            int remainder = a % b;\n            a = b;\n            b = remainder;\n        }\n        return a;\n    }\n}\n"
+      },
+      {
+        "id": "algo-gcd-01-wrong-multiply-first",
+        "misconception": "답이 long에 담기면 a × b / gcd(a, b)의 중간값도 담긴다고 생각합니다.",
+        "wrongSolution": "public class Solution {\n    public static long solve(int[] periods) {\n        // 두 주기가 처음 겹치는 때는 최소공배수이고 셋 이상이면 앞에서부터 이어서 구한다.\n        long common = periods[0];\n        for (int i = 1; i < periods.length; i++) {\n            long next = periods[i];\n            // 곱하기 전에 최대공약수로 먼저 나누어 중간값이 답보다 커지지 않게 한다.\n            common = common * next / gcd(common, next);\n        }\n        return common;\n    }\n\n    // 유클리드 호제법: gcd(a, b) = gcd(b, a % b)를 나머지가 0이 될 때까지 반복한다.\n    private static long gcd(long a, long b) {\n        while (b != 0) {\n            long remainder = a % b;\n            a = b;\n            b = remainder;\n        }\n        return a;\n    }\n}\n"
+      },
+      {
+        "id": "algo-gcd-01-wrong-product",
+        "misconception": "모든 주기를 곱한 값이 처음 함께 켜지는 시각이라고 생각합니다.",
+        "wrongSolution": "public class Solution {\n    public static long solve(int[] periods) {\n        // 모든 주기를 곱하면 모두가 함께 켜지는 시각이라고 생각한다.\n        long common = 1;\n        for (int period : periods) {\n            common *= period;\n        }\n        return common;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-prime-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    private static final int LIMIT = 1_000_000;\n\n    public static int[] solve(int[][] queries) {\n        // 구간 질의가 많으므로 한 수씩 판별하지 않고 체를 한 번만 만든다.\n        // 번호가 곧 수가 되도록 크기를 LIMIT + 1로 두고 0과 1은 소수가 아니므로 먼저 지운다.\n        boolean[] composite = new boolean[LIMIT + 1];\n        composite[0] = true;\n        composite[1] = true;\n        for (int i = 2; (long) i * i <= LIMIT; i++) {\n            if (composite[i]) continue;\n            // i보다 작은 수를 곱한 배수는 앞에서 지웠으므로 i * i부터 지운다.\n            for (int j = i * i; j <= LIMIT; j += i) {\n                composite[j] = true;\n            }\n        }\n\n        // primeCount[x]는 x 이하의 소수 개수다. 질의마다 두 값의 차이로 바로 답한다.\n        int[] primeCount = new int[LIMIT + 1];\n        for (int x = 1; x <= LIMIT; x++) {\n            primeCount[x] = primeCount[x - 1] + (composite[x] ? 0 : 1);\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int lo = queries[i][0];\n            int hi = queries[i][1];\n            // lo도 구간에 들어가므로 lo - 1 이하의 개수를 뺀다.\n            answer[i] = primeCount[hi] - primeCount[lo - 1];\n        }\n        return answer;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          [
+            [
+              14,
+              16
+            ],
+            [
+              100,
+              100
+            ]
+          ]
+        ],
+        "expected": [
+          0,
+          0
+        ],
+        "reason": "14·15·16과 100은 모두 합성수라 소수가 없는 구간을 확인합니다."
+      },
+      {
+        "args": [
+          [
+            [
+              1,
+              1000000
+            ],
+            [
+              999983,
+              999983
+            ]
+          ]
+        ],
+        "expected": [
+          78498,
+          1
+        ],
+        "reason": "1,000,000 이하의 소수가 78,498개이고 999,983이 그 가운데 가장 큰 소수인지 확인합니다."
+      },
+      {
+        "args": [
+          [
+            [
+              2,
+              3
+            ],
+            [
+              4,
+              5
+            ],
+            [
+              5,
+              7
+            ]
+          ]
+        ],
+        "expected": [
+          2,
+          1,
+          2
+        ],
+        "reason": "시작과 끝이 모두 소수인 짧은 구간에서 양 끝을 모두 세는지 확인합니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-prime-01-wrong-one-is-prime",
+        "misconception": "체에서 0만 지우거나 1을 지우는 줄을 빠뜨려 1을 소수로 셉니다.",
+        "wrongSolution": "public class Solution {\n    private static final int LIMIT = 1_000_000;\n\n    public static int[] solve(int[][] queries) {\n        // 구간 질의가 많으므로 한 수씩 판별하지 않고 체를 한 번만 만든다.\n        // 번호가 곧 수가 되도록 크기를 LIMIT + 1로 두고 0과 1은 소수가 아니므로 먼저 지운다.\n        boolean[] composite = new boolean[LIMIT + 1];\n        composite[0] = true;\n        for (int i = 2; (long) i * i <= LIMIT; i++) {\n            if (composite[i]) continue;\n            // i보다 작은 수를 곱한 배수는 앞에서 지웠으므로 i * i부터 지운다.\n            for (int j = i * i; j <= LIMIT; j += i) {\n                composite[j] = true;\n            }\n        }\n\n        // primeCount[x]는 x 이하의 소수 개수다. 질의마다 두 값의 차이로 바로 답한다.\n        int[] primeCount = new int[LIMIT + 1];\n        for (int x = 1; x <= LIMIT; x++) {\n            primeCount[x] = primeCount[x - 1] + (composite[x] ? 0 : 1);\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int lo = queries[i][0];\n            int hi = queries[i][1];\n            // lo도 구간에 들어가므로 lo - 1 이하의 개수를 뺀다.\n            answer[i] = primeCount[hi] - primeCount[lo - 1];\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "algo-prime-01-wrong-exclusive-lo",
+        "misconception": "구간의 개수를 primeCount[hi] - primeCount[lo]로 구해 lo 자신을 뺍니다.",
+        "wrongSolution": "public class Solution {\n    private static final int LIMIT = 1_000_000;\n\n    public static int[] solve(int[][] queries) {\n        // 구간 질의가 많으므로 한 수씩 판별하지 않고 체를 한 번만 만든다.\n        // 번호가 곧 수가 되도록 크기를 LIMIT + 1로 두고 0과 1은 소수가 아니므로 먼저 지운다.\n        boolean[] composite = new boolean[LIMIT + 1];\n        composite[0] = true;\n        composite[1] = true;\n        for (int i = 2; (long) i * i <= LIMIT; i++) {\n            if (composite[i]) continue;\n            // i보다 작은 수를 곱한 배수는 앞에서 지웠으므로 i * i부터 지운다.\n            for (int j = i * i; j <= LIMIT; j += i) {\n                composite[j] = true;\n            }\n        }\n\n        // primeCount[x]는 x 이하의 소수 개수다. 질의마다 두 값의 차이로 바로 답한다.\n        int[] primeCount = new int[LIMIT + 1];\n        for (int x = 1; x <= LIMIT; x++) {\n            primeCount[x] = primeCount[x - 1] + (composite[x] ? 0 : 1);\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int lo = queries[i][0];\n            int hi = queries[i][1];\n            // lo도 구간에 들어가므로 lo - 1 이하의 개수를 뺀다.\n            answer[i] = primeCount[hi] - primeCount[lo];\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "algo-prime-01-wrong-sieve-size",
+        "misconception": "1,000,000까지 기록하려면 크기 1,000,000인 배열이면 된다고 생각합니다.",
+        "wrongSolution": "public class Solution {\n    private static final int LIMIT = 1_000_000;\n\n    public static int[] solve(int[][] queries) {\n        // 구간 질의가 많으므로 한 수씩 판별하지 않고 체를 한 번만 만든다.\n        // 번호가 곧 수가 되도록 크기를 LIMIT + 1로 두고 0과 1은 소수가 아니므로 먼저 지운다.\n        boolean[] composite = new boolean[LIMIT];\n        composite[0] = true;\n        composite[1] = true;\n        for (int i = 2; (long) i * i <= LIMIT; i++) {\n            if (composite[i]) continue;\n            // i보다 작은 수를 곱한 배수는 앞에서 지웠으므로 i * i부터 지운다.\n            for (int j = i * i; j < LIMIT; j += i) {\n                composite[j] = true;\n            }\n        }\n\n        // primeCount[x]는 x 이하의 소수 개수다. 질의마다 두 값의 차이로 바로 답한다.\n        int[] primeCount = new int[LIMIT];\n        for (int x = 1; x < LIMIT; x++) {\n            primeCount[x] = primeCount[x - 1] + (composite[x] ? 0 : 1);\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int lo = queries[i][0];\n            int hi = queries[i][1];\n            // lo도 구간에 들어가므로 lo - 1 이하의 개수를 뺀다.\n            answer[i] = primeCount[hi] - primeCount[lo - 1];\n        }\n        return answer;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-combinatorics-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    private static final int MOD = 1_000_000_007;\n    private static final int MAX_N = 1_000;\n\n    public static int[] solve(int[][] queries) {\n        // 파스칼의 삼각형: nCr = (n-1)C(r-1) + (n-1)Cr을 윗줄부터 덧셈으로 채운다.\n        // 표를 한 번만 만들면 질의마다 칸 하나를 읽어 바로 답한다.\n        // 칸은 r > n인 자리까지 만들어 두면 채우지 않은 칸이 0이라 뽑을 수 없는 경우의 답이 된다.\n        long[][] choose = new long[MAX_N + 1][MAX_N + 1];\n        for (int n = 0; n <= MAX_N; n++) {\n            choose[n][0] = 1;\n            choose[n][n] = 1;\n            for (int r = 1; r < n; r++) {\n                // 덧셈은 중간에 나머지를 구해도 결과가 같으므로 칸마다 나머지만 남겨 넘치지 않게 한다.\n                choose[n][r] = (choose[n - 1][r - 1] + choose[n - 1][r]) % MOD;\n            }\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int n = queries[i][0];\n            int r = queries[i][1];\n            answer[i] = (int) choose[n][r];\n        }\n        return answer;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          [
+            [
+              2,
+              1
+            ],
+            [
+              999,
+              998
+            ]
+          ]
+        ],
+        "expected": [
+          2,
+          999
+        ],
+        "reason": "nCr = nC(n - r)이므로 999C998이 999C1과 같은 999인지 확인합니다."
+      },
+      {
+        "args": [
+          [
+            [
+              67,
+              33
+            ],
+            [
+              1,
+              2
+            ]
+          ]
+        ],
+        "expected": [
+          34643904,
+          0
+        ],
+        "reason": "long 범위를 처음 넘는 근처인 67C33의 나머지와 한 명 가운데 두 명을 고르는 0을 확인합니다."
+      },
+      {
+        "args": [
+          [
+            [
+              4,
+              2
+            ],
+            [
+              4,
+              2
+            ],
+            [
+              6,
+              3
+            ]
+          ]
+        ],
+        "expected": [
+          6,
+          6,
+          20
+        ],
+        "reason": "같은 질의가 반복돼도 같은 값을 돌려주고 작은 값 6C3이 20인지 손으로 계산해 확인합니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-combinatorics-01-wrong-mod-at-end",
+        "misconception": "파스칼의 삼각형을 long으로 채우면 넘치지 않는다고 보고 나머지를 마지막에만 구합니다.",
+        "wrongSolution": "public class Solution {\n    private static final int MOD = 1_000_000_007;\n    private static final int MAX_N = 1_000;\n\n    public static int[] solve(int[][] queries) {\n        // 파스칼의 삼각형: nCr = (n-1)C(r-1) + (n-1)Cr을 윗줄부터 덧셈으로 채운다.\n        // 표를 한 번만 만들면 질의마다 칸 하나를 읽어 바로 답한다.\n        // 칸은 r > n인 자리까지 만들어 두면 채우지 않은 칸이 0이라 뽑을 수 없는 경우의 답이 된다.\n        long[][] choose = new long[MAX_N + 1][MAX_N + 1];\n        for (int n = 0; n <= MAX_N; n++) {\n            choose[n][0] = 1;\n            choose[n][n] = 1;\n            for (int r = 1; r < n; r++) {\n                // 덧셈은 중간에 나머지를 구해도 결과가 같으므로 칸마다 나머지만 남겨 넘치지 않게 한다.\n                choose[n][r] = choose[n - 1][r - 1] + choose[n - 1][r];\n            }\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int n = queries[i][0];\n            int r = queries[i][1];\n            answer[i] = (int) (choose[n][r] % MOD);\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "algo-combinatorics-01-wrong-mod-division",
+        "misconception": "팩토리얼의 나머지끼리 나누어도 nCr의 나머지가 된다고 생각합니다.",
+        "wrongSolution": "public class Solution {\n    private static final int MOD = 1_000_000_007;\n    private static final int MAX_N = 1_000;\n\n    public static int[] solve(int[][] queries) {\n        // 팩토리얼을 나머지로 구해 두고 공식 n! / (r! × (n - r)!)에 그대로 넣는다.\n        long[] factorial = new long[MAX_N + 1];\n        factorial[0] = 1;\n        for (int k = 1; k <= MAX_N; k++) {\n            factorial[k] = factorial[k - 1] * k % MOD;\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int n = queries[i][0];\n            int r = queries[i][1];\n            if (r > n) {\n                answer[i] = 0;\n                continue;\n            }\n            long bottom = factorial[r] * factorial[n - r] % MOD;\n            answer[i] = (int) (factorial[n] / bottom % MOD);\n        }\n        return answer;\n    }\n}\n"
+      },
+      {
+        "id": "algo-combinatorics-01-wrong-short-rows",
+        "misconception": "각 줄에 n + 1칸만 있으면 된다고 보고 r이 n보다 큰 질의를 생각하지 않습니다.",
+        "wrongSolution": "public class Solution {\n    private static final int MOD = 1_000_000_007;\n    private static final int MAX_N = 1_000;\n\n    public static int[] solve(int[][] queries) {\n        // 파스칼의 삼각형: nCr = (n-1)C(r-1) + (n-1)Cr을 윗줄부터 덧셈으로 채운다.\n        // 표를 한 번만 만들면 질의마다 칸 하나를 읽어 바로 답한다.\n        // 각 줄은 n + 1칸이면 충분하다고 보고 필요한 칸만 만든다.\n        long[][] choose = new long[MAX_N + 1][];\n        for (int n = 0; n <= MAX_N; n++) {\n            choose[n] = new long[n + 1];\n            choose[n][0] = 1;\n            choose[n][n] = 1;\n            for (int r = 1; r < n; r++) {\n                // 덧셈은 중간에 나머지를 구해도 결과가 같으므로 칸마다 나머지만 남겨 넘치지 않게 한다.\n                choose[n][r] = (choose[n - 1][r - 1] + choose[n - 1][r]) % MOD;\n            }\n        }\n\n        int[] answer = new int[queries.length];\n        for (int i = 0; i < queries.length; i++) {\n            int n = queries[i][0];\n            int r = queries[i][1];\n            answer[i] = (int) choose[n][r];\n        }\n        return answer;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-bits-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    public static int solve(int[] availableDays, int requiredDays) {\n        int n = availableDays.length;\n        int count = 0;\n        // 0부터 2ⁿ - 1까지의 정수 하나가 팀 하나다. 0은 아무도 고르지 않은 팀이라 1부터 센다.\n        for (int team = 1; team < (1 << n); team++) {\n            int covered = 0;\n            for (int member = 0; member < n; member++) {\n                // member번 비트가 켜져 있으면 그 스터디원이 팀에 있으므로 요일을 | 로 합친다.\n                if ((team & (1 << member)) != 0) {\n                    covered |= availableDays[member];\n                }\n            }\n            // 필요한 요일 자리만 남긴 값이 requiredDays와 같으면 필요한 요일을 모두 채운 것이다.\n            if ((covered & requiredDays) == requiredDays) {\n                count++;\n            }\n        }\n        return count;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          [
+            3,
+            4
+          ],
+          7
+        ],
+        "expected": 1,
+        "reason": "월·화를 맡은 사람과 수요일을 맡은 사람이 함께 있어야 월·화·수를 채웁니다."
+      },
+      {
+        "args": [
+          [
+            64,
+            64,
+            1
+          ],
+          65
+        ],
+        "expected": 3,
+        "reason": "일요일을 맡은 두 사람 중 하나 이상과 월요일을 맡은 사람을 고른 팀은 {0, 2}·{1, 2}·{0, 1, 2} 세 팀입니다."
+      },
+      {
+        "args": [
+          [
+            6,
+            1
+          ],
+          4
+        ],
+        "expected": 2,
+        "reason": "수요일은 첫 사람만 참석할 수 있으므로 첫 사람이 든 팀 {0}·{0, 1} 두 팀입니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-bits-01-wrong-any-overlap",
+        "misconception": "필요한 요일 중 하나만 겹쳐도 요일을 채운 팀으로 센다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int[] availableDays, int requiredDays) {\n        int n = availableDays.length;\n        int count = 0;\n        // 0부터 2ⁿ - 1까지의 정수 하나가 팀 하나다. 0은 아무도 고르지 않은 팀이라 1부터 센다.\n        for (int team = 1; team < (1 << n); team++) {\n            int covered = 0;\n            for (int member = 0; member < n; member++) {\n                // member번 비트가 켜져 있으면 그 스터디원이 팀에 있으므로 요일을 | 로 합친다.\n                if ((team & (1 << member)) != 0) {\n                    covered |= availableDays[member];\n                }\n            }\n            // 필요한 요일 자리만 남긴 값이 requiredDays와 같으면 필요한 요일을 모두 채운 것이다.\n            if ((covered & requiredDays) != 0) {\n                count++;\n            }\n        }\n        return count;\n    }\n}\n"
+      },
+      {
+        "id": "algo-bits-01-wrong-exact-days",
+        "misconception": "모은 요일이 requiredDays와 똑같을 때만 센다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int[] availableDays, int requiredDays) {\n        int n = availableDays.length;\n        int count = 0;\n        // 0부터 2ⁿ - 1까지의 정수 하나가 팀 하나다. 0은 아무도 고르지 않은 팀이라 1부터 센다.\n        for (int team = 1; team < (1 << n); team++) {\n            int covered = 0;\n            for (int member = 0; member < n; member++) {\n                // member번 비트가 켜져 있으면 그 스터디원이 팀에 있으므로 요일을 | 로 합친다.\n                if ((team & (1 << member)) != 0) {\n                    covered |= availableDays[member];\n                }\n            }\n            // 필요한 요일 자리만 남긴 값이 requiredDays와 같으면 필요한 요일을 모두 채운 것이다.\n            if (covered == requiredDays) {\n                count++;\n            }\n        }\n        return count;\n    }\n}\n"
+      },
+      {
+        "id": "algo-bits-01-wrong-last-team",
+        "misconception": "반복 조건을 (1 << n) - 1 미만으로 두어 전원을 고른 팀을 빼먹는다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int[] availableDays, int requiredDays) {\n        int n = availableDays.length;\n        int count = 0;\n        // 0부터 2ⁿ - 1까지의 정수 하나가 팀 하나다. 0은 아무도 고르지 않은 팀이라 1부터 센다.\n        for (int team = 1; team < (1 << n) - 1; team++) {\n            int covered = 0;\n            for (int member = 0; member < n; member++) {\n                // member번 비트가 켜져 있으면 그 스터디원이 팀에 있으므로 요일을 | 로 합친다.\n                if ((team & (1 << member)) != 0) {\n                    covered |= availableDays[member];\n                }\n            }\n            // 필요한 요일 자리만 남긴 값이 requiredDays와 같으면 필요한 요일을 모두 채운 것이다.\n            if ((covered & requiredDays) == requiredDays) {\n                count++;\n            }\n        }\n        return count;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-geometry-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    public static int solve(int[][] triangle, int[][] points) {\n        int count = 0;\n        for (int[] point : points) {\n            // 세 변을 차례로 따라 걸을 때 가게가 어느 쪽에 있는지 외적의 부호로 본다.\n            long first = cross(triangle[0], triangle[1], point);\n            long second = cross(triangle[1], triangle[2], point);\n            long third = cross(triangle[2], triangle[0], point);\n            // 안쪽이면 세 변 모두 같은 쪽에 있고 변 위이면 그 변의 외적이 0이다.\n            // 꼭짓점이 반시계 방향이면 모두 0 이상이고 시계 방향이면 모두 0 이하이다.\n            boolean noNegative = first >= 0 && second >= 0 && third >= 0;\n            boolean noPositive = first <= 0 && second <= 0 && third <= 0;\n            if (noNegative || noPositive) {\n                count++;\n            }\n        }\n        return count;\n    }\n\n    // a → b 벡터와 a → c 벡터의 외적이다. 차끼리 곱하면 int 범위를 넘으므로 곱하기 전에 long으로 바꾼다.\n    private static long cross(int[] a, int[] b, int[] c) {\n        long abX = (long) b[0] - a[0];\n        long abY = (long) b[1] - a[1];\n        long acX = (long) c[0] - a[0];\n        long acY = (long) c[1] - a[1];\n        return abX * acY - abY * acX;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              5,
+              10
+            ]
+          ],
+          [
+            [
+              5,
+              5
+            ],
+            [
+              5,
+              10
+            ],
+            [
+              10,
+              10
+            ],
+            [
+              -1,
+              0
+            ]
+          ]
+        ],
+        "expected": 2,
+        "reason": "(5, 5)는 안쪽이고 (5, 10)은 꼭짓점이라 셉니다. (10, 10)과 (-1, 0)은 바깥입니다."
+      },
+      {
+        "args": [
+          [
+            [
+              1000000000,
+              1000000000
+            ],
+            [
+              -1000000000,
+              1000000000
+            ],
+            [
+              1000000000,
+              -1000000000
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              -1000000000,
+              -1000000000
+            ],
+            [
+              999999999,
+              999999999
+            ]
+          ]
+        ],
+        "expected": 2,
+        "reason": "(0, 0)은 빗변 위이고 (999999999, 999999999)는 안쪽입니다. (-10억, -10억)은 빗변 건너편 바깥입니다."
+      },
+      {
+        "args": [
+          [
+            [
+              3,
+              -2
+            ],
+            [
+              -4,
+              5
+            ],
+            [
+              -4,
+              -2
+            ]
+          ],
+          [
+            [
+              -4,
+              0
+            ],
+            [
+              0,
+              1
+            ],
+            [
+              -5,
+              -2
+            ]
+          ]
+        ],
+        "expected": 2,
+        "reason": "(-4, 0)은 세로 변 위이고 (0, 1)은 빗변 x + y = 1 위라서 셉니다. (-5, -2)는 밑변의 연장선 위 바깥입니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-geometry-01-wrong-int-cross",
+        "misconception": "외적을 int로 계산해 큰 좌표에서 곱셈이 넘친다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int[][] triangle, int[][] points) {\n        int count = 0;\n        for (int[] point : points) {\n            // 세 변을 차례로 따라 걸을 때 가게가 어느 쪽에 있는지 외적의 부호로 본다.\n            long first = cross(triangle[0], triangle[1], point);\n            long second = cross(triangle[1], triangle[2], point);\n            long third = cross(triangle[2], triangle[0], point);\n            // 안쪽이면 세 변 모두 같은 쪽에 있고 변 위이면 그 변의 외적이 0이다.\n            // 꼭짓점이 반시계 방향이면 모두 0 이상이고 시계 방향이면 모두 0 이하이다.\n            boolean noNegative = first >= 0 && second >= 0 && third >= 0;\n            boolean noPositive = first <= 0 && second <= 0 && third <= 0;\n            if (noNegative || noPositive) {\n                count++;\n            }\n        }\n        return count;\n    }\n\n    // a → b 벡터와 a → c 벡터의 외적이다. 차끼리 곱하면 int 범위를 넘으므로 곱하기 전에 long으로 바꾼다.\n    private static long cross(int[] a, int[] b, int[] c) {\n        int abX = b[0] - a[0];\n        int abY = b[1] - a[1];\n        int acX = c[0] - a[0];\n        int acY = c[1] - a[1];\n        return abX * acY - abY * acX;\n    }\n}\n"
+      },
+      {
+        "id": "algo-geometry-01-wrong-strict-inside",
+        "misconception": "외적이 0인 변 위와 꼭짓점 위의 가게를 뺀다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int[][] triangle, int[][] points) {\n        int count = 0;\n        for (int[] point : points) {\n            // 세 변을 차례로 따라 걸을 때 가게가 어느 쪽에 있는지 외적의 부호로 본다.\n            long first = cross(triangle[0], triangle[1], point);\n            long second = cross(triangle[1], triangle[2], point);\n            long third = cross(triangle[2], triangle[0], point);\n            // 안쪽이면 세 변 모두 같은 쪽에 있고 변 위이면 그 변의 외적이 0이다.\n            // 꼭짓점이 반시계 방향이면 모두 0 이상이고 시계 방향이면 모두 0 이하이다.\n            boolean noNegative = first > 0 && second > 0 && third > 0;\n            boolean noPositive = first < 0 && second < 0 && third < 0;\n            if (noNegative || noPositive) {\n                count++;\n            }\n        }\n        return count;\n    }\n\n    // a → b 벡터와 a → c 벡터의 외적이다. 차끼리 곱하면 int 범위를 넘으므로 곱하기 전에 long으로 바꾼다.\n    private static long cross(int[] a, int[] b, int[] c) {\n        long abX = (long) b[0] - a[0];\n        long abY = (long) b[1] - a[1];\n        long acX = (long) c[0] - a[0];\n        long acY = (long) c[1] - a[1];\n        return abX * acY - abY * acX;\n    }\n}\n"
+      },
+      {
+        "id": "algo-geometry-01-wrong-one-orientation",
+        "misconception": "꼭짓점이 늘 반시계 방향이라고 가정하고 모두 0 이상인지만 본다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int[][] triangle, int[][] points) {\n        int count = 0;\n        for (int[] point : points) {\n            // 세 변을 차례로 따라 걸을 때 가게가 어느 쪽에 있는지 외적의 부호로 본다.\n            long first = cross(triangle[0], triangle[1], point);\n            long second = cross(triangle[1], triangle[2], point);\n            long third = cross(triangle[2], triangle[0], point);\n            // 안쪽이면 세 변 모두 같은 쪽에 있고 변 위이면 그 변의 외적이 0이다.\n            // 꼭짓점이 반시계 방향이면 모두 0 이상이고 시계 방향이면 모두 0 이하이다.\n            boolean noNegative = first >= 0 && second >= 0 && third >= 0;\n            boolean noPositive = false;\n            if (noNegative || noPositive) {\n                count++;\n            }\n        }\n        return count;\n    }\n\n    // a → b 벡터와 a → c 벡터의 외적이다. 차끼리 곱하면 int 범위를 넘으므로 곱하기 전에 long으로 바꾼다.\n    private static long cross(int[] a, int[] b, int[] c) {\n        long abX = (long) b[0] - a[0];\n        long abY = (long) b[1] - a[1];\n        long acX = (long) c[0] - a[0];\n        long acY = (long) c[1] - a[1];\n        return abX * acY - abY * acX;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-integer-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    public static int solve(int trackLength, int start, int[] moves) {\n        int position = start;\n        for (int move : moves) {\n            // 위치는 10억 미만이고 이동은 ±10억 이하라서 둘의 합은 long에 여유 있게 담긴다.\n            // 합이 음수일 수 있으므로 %가 아니라 floorMod로 0 이상 trackLength 미만의 칸 번호를 구한다.\n            position = (int) Math.floorMod((long) position + move, (long) trackLength);\n        }\n        return position;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          12,
+          11,
+          [
+            -23
+          ]
+        ],
+        "expected": 0,
+        "reason": "11 - 23은 -12이고 -12는 12의 배수라서 0번 칸입니다."
+      },
+      {
+        "args": [
+          7,
+          1,
+          [
+            -1000000000,
+            -1000000000,
+            -1000000000
+          ]
+        ],
+        "expected": 4,
+        "reason": "10억을 7로 나눈 나머지는 6이라 한 번 이동은 6칸 뒤로 가는 것과 같습니다. 1에서 18칸 뒤로 가면 -17이고 floorMod(-17, 7)은 4입니다."
+      },
+      {
+        "args": [
+          1000000000,
+          999999999,
+          [
+            1000000000
+          ]
+        ],
+        "expected": 999999999,
+        "reason": "트랙 길이만큼 움직이면 한 바퀴를 돌아 같은 칸에 도착합니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-integer-01-wrong-percent",
+        "misconception": "%로 나머지를 구해 0번 칸 뒤로 넘어가면 음수 칸 번호가 나온다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int trackLength, int start, int[] moves) {\n        int position = start;\n        for (int move : moves) {\n            // 위치는 10억 미만이고 이동은 ±10억 이하라서 둘의 합은 long에 여유 있게 담긴다.\n            // 합이 음수일 수 있으므로 %가 아니라 floorMod로 0 이상 trackLength 미만의 칸 번호를 구한다.\n            position = (position + move) % trackLength;\n        }\n        return position;\n    }\n}\n"
+      },
+      {
+        "id": "algo-integer-01-wrong-int-total",
+        "misconception": "모든 이동을 int 하나에 더해 합이 int 범위를 넘는다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int trackLength, int start, int[] moves) {\n        // 모든 이동을 먼저 더한 뒤 나머지를 한 번만 구한다.\n        int total = start;\n        for (int move : moves) {\n            total += move;\n        }\n        return Math.floorMod(total, trackLength);\n    }\n}\n"
+      },
+      {
+        "id": "algo-integer-01-wrong-absolute",
+        "misconception": "음수 위치에 절댓값을 씌워 방향을 거꾸로 바꾼다.",
+        "wrongSolution": "public class Solution {\n    public static int solve(int trackLength, int start, int[] moves) {\n        int position = start;\n        for (int move : moves) {\n            // 위치는 10억 미만이고 이동은 ±10억 이하라서 둘의 합은 long에 여유 있게 담긴다.\n            // 합이 음수일 수 있으므로 %가 아니라 floorMod로 0 이상 trackLength 미만의 칸 번호를 구한다.\n            position = Math.abs(position + move) % trackLength;\n        }\n        return position;\n    }\n}\n"
+      }
+    ]
+  },
+  {
+    "problemId": "coding-test-java-algo-fast-power-01",
+    "revision": 1,
+    "executionStatus": "PASS: Java 17.0.20 + JUnit 6.0.3으로 기준 풀이 통과 · 시작 코드 실패 · 대표 오답 3개 모두 실패 확인",
+    "referenceSolution": "public class Solution {\n    public static long solve(long base, long exponent, long modulus) {\n        // modulus가 1이면 어떤 거듭제곱이든 나머지가 0이므로 시작값부터 나머지로 둔다.\n        long result = 1 % modulus;\n        // base를 먼저 줄여 두어야 첫 제곱에서 long 범위를 넘지 않는다. 두 나머지의 곱은 4 × 10¹⁸ 미만이다.\n        long square = base % modulus;\n        long remaining = exponent;\n        // 지수를 2진수로 보고 가장 낮은 비트가 1인 자리의 거듭제곱만 결과에 곱한다.\n        while (remaining > 0) {\n            if ((remaining & 1) == 1) {\n                result = result * square % modulus;\n            }\n            square = square * square % modulus;\n            remaining >>= 1;\n        }\n        return result;\n    }\n}\n",
+    "independentCases": [
+      {
+        "args": [
+          "123456789",
+          "987654321987654321",
+          "1000000007"
+        ],
+        "expected": "689051811",
+        "reason": "Python의 pow(123456789, 987654321987654321, 1000000007)로 따로 계산한 값과 같습니다."
+      },
+      {
+        "args": [
+          "7",
+          "999999999999999999",
+          "1000000000"
+        ],
+        "expected": "142857143",
+        "reason": "7의 10¹⁸제곱을 10억으로 나눈 나머지는 1이라 7의 (10¹⁸ - 1)제곱은 곱해서 1이 되는 수입니다. 7 × 142857143 = 1000000001이므로 답은 142857143입니다."
+      },
+      {
+        "args": [
+          "999999999999999999",
+          "3",
+          "97"
+        ],
+        "expected": "47",
+        "reason": "10¹⁸ - 1을 97로 나눈 나머지는 88이고 88의 세제곱 681472를 97로 나눈 나머지는 47입니다."
+      }
+    ],
+    "representativeWrongAnswerCandidates": [
+      {
+        "id": "algo-fast-power-01-wrong-linear-loop",
+        "misconception": "base를 exponent번 곱해 지수가 10¹⁸이면 시간 안에 끝나지 않는다.",
+        "wrongSolution": "public class Solution {\n    public static long solve(long base, long exponent, long modulus) {\n        // base를 exponent번 곱하면서 곱할 때마다 나머지를 구한다.\n        long result = 1 % modulus;\n        long reduced = base % modulus;\n        for (long count = 0; count < exponent; count++) {\n            result = result * reduced % modulus;\n        }\n        return result;\n    }\n}\n"
+      },
+      {
+        "id": "algo-fast-power-01-wrong-unreduced-base",
+        "misconception": "base를 modulus로 줄이지 않고 제곱해 long 범위를 넘는다.",
+        "wrongSolution": "public class Solution {\n    public static long solve(long base, long exponent, long modulus) {\n        // modulus가 1이면 어떤 거듭제곱이든 나머지가 0이므로 시작값부터 나머지로 둔다.\n        long result = 1 % modulus;\n        // base를 먼저 줄여 두어야 첫 제곱에서 long 범위를 넘지 않는다. 두 나머지의 곱은 4 × 10¹⁸ 미만이다.\n        long square = base;\n        long remaining = exponent;\n        // 지수를 2진수로 보고 가장 낮은 비트가 1인 자리의 거듭제곱만 결과에 곱한다.\n        while (remaining > 0) {\n            if ((remaining & 1) == 1) {\n                result = result * square % modulus;\n            }\n            square = square * square % modulus;\n            remaining >>= 1;\n        }\n        return result;\n    }\n}\n"
+      },
+      {
+        "id": "algo-fast-power-01-wrong-zero-exponent",
+        "misconception": "결과의 시작값을 1로 두어 modulus가 1이고 exponent가 0이면 1을 반환한다.",
+        "wrongSolution": "public class Solution {\n    public static long solve(long base, long exponent, long modulus) {\n        // modulus가 1이면 어떤 거듭제곱이든 나머지가 0이므로 시작값부터 나머지로 둔다.\n        long result = 1;\n        // base를 먼저 줄여 두어야 첫 제곱에서 long 범위를 넘지 않는다. 두 나머지의 곱은 4 × 10¹⁸ 미만이다.\n        long square = base % modulus;\n        long remaining = exponent;\n        // 지수를 2진수로 보고 가장 낮은 비트가 1인 자리의 거듭제곱만 결과에 곱한다.\n        while (remaining > 0) {\n            if ((remaining & 1) == 1) {\n                result = result * square % modulus;\n            }\n            square = square * square % modulus;\n            remaining >>= 1;\n        }\n        return result;\n    }\n}\n"
+      }
+    ]
+  }
+]

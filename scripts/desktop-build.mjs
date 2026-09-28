@@ -55,7 +55,10 @@ export async function buildCodingTestBundle({ resourcesPath, stagingRoot, junitA
       await cp(path.join(projectRoot, "desktop", "runtime", name), path.join(workRoot, "sources", name));
     }
     await cp(junitArtifact, path.join(workRoot, CT_JUNIT.file));
-    const sourcePaths = [...Object.keys(sources), "sources/JavaBamCodingTestRunner.java", "sources/SolutionInvoker.java"].sort().map((file) => path.join(workRoot, file));
+    // Default-package authored tests compile beside the learner source in each fresh run.
+    const sourcePaths = [...Object.keys(sources).filter((file) => !file.startsWith("sources/authored/")),
+      "sources/JavaBamCodingTestRunner.java", "sources/SolutionInvoker.java"]
+      .sort().map((file) => path.join(workRoot, file));
     const compile = await compileSources({ bundleRoot: resourcesPath, workRoot, sourcePaths });
     // Preserve the actual compiler/termination record before inspecting success or cleaning work.
     await writeFile(path.join(workRoot, "compile-receipt.json"), `${JSON.stringify(compile, null, 2)}\n`, { flag: "wx" });

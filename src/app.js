@@ -2079,6 +2079,13 @@ export class BamLearningApp {
       this.root.querySelector('[data-catalog-topic][aria-pressed="true"]')?.focus({ preventScroll: true });
       return;
     }
+    const catalogKeyword = event.target.closest("[data-catalog-keyword]");
+    if (catalogKeyword && this.currentView === "learn-catalog") {
+      this.catalogFilters.learn = { ...this.catalogFilters.learn, keywordId: catalogKeyword.dataset.catalogKeyword };
+      this.renderLearningCatalog();
+      this.root.querySelector('[data-catalog-keyword][aria-pressed="true"]')?.focus({ preventScroll: true });
+      return;
+    }
     if (event.target.closest("[data-catalog-reset]")) {
       const kind = this.currentView === "review-catalog" ? "review" : "learn";
       this.catalogFilters[kind] = { topicId: null, query: "" };
@@ -2469,6 +2476,7 @@ export class BamLearningApp {
     if (!subject || typeof subject.publicTestSource !== "string") return;
 
     const status = button.parentElement?.querySelector("[data-quest-public-source-status]");
+    const sourceLabel = subject.origin === "bam-authored" ? "공개 테스트 소스" : "원본 공개 테스트 소스";
     let link = null;
     let objectUrl = null;
     try {
@@ -2481,9 +2489,9 @@ export class BamLearningApp {
       link.hidden = true;
       document.body.append(link);
       link.click();
-      if (status) status.textContent = "원본 공개 테스트 소스 다운로드를 요청했습니다.";
+      if (status) status.textContent = `${sourceLabel} 다운로드를 요청했습니다.`;
     } catch {
-      if (status) status.textContent = "원본 공개 테스트 소스를 준비하지 못했습니다.";
+      if (status) status.textContent = `${sourceLabel}를 준비하지 못했습니다.`;
     } finally {
       link?.remove();
       if (objectUrl) window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);

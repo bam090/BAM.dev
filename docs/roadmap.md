@@ -69,7 +69,7 @@
   "id": "source-java-browser",
   "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922",
   "scopeFiles": [
-    { "path": "docs/architecture.md", "sha256": "e8d0e1ca8ef56a0f2f3e44a3283ead99f79a17a6a86746c530b7a91f2e7123d5" }
+    { "path": "docs/architecture.md", "sha256": "daa360ca72d59636dc78b37b413f783f3d80ddcbc9f9a57a2ee2477e2957297d" }
   ],
   "stage": "implementation",
   "requiredChecks": [
@@ -407,7 +407,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "review-history",
   "scopeRevision": "REVIEW-HISTORY-v1",
-  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "e0070b894ad90eb6eaaee5a436a2de015ccb4deaec6c977229d4bdd1cfdfa8e1" }],
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "a288cd6223bd3edf859f81dc47cf2568e37dc65c60a8fb758665a6899aa4ddcc" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
@@ -453,7 +453,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "react-list-pilot",
   "scopeRevision": "REACT-LIST-PILOT-v1",
-  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "e8d0e1ca8ef56a0f2f3e44a3283ead99f79a17a6a86746c530b7a91f2e7123d5" }],
+  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "daa360ca72d59636dc78b37b413f783f3d80ddcbc9f9a57a2ee2477e2957297d" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-FRONTEND-MIGRATION-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
@@ -475,7 +475,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "release-content-audit",
   "scopeRevision": "RELEASE-CONTENT-AUDIT-v1",
-  "scopeFiles": [{ "path": "docs/learning-content-design.md", "sha256": "fca73fb02fafb9f6c5f0db30a53dc51f4af047239d10c08546ac787aca8751a2" }],
+  "scopeFiles": [{ "path": "docs/learning-content-design.md", "sha256": "51e0a2632b9f61039a19a4b4c1ba10c1d493e6d720bdaece6f8d6218804a8525" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-MVP-01-release-manifest", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
@@ -495,3 +495,13 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 시뮬레이션 집계(이전 desktop 가정의 보존 이력이며 새 소스 브라우저 보장 아님): 로컬 데이터·객관식·외부 과제/표시 이관의 논리 상태 모델을 local 계약 `00cd4bad…`·lesson 계약 `3dce4299…` 기준으로 조건부 PASS 인수했다. v1 경쟁 write 반례를 확인한 뒤 v2 writer 배제 가정으로 보완했다. seed `0x42414d32`, BFS 깊이 10/7/7에서 합계 2,028상태·5,613전이를 확인했고 seeded trace 1,500개에서 이벤트 선택 60,000회 중 활성 전이 15,846회를 다뤘다. 불량 모델 10/10 검출·경계 33개 PASS다. Node 모델 실행 5회는 기대한 v1 반례 1회, 모델 alias 오류 1회와 진단 1회, 개정 전체 1회, 추가 경계 1회이며 제품 버그나 앱 전체 PASS로 세지 않는다.
 
 로컬 전용 결과: `/private/tmp/bam-design-simulation-XR3Rnr/FINAL.json` (SHA-256 `ad51fc2354e1de00f34245a7158451dbce81dec2e31c68e6969e1b100467c9a4`). 당시 실행 명령은 `/usr/local/bin/node /private/tmp/bam-design-simulation-XR3Rnr/simulate.mjs`와 `/usr/local/bin/node /private/tmp/bam-design-simulation-XR3Rnr/run-boundaries.mjs`다. 재현은 기존 증거를 보존한 새 임시 폴더에 모델 소스만 복사해 그 경로에서 실행한다. 실제 lock·fsync·다중 창·구버전 writer·제품 validator·설치 후 오프라인은 미검증이며 모델 가정과 실제 구현 보장은 다르다. 이 결과로 제품·설치·콘텐츠 완료를 표시하지 않는다.
+
+## 2026-09-28 알고리즘 교안·코딩테스트 확장 결정
+
+`[확정 결정]` `DEC-ALGORITHM-KEYWORDS-01`: 알고리즘 교안 40편을 0~13번 14개 키워드의 개념·활용·심화 문서로 구성한다. 기존 ID·URL·진도를 보존하고 새 문서에 완료 기록을 복사하지 않는다. 구성은 [키워드 계약](designs/lesson-review.md#알고리즘-과정의-키워드-구성)을 따른다.
+
+`[확정 결정]` `DEC-JAVA-CT-AUTHORED-01`: 원본 Algorithm Bridge 72문제를 보존하고 교안 12편에 대응하는 새 코딩테스트 12개를 `origin: bam-authored`·`algo-` ID/slug로 추가한다. 신규 문제의 공개 실행·채점 연결까지 확인한 뒤 PR #32를 병합한다는 bam의 최신 지시를 따른다. 개발 fixture 확인만으로 끝내거나 새 문제를 앱의 실행 미지원 상태로 남겨 병합하지 않는다. 기존 브라우저 Java 17·컴파일 재사용·격리·편집기와 별도 로컬 Java 25 경로를 보존한다.
+
+`[확정 결정]` 교안·객관식 설명 기준은 Java 25다. 실제 풀이용 시작 코드·기준 풀이·공개 테스트·대표 오답은 Java 17과 25의 공통 문법·API 범위로 작성하고 신규 12개를 두 버전에서 실행해 확인한다. 브라우저 런타임을 Java 25로 교체하는 결정은 아니다. JUnit은 기존 제품의 고정 6.1.3 자산을 재사용한다. 초기 PR의 JDK 17·JUnit 6.0.3 개발 검증만 수행하고 draft-only 실행 차단을 유지한다는 문구는 이 최신 승인으로 대체한다.
+
+`[현재 사실]` 신규 12개의 콘텐츠 독립 검토, Java 17·25 기준 풀이 공개 실행과 선택 대표 오답, 대표 제품 UI의 실행·제출·취소·복원을 PASS로 인수했다. 실제 실행·재사용·미실행과 최초 실패·수정은 [검증 기록](problem-verification.md#2026-09-28-pr-32-알고리즘-교안java-코딩테스트-통합-검증)에 구분했다. fixture의 PASS 문자열로 대신 판정하지 않았으며 기존 72개·전체 36개 대표 오답 전수를 새로 실행한 것은 아니다.

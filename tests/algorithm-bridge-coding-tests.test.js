@@ -149,29 +149,32 @@ function installBrowserGlobals(t, hash) {
   return replacements;
 }
 
-test("Java72·JavaScript6과 기존 Quest32의 ID·원본 순서·연결을 고정한다", () => {
+test("Java 원본72·JavaScript6과 기존 Quest32의 ID·원본 순서·연결을 고정한다", () => {
+  // 원본 Algorithm Bridge 문제는 origin이 없고 늘 앞 72칸을 차지한다. 새로 만든 문제는 그 뒤에만 붙는다.
+  const bridgeProblems = javaCodingTests.problems.filter((problem) => problem.origin === undefined);
   const expectedProblemIds = SOURCE_SLOTS.map((slot) => `coding-test-java-bridge-${slot}`);
   const expectedSlugs = SOURCE_SLOTS.map((slot) => `bridge-${slot}`);
   const related = javaCodingTests.problems.filter((problem) => problem.relatedQuestId);
   const legacy = javaCodingTests.problems.filter((problem) => problem.legacyQuestId);
-  const publicTestIds = javaCodingTests.problems.flatMap((problem) =>
+  const publicTestIds = bridgeProblems.flatMap((problem) =>
     problem.publicTests.map((publicTest) => publicTest.id),
   );
   const usedTypes = new Set(
-    javaCodingTests.problems.flatMap((problem) => [
+    bridgeProblems.flatMap((problem) => [
       ...problem.functionContract.parameters.map((parameter) => parameter.type),
       problem.functionContract.returns.type,
     ]),
   );
 
   assert.equal(SOURCE_SLOTS.length, 72);
-  assert.equal(javaCodingTests.problems.length, 72);
+  assert.equal(bridgeProblems.length, 72);
+  assert.deepEqual(javaCodingTests.problems.slice(0, 72), bridgeProblems);
   assert.equal(javascriptCodingTests.problems.length, 6);
   assert.equal(questCollections.reduce((count, collection) => count + collection.quests.length, 0), 32);
   assert.equal(questCollections.find(({ languageId }) => languageId === "java").quests.length, 4);
-  assert.deepEqual(javaCodingTests.problems.map(({ id }) => id), expectedProblemIds);
-  assert.deepEqual(javaCodingTests.problems.map(({ slug }) => slug), expectedSlugs);
-  assert.deepEqual(javaCodingTests.problems.map(({ order }) => order), SOURCE_SLOTS.map((_, index) => index + 1));
+  assert.deepEqual(bridgeProblems.map(({ id }) => id), expectedProblemIds);
+  assert.deepEqual(bridgeProblems.map(({ slug }) => slug), expectedSlugs);
+  assert.deepEqual(bridgeProblems.map(({ order }) => order), SOURCE_SLOTS.map((_, index) => index + 1));
   assert.deepEqual(new Set(related.map(({ relatedQuestId }) => relatedQuestId)), RELATED_QUEST_IDS);
   assert.equal(related.length, 3);
   assert.equal(legacy.length, 69);
@@ -193,7 +196,7 @@ test("Java72·JavaScript6과 기존 Quest32의 ID·원본 순서·연결을 고�
   assert.equal(javaCodingTests.problems.some(({ hints }) => hints.length === 0), true);
   assert.deepEqual(
     codingTestFixtures.map(({ problemId, revision }) => [problemId, revision]),
-    javaCodingTests.problems.map(({ id, revision }) => [id, revision]),
+    bridgeProblems.map(({ id, revision }) => [id, revision]),
   );
   assert.equal(
     codingTestFixtures.every(({ executionStatus }) =>
@@ -202,9 +205,9 @@ test("Java72·JavaScript6과 기존 Quest32의 ID·원본 순서·연결을 고�
   );
 });
 
-test("Java 전용 schema와 core는 닫힌 72문제 draft 계약을 승인한다", () => {
-  assert.equal(javaSchema.properties.problems.minItems, 72);
-  assert.equal(javaSchema.properties.problems.maxItems, 72);
+test("Java 전용 schema와 core는 원본 72문제와 뒤에 붙는 새 문제의 draft 계약을 승인한다", () => {
+  assert.equal(javaSchema.properties.problems.minItems, 84);
+  assert.equal(javaSchema.properties.problems.maxItems, 84);
   assert.deepEqual(javaSchema.$defs.javaType.enum, JAVA_TYPES);
   assert.equal(javaSchema.$defs.problem.properties.executionMode.const, "draft-only");
   assert.equal(javaSchema.$defs.problem.additionalProperties, false);
@@ -219,6 +222,24 @@ test("Java 전용 schema와 core는 닫힌 72문제 draft 계약을 승인한다
   assert.match(validateMutation(expectedJavaProblemId(2), (problem) => {
     delete problem.legacyQuestId;
   }).join("\n"), /relatedQuestId 또는 legacyQuestId 중 하나/);
+});
+
+test("새로 만든 Java 코딩테스트는 승인된 12개 ID·순서를 지키고 원본 Quest 연결을 두지 않는다", () => {
+  const withAuthored = (change) => {
+    const candidate = structuredClone(javaCodingTests);
+    const authored = candidate.problems[83];
+    change?.(candidate, authored);
+    return validateCodingTestCollection(candidate, curriculum).join("\n");
+  };
+  assert.equal(withAuthored(), "");
+  assert.match(withAuthored((_, authored) => { authored.legacyQuestId = "quest-java-bridge-arr-01"; }), /원본 Quest 연결을 두지 않습니다/);
+  assert.match(withAuthored((_, authored) => { authored.slug = "bridge-test-01"; }), /algo-로 시작해야/);
+  assert.match(withAuthored((_, authored) => { authored.origin = "copied"; }), /origin은 bam-authored/);
+  assert.match(withAuthored((candidate) => {
+    const authored = candidate.problems.pop();
+    candidate.problems.unshift(authored);
+    candidate.problems.forEach((problem, index) => { problem.order = index + 1; });
+  }), /원본 72문제 뒤에 이어져야/);
 });
 
 test("12개 Java 표시 타입은 예제 인수·반환의 잘못된 값과 배열 경계를 거부한다", () => {

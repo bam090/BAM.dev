@@ -1,6 +1,7 @@
 import { compileJavaSources } from "./java-browser-compiler.js";
 import { createJavaClassJar } from "./java-browser-class-jar.js";
 import { runJavaBrowserCase } from "./java-browser-provider.js";
+import { isApprovedAuthoredJavaCodingTest } from "../core/coding-test.js";
 
 const SUPPORTED_PROBLEM_COUNTS = Object.freeze({
   arr: 12, stk: 5, que: 4, hsh: 6, tre: 4, set: 4, gra: 6,
@@ -47,17 +48,21 @@ function canonicalArtifact(assets, problem) {
   const artifact = assets?.ctArtifacts;
   const item = artifact?.manifest?.problems?.find((entry) => entry.id === problem.id && entry.revision === problem.revision);
   if (!item || !Array.isArray(item.tests) || item.tests.length !== problem.publicTests?.length) throw new Error("공개 JUnit 자산이 현재 문제와 일치하지 않습니다.");
-  const testPath = `${item.tests[0].testClass.replaceAll(".", "/")}.java`;
-  const adapterPath = `${item.solutionClass.replaceAll(".", "/")}.java`;
-  const originalTestSource = artifact.sources?.[`sources/${testPath}`];
-  const adapterSource = artifact.sources?.[`sources/${adapterPath}`];
-  if (originalTestSource !== problem.publicTestSource || typeof adapterSource !== "string"
+  const authored = isApprovedAuthoredJavaCodingTest(problem);
+  const testPath = authored ? "SolutionPublicTest.java" : `${item.tests[0].testClass.replaceAll(".", "/")}.java`;
+  const adapterPath = authored ? null : `${item.solutionClass.replaceAll(".", "/")}.java`;
+  const sourcePath = authored ? `sources/authored/${problem.id}/SolutionPublicTest.java` : `sources/${testPath}`;
+  const originalTestSource = artifact.sources?.[sourcePath];
+  const adapterSource = authored ? null : artifact.sources?.[`sources/${adapterPath}`];
+  if (item.origin !== problem.origin || (authored && (item.solutionClass !== "Solution"
+      || item.tests.some((test) => test.testClass !== "SolutionPublicTest")))
+    || originalTestSource !== problem.publicTestSource || (!authored && typeof adapterSource !== "string")
     || item.tests.some((test, index) => test.id !== problem.publicTests[index]?.id
       || test.label !== problem.publicTests[index]?.label
       || test.assertionSource !== problem.publicTests[index]?.assertionSource)) {
     throw new Error("공개 JUnit 원본과 실행 자산이 일치하지 않습니다.");
   }
-  return { item, testPath, adapterPath, originalTestSource, adapterSource };
+  return { item, testPath, adapterPath, originalTestSource, adapterSource, authored };
 }
 
 export class JavaBrowserCodingTestProvider {
@@ -70,8 +75,9 @@ export class JavaBrowserCodingTestProvider {
   }
 
   supportsProblem(problem) {
+    if (isApprovedAuthoredJavaCodingTest(problem)) return true;
     const match = /^coding-test-java-bridge-([a-z]{3})-(\d{2})$/.exec(problem?.id ?? "");
-    return problem?.revision === 1 && Boolean(match)
+    return problem?.revision === 1 && problem?.origin === undefined && Boolean(match)
       && Number(match[2]) >= 1 && Number(match[2]) <= (SUPPORTED_PROBLEM_COUNTS[match[1]] ?? 0);
   }
 
@@ -88,7 +94,7 @@ export class JavaBrowserCodingTestProvider {
     const collection = this.getCollection?.();
     const problem = collection?.problems?.find((item) => item.id === request.problemId && item.revision === request.revision);
     if (!this.supportsProblem(problem) || !["run", "submit"].includes(request.mode)) throw new Error("이 Java 코딩테스트는 아직 브라우저 실행을 지원하지 않습니다.");
-    const { item, testPath, adapterPath, originalTestSource, adapterSource } = canonicalArtifact(assets, problem);
+    const { item, testPath, adapterPath, originalTestSource, adapterSource, authored } = canonicalArtifact(assets, problem);
     const selected = request.mode === "run" ? item.tests.slice(0, 1) : item.tests;
     const started = performance.now();
     const controller = new AbortController();
@@ -103,8 +109,10 @@ export class JavaBrowserCodingTestProvider {
       try {
         compiled = await this.compile({ sources: [
           { path: "Solution.java", source: request.source },
-          { path: adapterPath, source: adapterSource },
-          { path: "dev/bam/runtime/SolutionInvoker.java", source: assets.compiler.solutionInvokerSource },
+          ...(!authored ? [
+            { path: adapterPath, source: adapterSource },
+            { path: "dev/bam/runtime/SolutionInvoker.java", source: assets.compiler.solutionInvokerSource },
+          ] : []),
           { path: testPath, source: originalTestSource },
         ], entryClass: "Solution", profile: "junit" }, { signal: controller.signal, assets });
       } catch (error) {

@@ -101,3 +101,17 @@ test("Quest와 JUnit의 고정 entry·source 개수·UTF-8 상한을 Worker 전�
   }
   assert.equal(requests.length, 0);
 });
+
+
+test("authored JUnit은 Solution과 기본 패키지 원문 테스트 두 소스만 받는다", async (t) => {
+  const requests = installWorker(t, (worker, request) => worker.send({
+    status: "compiled", diagnostics: [], classesBase64: { Solution: class17, SolutionPublicTest: class17 },
+  }, request));
+  const authored = [source(), source("SolutionPublicTest.java", "class SolutionPublicTest {}")];
+  const result = await compileJavaSources({ sources: authored, entryClass: "Solution", profile: "junit" }, { assets });
+  assert.deepEqual(requests[0].sources, authored);
+  assert.deepEqual(Object.keys(result.classes).sort(), ["Solution", "SolutionPublicTest"]);
+  await assert.rejects(async () => compileJavaSources({ sources: [...authored, source("Placeholder.java")],
+    entryClass: "Solution", profile: "junit" }, { assets }), { code: "invalid_input" });
+  assert.equal(requests.length, 1);
+});
