@@ -1114,7 +1114,7 @@ test("코딩테스트 분할선은 키보드·포인터와 크기 변경에서 �
   app.root = { querySelector(selector) { return selector === "[data-coding-test-workspace]" ? workspace : null; } };
   app.attachCodingTestSplitters();
   assert.equal(observers[0].observed, workspace);
-  assert.equal(workspace.style["--coding-test-workspace-height"], "600px");
+  assert.equal(workspace.style["--coding-test-workspace-height"], "569px");
   const key = (handle, name, shiftKey = false) => {
     let prevented = false;
     handle.dispatch("keydown", { key: name, shiftKey, preventDefault() { prevented = true; } });
@@ -1122,7 +1122,7 @@ test("코딩테스트 분할선은 키보드·포인터와 크기 변경에서 �
   };
   const columnWidth = () => parseFloat(workspace.style["--coding-test-problem-width"]);
   const rowHeight = () => parseFloat(runColumn.style["--coding-test-editor-height"]);
-  assert.equal(Math.round(rowHeight() / 588 * 100), 64, "기본 코딩 영역 비율을 실제 분할 높이에 적용한다.");
+  assert.equal(Math.round(rowHeight() / 557 * 100), 64, "기본 코딩 영역 비율을 실제 분할 높이에 적용한다.");
   const initialWidth = columnWidth();
   key(columns, "ArrowRight");
   assert.equal(columnWidth(), initialWidth + 12);
@@ -1135,7 +1135,7 @@ test("코딩테스트 분할선은 키보드·포인터와 크기 변경에서 �
   key(rows, "Home");
   assert.equal(rowHeight(), 300);
   key(rows, "End");
-  assert.equal(rowHeight(), 428);
+  assert.equal(rowHeight(), 397);
   let prevented = false;
   columns.dispatch("pointerdown", { button: 0, pointerId: 7, preventDefault() { prevented = true; } });
   assert.equal(prevented, true);
@@ -1147,7 +1147,7 @@ test("코딩테스트 분할선은 키보드·포인터와 크기 변경에서 �
   columns.dispatch("pointermove", { pointerId: 7, clientX: 10 });
   assert.equal(columnWidth(), 808, "드래그가 끝나면 후속 이동은 무시한다.");
   bounds.width = 900;
-  window.innerHeight = 830;
+  window.innerHeight = 861;
   observers[0].callback();
   assert.equal(workspace.style["--coding-test-workspace-height"], "500px");
   assert.equal(columnWidth(), 508);
