@@ -385,18 +385,48 @@ test("탐색 사이드바는 실제 주제의 가까운 문서와 성공한 최�
   app.handleClick(click("[data-sidebar-catalog]", { dataset: { sidebarCatalog: "learn" } }));
   await app.openRoute();
   assert.equal(window.location.hash, "#/learn");
-  assert.match(app.root.innerHTML, /HTML · 15개 키워드/);
+  assert.match(app.root.innerHTML, /HTML · 15개 문서/);
   app.handleChange({ target: { closest: (selector) => selector === "[data-sidebar-topic]" ? { value: "css" } : null } });
   const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
   assert.deepEqual(app.catalogFilters.learn, { topicId: "css", query: "" });
   assert.deepEqual(app.catalogFilters.review, { topicId: null, query: "" });
-  // 학습문서는 주제를 고르면 그 주제의 키워드 카드가 나온다.
-  const cssKeywordIds = app.curriculum.lessons.filter((lesson) => lesson.courseId === "css" && !lesson.archivedFromCatalog).map((lesson) => lesson.id);
-  const shownKeywordIds = [...main.matchAll(/data-catalog-keyword="([^"]+)"/g)].map((match) => match[1]);
-  assert.ok(shownKeywordIds.length > 0);
-  assert.ok(shownKeywordIds.every((id) => cssKeywordIds.includes(id)));
+  const cssCards = [...main.matchAll(/class="catalog-card" href="([^"]+)"/g)].map((match) => match[1]);
+  assert.ok(cssCards.length > 0);
+  assert.ok(cssCards.every((href) => href.startsWith("#/learn/css/")));
+  assert.doesNotMatch(main, /data-catalog-keyword=/);
   assert.deepEqual(app.progressRepository.getProgress().completedLessonIds, []);
   assert.deepEqual(app.progressRepository.getProgress().quizAttempts, []);
+});
+
+test("알고리즘만 키워드 선택 뒤 문서 카드를 열고 검색은 선택을 지운다", async (t) => {
+  browser(t, "#/learn");
+  const { app, errors } = harness();
+  await app.openRoute();
+  app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "algorithm" }, disabled: false }));
+  assert.match(app.root.innerHTML, /data-catalog-keyword="algo-09-tree"/);
+  assert.doesNotMatch(app.root.innerHTML, /class="catalog-card"/);
+  let focusOptions = null;
+  const querySelector = app.root.querySelector;
+  app.root.querySelector = (selector) => selector === '[data-catalog-keyword][aria-pressed="true"]'
+    ? { focus(options) { focusOptions = options; } } : querySelector(selector);
+  app.handleClick(click("[data-catalog-keyword]", { dataset: { catalogKeyword: "algo-09-tree" } }));
+  app.root.querySelector = querySelector;
+  assert.equal(app.catalogFilters.learn.keywordId, "algo-09-tree");
+  assert.deepEqual(focusOptions, { preventScroll: true });
+  assert.match(app.root.innerHTML, /data-catalog-keyword="algo-09-tree" aria-pressed="true"/);
+  assert.match(app.root.innerHTML, /class="catalog-card" href="#\/learn\/algorithm\/tree-basics"/);
+  const input = { value: "트리", selectionStart: 2, focus() {}, setSelectionRange() {} };
+  app.root.querySelector = (selector) => selector === "[data-catalog-search]" ? input : null;
+  app.handleInput({ target: { closest: (selector) => selector === "[data-catalog-search]" ? input : null } });
+  assert.deepEqual(app.catalogFilters.learn, { topicId: "algorithm", query: "트리" });
+  assert.doesNotMatch(app.root.innerHTML, /data-catalog-keyword=/);
+  assert.match(app.root.innerHTML, /class="catalog-card"/);
+  app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "html" }, disabled: false }));
+  assert.deepEqual(app.catalogFilters.learn, { topicId: "html", query: "트리" });
+  app.handleClick(click("[data-catalog-keyword]", { dataset: { catalogKeyword: "algo-09-tree" } }));
+  assert.deepEqual(app.catalogFilters.learn, { topicId: "html", query: "트리" }, "다른 주제의 오래된 키워드 클릭은 무시한다.");
+  assert.doesNotMatch(app.root.innerHTML, /data-catalog-keyword=/);
+  assert.deepEqual(errors, []);
 });
 
 test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를 선택하고 이전 검색을 비운다", async (t) => {
@@ -419,17 +449,8 @@ test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를
     await followService(app, "learn");
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topicId }, disabled: false }));
     if (documentHash) {
-      const documentLesson = app.curriculum.lessons.find((lesson) => `#/learn/${lesson.courseId}/${lesson.slug}` === documentHash);
-      let focusOptions = null;
-      const querySelector = app.root.querySelector;
-      app.root.querySelector = (selector) => selector === '[data-catalog-keyword][aria-pressed="true"]'
-        ? { focus(options) { focusOptions = options; } } : querySelector(selector);
-      app.handleClick(click("[data-catalog-keyword]", { dataset: { catalogKeyword: documentLesson.id } }));
-      app.root.querySelector = querySelector;
-      assert.equal(app.catalogFilters.learn.keywordId, documentLesson.id);
-      assert.deepEqual(focusOptions, { preventScroll: true });
-      assert.ok(app.root.innerHTML.includes(`data-catalog-keyword="${documentLesson.id}" aria-pressed="true"`));
       assert.ok(app.root.innerHTML.includes(`class="catalog-card" href="${documentHash}"`));
+      assert.doesNotMatch(app.root.innerHTML, /data-catalog-keyword=/);
       window.location.hash = documentHash;
       await app.openRoute();
     }
@@ -533,7 +554,8 @@ test("문서와 문제에서 검색·주제 선택·초기화가 동작하고 �
     input.value = "";
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "javascript" }, disabled: false }));
     assert.deepEqual(app.catalogFilters[kind], { topicId: "javascript", query: "" });
-    assert.match(app.root.innerHTML, kind === "learn" ? /data-catalog-keyword=/ : /class="catalog-card"/);
+    assert.match(app.root.innerHTML, /class="catalog-card"/);
+    assert.doesNotMatch(app.root.innerHTML, /data-catalog-keyword=/);
   }
   assert.deepEqual(app.catalogFilters.learn, { topicId: "javascript", query: "" });
   assert.ok(focused >= 4, "검색과 초기화 이후 검색 입력 초점을 유지한다.");

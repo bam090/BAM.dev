@@ -118,13 +118,15 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
     .map(getCourseTopic) : [];
   const topicButtons = CATALOG_TOPICS.map((topic) => {
     const topicItems = topic.id === "all" ? allItems : allItems.filter((item) => item.topicId === topic.id);
-    const count = isReview ? topicItems.reduce((sum, item) => sum + item.count, 0) : topicItems.filter((item) => item.isUnit).length;
+    const count = isReview ? topicItems.reduce((sum, item) => sum + item.count, 0)
+      : topic.id === "algorithm" ? topicItems.filter((item) => item.isUnit).length : topicItems.length;
     const sample = topicItems.length > 0 && topicItems.every((item) => item.sample);
     const failed = topic.id === "all" ? failedTopics.length > 0 : failedTopics.includes(topic.id);
-    const status = failed ? (count ? "일부 불러오기 실패" : "불러오기 실패") : count ? `${count}${isReview ? "문제" : "개 키워드"}${sample ? " · 샘플" : ""}` : topic.planned ? "준비 중" : "자료 없음";
+    const countLabel = isReview ? "문제" : topic.id === "algorithm" ? "개 키워드" : "개 문서";
+    const status = failed ? (count ? "일부 불러오기 실패" : "불러오기 실패") : count ? `${count}${countLabel}${sample ? " · 샘플" : ""}` : topic.planned ? "준비 중" : "자료 없음";
     return `<button class="catalog-topic" type="button" data-catalog-topic="${topic.id}" aria-pressed="${topic.id === topicId}"${count === 0 && topic.id !== "all" ? " disabled" : ""}><strong>${topic.title}</strong><span>${status}</span>${topic.id === topicId ? '<span class="catalog-topic-selected">선택됨</span>' : ""}</button>`;
   }).join("");
-  const usesKeywordFlow = !isReview && topicId !== null && topicId !== "all" && !query.trim();
+  const usesKeywordFlow = !isReview && topicId === "algorithm" && !query.trim();
   const keywordUnits = usesKeywordFlow ? items.filter((item) => item.isUnit) : [];
   const selectedKeyword = keywordUnits.find((item) => item.lessonId === filters.keywordId) ?? null;
   const documentItems = usesKeywordFlow ? items.filter((item) => item.unitId === selectedKeyword?.lessonId) : items;

@@ -2080,7 +2080,8 @@ export class BamLearningApp {
       return;
     }
     const catalogKeyword = event.target.closest("[data-catalog-keyword]");
-    if (catalogKeyword && this.currentView === "learn-catalog") {
+    if (catalogKeyword && this.currentView === "learn-catalog"
+      && this.catalogFilters.learn.topicId === "algorithm" && !(this.catalogFilters.learn.query ?? "").trim()) {
       this.catalogFilters.learn = { ...this.catalogFilters.learn, keywordId: catalogKeyword.dataset.catalogKeyword };
       this.renderLearningCatalog();
       this.root.querySelector('[data-catalog-keyword][aria-pressed="true"]')?.focus({ preventScroll: true });
