@@ -278,6 +278,48 @@ test("HTML·CSS 개념 문서는 직접답과 활성 순서를 사용하고 보�
   }
 });
 
+test("등록 학습문서마다 같은 객관식 복습 CTA는 한 번만 표시한다", async () => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  const { concepts } = JSON.parse(await readFile(new URL("../content/review-concepts.json", import.meta.url), "utf8"));
+  const collections = new Map(await Promise.all(["html", "css", "javascript", "java"].map(async (id) =>
+    [id, JSON.parse(await readFile(new URL(`../content/quizzes/${id}.json`, import.meta.url), "utf8"))])));
+  const duplicates = [];
+  let rendered = 0;
+  const consolidated = new Map();
+  for (const lesson of curriculum.lessons) {
+    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+    const app = createLessonApp(false);
+    Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: markdown, reviewConcepts: concepts, quizCollections: collections });
+    app.renderLesson();
+    rendered += 1;
+    const ctas = [...app.root.innerHTML.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g)]
+      .map(([, href, body]) => ({ href: href.replaceAll("&amp;", "&"), label: body.replace(/<[^>]+>/g, "").trim() }))
+      .filter(({ href, label }) => href.startsWith("#/review/") && label.includes("객관식으로 복습하기"));
+    const byLabel = new Map();
+    for (const cta of ctas) {
+      const key = `${cta.label}\u0000${cta.href.split("?")[0]}`;
+      const previous = byLabel.get(key) ?? [];
+      previous.push(cta.href);
+      byLabel.set(key, previous);
+    }
+    for (const [key, hrefs] of byLabel) {
+      if (hrefs.length > 1) duplicates.push(`${lesson.id}: ${key.split("\u0000")[0]} → ${hrefs.join(", ")}`);
+    }
+    if (["css-notes-css-basics", "css-notes-states", "css-notes-layout-review"].includes(lesson.id)) {
+      consolidated.set(lesson.id, ctas);
+    }
+  }
+  assert.equal(rendered, curriculum.lessons.length);
+  assert.equal(duplicates.length, 0, `같은 문서의 같은 표시 문구 복습 CTA 중복 ${duplicates.length}건: ${duplicates.slice(0, 8).join("; ")}`);
+  for (const [id, questionCount] of [["css-notes-css-basics", 2], ["css-notes-states", 2], ["css-notes-layout-review", 4]]) {
+    const route = `#/review/css/${id}`;
+    const links = consolidated.get(id) ?? [];
+    assert.deepEqual(links.filter(({ href }) => href.split("?")[0] === route).map(({ href }) => href), [route], `${id}: 문서 전체 복습 CTA 하나`);
+    assert.equal(collections.get("css").questions.filter((question) => question.lessonId === id).length, questionCount, `${id}: 문서 전체 복습 질문은 보존한다.`);
+    if (id === "css-notes-layout-review") assert.equal(links.filter(({ href }) => href.split("?")[0] !== route).length, 3, "다른 문서 소유 복습 CTA는 보존한다.");
+  }
+});
+
 test("Spring의 명시 직접답과 선수 링크를 읽고 CSS·Spring 활성 문서 모두 실제 객관식으로 이동한다", async () => {
   const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
   const { concepts } = JSON.parse(await readFile(new URL("../content/review-concepts.json", import.meta.url), "utf8"));
@@ -299,7 +341,8 @@ test("Spring의 명시 직접답과 선수 링크를 읽고 CSS·Spring 활성 �
       const conceptId = new URLSearchParams(query).get("concept");
       assert.equal(service, "review");
       assert.equal(languageId, lesson.languageId);
-      assert.ok(collections.get(languageId).questions.some((question) => (!ownerId || question.lessonId === ownerId) && question.conceptId === conceptId), `${lesson.id}: ${href}`);
+      assert.ok(collections.get(languageId).questions.some((question) =>
+        (!ownerId || question.lessonId === ownerId) && (!conceptId || question.conceptId === conceptId)), `${lesson.id}: ${href}`);
     }
     if (lesson.courseId !== "spring") continue;
     assert.equal(lesson.answerHeading, "핵심 질문 답");

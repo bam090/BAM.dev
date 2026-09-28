@@ -940,6 +940,20 @@ test("공유 키워드에 새 문항이 추가되면 안내 후 사용자가 새
   assert.deepEqual(errors, []);
 });
 
+test("합쳐진 CSS 문서 복습 링크는 각 문서의 공개 질문을 모두 연다", async (t) => {
+  browser(t);
+  const cssQuestions = JSON.parse(await readFile(new URL("../content/quizzes/css.json", import.meta.url), "utf8")).questions;
+  for (const [ownerId, expectedCount] of [["css-notes-css-basics", 2], ["css-notes-states", 2], ["css-notes-layout-review", 4]]) {
+    window.location.hash = `#/review/css/${ownerId}`;
+    const { app, errors } = harness();
+    await app.openRoute();
+    assert.deepEqual(app.quizSession.questions.map((question) => question.id).sort(),
+      cssQuestions.filter((question) => question.lessonId === ownerId).map((question) => question.id).sort(), ownerId);
+    assert.equal(app.quizSession.questions.length, expectedCount, ownerId);
+    assert.deepEqual(errors, []);
+  }
+});
+
 test("CSS Flexbox의 글쓰기 조건 보완은 해당 풀이만 새 시작을 요구하고 미변경 문항·완료 기록을 보존한다", async (t) => {
   browser(t);
   const currentFetch = globalThis.fetch;
@@ -1233,7 +1247,7 @@ test("Spring 문서 범위는 과정명을 표시하고 Java 전체 범위와 �
   }
 });
 
-test("새 HTML·CSS 문서는 실제 키워드만 연결하고 문제 없는 문서를 전체 문제로 보내지 않는다", async (t) => {
+test("새 HTML·CSS 문서는 실제 복습 범위만 연결하고 문제 없는 문서를 전체 문제로 보내지 않는다", async (t) => {
   browser(t);
   for (const [languageId, mappedSlug, unmappedSlug, expectedQuestions] of [
     ["html", "input-names", "media-alternatives", [
@@ -1244,8 +1258,10 @@ test("새 HTML·CSS 문서는 실제 키워드만 연결하고 문제 없는 문
       ["css-position-flex-grid", "css.grid", ["quiz-css-grid-position-choice"]],
       [null, "css.debugging", ["quiz-css-debugging-cascade-step", "quiz-css-unmatched-selector-debug"]],
       [null, "css.layout-choice", ["quiz-css-layout-tool-choice", "quiz-css-variable-badge-flow"]],
-      ["css-notes-layout-review", "css.problem-decomposition", ["quiz-css-overflow-one-cause"]],
-      ["css-notes-layout-review", "css.accessibility-review", ["quiz-css-visual-dom-order"]],
+      ["css-notes-layout-review", null, [
+        "quiz-css-unmatched-selector-debug", "quiz-css-overflow-one-cause",
+        "quiz-css-visual-dom-order", "quiz-css-variable-badge-flow",
+      ]],
     ]],
   ]) {
     window.location.hash = `#/learn/${languageId}/wiki-${mappedSlug}`;
@@ -1253,7 +1269,7 @@ test("새 HTML·CSS 문서는 실제 키워드만 연결하고 문제 없는 문
     await app.openRoute();
     const links = [...app.root.innerHTML.matchAll(/href="(#\/review\/[^\"]+)"/g)].map((match) => match[1]);
     const expected = expectedQuestions.map(([ownerId, conceptId, questionIds]) => [
-      `#/review/${languageId}${ownerId ? `/${ownerId}` : ""}?concept=${conceptId}`, questionIds,
+      `#/review/${languageId}${ownerId ? `/${ownerId}` : ""}${conceptId ? `?concept=${conceptId}` : ""}`, questionIds,
     ]);
     assert.deepEqual(links.toSorted(), expected.map(([href]) => href).toSorted());
     for (const [href, questionIds] of expected) {
