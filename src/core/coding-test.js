@@ -55,7 +55,26 @@ const PUBLIC_TEST_FIELDS = new Set(["id", "label", "args", "expected"]);
 const FAILURE_EXPLANATION_FIELDS = new Set(["testId", "message"]);
 const JAVA_AUTHORED_ORIGIN = "bam-authored";
 const JAVA_BRIDGE_PROBLEM_COUNT = 72;
-const JAVA_MAX_PROBLEM_COUNT = 100;
+const JAVA_TOTAL_PROBLEM_COUNT = 84;
+export const JAVA_AUTHORED_CODING_TEST_IDS = Object.freeze([
+  "coding-test-java-algo-tree-map-01",
+  "coding-test-java-algo-bellman-ford-01",
+  "coding-test-java-algo-binary-search-01",
+  "coding-test-java-algo-topological-sort-01",
+  "coding-test-java-algo-string-01",
+  "coding-test-java-algo-gcd-01",
+  "coding-test-java-algo-prime-01",
+  "coding-test-java-algo-combinatorics-01",
+  "coding-test-java-algo-bits-01",
+  "coding-test-java-algo-geometry-01",
+  "coding-test-java-algo-integer-01",
+  "coding-test-java-algo-fast-power-01",
+]);
+export function isApprovedAuthoredJavaCodingTest(problem) {
+  const index = JAVA_AUTHORED_CODING_TEST_IDS.indexOf(problem?.id);
+  return index >= 0 && problem.origin === JAVA_AUTHORED_ORIGIN
+    && problem.order === JAVA_BRIDGE_PROBLEM_COUNT + index + 1 && problem.revision === 1;
+}
 const JAVA_PROBLEM_FIELDS = new Set([
   "id",
   "slug",
@@ -114,6 +133,27 @@ const JAVA_LONG_MAX = 2n ** 63n - 1n;
 const CANONICAL_DECIMAL_PATTERN = /^(?:0|-?[1-9][0-9]*)$/;
 const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*tests?|hidden\s*tests?/iu;
 const JAVA_EVALUATION_KIND = "java-static-method-v1";
+export async function createCodingTestSourceFingerprint(
+  source,
+  crypto = globalThis.crypto,
+) {
+  if (typeof source !== "string") {
+    throw new TypeError("코딩테스트 source는 문자열이어야 합니다.");
+  }
+  if (typeof crypto?.subtle?.digest !== "function") {
+    throw new Error("코딩테스트 source fingerprint를 계산할 수 없습니다.");
+  }
+
+  const digest = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source)),
+  );
+  if (digest.byteLength !== 32) {
+    throw new Error("코딩테스트 source fingerprint를 계산할 수 없습니다.");
+  }
+  return [...digest]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
 const JAVA_DRAFT_EXECUTION_MODE = "draft-only";
 const JAVA_TYPES = new Set([
   "int",
@@ -833,7 +873,7 @@ function validateJavaCodingTestCollectionInternal(collectionValue, curriculum) {
   const lessonMap = new Map(
     (Array.isArray(curriculum?.lessons) ? curriculum.lessons : []).map((lesson) => [lesson.id, lesson]),
   );
-  const problems = inspectArray(collection.problems, "Java 코딩테스트 컬렉션.problems", errors, JAVA_BRIDGE_PROBLEM_COUNT, JAVA_MAX_PROBLEM_COUNT);
+  const problems = inspectArray(collection.problems, "Java 코딩테스트 컬렉션.problems", errors, JAVA_TOTAL_PROBLEM_COUNT, JAVA_TOTAL_PROBLEM_COUNT);
   const problemIds = new Set();
   const slugs = new Set();
   const allTestIds = new Set();
@@ -855,11 +895,14 @@ function validateJavaCodingTestCollectionInternal(collectionValue, curriculum) {
   }
   // 원본 72문제는 순서와 URL을 지키려고 늘 앞에 두고 새로 만든 문제는 그 뒤에만 붙인다.
   const firstAuthoredIndex = problems.findIndex((problem) => problem?.origin === JAVA_AUTHORED_ORIGIN);
-  if (firstAuthoredIndex !== -1 && firstAuthoredIndex !== JAVA_BRIDGE_PROBLEM_COUNT) {
+  if (firstAuthoredIndex !== JAVA_BRIDGE_PROBLEM_COUNT) {
     errors.push(`새로 만든 Java 코딩테스트는 원본 ${JAVA_BRIDGE_PROBLEM_COUNT}문제 뒤에 이어져야 합니다.`);
   }
-  if (firstAuthoredIndex !== -1 && problems.slice(firstAuthoredIndex).some((problem) => problem?.origin !== JAVA_AUTHORED_ORIGIN)) {
+  if (problems.slice(JAVA_BRIDGE_PROBLEM_COUNT).some((problem) => problem?.origin !== JAVA_AUTHORED_ORIGIN)) {
     errors.push("원본 Java 코딩테스트는 새로 만든 문제 뒤에 올 수 없습니다.");
+  }
+  if (problems.slice(JAVA_BRIDGE_PROBLEM_COUNT).some((problem) => !isApprovedAuthoredJavaCodingTest(problem))) {
+    errors.push("새로 만든 Java 코딩테스트의 승인된 ID·순서·revision이 일치하지 않습니다.");
   }
   return errors;
 }
@@ -960,14 +1003,24 @@ export function findCodingTestProblemBySlug(collectionOrProblems, slug) {
   return resolveProblemList(collectionOrProblems).find((problem) => problem?.slug === slug) ?? null;
 }
 
-export function canRunCodingTest(collection, problem) {
-  return (
+export function canRunCodingTest(collection, problem, javaExecutionAvailable = false) {
+  const belongsToCollection =
     isPlainRecord(collection) &&
-    collection.languageId === "javascript" &&
     isPlainRecord(problem) &&
-    problem.executionMode !== JAVA_DRAFT_EXECUTION_MODE &&
     Array.isArray(collection.problems) &&
-    collection.problems.some((candidate) => candidate?.id === problem.id)
+    collection.problems.some(
+      (candidate) =>
+        candidate?.id === problem.id && candidate?.revision === problem.revision,
+    );
+  if (!belongsToCollection) return false;
+  if (collection.languageId === "javascript") {
+    return problem.executionMode !== JAVA_DRAFT_EXECUTION_MODE;
+  }
+  return (
+    collection.languageId === "java" &&
+    collection.evaluationKind === JAVA_EVALUATION_KIND &&
+    problem.executionMode === JAVA_DRAFT_EXECUTION_MODE &&
+    javaExecutionAvailable === true
   );
 }
 
@@ -1003,7 +1056,9 @@ export function filterCodingTestProblems(
     if (difficulty !== "all" && problem.difficulty !== difficulty) return false;
     if (type !== "all" && problem.type !== type) return false;
     const isCompleted = completedIds.has(problem.id);
-    const isDraftOnly = problem.executionMode === JAVA_DRAFT_EXECUTION_MODE;
+    const isDraftOnly =
+      problem.executionMode === JAVA_DRAFT_EXECUTION_MODE &&
+      problem.executionAvailable !== true;
     if (status === "solved" && (isDraftOnly || !isCompleted)) return false;
     if (status === "unsolved" && (isCompleted || isDraftOnly)) return false;
     if (!normalizedQuery) return true;

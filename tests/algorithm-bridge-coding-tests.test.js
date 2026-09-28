@@ -206,8 +206,8 @@ test("Java 원본72·JavaScript6과 기존 Quest32의 ID·원본 순서·연결�
 });
 
 test("Java 전용 schema와 core는 원본 72문제와 뒤에 붙는 새 문제의 draft 계약을 승인한다", () => {
-  assert.equal(javaSchema.properties.problems.minItems, 72);
-  assert.equal(javaSchema.properties.problems.maxItems, 100);
+  assert.equal(javaSchema.properties.problems.minItems, 84);
+  assert.equal(javaSchema.properties.problems.maxItems, 84);
   assert.deepEqual(javaSchema.$defs.javaType.enum, JAVA_TYPES);
   assert.equal(javaSchema.$defs.problem.properties.executionMode.const, "draft-only");
   assert.equal(javaSchema.$defs.problem.additionalProperties, false);
@@ -224,19 +224,10 @@ test("Java 전용 schema와 core는 원본 72문제와 뒤에 붙는 새 문제�
   }).join("\n"), /relatedQuestId 또는 legacyQuestId 중 하나/);
 });
 
-test("새로 만든 Java 코딩테스트는 algo- 이름으로 원본 뒤에 붙고 원본 Quest 연결을 두지 않는다", () => {
-  const original = javaCodingTests.problems.find(({ origin }) => origin === undefined);
+test("새로 만든 Java 코딩테스트는 승인된 12개 ID·순서를 지키고 원본 Quest 연결을 두지 않는다", () => {
   const withAuthored = (change) => {
     const candidate = structuredClone(javaCodingTests);
-    const authored = structuredClone(original);
-    delete authored.relatedQuestId;
-    delete authored.legacyQuestId;
-    Object.assign(authored, {
-      id: "coding-test-java-algo-test-01", slug: "algo-test-01", origin: "bam-authored",
-      order: candidate.problems.length + 1,
-      publicTests: authored.publicTests.map((publicTest) => ({ ...publicTest, id: `algo-test-01-${publicTest.id}` })),
-    });
-    candidate.problems.push(authored);
+    const authored = candidate.problems[83];
     change?.(candidate, authored);
     return validateCodingTestCollection(candidate, curriculum).join("\n");
   };
@@ -244,8 +235,8 @@ test("새로 만든 Java 코딩테스트는 algo- 이름으로 원본 뒤에 붙
   assert.match(withAuthored((_, authored) => { authored.legacyQuestId = "quest-java-bridge-arr-01"; }), /원본 Quest 연결을 두지 않습니다/);
   assert.match(withAuthored((_, authored) => { authored.slug = "bridge-test-01"; }), /algo-로 시작해야/);
   assert.match(withAuthored((_, authored) => { authored.origin = "copied"; }), /origin은 bam-authored/);
-  assert.match(withAuthored((candidate, authored) => {
-    candidate.problems.pop();
+  assert.match(withAuthored((candidate) => {
+    const authored = candidate.problems.pop();
     candidate.problems.unshift(authored);
     candidate.problems.forEach((problem, index) => { problem.order = index + 1; });
   }), /원본 72문제 뒤에 이어져야/);
@@ -491,7 +482,7 @@ test("가져오기 버튼을 누르는 순간 생긴 CT 초안을 재확인해 �
   assert.equal(app.codingTestState.hasCodingTestDraft, true);
 });
 
-test("Java 상세는 source-first 자료·typed 표·접힌 힌트와 3중 실행 차단을 표시한다", () => {
+test("Java 상세는 source-first 자료를 보존하고 검증 capability에만 JUnit 실행을 연다", () => {
   const problem = structuredClone(findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-01"));
   const maliciousSource = "</code><script>globalThis.bad = true</script>";
   problem.publicTestSource += maliciousSource;
@@ -514,8 +505,16 @@ test("Java 상세는 source-first 자료·typed 표·접힌 힌트와 3중 실�
   assert.equal((html.match(/<summary>[123]단계 ·/g) ?? []).length, 3);
   assert.match(html, /Code Quest에서 코딩테스트로 이동/);
   assert.match(html, /관련 준비 연습:/);
-  assert.match(html, /작성 전용/);
-  assert.doesNotMatch(html, /data-coding-test-(?:run|submit|cancel|results)/);
+  assert.doesNotMatch(html, /작성 전용/);
+  assert.match(html, /data-coding-test-run/);
+  assert.doesNotMatch(html, /data-coding-test-run[^>]* disabled/u);
+  assert.match(html, /첫 공개 그룹 실행/);
+  assert.match(html, /data-coding-test-submit/);
+  assert.doesNotMatch(html, /data-coding-test-submit[^>]* disabled/u);
+  assert.match(html, /전체 공개 테스트 확인/);
+  assert.match(html, /data-coding-test-results/);
+  assert.match(html, /첫 공개 JUnit 메서드 그룹 1개/);
+  assert.match(html, /공개 그룹 2개를 모두 실행/);
   assert.match(html, /globalThis\.bad/);
   assert.doesNotMatch(html, /<script>/);
 
@@ -529,6 +528,33 @@ test("Java 상세는 source-first 자료·typed 표·접힌 힌트와 3중 실�
     executionAvailable: false,
   });
   assert.doesNotMatch(noHintHtml, /coding-test-support-title|단계 ·|힌트.*(?:button|버튼)/);
+  assert.match(noHintHtml, /작성 전용/);
+  assert.match(noHintHtml, /data-coding-test-run[^>]* disabled/u);
+  assert.match(noHintHtml, /data-coding-test-submit[^>]* disabled/u);
+  assert.match(noHintHtml, /data-coding-test-results/u);
+  assert.doesNotMatch(noHintHtml, /data-coding-test-cancel/u);
+});
+
+test("작성 전용 Java 문제도 로컬 연결을 안내하되 capability 전에는 실행을 비활성화한다", () => {
+  const problem = findCodingTestProblemBySlug(javaCodingTests, "bridge-arr-01");
+  assert.equal(problem.executionMode, "draft-only");
+  const html = renderCodingTestView({
+    languageName: "Java",
+    problem,
+    source: problem.starterCode,
+    evaluationKind: javaCodingTests.evaluationKind,
+    executionAvailable: false,
+    javaConnection: {
+      message: "이 탭에서 로컬 Java 연결을 시작하세요.", canConnect: true, needsReload: false,
+    },
+  });
+  assert.match(html, /이 탭에서 로컬 Java 연결을 시작하세요/);
+  assert.match(html, /data-java-connect>로컬 Java 연결/);
+  assert.match(html, /작성 전용/);
+  assert.match(html, /data-coding-test-run[^>]* disabled/u);
+  assert.match(html, /data-coding-test-submit[^>]* disabled/u);
+  assert.match(html, /data-coding-test-results/u);
+  assert.doesNotMatch(html, /data-coding-test-cancel/u);
 });
 
 test("legacy 초안은 현재 CT 초안 유무에 따라 가져오기만 숨기고 원문은 따로 보존한다", () => {

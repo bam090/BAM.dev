@@ -156,3 +156,15 @@ CT ID는 아래 slot 소문자에 `coding-test-java-bridge-`를 붙인다. 준�
 - [PR #22](https://github.com/bam090/BAM.dev/pull/22)는 최종 게시 receipt에서 OPEN·Draft, base `dev`, head 위 후속 commit이다. `dev`는 `3d2f4b90f834d2fe400de69d048f3bf133015645`를 유지했다. **병합·Pages 배포는 수행하지 않았다.**
 
 근거는 `/tmp/bridge-ct-desktop-receipt.md`, `/tmp/bridge-ct-publication-integration.md`, `/tmp/bridge-ct-ci-integration.md`, `/tmp/bridge-ct-publish-receipt.md`의 최종 인수 기록이다. 원본 작업 폴더의 `src`·`content`·`styles`가 게시 head와 같다는 후속 자료 조사에 따라 동일 제품 증거를 재사용했다. Java/JDK·실제 Java 컴파일/채점·desktop/설치·모바일·다른 OS는 이번 검증 PASS에 포함하지 않으며 Java 실행은 **BLOCKED**다.
+
+## 브라우저 게시 작업본 준비
+
+`[현재 사실]` 게시 담당이 원격 dev `3d2f4b90f834d2fe400de69d048f3bf133015645`에서 `codex/bridge-coding-tests` 브랜치와 `/private/tmp/bam-bridge-ct-publication` 작업본을 준비했다. 명시 허용 파일만 반입했으며 원격 기존 게시/PASS 이력과 `.nojekyll`을 보존한다. 후속 독립 자동 검사130/130·콘텐츠검사 Quest32/CT78 PASS를 총괄이 인수했다. 독립 UI·문서·최종 통합과 커밋·푸시는 아직 대기다. 이 절은 준비 사실이며 Git 게시 완료 기록이 아니다.
+
+## 최종 독립 검증 결과
+
+`[현재 사실]` 2026-09-15 독립 test_engineer **PASS**. 수정 후 관련 자동 검사130/130, 콘텐츠 검사 Quest32·CT78을 통과했다. Chrome 1024/1440의 light/dark 목록·상세·원본 소스/다운로드·Java 초안 저장/재진입·키보드, 기존 JavaScript Worker 실행·제출을 확인했다. legacy URL의 canonical 전환, 두 탭에서 클릭 시점의 최신 CT 초안을 보존하는 가져오기와 기존 Quest 초안/시도/완료 불변도 통과했다. 검증 대상 app SHA는 `fe73734eed9fa35864e6f8846784d6919a7cde43c54ef8b6730177e98f4cefba`이며 콘텐츠/제품 대상은 위 구현·콘텐츠 인계 해시와 일치한다. 독립 UI receipt SHA-256은 `8ec5ba4b104bd2050e42f221937b49c7695d66ef1f61696f037539bcc9431274`다.
+
+게시 문서 독립 검토도 반환2건 수정 후 **PASS**다. 전체Quest 카드의 대체/과거 검증 표시와 경험 표 연결을 재검했고 나머지12문서·기존323링크 PASS를 재사용했다. 문서 검토 receipt SHA-256은 `ea47d8097f9b3e0f680401ceac729bed3128993ec6269dadd506f699503ebbc1`다. 이 최종 결과는 위 단계별 대기 기록을 해당 검증 범위에서 갱신하며 최초 실패 이력을 삭제하지 않는다.
+
+Java/JDK·실제 Java 컴파일/채점·desktop/설치·모바일·다른 OS는 미실행이며 Java 실행은 계속 **BLOCKED**다. 최종 통합은 마감 중이고 커밋·푸시는 아직 완료하지 않았다. 이 절은 검증 기록만 추가하며 제품·출처·사용자 상태를 바꾸지 않는다.

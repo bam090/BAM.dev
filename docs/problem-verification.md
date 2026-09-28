@@ -58,3 +58,35 @@ node --test \
 위 명령은 52개 테스트가 모두 통과했습니다. 이어서 `npm run check`에서 콘텐츠 검증, 전체 자동 테스트 524/524와 정적 빌드가 통과했습니다. 2026-08-18 브라우저 검증에서는 HTML 문서 구조 기준 답안 6/6, 접근성 폼 기준 답안 6/6, CSS 반응형 기준 답안 5/5가 통과했습니다. `<!doctype html foo>`는 5/6, 여러 form에 컨트롤을 분산한 오답은 2/6, 비활성 `@supports` 안에 미디어 규칙을 중첩한 오답은 3/5로 실패했으며 각 실패 설명을 확인했습니다. 360px 1열·모바일 메뉴·가로 넘침 없음과 콘솔 warning/error 0건도 확인했습니다.
 
 브라우저에 포함된 Quest·코딩테스트의 실행·제출 테스트는 모두 공개 테스트이며 이것이 학습자 결과에 사용하는 전체 사례입니다. 비공개·숨김 테스트나 원격 추가 채점을 사용하지 않습니다. 아래 기준 풀이·독립 사례·대표 오답 검증은 콘텐츠와 평가기를 확인하는 개발 증거이며 설치본의 학습자 답안에는 실행하지 않습니다.
+
+## 2026-09-28 PR #32 알고리즘 교안·Java 코딩테스트 통합 검증
+
+`[현재 사실]` 독립 콘텐츠 검토에서 신규 12개 경험 근거·연결·발췌와 반환 수정 대상 7개 교안을 PASS로 인수했다. 아래는 독립 실행·UI·감독 인계를 재사용한 기록이며 문서 담당이 같은 Java 실행을 반복하지 않았다. 이 검증 시점에는 PR이 미병합이었으며 원격 게시·정식 설치·다른 OS/브라우저 지원 완료를 뜻하지 않는다.
+
+| 범위 | 실제 결과와 재사용 범위 |
+| --- | --- |
+| 브라우저 Java 17 기준 풀이 | 신규 12개·공개 method 그룹 32개 PASS. 1~5번의 변경되지 않은 정상 경로 증거를 재사용하고 6~12번은 최종 분류 helper로 실행했다. 문자열 문제 기준 풀이도 수정 후 재검했다. |
+| 브라우저 시작 코드 | 신규 12개 모두 `wrong_answer`. |
+| 브라우저 대표 오답 | 최종 문제별 선택 12개는 `wrong_answer` 11개·문자열 문제 `runtime_error` 1개. 빠른 거듭제곱의 선형 반복 오답은 별도 `timeout`으로 거부했고 이후 축약하지 않은 base 오답도 실제 `wrong_answer`로 확인했다. fixture 후보 36개 중 실제 14개를 실행했으며 나머지 22개는 미실행이다. |
+| 로컬 Java 25 | 신규 기준 풀이 12개·32그룹·97 invocation PASS. 문제별 대표 오답 12개는 `wrong_answer` 11개·문자열 `runtime_error` 1개다. 후보 36개 중 나머지 24개와 시작 코드의 별도 Java 25 실행은 이 증거에 포함하지 않는다. |
+| 감독·안전 | 로컬 감독 guard receipt 88개, 잔류 프로세스 0, guard closed를 인수했다. 브라우저 실패 분류 경계와 기존 bridge 오답·학습자 예외를 직접 확인했다. 준비 이후 실행 자산의 임의 네트워크 fallback은 추가하지 않았다. |
+| 실제 제품 UI | 별도 Chrome 150 프로필의 신규 TreeMap 문제에서 run 1/1·submit 3/3, reload 후 원본 source·제출 상세 복원 PASS. 수정한 draft로 재준비·실행·취소 후 source 보존·취소 표시, reload 후 수정 draft와 이전 제출의 stale 경고 복원 PASS. RAM 준비 상태가 reload에 사라지는 기존 계약도 확인했고 page error는 0이었다. |
+
+최초 실패를 성공 기록으로 덮어쓰지 않는다. 공식 runtime의 `tzdb.dat` 누락은 고정 자산 추가로 보완했다. optional bridge `LearnerFailure` 타입 직접 참조로 생긴 listener 실패와 authored의 직접 학습자 예외를 infrastructure로 분류하던 결함은 수정 후 실제 오답·예외 경계로 재검했다. 거듭제곱 선형 오답의 정상 timeout을 `wrong_answer`만 기대하던 개발 harness의 실패 문자열은 당시 receipt에 보존한다. 이 timeout을 숨기기 위해 성공 오답으로 바꿔 기록하지 않고 후속 오답 실행을 별도 증거로 구분한다.
+
+기존 72개 전수, 전체 36개 대표 오답, 다른 브라우저·OS와 정식 설치는 이번 신규 PASS가 아니다. UI는 위 대표 문제 흐름의 검증이며 12개 전체 UI 순회로 확대하지 않는다. 학습자 채점은 문제에 공개된 JUnit만 사용하고 개발용 독립 사례를 숨은 채점으로 연결하지 않았다.
+
+### 인수한 receipt
+
+경로는 이번 개발 검증 증거의 위치이며 제품 실행에 필요한 경로가 아니다. 아래 SHA-256은 해당 인계 파일을 식별한다.
+
+| 증거 파일 | SHA-256 |
+| --- | --- |
+| `/private/tmp/bam-pr32-independent-java-final.json` · 최종 독립 범위·판정 | `65300224259d83e2bd123dacf622f6656b7c7ad259aded2dd0bf938e8abc1529` |
+| `/private/tmp/bam-pr32-native25-authored-result.json` | `b5416fe5d3a2a8dca4bbb31c8bc8217b38fcf6bf82e26f000a5bc3112a556b2b` |
+| `/private/tmp/bam-pr32-browser-authored-result.json` · 최초 부분 실행·실패 보존 | `8f07c4f278a46803bed6a169c8beb63f85a1dc34fddf533bd54b62f274767bab` |
+| `/private/tmp/bam-pr32-browser-authored-resume-result.json` · 후속 정상·timeout 보존 | `286843f15c5460ceb50169c502b042e0e0fa02a5eb19d03d3b3b39b1f536d5c8` |
+| `/private/tmp/bam-pr32-runtime-classification-result.json` | `b7c291d4b4170079ba9e085163ed87395c9ea245e8b566aaa476ad05765311e8` |
+| `/private/tmp/bam-pr32-browser-fastpower-wrong2-detail.json` | `754c580714e75c48c6b09971a14ab26e302e67050c634eafa12146f42c48d8cc` |
+| `/private/tmp/bam-pr32-authored-ui-result.json` | `a6643e5294dd3ecc8bc62ea96b4111f65370a484b041b4c4fa86585b0e255a8d` |
+| `/private/tmp/bam-pr32-authored-ui-cancel-result.json` | `36fabd7e81e7583b86fc82d9cbdb43c02c9bef1a74710f238aba2d77abbce55f` |

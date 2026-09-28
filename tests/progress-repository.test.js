@@ -12,6 +12,54 @@ import {
 
 const fixedClock = () => new Date("2026-08-16T12:00:00.000Z");
 
+function createCodingTestResultInput({
+  problemId = "coding-test-javascript-result-storage",
+  problemRevision = 1,
+  languageId = "javascript",
+  sourceFingerprint = "a".repeat(64),
+  mode = "run",
+  outcome = "passed",
+  preview = "",
+} = {}) {
+  const counts = {
+    passed: 0,
+    wrong_answer: 0,
+    syntax_error: 0,
+    runtime_error: 0,
+    timeout: 0,
+    output_limit: 0,
+    cancelled: 0,
+    engine_error: 0,
+    not_run: 0,
+  };
+  counts[outcome] = 1;
+  return {
+    problemId,
+    problemRevision,
+    languageId,
+    sourceFingerprint,
+    mode,
+    outcome,
+    tests: [
+      {
+        testId: "public-one",
+        label: "공개 테스트 1",
+        outcome,
+        expectedDisplay: "2",
+        actualDisplay: outcome === "passed" || outcome === "wrong_answer" ? "2" : null,
+        hasActual: outcome === "passed" || outcome === "wrong_answer",
+        durationMs: 2.5,
+        console: preview ? [{ method: "log", preview }] : [],
+        error: null,
+        invocations: null,
+      },
+    ],
+    summary: { outcome, total: 1, ...counts },
+    durationMs: 3.5,
+    error: null,
+  };
+}
+
 test("처음에는 빈 진도를 반환한다", () => {
   const repository = new LocalStorageProgressRepository(new MemoryStorage(), fixedClock);
   assert.deepEqual(repository.getProgress(), createEmptyProgress());
@@ -37,6 +85,7 @@ test("최근 교안과 완료 상태를 같은 버전 데이터에 저장한다"
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
+    codingTestResults: [],
     updatedAt: "2026-08-16T12:00:00.000Z",
   });
   assert.ok(storage.getItem(PROGRESS_STORAGE_KEY));
@@ -78,6 +127,7 @@ test("1차 저장 형식을 읽을 때 객관식 필드를 빈 배열로 보완�
     codingTestDrafts: [],
     codingTestSubmissions: [],
     completedCodingTestProblems: [],
+    codingTestResults: [],
     updatedAt: "2026-08-15T12:00:00.000Z",
   });
 });
@@ -172,6 +222,7 @@ test("기존 dev 진도의 Quest revision과 Java 실습 기록을 교안·객�
     "codingTestDrafts",
     "codingTestSubmissions",
     "completedCodingTestProblems",
+    "codingTestResults",
   ]) {
     assert.deepEqual(saved[field], legacyState[field], field);
   }
@@ -872,6 +923,164 @@ test("코딩테스트 초안은 문제 리비전별로 조회하고 같은 문�
     repository.getCodingTestDraft("coding-test-javascript-pair-sum", 2),
     null,
   );
+});
+
+test("코딩테스트 상세 결과는 문제별 마지막 한 건과 최근 20개만 보관하고 초기화한다", () => {
+  let tick = 0;
+  const clock = () => new Date(Date.UTC(2026, 7, 16, 12, 0, tick++));
+  const repository = new LocalStorageProgressRepository(new MemoryStorage(), clock);
+  repository.recordQuestAttempt({
+    questId: "quest-javascript-result-separation",
+    questRevision: 1,
+    languageId: "javascript",
+    outcome: "passed",
+    passed: 1,
+    total: 1,
+  });
+  const questState = structuredClone({
+    questAttempts: repository.getProgress().questAttempts,
+    completedQuestIds: repository.getProgress().completedQuestIds,
+    completedQuestRevisions: repository.getProgress().completedQuestRevisions,
+  });
+
+  repository.saveCodingTestResult(createCodingTestResultInput());
+  repository.saveCodingTestResult(
+    createCodingTestResultInput({
+      problemRevision: 2,
+      sourceFingerprint: "b".repeat(64),
+      mode: "submit",
+    }),
+  );
+
+  assert.equal(
+    repository.getCodingTestResult("coding-test-javascript-result-storage", 1),
+    null,
+  );
+  assert.deepEqual(
+    repository.getCodingTestResult("coding-test-javascript-result-storage", 2),
+    {
+      ...createCodingTestResultInput({
+        problemRevision: 2,
+        sourceFingerprint: "b".repeat(64),
+        mode: "submit",
+      }),
+      finishedAt: "2026-08-16T12:00:02.000Z",
+    },
+  );
+  assert.deepEqual(
+    {
+      questAttempts: repository.getProgress().questAttempts,
+      completedQuestIds: repository.getProgress().completedQuestIds,
+      completedQuestRevisions: repository.getProgress().completedQuestRevisions,
+    },
+    questState,
+  );
+  assert.deepEqual(repository.getProgress().codingTestSubmissions, []);
+  assert.deepEqual(repository.getProgress().completedCodingTestProblems, []);
+
+  repository.clearCodingTestResult("coding-test-javascript-result-storage");
+  assert.equal(
+    repository.getCodingTestResult("coding-test-javascript-result-storage", 2),
+    null,
+  );
+
+  for (let index = 0; index < 21; index += 1) {
+    repository.saveCodingTestResult(
+      createCodingTestResultInput({
+        problemId: `coding-test-javascript-result-${index}`,
+      }),
+    );
+  }
+  const retained = repository.getProgress().codingTestResults;
+  assert.equal(retained.length, 20);
+  assert.equal(
+    retained.some((result) => result.problemId === "coding-test-javascript-result-0"),
+    false,
+  );
+  assert.equal(
+    retained.some((result) => result.problemId === "coding-test-javascript-result-20"),
+    true,
+  );
+});
+
+test("기존 v1 진도와 손상된 상세 결과를 격리하고 유효한 결과·학습 진도를 보존한다", () => {
+  const finishedAt = "2026-08-16T12:00:00.000Z";
+  const validResult = {
+    ...createCodingTestResultInput(),
+    finishedAt,
+  };
+  const oversizedResult = structuredClone(validResult);
+  oversizedResult.problemId = "coding-test-javascript-oversized-stored-result";
+  oversizedResult.tests[0].console = [
+    { method: "log", preview: "가".repeat(22_000) },
+  ];
+  const inconsistentResult = {
+    ...validResult,
+    problemId: "coding-test-javascript-inconsistent-stored-result",
+    outcome: "wrong_answer",
+  };
+  const progress = normalizeProgress({
+    ...createEmptyProgress(),
+    completedLessonIds: ["js-01-runtime"],
+    completedQuestIds: ["quest-javascript-existing-progress"],
+    codingTestResults: [
+      { ...validResult, sourceFingerprint: "INVALID" },
+      oversizedResult,
+      inconsistentResult,
+      validResult,
+    ],
+    updatedAt: finishedAt,
+  });
+
+  assert.deepEqual(progress.completedLessonIds, ["js-01-runtime"]);
+  assert.deepEqual(progress.completedQuestIds, ["quest-javascript-existing-progress"]);
+  assert.deepEqual(progress.codingTestResults, [validResult]);
+
+  const legacy = normalizeProgress({
+    schemaVersion: 1,
+    completedLessonIds: ["js-01-runtime"],
+    updatedAt: finishedAt,
+  });
+  assert.deepEqual(legacy.codingTestResults, []);
+  assert.deepEqual(legacy.completedLessonIds, ["js-01-runtime"]);
+});
+
+test("상세 결과의 UTF-8 64KiB 초과와 저장소 실패는 기존 진도를 덮어쓰지 않는다", () => {
+  const backing = new MemoryStorage();
+  let rejectWrites = false;
+  const storage = {
+    getItem(key) {
+      return backing.getItem(key);
+    },
+    setItem(key, value) {
+      if (rejectWrites) throw new Error("quota exceeded");
+      backing.setItem(key, value);
+    },
+    isPersistent() {
+      return true;
+    },
+  };
+  const repository = new LocalStorageProgressRepository(storage, fixedClock);
+  repository.setLessonCompleted("js-01-runtime", true);
+  const savedBeforeFailure = backing.getItem(PROGRESS_STORAGE_KEY);
+
+  assert.throws(
+    () =>
+      repository.saveCodingTestResult(
+        createCodingTestResultInput({ preview: "가".repeat(22_000) }),
+      ),
+    /65536바이트/,
+  );
+  assert.equal(backing.getItem(PROGRESS_STORAGE_KEY), savedBeforeFailure);
+
+  rejectWrites = true;
+  assert.throws(
+    () => repository.saveCodingTestResult(createCodingTestResultInput()),
+    /quota exceeded/,
+  );
+  assert.equal(backing.getItem(PROGRESS_STORAGE_KEY), savedBeforeFailure);
+  assert.deepEqual(repository.getProgress().completedLessonIds, ["js-01-runtime"]);
+  assert.deepEqual(repository.getProgress().codingTestResults, []);
 });
 
 test("코딩테스트는 실행 코드 없이 제출 요약만 저장하고 현재 리비전 통과를 완료로 기록한다", () => {

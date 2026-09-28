@@ -69,8 +69,9 @@ test("Java 실행 준비 중 목록은 네 Quest의 읽기·작성 진입을 유
 
   assert.equal(course.totalCount, 4);
   assert.match(html, /data-quest-course="java"[^>]*[\s\S]*?<span>4개 등록 · 실행 준비 중<\/span>/);
-  assert.match(html, /등록된 4개 Quest의 문제·힌트·공개 조건을 읽고 코드를 저장할 수 있습니다/);
-  assert.equal((html.match(/Java 실행 준비 중 · 코드 작성·저장 가능/g) ?? []).length, 5);
+  assert.match(html, /Java Quest 4개 등록 · 0개 실행 가능/);
+  assert.match(html, /나머지 4개는 문제·힌트·공개 테스트를 읽고 코드를 저장할 수 있습니다/);
+  assert.equal((html.match(/Java 실행 준비 중 · 코드 작성·저장 가능/g) ?? []).length, 4);
   for (const item of course.items) {
     assert.match(html, new RegExp(`href="${item.href}"`));
   }

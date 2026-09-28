@@ -1,0 +1,32 @@
+Manifest-Version: 1.0
+Automatic-Module-Name: org.junit.platform.console.standalone
+Build-Date: 2026-08-07
+Build-Revision: f59f60d2cebdf2224235d81f781b1f310cbc8138
+Build-Time: 14:25:13.673+0200
+Built-By: JUnit Team
+Bundle-ManifestVersion: 2
+Bundle-Name: JUnit Platform Console Standalone
+Bundle-SymbolicName: junit-platform-console-standalone
+Bundle-Version: 6.1.3
+Created-By: 25.0.4 (Eclipse Adoptium 25.0.4+7-LTS)
+Engine-Version-junit-jupiter: 6.1.3
+Engine-Version-junit-vintage: 6.1.3
+Implementation-Title: junit-platform-console-standalone
+Implementation-Vendor: junit.org
+Implementation-Version: 6.1.3
+Import-Package: org.jspecify.annotations;version="[1.0,2)";resolution:
+ =optional,kotlin;resolution:=optional,kotlin.collections;resolution:=
+ optional,kotlin.coroutines;resolution:=optional,kotlin.jvm;resolution
+ :=optional,kotlin.jvm.functions;resolution:=optional,kotlin.jvm.inter
+ nal;resolution:=optional,kotlin.reflect;resolution:=optional,kotlin.r
+ eflect.full;resolution:=optional,kotlin.reflect.jvm;resolution:=optio
+ nal,kotlin.text;resolution:=optional,kotlinx.coroutines;resolution:=o
+ ptional,javax.xml.namespace,javax.xml.parsers,javax.xml.stream,javax.
+ xml.transform,javax.xml.transform.dom,javax.xml.transform.stax,jdk.jf
+ r,org.w3c.dom
+Main-Class: org.junit.platform.console.ConsoleLauncher
+Require-Capability: osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=17))"
+Specification-Title: junit-platform-console-standalone
+Specification-Vendor: junit.org
+Specification-Version: 6.1.3
+

@@ -3714,9 +3714,9 @@
       "slug": "bridge-set-03",
       "revision": 1,
       "order": 34,
-      "lessonId": "algo-06-union-find",
+      "lessonId": "algo-09-tree",
       "conceptIds": [
-        "algo.union-find"
+        "algo.tree"
       ],
       "difficulty": "beginner",
       "estimatedMinutes": 15,
@@ -3828,7 +3828,7 @@
           "explanation": "문제의 입력·반환 계약을 다시 확인하세요. 이미 같은 구역인 두 작업대를 이을 때도 구역 수를 줄이기는 요구한 결과와 다릅니다."
         }
       ],
-      "description": "0번부터 itemCount-1번까지의 작업대가 처음에는 각각 혼자 떨어진 구역에 있다.\nconnections의 각 행은 new int[]{a, b}이며, a 작업대가 속한 구역과 b 작업대가 속한 구역을 하나로 잇는다.\n같은 연결이 반복되거나 자기 자신과 연결되어도 이미 같은 구역이면 구역 수는 줄지 않는다.\n모든 연결을 처리한 뒤 서로 떨어진 작업 구역이 몇 개인지 반환하라.\n\n코드를 쓰기 전에 생각해 보세요.\n- 처음에는 작업대마다 대표가 누구이며 구역은 몇 개인가?\n- 작업대 두 개가 이미 같은 구역인지 무엇을 비교해 알 수 있는가?\n- 연결할 때 작업대 자체와 최종 대표 중 무엇을 이어야 하는가?\n- 같은 구역을 다시 연결할 때 구역 수를 줄여도 되는가?\n\n연결 교안은 유니온 파인드로 대표를 찾고 구역을 합치는 방법을 설명합니다. 원본 SetGuide에서 다루듯, 직접 연결되지 않은 항목도 다른 항목을 거쳐 이어지면 같은 그룹에 속합니다.\n\n시작 코드의 solve 메서드 본문을 직접 작성하세요. Solution 클래스와 매개변수·반환 타입은 유지합니다. 기본 반환값은 완성된 풀이가 아니며 main 메서드나 입력·출력 코드는 필요하지 않습니다.",
+      "description": "0번부터 itemCount-1번까지의 작업대가 처음에는 각각 혼자 떨어진 구역에 있다.\nconnections의 각 행은 new int[]{a, b}이며, a 작업대가 속한 구역과 b 작업대가 속한 구역을 하나로 잇는다.\n같은 연결이 반복되거나 자기 자신과 연결되어도 이미 같은 구역이면 구역 수는 줄지 않는다.\n모든 연결을 처리한 뒤 서로 떨어진 작업 구역이 몇 개인지 반환하라.\n\n코드를 쓰기 전에 생각해 보세요.\n- 처음에는 작업대마다 대표가 누구이며 구역은 몇 개인가?\n- 작업대 두 개가 이미 같은 구역인지 무엇을 비교해 알 수 있는가?\n- 연결할 때 작업대 자체와 최종 대표 중 무엇을 이어야 하는가?\n- 같은 구역을 다시 연결할 때 구역 수를 줄여도 되는가?\n\n연결 교안은 트리의 부모 사슬에 대한 선수 개념이며, 유니온-파인드 자체를 설명하는 교안은 아닙니다. 원본 SetGuide에서 다루듯, 직접 연결되지 않은 항목도 다른 항목을 거쳐 이어지면 같은 그룹에 속합니다.\n\n시작 코드의 solve 메서드 본문을 직접 작성하세요. Solution 클래스와 매개변수·반환 타입은 유지합니다. 기본 반환값은 완성된 풀이가 아니며 main 메서드나 입력·출력 코드는 필요하지 않습니다.",
       "legacyQuestId": "quest-java-bridge-set-03",
       "type": "object",
       "tags": [
@@ -3841,9 +3841,9 @@
       "slug": "bridge-set-04",
       "revision": 1,
       "order": 35,
-      "lessonId": "algo-06-union-find",
+      "lessonId": "algo-09-tree",
       "conceptIds": [
-        "algo.union-find"
+        "algo.tree"
       ],
       "difficulty": "intermediate",
       "estimatedMinutes": 40,
@@ -3957,7 +3957,7 @@
       ],
       "hints": [],
       "commonMistakes": [],
-      "description": "0번부터 deviceCount-1번까지의 장비가 처음에는 서로 다른 연결 그룹에 있다.\nactions, firstIds, secondIds의 같은 인덱스가 요청 하나를 나타낸다.\n요청은 배열 순서대로 처리하며 요청 번호는 1부터 센다.\n\n- LINK 요청은 두 장비가 속한 전체 그룹을 연결한다.\n- AUDIT 요청은 두 장비가 현재 같은 그룹인지 확인한다.\n\nAUDIT 시점에 두 장비가 다른 그룹이면 그 요청 번호를 기록하라.\n모든 요청을 처리한 뒤 실패한 AUDIT 요청 번호만 새 배열로 반환하라.\n입력 배열은 바꾸면 안 된다.\n\n코드를 쓰기 전에 생각해 보세요.\n- 뒤에 나오는 LINK를 앞선 AUDIT보다 먼저 적용해도 되는가?\n- 두 장비의 바로 위 부모만 같으면 같은 그룹이라고 판단해도 되는가?\n- 같은 그룹을 다시 LINK할 때 그룹 수나 크기가 또 바뀌어도 되는가?\n- 결과에 기록하는 번호는 AUDIT만 센 번호인가, 모든 요청을 센 번호인가?\n- 실패 개수를 미리 모를 때 최대 크기의 배열과 실제 개수를 어떻게 함께 사용할 수 있는가?\n\n연결 교안은 유니온 파인드로 대표를 찾고 구역을 합치는 방법을 설명합니다. 원본 SetGuide에서 다루듯, 직접 연결되지 않은 항목도 다른 항목을 거쳐 이어지면 같은 그룹에 속합니다.\n\n시작 코드의 solve 메서드 본문을 직접 작성하세요. Solution 클래스와 매개변수·반환 타입은 유지합니다. 기본 반환값은 완성된 풀이가 아니며 main 메서드나 입력·출력 코드는 필요하지 않습니다.",
+      "description": "0번부터 deviceCount-1번까지의 장비가 처음에는 서로 다른 연결 그룹에 있다.\nactions, firstIds, secondIds의 같은 인덱스가 요청 하나를 나타낸다.\n요청은 배열 순서대로 처리하며 요청 번호는 1부터 센다.\n\n- LINK 요청은 두 장비가 속한 전체 그룹을 연결한다.\n- AUDIT 요청은 두 장비가 현재 같은 그룹인지 확인한다.\n\nAUDIT 시점에 두 장비가 다른 그룹이면 그 요청 번호를 기록하라.\n모든 요청을 처리한 뒤 실패한 AUDIT 요청 번호만 새 배열로 반환하라.\n입력 배열은 바꾸면 안 된다.\n\n코드를 쓰기 전에 생각해 보세요.\n- 뒤에 나오는 LINK를 앞선 AUDIT보다 먼저 적용해도 되는가?\n- 두 장비의 바로 위 부모만 같으면 같은 그룹이라고 판단해도 되는가?\n- 같은 그룹을 다시 LINK할 때 그룹 수나 크기가 또 바뀌어도 되는가?\n- 결과에 기록하는 번호는 AUDIT만 센 번호인가, 모든 요청을 센 번호인가?\n- 실패 개수를 미리 모를 때 최대 크기의 배열과 실제 개수를 어떻게 함께 사용할 수 있는가?\n\n연결 교안은 트리의 부모 사슬에 대한 선수 개념이며, 유니온-파인드 자체를 설명하는 교안은 아닙니다. 원본 SetGuide에서 다루듯, 직접 연결되지 않은 항목도 다른 항목을 거쳐 이어지면 같은 그룹에 속합니다.\n\n시작 코드의 solve 메서드 본문을 직접 작성하세요. Solution 클래스와 매개변수·반환 타입은 유지합니다. 기본 반환값은 완성된 풀이가 아니며 main 메서드나 입력·출력 코드는 필요하지 않습니다.",
       "legacyQuestId": "quest-java-bridge-set-04",
       "type": "object",
       "tags": [
@@ -8826,7 +8826,7 @@
         {
           "id": "algo-string-01-applies-script",
           "label": "명령을 순서대로 적용하고 SHOW마다 전광판을 기록한다",
-          "assertionSource": "@ParameterizedTest(name = \"{0}"
+          "assertionSource": "@ParameterizedTest(name = \"{0}\")\n    @MethodSource(\"scriptCases\")\n    @DisplayName(\"명령을 순서대로 적용하고 SHOW마다 전광판을 기록한다\")\n    void appliesScript(String name, String script, String[] expected) {\n        String[] actual = Solution.solve(script);\n\n        assertAll(name,\n                () -> assertNotNull(actual),\n                () -> assertArrayEquals(expected, actual));\n    }"
         },
         {
           "id": "algo-string-01-longest-script",
@@ -8961,7 +8961,7 @@
         {
           "id": "algo-gcd-01-finds-common-time",
           "label": "모든 신호등이 다시 함께 켜지는 가장 이른 시각을 구한다",
-          "assertionSource": "@ParameterizedTest(name = \"{0}"
+          "assertionSource": "@ParameterizedTest(name = \"{0}\")\n    @MethodSource(\"periodCases\")\n    @DisplayName(\"모든 신호등이 다시 함께 켜지는 가장 이른 시각을 구한다\")\n    void findsCommonTime(String name, long expected, int[] periods) {\n        int[] before = periods.clone();\n        long actual = Solution.solve(periods);\n\n        assertAll(name,\n                () -> assertEquals(expected, actual),\n                () -> assertArrayEquals(before, periods));\n    }"
         },
         {
           "id": "algo-gcd-01-avoids-product-overflow",
@@ -9108,7 +9108,7 @@
         {
           "id": "algo-prime-01-counts-primes",
           "label": "각 구간에 들어 있는 소수의 개수를 질의 순서대로 구한다",
-          "assertionSource": "@ParameterizedTest(name = \"{0}"
+          "assertionSource": "@ParameterizedTest(name = \"{0}\")\n    @MethodSource(\"queryCases\")\n    @DisplayName(\"각 구간에 들어 있는 소수의 개수를 질의 순서대로 구한다\")\n    void countsPrimes(String name, int[] expected, int[][] queries) {\n        int[][] before = deepCopy(queries);\n        int[] actual = Solution.solve(queries);\n\n        assertAll(name,\n                () -> assertArrayEquals(expected, actual),\n                () -> assertArrayEquals(before, queries));\n    }"
         },
         {
           "id": "algo-prime-01-many-full-range-queries",
@@ -9267,7 +9267,7 @@
         {
           "id": "algo-combinatorics-01-counts-choices",
           "label": "각 질의의 nCr을 1,000,000,007로 나눈 나머지를 구한다",
-          "assertionSource": "@ParameterizedTest(name = \"{0}"
+          "assertionSource": "@ParameterizedTest(name = \"{0}\")\n    @MethodSource(\"choiceCases\")\n    @DisplayName(\"각 질의의 nCr을 1,000,000,007로 나눈 나머지를 구한다\")\n    void countsChoices(String name, int[] expected, int[][] queries) {\n        int[][] before = deepCopy(queries);\n        int[] actual = Solution.solve(queries);\n\n        assertAll(name,\n                () -> assertArrayEquals(expected, actual),\n                () -> assertArrayEquals(before, queries));\n    }"
         },
         {
           "id": "algo-combinatorics-01-many-largest-queries",

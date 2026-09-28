@@ -2,6 +2,10 @@
 
 이 문서는 교안에 연결된 Code Quest의 정보 구조, 학습 위치, 탐색·진도와 기존 기능의 단계적 UI 개선 정본이다. 코딩테스트는 별도 [`coding-test.md`](coding-test.md), 문제 저작은 [`../code-quest-authoring.md`](../code-quest-authoring.md), 학습 경험 판정은 [`../learning-content-design.md`](../learning-content-design.md), 전역 색상·상태 표현은 [`visual-design.md`](visual-design.md)가 담당한다. 결정 문구·이유·날짜는 [`DEC-QUEST-SEPARATE-01`과 `DEC-QUEST-UI-01`](../roadmap.md#2026-08-29-확정-제품-결정), [`DEC-LOCAL-EVALUATION-01`](../roadmap.md#2026-09-02-확정-제품-결정)이 정본이다.
 
+## Code Quest 편집 보조
+
+`[확정 결정]` JavaScript·Java·HTML·CSS의 기존 textarea·언어 구문 강조·초안·공개 평가를 유지한다. 언어 키워드/현재 문서 식별자 완성과 들여쓰기만 공통 모듈에 연결하며 실행 중 readonly, 준비 중 편집 가능, 기존 hint/정답 경계를 보존한다. 공통 키보드·IME·undo·커서 보존·접근성·검증과 역할 경계는 [EDITOR-ASSIST-v1](../architecture.md#quest코딩테스트-공통-편집-보조)을 따른다. 이 변경은 일반 제품 기능이며 문제·공개 평가·학습 내용은 수정하지 않는다. 구현과 Chrome 150의 독립 편집 검증을 인수했으며 정확한 PASS·미실행 범위는 위 공통 정본의 현재 사실을 따른다. 새 Git 게시 완료를 뜻하지 않는다.
+
 ## 결정 적용과 현재 상태
 
 - `DEC-QUEST-SEPARATE-01` 적용: Code Quest는 코딩테스트와 별도 목적·route·콘텐츠·UI·진도를 유지한다. 코딩테스트를 `심화 Code Quest`로 투영하지 않는다.

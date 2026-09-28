@@ -1,4 +1,5 @@
 import { escapeHtml, renderHighlightedCode } from "./markdown.js";
+import { renderJavaBrowserPreparation } from "./java-browser-preparation-view.js";
 import {
   renderExamples as renderCodeQuestExamples,
   renderFunctionContract as renderCodeQuestFunctionContract,
@@ -33,6 +34,22 @@ const OUTCOME_COPY = Object.freeze({
   cancelled: { label: "실행 취소", tone: "muted" },
   engine_error: { label: "실행기 오류", tone: "danger" },
   not_run: { label: "실행하지 않음", tone: "muted" },
+});
+
+const RESULT_GUIDANCE = Object.freeze({
+  passed: "",
+  wrong_answer: "실패한 공개 테스트의 기대값·실제값과 문제 조건을 비교해 보세요.",
+  syntax_error: "오류 위치를 확인하고 기호, 이름, 타입이 맞는지 살펴보세요.",
+  runtime_error:
+    "오류 메시지를 확인해 보세요. 표시된 사유에 따라 배열 범위, null 사용, 메모리 사용 등을 점검하세요.",
+  timeout:
+    "실행 시간 제한을 넘었습니다. 반복문의 종료 조건과 입력 크기에 따른 반복량을 확인해 보세요.",
+  cancelled:
+    "사용자가 실행을 중단했습니다. 오답이나 성공으로 판정하지 않았습니다. 준비되면 다시 실행하세요.",
+  output_limit:
+    "출력량 제한을 넘었습니다. 디버그 출력을 줄이고 필요한 출력만 남겨 보세요.",
+  engine_error: "실행기 문제로 결과를 확인하지 못했습니다.",
+  not_run: "이 테스트는 실행되지 않았습니다.",
 });
 
 const DRAFT_STATUS_COPY = Object.freeze({
@@ -80,6 +97,10 @@ function getErrorMessage(error) {
   if (!error || typeof error !== "object") return "";
   const message = error.learnerMessage ?? error.message;
   return typeof message === "string" ? message : "";
+}
+
+function getOutcomeGuidance(outcome) {
+  return RESULT_GUIDANCE[normalizeOutcome(outcome)] ?? RESULT_GUIDANCE.engine_error;
 }
 
 function getDifficultyLabel(value) {
@@ -141,7 +162,8 @@ function getTypeLabel(type, typeOptions = []) {
 
 function renderProblemCard(problem, index, options) {
   const solvedIds = options.solvedIds;
-  const isDraftOnly = problem?.executionMode === "draft-only";
+  const isDraftOnly =
+    problem?.executionMode === "draft-only" && problem?.executionAvailable !== true;
   const isSolved = !isDraftOnly && solvedIds.has(problem?.id);
   const tags = toStringArray(problem?.tags);
   const conceptIds = toStringArray(problem?.conceptIds);
@@ -172,6 +194,7 @@ function renderProblemCard(problem, index, options) {
                 .join("")}</ul>`
             : ""
         }
+        <p class="coding-test-card-time">예상 풀이 시간 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</p>
       </article>
     </li>
   `;
@@ -203,15 +226,23 @@ function renderConsoleEntries(entries) {
   `;
 }
 
-function getOutcomeTitle(outcome, mode) {
+function getOutcomeTitle(outcome, mode, isJava) {
   const submission = mode === "submit";
   const copy = {
     passed: submission
-      ? "제출 채점을 통과했습니다."
-      : "실행 테스트를 모두 통과했습니다.",
+      ? isJava
+        ? "전체 공개 JUnit 테스트를 통과했습니다."
+        : "제출 채점을 통과했습니다."
+      : isJava
+        ? "빠른 공개 JUnit 테스트를 통과했습니다."
+        : "실행 테스트를 모두 통과했습니다.",
     wrong_answer: submission
-      ? "제출 채점에서 통과하지 못한 테스트가 있습니다."
-      : "일부 실행 테스트의 결과가 기대값과 다릅니다.",
+      ? isJava
+        ? "전체 공개 JUnit 테스트에서 assertion 실패가 있습니다."
+        : "제출 채점에서 통과하지 못한 테스트가 있습니다."
+      : isJava
+        ? "빠른 공개 JUnit 테스트에서 assertion 실패가 있습니다."
+        : "일부 실행 테스트의 결과가 기대값과 다릅니다.",
     syntax_error: "문법 오류로 테스트 실행을 멈췄습니다.",
     runtime_error: "코드를 실행하는 중 오류가 발생했습니다.",
     timeout: "테스트 실행 시간이 제한을 넘었습니다.",
@@ -223,7 +254,25 @@ function getOutcomeTitle(outcome, mode) {
   return copy[outcome] ?? copy.engine_error;
 }
 
-function renderTestResult(testResult, index, failureByTestId) {
+function renderJavaInvocationSummary(invocations) {
+  if (!invocations || typeof invocations !== "object") return "";
+  const count = (field) => Math.max(0, safeInteger(invocations[field]));
+  return `
+    <dl class="coding-test-result-values" aria-label="JUnit 실제 호출 결과">
+      ${renderResultValue("발견한 호출", String(count("discovered")))}
+      ${renderResultValue("완료한 호출", String(count("finished")))}
+      ${renderResultValue("통과", String(count("passed")))}
+      ${renderResultValue("assertion 실패", String(count("wrongAnswer")))}
+      ${renderResultValue("학습자 코드 오류", String(count("runtimeError")))}
+      ${renderResultValue(
+        "미완료 호출",
+        `skip ${count("skipped")} · abort ${count("aborted")} · 실행기 ${count("infrastructure")}`,
+      )}
+    </dl>
+  `;
+}
+
+function renderTestResult(testResult, index, failureByTestId, isJava) {
   const outcome = normalizeOutcome(testResult?.outcome);
   const copy = OUTCOME_COPY[outcome];
   const errorMessage = getErrorMessage(testResult?.error);
@@ -238,6 +287,7 @@ function renderTestResult(testResult, index, failureByTestId) {
       ? testResult.actualDisplay
       : formatJsonValue(testResult?.actual);
   const duration = Math.max(0, Number(testResult?.durationMs) || 0);
+  const guidance = getOutcomeGuidance(outcome);
 
   return `
     <article class="coding-test-case is-${copy.tone}" aria-labelledby="coding-test-case-title-${index}">
@@ -248,15 +298,30 @@ function renderTestResult(testResult, index, failureByTestId) {
         </div>
         <span>${duration}ms</span>
       </header>
-      <dl class="coding-test-result-values">
+      ${isJava ? renderJavaInvocationSummary(testResult?.invocations) : `<dl class="coding-test-result-values">
         ${renderResultValue("기대값", expectedDisplay)}
         ${testResult?.hasActual === true ? renderResultValue("실제값", actualDisplay) : ""}
-      </dl>
+      </dl>`}
       ${errorMessage ? `<p class="coding-test-test-error"><strong>실행 안내</strong>${escapeHtml(errorMessage)}</p>` : ""}
+      ${guidance && outcome !== "wrong_answer" ? `<p class="coding-test-failure-explanation"><strong>확인할 점</strong>${escapeHtml(guidance)}</p>` : ""}
       ${failureExplanation ? `<p class="coding-test-failure-explanation"><strong>확인할 점</strong>${escapeHtml(failureExplanation)}</p>` : ""}
       ${renderConsoleEntries(testResult?.console)}
     </article>
   `;
+}
+
+function renderResultStorageStatus(status) {
+  if (!status) return "";
+  const copy = {
+    saved: "상세 결과를 이 브라우저에 저장했습니다.",
+    memory: "상세 결과는 현재 탭에만 유지됩니다. 탭을 닫으면 복원할 수 없습니다.",
+    failed: "상세 결과를 저장하지 못했습니다. 현재 화면의 결과와 기존 학습 기록은 유지됩니다.",
+    "too-large": "결과가 커서 상세 내용을 저장하지 못했습니다. 현재 화면에서 확인해 주세요.",
+    restored: "저장된 마지막 상세 결과를 복원했습니다.",
+  }[status];
+  if (!copy) return "";
+  const warning = ["memory", "failed", "too-large"].includes(status);
+  return `<p class="coding-test-persistence${warning ? " is-warning" : ""}" data-coding-test-result-storage>${copy}</p>`;
 }
 
 function renderPersistenceStatus(status, mode) {
@@ -271,15 +336,27 @@ function renderPersistenceStatus(status, mode) {
   return `<p class="coding-test-persistence${warning ? " is-warning" : ""}">${copy}</p>`;
 }
 
-function renderExecutionReport({ problem, report, mode, persistenceStatus, isRunning }) {
-  const runCount = toStringArray(problem?.runTestIds).length;
+function renderExecutionReport({
+  problem,
+  report,
+  mode,
+  persistenceStatus,
+  sourceStatus,
+  resultPersistenceStatus,
+  isRunning,
+  evaluationKind,
+}) {
+  const isJava = evaluationKind === "java-static-method-v1";
+  const runCount = isJava
+    ? Math.min(1, Array.isArray(problem?.publicTests) ? problem.publicTests.length : 0)
+    : toStringArray(problem?.runTestIds).length;
   const submitCount = Array.isArray(problem?.publicTests) ? problem.publicTests.length : 0;
 
   if (isRunning) {
-    return `<p class="coding-test-results-state">${mode === "submit" ? "제출 테스트를 채점하고 있습니다…" : "실행 테스트를 확인하고 있습니다…"}</p>`;
+    return `<p class="coding-test-results-state">${mode === "submit" ? isJava ? "전체 공개 JUnit 테스트를 확인하고 있습니다…" : "제출 테스트를 채점하고 있습니다…" : isJava ? "첫 공개 JUnit 그룹을 확인하고 있습니다…" : "실행 테스트를 확인하고 있습니다…"}</p>`;
   }
   if (!report) {
-    return `<p class="coding-test-results-state">코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 브라우저에 포함된 공개 테스트 ${submitCount}개를 모두 채점합니다.</p>`;
+    return `<p class="coding-test-results-state">${isJava ? `빠른 실행은 첫 공개 JUnit 메서드 그룹 ${runCount}개를 확인합니다. 전체 확인은 이 기기에 포함된 공개 그룹 ${submitCount}개를 모두 실행합니다.` : `코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 브라우저에 포함된 공개 테스트 ${submitCount}개를 모두 채점합니다.`}</p>`;
   }
 
   const outcome = normalizeOutcome(report?.outcome);
@@ -287,6 +364,7 @@ function renderExecutionReport({ problem, report, mode, persistenceStatus, isRun
   const passed = Math.max(0, safeInteger(report?.summary?.passed));
   const total = Math.max(0, safeInteger(report?.summary?.total));
   const reportError = getErrorMessage(report?.error);
+  const guidance = getOutcomeGuidance(outcome);
   const failureByTestId = new Map(
     (Array.isArray(problem?.failureExplanations) ? problem.failureExplanations : [])
       .filter((item) => item && typeof item.testId === "string")
@@ -298,16 +376,21 @@ function renderExecutionReport({ problem, report, mode, persistenceStatus, isRun
       <header>
         <div>
           <p class="coding-test-result-mode" data-coding-test-result-mode>${mode === "submit" ? "마지막 제출 채점 결과" : "마지막 실행 테스트 결과"}</p>
-          <h3>${escapeHtml(getOutcomeTitle(outcome, mode))}</h3>
+          <h3>${escapeHtml(getOutcomeTitle(outcome, mode, isJava))}</h3>
         </div>
-        <strong>${passed}/${total} 통과</strong>
+        <strong>${passed}/${total}${isJava ? " 그룹" : ""} 통과</strong>
       </header>
+      <p class="coding-test-persistence is-warning" data-coding-test-result-provenance${sourceStatus === "stale" ? "" : " hidden"}>이 결과는 이전 코드로 실행한 결과입니다. 현재 코드를 확인하려면 다시 실행하세요.</p>
       ${reportError ? `<p class="coding-test-report-error"><strong>실행 안내</strong>${escapeHtml(reportError)}</p>` : ""}
+      ${guidance ? `<p class="coding-test-failure-explanation" data-coding-test-guidance><strong>확인할 점</strong>${escapeHtml(guidance)}</p>` : ""}
       <div class="coding-test-case-list">
         ${(Array.isArray(report?.tests) ? report.tests : [])
-          .map((testResult, index) => renderTestResult(testResult, index, failureByTestId))
+          .map((testResult, index) =>
+            renderTestResult(testResult, index, failureByTestId, isJava),
+          )
           .join("")}
       </div>
+      ${renderResultStorageStatus(resultPersistenceStatus)}
       ${renderPersistenceStatus(persistenceStatus, mode)}
     </div>
   `;
@@ -382,16 +465,15 @@ function renderJavaSupport(problem) {
     ? problem.commonMistakes
     : [];
   if (hints.length === 0 && commonMistakes.length === 0) return "";
-  // 원본 없이 새로 만든 문제에는 "원본" 문구를 쓰지 않는다.
-  const isAuthored = problem?.origin === "bam-authored";
+  const authored = problem?.origin === "bam-authored";
 
   return `
     <section class="coding-test-section" aria-labelledby="coding-test-support-title">
-      <p class="coding-test-section-label">${isAuthored ? "학습 지원" : "원본 지원"}</p>
+      <p class="coding-test-section-label">${authored ? "학습 지원" : "원본 지원"}</p>
       <h2 id="coding-test-support-title">필요할 때 확인하기</h2>
-      <p>${isAuthored ? "힌트와 대표 실수는 막혔을 때 보는 읽기 자료입니다." : "힌트와 대표 실수는 원본 자료를 보존한 읽기 자료입니다."} 먼저 직접 풀이한 뒤 필요한 항목만 펼쳐 보세요.</p>
+      <p>${authored ? "힌트와 대표 실수는 막혔을 때 보는 읽기 자료입니다." : "힌트와 대표 실수는 원본 자료를 보존한 읽기 자료입니다."} 먼저 직접 풀이한 뒤 필요한 항목만 펼쳐 보세요.</p>
       ${hints.map((hint) => `<details class="quest-console"><summary>${safeInteger(hint?.level, 1)}단계 · ${escapeHtml(hint?.title ?? "힌트")}</summary><p>${renderQuestProse(hint?.content)}</p></details>`).join("")}
-      ${commonMistakes.length > 0 ? `<details class="quest-console"><summary>${isAuthored ? "" : "원본의 "}대표 실수 ${commonMistakes.length}개</summary><ul class="quest-constraints">${commonMistakes.map((mistake) => `<li><strong>${escapeHtml(mistake?.title ?? "대표 실수")}</strong><p>${renderQuestProse(mistake?.explanation)}</p></li>`).join("")}</ul></details>` : ""}
+      ${commonMistakes.length > 0 ? `<details class="quest-console"><summary>${authored ? "" : "원본의 "}대표 실수 ${commonMistakes.length}개</summary><ul class="quest-constraints">${commonMistakes.map((mistake) => `<li><strong>${escapeHtml(mistake?.title ?? "대표 실수")}</strong><p>${renderQuestProse(mistake?.explanation)}</p></li>`).join("")}</ul></details>` : ""}
     </section>
   `;
 }
@@ -541,25 +623,35 @@ export function renderCodingTestView({
   draftStatus = "starter",
   uiError = null,
   report = null,
+  reportSourceStatus = null,
   reportPersistenceStatus = null,
+  resultPersistenceStatus = null,
   isSolved = false,
   evaluationKind = null,
-  executionAvailable = true,
+  executionAvailable = null,
+  javaConnection = null,
+  javaPreparationState = "unavailable",
+  javaPreparationMessage = "",
+  javaPreparationSupport = "",
   routeNotice = "",
   relatedQuest = null,
   legacyDraft = null,
   hasCodingTestDraft = false,
 } = {}) {
-  const isJavaDraft =
-    evaluationKind === "java-static-method-v1" && problem?.executionMode === "draft-only";
+  const isJava = evaluationKind === "java-static-method-v1";
+  const javaExecutionPending = isJava && executionAvailable !== true;
   const mode = executionMode === "submit" ? "submit" : "run";
   const normalizedDraftStatus = normalizeDraftStatus(draftStatus);
   const sourceIsEmpty = String(source).trim().length === 0;
-  const actionsDisabled = isRunning || sourceIsEmpty ? " disabled" : "";
+  const actionsDisabled = isRunning || sourceIsEmpty || javaExecutionPending ? " disabled" : "";
   const editorReadonly = isRunning ? " readonly" : "";
   const typeLabel = getTypeLabel(problem?.type);
   const publicTestCount = Array.isArray(problem?.publicTests) ? problem.publicTests.length : 0;
-  const runTestCount = toStringArray(problem?.runTestIds).length;
+  const runTestCount = isJava
+    ? Math.min(1, publicTestCount)
+    : toStringArray(problem?.runTestIds).length;
+  const runButtonLabel = isJava ? "첫 공개 그룹 실행" : "테스트 실행";
+  const submitButtonLabel = isJava ? "전체 공개 테스트 확인" : "제출 및 채점";
 
   return `
     <main class="main-area coding-test-main" id="lesson-content" tabindex="-1">
@@ -573,7 +665,7 @@ export function renderCodingTestView({
           </div>
           <div class="coding-test-title-row">
             <div>
-              <p>${escapeHtml(getDifficultyLabel(problem?.difficulty))} · ${escapeHtml(typeLabel)}</p>
+              <p>${escapeHtml(getDifficultyLabel(problem?.difficulty))} · ${escapeHtml(typeLabel)} · 약 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</p>
               <h1 id="coding-test-title" tabindex="-1">${escapeHtml(problem?.title ?? "코딩테스트 문제")}</h1>
             </div>
             <span class="coding-test-solved-badge${isSolved ? " is-solved" : ""}">${isSolved ? "풀이 완료" : "미풀이"}</span>
@@ -583,6 +675,8 @@ export function renderCodingTestView({
           ${relatedQuest ? `<p><a class="coding-test-back-link" href="${escapeHtml(relatedQuest.href)}">관련 준비 연습: ${escapeHtml(relatedQuest.title)}</a></p>` : ""}
         </header>
 
+        ${isJava ? renderJavaBrowserPreparation({ id: "coding-test-java", state: javaPreparationState, message: javaPreparationMessage, supportMessage: javaPreparationSupport }) : ""}
+
         <div class="coding-test-workspace">
           <article class="coding-test-problem-panel" aria-labelledby="coding-test-description-title">
             <section class="coding-test-section">
@@ -590,37 +684,41 @@ export function renderCodingTestView({
               <h2 id="coding-test-description-title">구현할 기능</h2>
               <p class="coding-test-description">${escapeHtml(problem?.description ?? "")}</p>
             </section>
-            ${isJavaDraft ? renderCodeQuestFunctionContract(problem) : renderFunctionContract(problem)}
-            ${isJavaDraft ? renderCodeQuestExamples(problem, evaluationKind) : renderExamples(problem?.examples)}
-            ${isJavaDraft ? renderJavaPublicTests(problem, executionAvailable) : ""}
-            ${isJavaDraft ? renderJavaSupport(problem) : ""}
+            ${isJava ? renderCodeQuestFunctionContract(problem) : renderFunctionContract(problem)}
+            ${isJava ? renderCodeQuestExamples(problem, evaluationKind) : renderExamples(problem?.examples)}
+            ${isJava ? renderJavaPublicTests(problem, executionAvailable) : ""}
+            ${isJava ? renderJavaSupport(problem) : ""}
           </article>
 
           <div class="coding-test-run-column">
-            ${isJavaDraft ? renderLegacyDraft(legacyDraft, hasCodingTestDraft) : ""}
+            ${isJava ? renderLegacyDraft(legacyDraft, hasCodingTestDraft) : ""}
             <section class="coding-test-editor-panel" aria-labelledby="coding-test-editor-title" aria-busy="${String(isRunning)}">
               <header>
                 <div>
                   <p class="coding-test-section-label">코드 작성</p>
                   <h2 id="coding-test-editor-title">${escapeHtml(languageName)} 편집기</h2>
                 </div>
-                <span>${isJavaDraft ? "작성 전용" : `실행 ${runTestCount}개 · 제출 ${publicTestCount}개`}</span>
+                <span data-coding-test-run-summary>${javaExecutionPending ? "작성 전용" : isJava ? `빠른 확인 ${runTestCount}개 그룹 · 전체 ${publicTestCount}개 그룹` : `실행 ${runTestCount}개 · 제출 ${publicTestCount}개`}</span>
               </header>
-              <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${isJavaDraft ? "Solution.java 전체 소스" : `${escapeHtml(problem?.entryPoint ?? "함수")} 함수 코드`}</label>
-              <textarea id="coding-test-source" data-coding-test-source aria-labelledby="coding-test-source-label" aria-describedby="coding-test-editor-help coding-test-draft-status" rows="18" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorReadonly}>${escapeHtml(source)}</textarea>
-              <p class="coding-test-editor-help" id="coding-test-editor-help">${isJavaDraft ? "지금은 Java 풀이를 작성하고 저장할 수 있습니다. 실행과 완료 처리는 Java 로컬 실행기가 연결된 뒤 제공됩니다." : "실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다."}</p>
+              <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${isJava ? "Solution.java 전체 소스" : `${escapeHtml(problem?.entryPoint ?? "함수")} 함수 코드`}</label>
+              <div class="coding-test-editor-shell${isRunning ? " is-readonly" : ""}" data-coding-test-editor-shell>
+                <pre class="coding-test-source-highlight syntax-code" aria-hidden="true"><code class="language-${isJava ? "java" : "javascript"}" data-coding-test-source-highlight>${renderHighlightedCode(source, isJava ? "java" : "javascript")}</code></pre>
+                <textarea id="coding-test-source" data-coding-test-source aria-labelledby="coding-test-source-label" aria-describedby="coding-test-editor-help coding-test-draft-status" rows="18" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorReadonly}>${escapeHtml(source)}</textarea>
+              </div>
+              <p class="coding-test-editor-help" id="coding-test-editor-help" data-coding-test-editor-help>${javaExecutionPending ? "지금은 Java 풀이를 작성하고 저장할 수 있습니다. 실행과 완료 처리는 Java 실행 환경이 준비된 뒤 제공됩니다." : isJava ? "빠른 확인과 전체 확인은 이 기기에 포함된 공개 JUnit 메서드 그룹만 실행합니다." : "실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다."}</p>
+              ${javaConnection ? `<div class="coding-test-route-notice" role="status"><p>${escapeHtml(javaConnection.message)}</p>${javaConnection.canConnect ? '<button class="button button--secondary" type="button" data-java-connect>로컬 Java 연결</button>' : ""}${javaConnection.needsReload ? '<button class="button button--secondary" type="button" data-java-reload>초안 저장 후 새로고침</button>' : ""}</div>` : ""}
               <p class="coding-test-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(normalizedDraftStatus)}</p>
               <div class="coding-test-actions">
-                ${isJavaDraft ? "" : `<button class="button button--secondary" type="button" data-coding-test-run aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : "테스트 실행"}</button>
-                <button class="button button--primary" type="button" data-coding-test-submit aria-busy="${String(isRunning && mode === "submit")}"${actionsDisabled}>${isRunning && mode === "submit" ? "채점 중…" : "제출 및 채점"}</button>`}
+                <button class="button button--secondary" type="button" data-coding-test-run aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : runButtonLabel}</button>
+                <button class="button button--primary" type="button" data-coding-test-submit aria-busy="${String(isRunning && mode === "submit")}"${actionsDisabled}>${isRunning && mode === "submit" ? "채점 중…" : submitButtonLabel}</button>
                 ${isRunning ? `<button class="button button--danger" type="button" data-coding-test-cancel${cancelRequested ? " disabled" : ""}>${cancelRequested ? "취소하는 중…" : "실행 취소"}</button>` : '<button class="button button--secondary" type="button" data-coding-test-reset>초기 코드로 되돌리기</button>'}
               </div>
               <div class="coding-test-inline-error" data-coding-test-error role="alert">${uiError ? escapeHtml(uiError) : ""}</div>
             </section>
 
-            ${isJavaDraft ? "" : `<section class="coding-test-results-panel" data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title" aria-busy="${String(isRunning)}">
+            <section class="coding-test-results-panel" data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title" aria-busy="${String(isRunning)}">
               <header class="coding-test-results-heading">
-                <p class="coding-test-section-label">브라우저 공개 채점</p>
+                <p class="coding-test-section-label">${isJava ? "이 기기 공개 JUnit 확인" : "브라우저 공개 채점"}</p>
                 <h2 id="coding-test-results-title">실행 결과</h2>
               </header>
               ${renderExecutionReport({
@@ -628,9 +726,12 @@ export function renderCodingTestView({
                 report,
                 mode,
                 persistenceStatus: reportPersistenceStatus,
+                sourceStatus: reportSourceStatus,
+                resultPersistenceStatus,
                 isRunning,
+                evaluationKind,
               })}
-            </section>`}
+            </section>
           </div>
         </div>
       </div>

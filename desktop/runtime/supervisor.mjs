@@ -1,9 +1,11 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { access, mkdir, mkdtemp, readFile, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { constants as fsConstants } from "node:fs";
 import { release as osRelease, tmpdir, version as osVersion } from "node:os";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { CT_EVALUATION_KIND, CT_JUNIT, CT_RUNNER_CLASS, createCodingTestArtifacts, verifyCodingTestBundle } from "./coding-test-artifacts.mjs";
 
 const MODULE_ROOT = dirname(fileURLToPath(import.meta.url));
 const SANDBOX_EXECUTABLE = "/usr/bin/sandbox-exec";
@@ -22,6 +24,7 @@ const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const ENTRY_POINT_PATTERN = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 // 실측된 커널에 한정한 활성화 후보이며, 장비 신원이나 공식 OS 지원을 보증하지 않는다.
 const ISOLATION_PROTOTYPE_VALIDATED = true;
+const CODING_TEST_PROTOTYPE_VALIDATED = true;
 let isolationRuntimePoisoned = false;
 const MAX_LONG = 9_223_372_036_854_775_807n;
 const MIN_LONG = -9_223_372_036_854_775_808n;
@@ -90,13 +93,13 @@ function isPlainRecord(value) {
   return prototype === Object.prototype || prototype === null;
 }
 
-function readRequest(request) {
+function readRequest(request, fields = REQUEST_FIELDS, idField = "questId") {
   if (!isPlainRecord(request)) throw new TypeError("Java 실행 요청은 일반 객체여야 합니다.");
 
   const copy = {};
   const found = new Set();
   for (const key of Reflect.ownKeys(request)) {
-    if (typeof key !== "string" || !REQUEST_FIELDS.has(key)) {
+    if (typeof key !== "string" || !fields.has(key)) {
       throw new TypeError(`Java 실행 요청에 허용되지 않은 필드가 있습니다: ${String(key)}`);
     }
     const descriptor = Object.getOwnPropertyDescriptor(request, key);
@@ -107,14 +110,14 @@ function readRequest(request) {
     copy[key] = descriptor.value;
   }
 
-  for (const field of REQUEST_FIELDS) {
+  for (const field of fields) {
     if (!found.has(field)) throw new TypeError(`Java 실행 요청.${field}는 필수 필드입니다.`);
   }
   if (typeof copy.requestId !== "string" || !ID_PATTERN.test(copy.requestId)) {
     throw new TypeError("Java 실행 요청.requestId 형식이 올바르지 않습니다.");
   }
-  if (typeof copy.questId !== "string" || !ID_PATTERN.test(copy.questId)) {
-    throw new TypeError("Java 실행 요청.questId 형식이 올바르지 않습니다.");
+  if (typeof copy[idField] !== "string" || !ID_PATTERN.test(copy[idField])) {
+    throw new TypeError(`Java 실행 요청.${idField} 형식이 올바르지 않습니다.`);
   }
   if (!Number.isSafeInteger(copy.revision) || copy.revision <= 0) {
     throw new TypeError("Java 실행 요청.revision은 양의 안전한 정수여야 합니다.");
@@ -362,7 +365,7 @@ function matchesValidatedKernel(release, version) {
     && version === "Darwin Kernel Version 23.6.0: Wed Nov  5 21:50:27 PST 2025; root:xnu-10063.141.1.708.2~1/RELEASE_ARM64_T6020";
 }
 
-async function resolveBundlePaths(bundleRoot) {
+async function resolveBundlePaths(bundleRoot, { requireQuestClass = true } = {}) {
   if (typeof bundleRoot !== "string" || !isAbsolute(bundleRoot)) {
     throw new TypeError("bundleRoot는 절대 경로여야 합니다.");
   }
@@ -384,7 +387,8 @@ async function resolveBundlePaths(bundleRoot) {
   const javaExecutable = await realpath(join(jdkRoot, "bin", "java"));
   const javacExecutable = await realpath(join(jdkRoot, "bin", "javac"));
   const runnerRoot = await realpath(join(resourcesRoot, "runtime", "java-runner"));
-  const runnerClass = await realpath(join(runnerRoot, `${RUNNER_CLASS}.class`));
+  const runnerClass = requireQuestClass
+    ? await realpath(join(runnerRoot, `${RUNNER_CLASS}.class`)) : null;
 
   if (!isWithin(resourcesRoot, jdkRoot) || !isWithin(resourcesRoot, runnerRoot)) {
     throw new Error("bundle Java 경로가 Resources 밖을 가리킵니다.");
@@ -393,7 +397,7 @@ async function resolveBundlePaths(bundleRoot) {
     if (!isWithin(jdkRoot, executable)) throw new Error("bundle JDK 실행 파일이 JDK 밖을 가리킵니다.");
     await access(executable, fsConstants.X_OK);
   }
-  if (!isWithin(runnerRoot, runnerClass)) throw new Error("Java runner class가 runner 경로 밖을 가리킵니다.");
+  if (runnerClass && !isWithin(runnerRoot, runnerClass)) throw new Error("Java runner class가 runner 경로 밖을 가리킵니다.");
   const release = await readFile(join(jdkRoot, "release"), "utf8");
   if (
     process.platform !== "darwin"
@@ -715,6 +719,7 @@ function runSandboxedProcess({
   protocol = false,
   input = null,
   maxProtocolBytes = JAVA_RUNTIME_LIMITS.maxProtocolBytes,
+  onChildSpawn,
 }, dependencies = {}) {
   if (isolationRuntimePoisoned) {
     return Promise.resolve({
@@ -785,6 +790,7 @@ function runSandboxedProcess({
     let reapDeadlineId;
     let timeoutId;
     let monitorId;
+    let spawnRecordPromise;
 
     const finish = async () => {
       if (settled || finishing) return;
@@ -797,6 +803,7 @@ function runSandboxedProcess({
       observerController?.abort();
       try {
         await observerPromise;
+        await spawnRecordPromise;
       } catch {
         // A cancelled or failed observer is already represented by processGroupAbsent.
       }
@@ -1027,6 +1034,15 @@ function runSandboxedProcess({
       void confirmTermination();
     });
 
+    if (Number.isSafeInteger(child.pid) && onChildSpawn) {
+      spawnRecordPromise = Promise.resolve().then(() => onChildSpawn(child.pid)).catch(() => {
+        cleanupFailed = true;
+        isolationRuntimePoisoned = true;
+        terminationReason ??= "spawn_record_failed";
+        stop("spawn_record_failed");
+      });
+    }
+
     timeoutId = setTimeoutFn(() => stop("timeout"), timeoutMs);
     monitorId = setIntervalFn(async () => {
       if (
@@ -1212,8 +1228,12 @@ function createReport(request, tests, startedAt, error = null) {
   return {
     requestId: request.requestId,
     contractVersion: 1,
-    questId: request.questId,
-    questRevision: request.revision,
+    ...(request.problemId ? {
+      problemId: request.problemId,
+      problemRevision: request.revision,
+      evaluationKind: CT_EVALUATION_KIND,
+      mode: request.mode,
+    } : { questId: request.questId, questRevision: request.revision }),
     languageId: "java",
     suite: "public",
     outcome: error ? "engine_error" : summary.outcome,
@@ -1345,22 +1365,220 @@ function runtimeTestResult(test, execution, signature) {
   };
 }
 
-export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedManifest } = {}) {
+function readCodingTestRequest(value) {
+  const request = readRequest(value, new Set(["requestId", "problemId", "revision", "source", "mode"]), "problemId");
+  if (!["run", "submit"].includes(request.mode)) throw new TypeError("CT mode must be run or submit");
+  return request;
+}
+
+function readTrustedCodingTest(collection, request) {
+  const { manifest } = createCodingTestArtifacts(collection);
+  const problem = manifest.problems.find((candidate) => candidate.id === request.problemId && candidate.revision === request.revision);
+  if (!problem) throw new TypeError("CT problem ID/revision does not match the installed collection");
+  const tests = request.mode === "run" ? problem.tests.filter((test) => problem.runTestIds.includes(test.id)) : problem.tests;
+  return { ...problem, codingTest: true, tests: tests.map((test) => ({ ...test, expected: test.assertionSource })) };
+}
+
+function parseCodingTestProtocol(buffer, expectedTestId) {
+  if (!Buffer.isBuffer(buffer) || buffer.length > JAVA_RUNTIME_LIMITS.maxProtocolBytes) throw new Error("Invalid CT frame size");
+  const text = buffer.toString("utf8");
+  const fields = text.trimEnd().split("|");
+  if (!text.endsWith("\n") || text.indexOf("\n") !== text.length - 1 || fields.length !== 15
+    || fields[0] !== "BAMCT1" || fields[1] !== expectedTestId
+    || !["passed", "wrong_answer", "runtime_error", "engine_error"].includes(fields[2])) throw new Error("Invalid CT frame identity");
+  const names = ["discovered", "started", "finished", "passed", "wrongAnswer", "runtimeError", "skipped", "aborted", "infrastructure"];
+  const counts = {};
+  names.forEach((name, index) => {
+    const token = fields[index + 3];
+    if (!/^(?:0|[1-9][0-9]*)$/u.test(token) || !Number.isSafeInteger(Number(token))) throw new Error("Invalid CT count");
+    counts[name] = Number(token);
+  });
+  if (![fields[12], fields[13]].every((value) => ["true", "false"].includes(value))) throw new Error("Invalid CT plan state");
+  const messageBytes = Buffer.from(fields[14], "base64");
+  if (messageBytes.toString("base64") !== fields[14] || messageBytes.length > 2048) throw new Error("Invalid CT message");
+  const complete = fields[12] === "true" && fields[13] === "true" && counts.discovered > 0
+    && counts.discovered === counts.started && counts.started === counts.finished
+    && counts.finished === counts.passed + counts.wrongAnswer + counts.runtimeError
+    && counts.skipped === 0 && counts.aborted === 0 && counts.infrastructure === 0;
+  const outcome = !complete ? "engine_error" : counts.runtimeError ? "runtime_error" : counts.wrongAnswer ? "wrong_answer" : "passed";
+  if (fields[2] !== outcome) throw new Error("Inconsistent CT result counts");
+  return { outcome, invocations: counts, message: messageBytes.toString("utf8"), complete };
+}
+
+function codingTestResult(test, execution) {
+  if (execution.startError || execution.terminationReason) return runtimeTestResult(test, execution);
+  let result;
+  try { result = parseCodingTestProtocol(execution.protocolOutput, test.id); }
+  catch { return runtimeTestResult(test, { ...execution, protocolOutput: Buffer.alloc(0) }); }
+  if (execution.exitCode !== 0) return stoppedTestResult(test, "engine_error", "CT runner가 결과 뒤 비정상 종료했습니다.", execution.durationMs);
+  return { ...baseTestResult(test), outcome: result.outcome, durationMs: execution.durationMs, invocations: result.invocations,
+    error: result.outcome === "passed" ? null : createError(result.outcome, result.message || "공개 JUnit 그룹을 완료하지 못했습니다.") };
+}
+
+export async function getJavaCodingTestCapabilities({ bundleRoot, trustedManifest } = {}) {
+  const base = { contractVersion: 1, evaluationKind: CT_EVALUATION_KIND };
+  if (!CODING_TEST_PROTOTYPE_VALIDATED) return { ...base, available: false, reason: "Java 코딩테스트 실행 검증이 아직 완료되지 않았습니다." };
+  const questCapability = await getJavaQuestCapabilities({ bundleRoot });
+  if (!questCapability.available) return { ...base, available: false, reason: questCapability.reason };
+  try {
+    const paths = await resolveBundlePaths(bundleRoot);
+    const ctRoot = await realpath(join(paths.resourcesRoot, "runtime", "java-ct-runner"));
+    if (!isWithin(paths.resourcesRoot, ctRoot)) throw new Error("CT root escaped bundle");
+    await verifyCodingTestBundle(ctRoot, trustedManifest);
+    return { ...base, available: true };
+  } catch { return { ...base, available: false, reason: "번들 Java 코딩테스트 실행 환경을 사용할 수 없습니다." }; }
+}
+
+export async function runJavaCodingTest(value, { signal, bundleRoot, trustedManifest, executionGuard } = {}) {
+  const request = readCodingTestRequest(value);
+  assertAbortSignal(signal);
+  const problem = readTrustedCodingTest(trustedManifest, request);
+  return runJavaTask(request, problem, { signal, bundleRoot, trustedManifest, executionGuard });
+}
+
+// Packaging compilation uses the same bounded child/group supervision as learner javac.
+export async function compileTrustedCodingTestSources({ bundleRoot, workRoot, sourcePaths, signal, executionGuard } = {}) {
+  assertAbortSignal(signal);
+  const paths = await resolveBundlePaths(bundleRoot, { requireQuestClass: false });
+  const root = await realpath(workRoot);
+  if (!Array.isArray(sourcePaths) || sourcePaths.length !== 146 || new Set(sourcePaths).size !== sourcePaths.length) throw new Error("Invalid CT build sources");
+  for (const source of sourcePaths) if (!source.endsWith(".java") || !isWithin(root, await realpath(source))) throw new Error("CT build source escaped work root");
+  const classesRoot = join(root, "classes");
+  const homeRoot = join(root, "home");
+  const tempRoot = join(root, "tmp");
+  await Promise.all([mkdir(classesRoot), mkdir(homeRoot), mkdir(tempRoot)]);
+  const args = ["-J-Xmx128m", `-J-Duser.home=${homeRoot}`, `-J-Djava.io.tmpdir=${tempRoot}`,
+    "--release", "25", "-encoding", "UTF-8", "-proc:none", "-implicit:none",
+    "-classpath", join(root, CT_JUNIT.file), "-d", classesRoot, ...sourcePaths];
+  const execution = await runSourceGuardedProcess({
+    profileName: "compile.sb", parameters: compileSandboxParameters(paths.jdkRoot, paths.javacExecutable, root),
+    executable: paths.javacExecutable, args, environment: createEnvironment(homeRoot, tempRoot),
+    timeoutMs: JAVA_RUNTIME_LIMITS.compileTimeoutMs, rssLimitBytes: JAVA_RUNTIME_LIMITS.compileRssBytes,
+    signal, compileOutputPath: classesRoot,
+  }, { executionGuard, kind: "prepare-coding-test", workRoot: root });
+  const safe = terminationIsSafe(execution);
+  if (!safe) isolationRuntimePoisoned = true;
+  return { execution, safe, executable: paths.javacExecutable, args: execution.launchedArgs ?? args };
+}
+
+export async function compileTrustedQuestSource({ bundleRoot, workRoot, sourcePath, sourceSha256, signal, executionGuard } = {},
+  { executeProcess = runSandboxedProcess } = {}) {
+  assertAbortSignal(signal);
+  if (typeof executionGuard?.reserve !== "function" || typeof executionGuard?.finish !== "function") {
+    throw new Error("Java 준비 child의 독립 회수 guard가 필요합니다.");
+  }
+  const paths = await resolveBundlePaths(bundleRoot, { requireQuestClass: false });
+  return compileTrustedQuestSourceWithPaths({
+    workRoot, sourcePath, sourceSha256, signal, executionGuard,
+  }, paths, { executeProcess });
+}
+
+// 공개 진입점의 커널·bundle 검증을 통과한 뒤에만 호출한다.
+async function compileTrustedQuestSourceWithPaths({ workRoot, sourcePath, sourceSha256, signal, executionGuard },
+  paths, { executeProcess = runSandboxedProcess } = {}) {
+  const root = await realpath(workRoot);
+  const source = await realpath(sourcePath);
+  if (source !== join(root, "JavaBamQuestRunner.java")
+    || !/^[a-f0-9]{64}$/u.test(sourceSha256)
+    || createHash("sha256").update(await readFile(source)).digest("hex") !== sourceSha256) {
+    throw new Error("고정 Quest runner 소스가 준비 작업 공간의 예상 바이트와 다릅니다.");
+  }
+  const classesRoot = join(root, "classes");
+  const emptyClasspath = join(root, "empty-classpath");
+  const homeRoot = join(root, "home");
+  const tempRoot = join(root, "tmp");
+  await Promise.all([mkdir(classesRoot), mkdir(emptyClasspath), mkdir(homeRoot), mkdir(tempRoot)]);
+  const args = ["-J-Xmx128m", `-J-Duser.home=${homeRoot}`, `-J-Djava.io.tmpdir=${tempRoot}`,
+    "--release", "25", "-encoding", "UTF-8", "-proc:none", "-implicit:none",
+    "-classpath", emptyClasspath, "-d", classesRoot, source];
+  const execution = await runSourceGuardedProcess({
+    profileName: "compile.sb", parameters: compileSandboxParameters(paths.jdkRoot, paths.javacExecutable, root),
+    executable: paths.javacExecutable, args, environment: createEnvironment(homeRoot, tempRoot),
+    timeoutMs: JAVA_RUNTIME_LIMITS.compileTimeoutMs, rssLimitBytes: JAVA_RUNTIME_LIMITS.compileRssBytes,
+    signal, compileOutputPath: classesRoot,
+  }, { executionGuard, kind: "prepare-quest", workRoot: root, executeProcess });
+  const safe = terminationIsSafe(execution);
+  if (!safe) isolationRuntimePoisoned = true;
+  if (createHash("sha256").update(await readFile(source)).digest("hex") !== sourceSha256) {
+    throw new Error("컴파일 중 Quest runner 소스가 변경됐습니다.");
+  }
+  return { execution, safe, executable: paths.javacExecutable, args: execution.launchedArgs, classesRoot, sourceSha256 };
+}
+
+function terminationIsSafe(execution) {
+  const evidence = execution.terminationEvidence;
+  return execution.guardSafe !== false && (evidence.childCreated === false || (evidence.exitObserved && evidence.closeObserved
+    && evidence.processGroupAbsent === true && evidence.processObserverCloseObserved === true
+    && evidence.observerUnreaped === false && evidence.cleanupFailed === false));
+}
+
+async function runSourceGuardedProcess(config, { executionGuard, kind, workRoot, executeProcess = runSandboxedProcess } = {}) {
+  if (!executionGuard) return executeProcess(config);
+  if (typeof executionGuard.reserve !== "function" || typeof executionGuard.recordSpawn !== "function"
+    || typeof executionGuard.finish !== "function") {
+    throw new Error("독립 Java 감독이 준비되지 않았습니다.");
+  }
+  let reservation;
+  try {
+    reservation = await executionGuard.reserve({ kind, workRoot, executable: config.executable });
+  } catch (error) {
+    isolationRuntimePoisoned = true;
+    throw error;
+  }
+  if (!/^[a-f0-9]{64}$/u.test(reservation?.attemptId)) {
+    isolationRuntimePoisoned = true;
+    throw new Error("독립 Java 감독 nonce가 유효하지 않습니다.");
+  }
+  let execution;
+  try {
+    const ownedArguments = [
+      `${basename(config.executable) === "javac" ? "-J-D" : "-D"}bam.owner.nonce=${reservation.attemptId}`,
+      ...config.args,
+    ];
+    execution = await executeProcess({
+      ...config,
+      parameters: { BAM_OWNER_NONCE: reservation.attemptId, ...config.parameters },
+      args: ownedArguments,
+      onChildSpawn: (pid) => executionGuard.recordSpawn({ reservation, pid, pgid: pid }),
+    });
+    execution = { ...execution, launchedArgs: ownedArguments };
+  } catch (error) {
+    try { await executionGuard.finish({ reservation, execution: null }); }
+    catch { /* The durable marker remains until independent recovery. */ }
+    isolationRuntimePoisoned = true;
+    throw error;
+  }
+  try {
+    const independentlyReaped = await executionGuard.finish({ reservation, execution });
+    if (independentlyReaped !== true) isolationRuntimePoisoned = true;
+    return { ...execution, guardSafe: independentlyReaped === true };
+  } catch (error) {
+    isolationRuntimePoisoned = true;
+    throw error;
+  }
+}
+
+export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedManifest, executionGuard } = {}) {
   const request = readRequest(requestValue);
   assertAbortSignal(signal);
   const quest = readTrustedQuest(trustedManifest, request);
-  const startedAt = performance.now();
+  return runJavaTask(request, quest, { signal, bundleRoot, executionGuard });
+}
 
-  if (!ISOLATION_PROTOTYPE_VALIDATED || isolationRuntimePoisoned) {
+async function runJavaTask(request, quest, { signal, bundleRoot, trustedManifest, executionGuard } = {}) {
+  const startedAt = performance.now();
+  const ctUnavailable = quest.codingTest && !CODING_TEST_PROTOTYPE_VALIDATED;
+
+  if (!ISOLATION_PROTOTYPE_VALIDATED || isolationRuntimePoisoned || ctUnavailable) {
     const tests = quest.tests.map((test) => ({ ...baseTestResult(test), outcome: "not_run" }));
     return createReport(
       request,
       tests,
       startedAt,
       createError(
-        "java_isolation_unavailable",
-        "macOS Java 격리 prototype이 timeout 뒤 프로세스 정리를 보장하지 못했습니다.",
-        "현재 기기에서는 Java 코드 실행을 안전하게 시작할 수 없습니다.",
+        ctUnavailable ? "java_ct_unavailable" : "java_isolation_unavailable",
+        ctUnavailable ? "Java 코딩테스트 실행 검증이 아직 완료되지 않았습니다." : "macOS Java 격리 prototype이 timeout 뒤 프로세스 정리를 보장하지 못했습니다.",
+        ctUnavailable ? "Java 코딩테스트 실행 검증이 아직 완료되지 않았습니다." : "현재 기기에서는 Java 코드 실행을 안전하게 시작할 수 없습니다.",
       ),
     );
   }
@@ -1369,16 +1587,7 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
   let preserveWorkRoot = false;
 
   const observeTermination = (execution) => {
-    const evidence = execution.terminationEvidence;
-    const cleanupIsSafe = evidence.childCreated === false
-      || (
-        evidence.exitObserved
-        && evidence.closeObserved
-        && evidence.processGroupAbsent === true
-        && evidence.processObserverCloseObserved === true
-        && evidence.observerUnreaped === false
-        && evidence.cleanupFailed === false
-      );
+    const cleanupIsSafe = terminationIsSafe(execution);
     if (!cleanupIsSafe) {
       preserveWorkRoot = true;
       isolationRuntimePoisoned = true;
@@ -1388,7 +1597,13 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
 
   try {
     const bundlePaths = await resolveBundlePaths(bundleRoot);
-    workRoot = await mkdtemp(join(tmpdir(), "bam-java-quest-"));
+    if (quest.codingTest) {
+      const ctRoot = await realpath(join(bundlePaths.resourcesRoot, "runtime", "java-ct-runner"));
+      if (!isWithin(bundlePaths.resourcesRoot, ctRoot)) throw new Error("CT runner root escaped the bundle");
+      await verifyCodingTestBundle(ctRoot, trustedManifest);
+      bundlePaths.runnerRoot = ctRoot;
+    }
+    workRoot = await mkdtemp(join(tmpdir(), quest.codingTest ? "bam-java-ct-" : "bam-java-quest-"));
     workRoot = await realpath(workRoot);
     const classesRoot = join(workRoot, "classes");
     const emptyClasspath = join(workRoot, "empty-classpath");
@@ -1402,6 +1617,22 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
     ]);
     const sourcePath = join(workRoot, SOURCE_FILE);
     await writeFile(sourcePath, request.source, { encoding: "utf8", flag: "wx", mode: 0o600 });
+    let authoredTestPath = null;
+    if (quest.codingTest && quest.origin === "bam-authored") {
+      const bundledTestPath = join(bundlePaths.runnerRoot, "sources", "authored", quest.id, "SolutionPublicTest.java");
+      if (!isWithin(bundlePaths.runnerRoot, bundledTestPath)) throw new Error("CT public source escaped the bundle");
+      const testBytes = await readFile(bundledTestPath);
+      if (createHash("sha256").update(testBytes).digest("hex") !== quest.publicSourceSha256) {
+        throw new Error("CT public source changed after bundle verification");
+      }
+      authoredTestPath = join(workRoot, "SolutionPublicTest.java");
+      await writeFile(authoredTestPath, testBytes, { flag: "wx", mode: 0o600 });
+      const junitBytes = await readFile(join(bundlePaths.runnerRoot, CT_JUNIT.file));
+      if (createHash("sha256").update(junitBytes).digest("hex") !== CT_JUNIT.sha256) {
+        throw new Error("CT JUnit changed after bundle verification");
+      }
+      await writeFile(join(workRoot, CT_JUNIT.file), junitBytes, { flag: "wx", mode: 0o600 });
+    }
 
     if (signal?.aborted) {
       const tests = [
@@ -1412,7 +1643,7 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
     }
 
     const environment = createEnvironment(homeRoot, tempRoot);
-    const compilation = await runSandboxedProcess({
+    const compilation = await runSourceGuardedProcess({
       profileName: "compile.sb",
       parameters: compileSandboxParameters(
         bundlePaths.jdkRoot,
@@ -1428,16 +1659,17 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
         "-encoding", "UTF-8",
         "-proc:none",
         "-implicit:none",
-        "-classpath", emptyClasspath,
+        "-classpath", authoredTestPath ? join(workRoot, CT_JUNIT.file) : emptyClasspath,
         "-d", classesRoot,
         sourcePath,
+        ...(authoredTestPath ? [authoredTestPath] : []),
       ],
       environment,
       timeoutMs: JAVA_RUNTIME_LIMITS.compileTimeoutMs,
       rssLimitBytes: JAVA_RUNTIME_LIMITS.compileRssBytes,
       signal,
       compileOutputPath: classesRoot,
-    });
+    }, { executionGuard, kind: quest.codingTest ? "coding-test" : "quest", workRoot });
     const compilationCleanupIsSafe = observeTermination(compilation);
 
     if (
@@ -1467,11 +1699,13 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
       }
 
       const arrayInput = quest.signature ? encodeArrayInput(quest.signature, test.args) : null;
-      const runnerArguments = quest.signature
+      const runnerArguments = quest.codingTest
+        ? [test.testClass, test.method, test.parameterTypes.join(","), test.id]
+        : quest.signature
         ? ["--array-v1", quest.entryPoint, quest.signature]
         : [quest.entryPoint, ...test.args.map(String)];
 
-      const execution = await runSandboxedProcess({
+      const execution = await runSourceGuardedProcess({
         profileName: "runtime.sb",
         parameters: {
           ...runtimeSandboxParameters({
@@ -1497,8 +1731,10 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
           "-XX:-UsePerfData",
           `-Duser.home=${homeRoot}`,
           `-Djava.io.tmpdir=${tempRoot}`,
-          "-cp", `${bundlePaths.runnerRoot}:${classesRoot}`,
-          RUNNER_CLASS,
+          "-cp", quest.codingTest
+            ? `${join(bundlePaths.runnerRoot, "classes")}:${join(bundlePaths.runnerRoot, CT_JUNIT.file)}:${classesRoot}`
+            : `${bundlePaths.runnerRoot}:${classesRoot}`,
+          quest.codingTest ? CT_RUNNER_CLASS : RUNNER_CLASS,
           ...runnerArguments,
         ],
         environment,
@@ -1510,10 +1746,10 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
         maxProtocolBytes: quest.signature
           ? JAVA_RUNTIME_LIMITS.maxArrayProtocolBytes
           : JAVA_RUNTIME_LIMITS.maxProtocolBytes,
-      });
+      }, { executionGuard, kind: quest.codingTest ? "coding-test" : "quest", workRoot });
       const executionCleanupIsSafe = observeTermination(execution);
       const result = executionCleanupIsSafe
-        ? runtimeTestResult(test, execution, quest.signature)
+        ? quest.codingTest ? codingTestResult(test, execution) : runtimeTestResult(test, execution, quest.signature)
         : stoppedTestResult(
           test,
           "engine_error",
@@ -1521,7 +1757,8 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
           execution.durationMs,
         );
       testResults.push(result);
-      if (result.outcome === "cancelled" || result.outcome === "engine_error") {
+      if (result.outcome === "cancelled" || result.outcome === "engine_error"
+        || (quest.codingTest && !["passed", "wrong_answer"].includes(result.outcome))) {
         testResults.push(...remainingNotRun(quest.tests, index + 1));
         break;
       }
@@ -1533,6 +1770,7 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
       preserveWorkRoot,
     );
   } catch (error) {
+    if (executionGuard) preserveWorkRoot = true;
     const tests = quest.tests.map((test) => ({ ...baseTestResult(test), outcome: "not_run" }));
     return finishJavaRun(
       createReport(
@@ -1552,6 +1790,11 @@ export async function runJavaQuest(requestValue, { signal, bundleRoot, trustedMa
 }
 
 export const __test = Object.freeze({
+  compileTrustedQuestSourceWithPaths,
+  readCodingTestRequest,
+  readTrustedCodingTest,
+  parseCodingTestProtocol,
+  codingTestResult,
   matchesValidatedKernel,
   compileFailureResult,
   compileSandboxParameters,
@@ -1567,6 +1810,7 @@ export const __test = Object.freeze({
     isolationRuntimePoisoned = false;
   },
   runSandboxedProcess,
+  runSourceGuardedProcess,
   runtimeSandboxParameters,
   runtimeTestResult,
 });

@@ -17,7 +17,7 @@ export function renderServiceIcon(kind) {
 }
 
 export function renderSidebarUtilityLink({ isCurrent = false } = {}) {
-  return `<a class="sidebar-utility-link${isCurrent ? " is-current" : ""}" href="${buildMyPageHash()}"${isCurrent ? ' aria-current="page"' : ""}>${renderServiceIcon("history")}내 학습 기록</a>`;
+  return `<a class="sidebar-utility-link${isCurrent ? " is-current" : ""}" href="${buildMyPageHash()}"${isCurrent ? ' aria-current="page"' : ""}>${renderServiceIcon("history")}마이페이지</a>`;
 }
 
 export function renderSidebarSearch(query = "", results = {}) {

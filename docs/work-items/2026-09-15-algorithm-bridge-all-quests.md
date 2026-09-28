@@ -1,8 +1,8 @@
 # Algorithm Bridge 전체 Code Quest 편입
 
-`[대체됨]` 이 문서의 전체 Quest 등록 위치·ID·수량은 [코딩테스트 전환](2026-09-15-algorithm-bridge-coding-tests.md)으로 대체됐다. 아래 결정·구현·검증 상태는 당시 기록이다. 현재 수량은 [README](../../README.md)만 요약한다. 신규 69개 경험 카드와 원본 229개 SHA-256은 동일 내용의 출처·독립 검토 증거로 영구 보존하며 현재 Quest 등록 목록으로 해석하지 않는다.
-
 ## 범위와 상태
+
+`[대체됨]` 이 카드의 전체69 Quest 등록 계약은 [Algorithm Bridge 코딩테스트 전환](2026-09-15-algorithm-bridge-coding-tests.md)으로 대체했다. 아래 Java73·전체101 수량과 등록/검증 PASS는 전환 전 당시 작업본의 이력이며 현재 수량이 아니다. 현재는 기존32 Quest를 보존하고 원본72를 별도 Java 코딩테스트로 제공한다. 아래 경험 카드·출처·검증 근거는 당시 대상에 대한 기록으로 보존하고 동일 내용 범위에서만 재사용한다. 신규 69개 경험 카드와 원본 229개 SHA-256은 영구 보존하며 현재 수량은 [README](../../README.md)에만 요약한다.
 
 `[대체됨]` 당시 2026-09-15 bam의 전체 적용 요청은 [대표 세 문제 편입](2026-09-15-algorithm-bridge-quests.md)의 수량 제한을 대체한다. 작업 유형은 학습 콘텐츠 포함 기능이다. 원본 72개 중 기존 3개와 Java pilot을 보존하고 신규 69개를 같은 Java 컬렉션에 draft-only로 추가한다. 교안·객관식·코딩테스트·curriculum·저장소·supervisor·Java 프로세스를 변경하지 않는다. 실행 재개·Git 게시·Electron·빌드·설치·지원 OS 확대는 범위 밖이다.
 

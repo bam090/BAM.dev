@@ -1,6 +1,6 @@
 # ADR 0005: Java Code Quest의 번들 JDK와 로컬 프로세스 평가
 
-`[현재 사실]` 이 ADR의 Java/Electron 구현·실패 증거는 별도 미게시 로컬 후보에 관한 기록이다. 브라우저 게시에 해당 실행기가 포함되거나 Java 실행·정식 설치 지원이 완료됐다는 뜻이 아니다. 정확한 artifact·격리 실패·실행 중지와 재개 계약은 아래 내용을 유지한다.
+`[현재 사실]` 이 ADR은 검증 커널에 한정한 Java Quest 로컬 prototype 계약과 실제 검증·실패 이력이다. 이 게시 후보에는 관련 실행기 소스를 포함하며, JDK·Electron 바이너리·정식 설치본 배포나 일반 브라우저 Java 실행 지원을 뜻하지 않는다.
 
 - 상태: `[확정 결정]` 2026-09-15 Java 실행 지원 요청의 제한된 prototype 계약. `[현재 사실]` compile·정상/부정 결과·배열 공개 평가·Java 미실행 앱 기본 검증과 OS 제한 활성 후보의 focused는 독립 PASS다. 단계 4 원본 harness FAIL과 격리 효과 한정 PASS를 함께 보존하며, 검증 커널의 로컬 Java Quest 활성 UI·취소·창 닫기·재시작 복원도 독립 PASS다. 최종 프로젝트 통합·Git 게시는 별도다. 전체 Java 지원 완료를 뜻하지 않는다.
 - 범위: macOS 14.8.3·Apple Silicon 검증 장비, 첫 Java Code Quest와 승인된 배열 3개의 OS 제한 실행 후보, 기존 정적 앱의 Electron shell. 제품 범위는 [`DEC-JAVA-QUEST-RUNTIME-01`](../roadmap.md#2026-09-15-java-실행-지원-결정)과 [배열 편입 계약](../content-schema.md#algorithm-bridge-java-배열-quest-편입), 실행·패키징 상태는 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md)를 따른다.
@@ -53,11 +53,9 @@ Java 25로 작성한 `BamQuestRunner`는 학습자 클래스의 허용된 정적
 
 `[확정 결정]` 후속 구현은 원본 `publicTestSource`, provider/helper, 최대 길이 생성, identity·입력 불변·tolerance assertion을 그대로 실행하는 계약을 먼저 검증한다. source-full을 정규식이나 JS 모사로 축소하지 않는다. 값 타입 12개(`int`, `long`, `double`, `boolean`, `String`, `int[]`, `long[]`, `double[]`, `String[]`, `int[][]`, `boolean[][]`, `String[][]`)의 표시는 실행 지원 증거가 아니다. long은 정규 decimal 문자열, double은 finite, 배열은 값과 원본/새 참조 의미를 보존한다.
 
-`[제안]` 격리 복구 이후 JUnit Jupiter/Platform의 정확한 artifact·hash·license를 선정하고 신뢰된 원본 `bridge.*.solution.*` 호출과 unnamed `Solution.java`를 연결할 작은 typed adapter를 검증한다. 아직 JUnit 버전·의존성·adapter는 확정·추가되지 않았다. discovery/provider 실행도 격리 내부에서 수행하고 Java 25·`--release 25`·preview off·processor off·고정 classpath를 유지한다. 사용자 소스나 원본 테스트를 문자열 치환하지 않는다.
+`[대체됨]` 이 준비 단계의 JUnit artifact·adapter·fresh 단위 미확정은 2026-09-22 [ADR 0006](0006-java-coding-test-local-runtime.md)으로 구체화했다. 원본 source/provider/helper 보존, JUnit 6.1.3 고정 JAR, typed adapter, 공개 method별 fresh JVM·모든 parameterized invocation 집계, 첫 그룹 run/전체 submit, 0/skip/abort/infrastructure 실패 차단과 별도 CT 진도를 따른다. 이후 검증 커널의 CT 구현·정상·오류·대표 앱 실행을 독립 PASS했고 해당 환경의 CT capability를 활성화했다. 실제 실행과 재사용·남은 정식 지원 범위는 [CT 실행 카드](../work-items/2026-09-22-java-coding-test-runtime.md)를 따른다.
 
-활성화 전 등록 publicTest ID와 class/method/invocation 대응, 빠른/전체 실행 선택, **공개 테스트마다 fresh JVM**의 실제 단위를 확정한다. 메서드 묶음의 static 상태 공유를 숨기거나 freshness를 줄이지 않는다. skipped/aborted/provider 실패/zero discovered는 PASS가 아니며 전체 현재 revision의 원본 사례가 끝나기 전 완료를 기록하지 않는다. 부모는 bundle 선택 목록과 결과 ID·revision·개수·상태를 대조하고 assertion 실패·컴파일 오류·provider/protocol 오류·예외·시간/출력 제한·취소·미실행을 구별한다. CT 결과와 진도는 Quest와 별도로 유지한다.
-
-일반 웹 `localhost:4173`에는 기존 `window.bamJava` bridge가 없다. dev server exec endpoint나 native host를 몰래 추가하지 않는다. 기존 제한 shell 재사용은 격리 PASS 이후 진입 UX·origin·저장 경계를 확인할 후속 항목이며, 서로 다른 origin의 초안·진도를 자동 이관하지 않는다. 정식 설치·DMG·지원 OS 확대는 이 준비 작업에 포함하지 않는다.
+기존 Quest 안전 감독·exact OS/JDK/profile·공유 단일 실행 잠금·poison/reap만 재사용하며 Quest class provenance는 CT와 분리한다. 웹 실행 endpoint·시스템 JDK·정식 설치·DMG·지원 OS 확대는 포함하지 않는다.
 
 ## 고정 배포물과 업데이트
 
