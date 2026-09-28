@@ -135,7 +135,7 @@ test("Spring은 Security·JPA를 포함한 46개 정적 교안·92문항을 기�
   const quiz = JSON.parse(await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"));
   assert.equal(lessons.length, 46);
   assert.deepEqual(lessons.map((lesson) => lesson.order), Array.from({ length: 46 }, (_, index) => index + 1));
-  assert.equal(quiz.questions.length, 156);
+  assert.equal(quiz.questions.length, 254);
   for (const lesson of lessons) {
     assert.equal(lesson.id, `spring-${lesson.slug}`);
     assert.equal(lesson.contentFile, `content/lessons/spring/${lesson.slug}.md`);

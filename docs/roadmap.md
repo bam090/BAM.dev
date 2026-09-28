@@ -407,7 +407,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "review-history",
   "scopeRevision": "REVIEW-HISTORY-v1",
-  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "37504b3aae6fc78e7a6f14d112e44ee146f682d587310bf3dd4273f3562bc8c0" }],
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "c709e8d2cd6dbca1933a58a1c2e41c2dc4254cfe1c50086ea06a366d754f0977" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
@@ -505,3 +505,5 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 `[확정 결정]` 교안·객관식 설명 기준은 Java 25다. 실제 풀이용 시작 코드·기준 풀이·공개 테스트·대표 오답은 Java 17과 25의 공통 문법·API 범위로 작성하고 신규 12개를 두 버전에서 실행해 확인한다. 브라우저 런타임을 Java 25로 교체하는 결정은 아니다. JUnit은 기존 제품의 고정 6.1.3 자산을 재사용한다. 초기 PR의 JDK 17·JUnit 6.0.3 개발 검증만 수행하고 draft-only 실행 차단을 유지한다는 문구는 이 최신 승인으로 대체한다.
 
 `[현재 사실]` 신규 12개의 콘텐츠 독립 검토, Java 17·25 기준 풀이 공개 실행과 선택 대표 오답, 대표 제품 UI의 실행·제출·취소·복원을 PASS로 인수했다. 실제 실행·재사용·미실행과 최초 실패·수정은 [검증 기록](problem-verification.md#2026-09-28-pr-32-알고리즘-교안java-코딩테스트-통합-검증)에 구분했다. fixture의 PASS 문자열로 대신 판정하지 않았으며 기존 72개·전체 36개 대표 오답 전수를 새로 실행한 것은 아니다.
+
+`[확정 결정]` `DEC-ALGORITHM-QUIZ-01`: 2026-09-28 bam 승인으로 알고리즘 교안 40편에 객관식을 추가한다. 개념 문서는 3문제·활용·심화 문서는 2문제씩 모두 98문항이다. 문항은 기존 Java 객관식 컬렉션 끝에 교안 읽기 순서대로 `quiz-java-algo-` ID로 붙이고 기존 156문항과 풀이 기록은 바꾸지 않는다. 작성·검토 기준은 [객관식 문항 작성과 검토 기준](designs/lesson-review.md#객관식-문항-작성과-검토-기준)과 [알고리즘 객관식 계약](designs/lesson-review.md#알고리즘-객관식)을 따른다.

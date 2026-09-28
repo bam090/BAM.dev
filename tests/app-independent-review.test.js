@@ -1199,7 +1199,7 @@ test("Spring 문서 범위는 과정명을 표시하고 Java 전체 범위와 �
   browser(t);
   for (const [hash, title, count] of [
     ["#/review/java/spring-ioc-di?concept=spring.ioc-di", "Spring · Spring Boot", 2],
-    ["#/review/java", "Java", 156],
+    ["#/review/java", "Java", 254],
   ]) {
     window.location.hash = hash;
     const { app, storage, errors } = harness();

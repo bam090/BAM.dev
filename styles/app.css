@@ -1588,6 +1588,12 @@ article.lesson-body > h3 {
   font-family: var(--font-mono);
   font-size: 13px;
   line-height: 1.72;
+  /* 교안 코드 카드와 같이 .code-line 사이의 줄바꿈 문자가 빈 줄로 보이지 않게 한다. */
+  white-space: normal;
+}
+
+.quiz-code .code-line {
+  white-space: pre;
 }
 
 .quiz-card :not(pre) > code {

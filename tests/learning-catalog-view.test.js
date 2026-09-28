@@ -87,10 +87,12 @@ test("JavaScript 주제는 활성 개념 문서와 runtime을 보여 주고 보�
   assert.ok(getLearningCatalogItems({ ...options, topicId: "java" }).every((item) => !item.href.includes("/algorithm/")));
   const javascriptQuestions = getLearningCatalogItems({ ...options, kind: "review", topicId: "javascript" });
   assert.equal(javascriptQuestions.reduce((sum, item) => sum + item.count, 0), collections.get("javascript").questions.length);
-  assert.equal(getLearningCatalogItems({ ...options, kind: "review", topicId: "algorithm" }).length, 0);
+  const algorithmQuestions = getLearningCatalogItems({ ...options, kind: "review", topicId: "algorithm" });
+  assert.equal(algorithmQuestions.length, 40);
+  assert.equal(algorithmQuestions.reduce((sum, item) => sum + item.count, 0), 98);
 });
 
-test("준비 중 주제와 문제 자료 없는 주제는 제공 중인 카드로 오인되지 않는다", () => {
+test("준비 중 주제는 제공 중인 카드로 오인되지 않고 알고리즘은 실제 문제 수를 보여 준다", () => {
   for (const kind of ["learn", "review"]) {
     const html = renderLearningCatalog({ ...options, kind });
     for (const id of ["cs", "typescript", "react"]) {
@@ -105,13 +107,14 @@ test("준비 중 주제와 문제 자료 없는 주제는 제공 중인 카드�
   }
   const review = renderLearningCatalog({ ...options, kind: "review" });
   const algorithmButton = review.match(/<button\b[^>]*data-catalog-topic="algorithm"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
-  assert.match(algorithmButton, /자료 없음/);
+  assert.match(algorithmButton, /98문제/);
+  assert.doesNotMatch(algorithmButton, /\bdisabled\b|자료 없음/);
   assert.doesNotMatch(review, /class="catalog-card"/);
 });
 
 test("공유 키워드와 소유별 문제 묶음은 모든 언어의 문항을 정확히 한 번 집계한다", () => {
   const items = getLearningCatalogItems({ ...options, kind: "review" });
-  assert.equal(items.reduce((sum, item) => sum + item.count, 0), 284);
+  assert.equal(items.reduce((sum, item) => sum + item.count, 0), 382);
   for (const [languageId, collection] of collections) {
     const questionIds = items.filter((item) => item.href.split("?")[0].split("/")[2] === languageId).flatMap((item) => {
       const [route, query] = item.href.split("?");
