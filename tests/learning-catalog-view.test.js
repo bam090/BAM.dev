@@ -62,10 +62,9 @@ test("문서와 문제 첫 화면은 검색 다음에 주제 선택을 보여 �
     assert.deepEqual([...html.matchAll(/data-catalog-topic="([^"]+)"/g)].map((match) => match[1]),
       ["html", "css", "javascript", "java", "spring", "algorithm", "all", "cs", "typescript", "react"]);
     const selected = renderLearningCatalog({ ...options, kind, filters: { topicId: "html" } });
-    // 학습문서는 주제를 고르면 키워드 카드가, 키워드를 고르면 문서 카드가 나온다.
-    const nextStep = kind === "learn" ? "data-catalog-keyword" : 'class="catalog-card"';
-    assert.ok(selected.includes(nextStep));
-    assert.ok(selected.indexOf("data-catalog-topic") < selected.indexOf(nextStep));
+    assert.match(selected, /class="catalog-card"/);
+    assert.doesNotMatch(selected, /data-catalog-keyword=/);
+    assert.ok(selected.indexOf("data-catalog-topic") < selected.indexOf('class="catalog-card"'));
     const htmlButton = selected.match(/<button\b[^>]*data-catalog-topic="html"[^>]*>/)?.[0] ?? "";
     assert.match(htmlButton, /aria-pressed="true"/);
   }
@@ -101,7 +100,8 @@ test("준비 중 주제와 문제 자료 없는 주제는 제공 중인 카드�
     }
     const java = renderLearningCatalog({ ...options, kind, filters: { topicId: "java" } });
     assert.doesNotMatch(java, /샘플/);
-    assert.match(java, kind === "learn" ? /data-catalog-keyword=/ : /class="catalog-card"/);
+    assert.match(java, /class="catalog-card"/);
+    assert.doesNotMatch(java, /data-catalog-keyword=/);
   }
   const review = renderLearningCatalog({ ...options, kind: "review" });
   const algorithmButton = review.match(/<button\b[^>]*data-catalog-topic="algorithm"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
@@ -157,7 +157,11 @@ test("Security·JPA를 포함한 Spring 문서 46개·92문항은 Java 주제와
     const html = renderLearningCatalog({ ...options, kind, filters: { topicId: "spring" } });
     const button = html.match(/<button\b[^>]*data-catalog-topic="spring"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
     assert.match(button, /Spring · Spring Boot/);
-    assert.match(button, kind === "learn" ? /46개 키워드/ : /92문제/);
+    assert.match(button, kind === "learn" ? /46개 문서/ : /92문제/);
+    if (kind === "learn") {
+      assert.match(html, /class="catalog-card"/);
+      assert.doesNotMatch(html, /data-catalog-keyword=/);
+    }
     assert.doesNotMatch(button, /disabled|준비 중|자료 없음/);
     assert.doesNotMatch(html, /개별 채점/);
   }
@@ -284,7 +288,7 @@ test("검색어·제목·요약·저장 제목은 HTML로 실행하지 않고 �
   assert.doesNotMatch(home, /<svg/);
 });
 
-test("학습문서는 주제 → 키워드 → 문서 카드로 펼쳐지고 키워드는 개념문서 순서와 하위 문서 수를 따른다", () => {
+test("알고리즘 학습문서는 주제 → 키워드 → 문서 카드로 펼쳐지고 키워드는 개념문서 순서와 하위 문서 수를 따른다", () => {
   const topic = renderLearningCatalog({ ...options, filters: { topicId: "algorithm" } });
   const keywordIds = [...topic.matchAll(/data-catalog-keyword="([^"]+)"/g)].map((match) => match[1]);
   const unitIds = curriculum.lessons
