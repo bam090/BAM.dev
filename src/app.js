@@ -354,6 +354,9 @@ export class BamLearningApp {
     this.assistedTextarea = null;
     this.editorRefreshBlocked = false;
     this.editorRefreshPendingTextarea = null;
+    this.codingTestSplitRatios = { columns: 0.44, rows: 0.64 };
+    this.codingTestSplitObserver = null;
+    this.codingTestSplitResize = null;
     this.curriculum = null;
     this.currentLesson = null;
     this.currentMarkdown = "";
@@ -519,7 +522,7 @@ export class BamLearningApp {
             && !provider.supportsQuest(this.codeQuestState?.quest)
             ? "이 Quest는 아직 브라우저 실행을 지원하지 않습니다. 코드를 작성하고 저장할 수 있습니다."
             : "";
-        panel.outerHTML = renderJavaBrowserPreparation({ id, state: provider.status, message: provider.message, supportMessage });
+        panel.outerHTML = renderJavaBrowserPreparation({ id, state: provider.status, message: provider.message, supportMessage, compact: this.currentView === "coding-test" });
       }
     }
     if (this.currentView === "quest" && this.codeQuestCollection?.languageId === "java" && this.codeQuestState) {
@@ -939,6 +942,10 @@ export class BamLearningApp {
   }
 
   leaveCurrentView(reason = "navigation") {
+    this.codingTestSplitObserver?.disconnect();
+    this.codingTestSplitObserver = null;
+    if (this.codingTestSplitResize) window.removeEventListener("resize", this.codingTestSplitResize);
+    this.codingTestSplitResize = null;
     if (this.currentView === "lesson" && this.currentLesson) {
       this.getServiceNavigation().readingPosition = {
         href: this.getServiceNavigation().routes.learn,
@@ -2515,6 +2522,15 @@ export class BamLearningApp {
   syncCodingTestEditorHighlight(editor = this.root?.querySelector?.("[data-coding-test-source]")) {
     const highlight = this.root?.querySelector?.("[data-coding-test-source-highlight]");
     if (!editor || !highlight) return;
+    const lineNumbers = this.root?.querySelector?.("[data-coding-test-line-numbers]");
+    if (lineNumbers) {
+      const count = Math.max(15, editor.value.split("\n").length);
+      if (lineNumbers.dataset.lineCount !== String(count)) {
+        lineNumbers.textContent = Array.from({ length: count }, (_, index) => index + 1).join("\n");
+        lineNumbers.dataset.lineCount = String(count);
+      }
+      lineNumbers.scrollTop = editor.scrollTop;
+    }
     const languageId = (this.codingTestState?.collection ?? this.codingTestCollection)?.languageId ?? "javascript";
     highlight.innerHTML = renderHighlightedCode(editor.value, languageId);
     const viewport = highlight.closest(".coding-test-source-highlight");
@@ -4920,6 +4936,9 @@ export class BamLearningApp {
     const state = this.codingTestState;
     const collection = state?.collection ?? this.codingTestCollection;
     if (!this.curriculum || !collection || !state) return;
+    const sameProblem = this.renderedEditor?.kind === "coding-test" && this.renderedEditor.state === state;
+    const problemScrollTop = sameProblem ? this.root.querySelector("[data-coding-test-problem-scroll]")?.scrollTop : 0;
+    const publicTestsOpen = sameProblem && this.root.querySelector("[data-coding-test-public-tests]")?.open;
     const language = getLanguage(this.curriculum, collection.languageId);
     if (!language) return;
     const progress = this.progressRepository.getProgress();
@@ -4958,6 +4977,94 @@ export class BamLearningApp {
       source: state.source, languageId: collection.languageId, selector: "[data-coding-test-source]",
       html: this.renderServiceShell({ current: "coding-test", mainContent }),
     });
+    if (this.editorRefreshBlocked) return;
+    const problemScroll = this.root.querySelector("[data-coding-test-problem-scroll]");
+    if (problemScroll) problemScroll.scrollTop = problemScrollTop ?? 0;
+    const publicTests = this.root.querySelector("[data-coding-test-public-tests]");
+    if (publicTests) publicTests.open = Boolean(publicTestsOpen);
+    this.attachCodingTestSplitters();
+  }
+
+  attachCodingTestSplitters() {
+    this.codingTestSplitObserver?.disconnect();
+    if (this.codingTestSplitResize) window.removeEventListener("resize", this.codingTestSplitResize);
+    this.codingTestSplitRatios ??= { columns: 0.44, rows: 0.64 };
+    const workspace = this.root.querySelector("[data-coding-test-workspace]");
+    const runColumn = workspace?.querySelector(".coding-test-run-column");
+    if (!workspace || !runColumn) return;
+    const splits = {
+      columns: { area: workspace, dimension: "width", start: "left", minimum: 320, otherMinimum: 380, property: "--coding-test-problem-width", label: "문제 영역" },
+      rows: { area: runColumn, dimension: "height", start: "top", minimum: 300, otherMinimum: 160, property: "--coding-test-editor-height", label: "코드 영역" },
+    };
+    const range = (split) => {
+      const total = Math.max(1, split.area.getBoundingClientRect()[split.dimension] - 12);
+      const fits = total >= split.minimum + split.otherMinimum;
+      const min = fits ? split.minimum : total * split.minimum / (split.minimum + split.otherMinimum);
+      const max = fits ? total - split.otherMinimum : min;
+      return { total, min, max };
+    };
+    const setSplit = (axis, pixels) => {
+      const split = splits[axis];
+      const { total, min, max } = range(split);
+      const value = Math.max(min, Math.min(max, pixels));
+      this.codingTestSplitRatios[axis] = value / total;
+      split.area.style.setProperty(split.property, `${value}px`);
+      const handle = workspace.querySelector(`[data-coding-test-splitter="${axis}"]`);
+      const percent = Math.round(value / total * 100);
+      handle?.setAttribute("aria-valuemin", String(Math.round(min / total * 100)));
+      handle?.setAttribute("aria-valuemax", String(Math.round(max / total * 100)));
+      handle?.setAttribute("aria-valuenow", String(percent));
+      handle?.setAttribute("aria-valuetext", `${split.label} ${percent}%`);
+    };
+    const resize = () => {
+      if (!window.matchMedia("(min-width: 1120px)").matches) {
+        workspace.style.removeProperty("--coding-test-workspace-height");
+        return;
+      }
+      const availableHeight = window.innerHeight - workspace.getBoundingClientRect().top - 47;
+      workspace.style.setProperty("--coding-test-workspace-height", `${Math.max(472, availableHeight)}px`);
+      for (const [axis, split] of Object.entries(splits)) {
+        setSplit(axis, range(split).total * this.codingTestSplitRatios[axis]);
+      }
+    };
+    for (const [axis, split] of Object.entries(splits)) {
+      const handle = workspace.querySelector(`[data-coding-test-splitter="${axis}"]`);
+      if (!handle) continue;
+      let pointerId = null;
+      handle.addEventListener("pointerdown", (event) => {
+        if (event.button !== 0) return;
+        event.preventDefault();
+        handle.focus();
+        pointerId = event.pointerId;
+        handle.setPointerCapture?.(event.pointerId);
+      });
+      handle.addEventListener("pointermove", (event) => {
+        if (event.pointerId !== pointerId) return;
+        const bounds = split.area.getBoundingClientRect();
+        setSplit(axis, event[`client${axis === "columns" ? "X" : "Y"}`] - bounds[split.start] - 6);
+      });
+      const stop = (event) => { if (event.pointerId === pointerId) pointerId = null; };
+      handle.addEventListener("pointerup", stop);
+      handle.addEventListener("pointercancel", stop);
+      handle.addEventListener("lostpointercapture", stop);
+      handle.addEventListener("keydown", (event) => {
+        const decrease = axis === "columns" ? "ArrowLeft" : "ArrowUp";
+        const increase = axis === "columns" ? "ArrowRight" : "ArrowDown";
+        if (![decrease, increase, "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        const { total, min, max } = range(split);
+        const next = event.key === "Home" ? min : event.key === "End" ? max
+          : this.codingTestSplitRatios[axis] * total + (event.key === increase ? 1 : -1) * (event.shiftKey ? 40 : 12);
+        setSplit(axis, next);
+      });
+    }
+    if (typeof ResizeObserver === "function") {
+      this.codingTestSplitObserver = new ResizeObserver(resize);
+      this.codingTestSplitObserver.observe(workspace);
+    }
+    window.addEventListener("resize", resize);
+    this.codingTestSplitResize = resize;
+    resize();
   }
 
   renderCodingTestShell(mainContent) {

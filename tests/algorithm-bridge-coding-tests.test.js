@@ -498,7 +498,13 @@ test("Java 상세는 source-first 자료를 보존하고 검증 capability에만
     relatedQuest: { href: "#/quest/java/bridge-arr-01", title: "기록 한 칸 바로잡기" },
   });
 
-  assert.ok(html.indexOf("공개 테스트 소스") < html.indexOf("Java 편집기"));
+  assert.ok(
+    html.indexOf("data-java-preparation-message") > html.indexOf('class="coding-test-title-row"')
+      && html.indexOf("data-java-preparation-message") < html.indexOf('class="coding-test-summary"'),
+    "Java 준비 상태는 문제 제목 옆에 두고 작업 영역 위에 유지한다.",
+  );
+  assert.ok(html.indexOf("공개 테스트 소스") > html.indexOf("Java 편집기"), "JUnit 원문은 작업 영역 아래에 둔다.");
+  assert.match(html, /data-coding-test-public-tests/);
   assert.match(html, /<table class="quest-example-table">/);
   assert.match(html, /원본 Test\.java 전체 보기/);
   assert.doesNotMatch(html, /<details[^>]*\bopen\b/);
@@ -508,10 +514,10 @@ test("Java 상세는 source-first 자료를 보존하고 검증 capability에만
   assert.doesNotMatch(html, /작성 전용/);
   assert.match(html, /data-coding-test-run/);
   assert.doesNotMatch(html, /data-coding-test-run[^>]* disabled/u);
-  assert.match(html, /첫 공개 그룹 실행/);
+  assert.match(html, /data-coding-test-run aria-label="첫 공개 JUnit 그룹 실행"[^>]*>실행<\/button>/);
   assert.match(html, /data-coding-test-submit/);
   assert.doesNotMatch(html, /data-coding-test-submit[^>]* disabled/u);
-  assert.match(html, /전체 공개 테스트 확인/);
+  assert.match(html, /data-coding-test-submit aria-label="전체 공개 JUnit 그룹 채점"[^>]*>전체 채점<\/button>/);
   assert.match(html, /data-coding-test-results/);
   assert.match(html, /첫 공개 JUnit 메서드 그룹 1개/);
   assert.match(html, /공개 그룹 2개를 모두 실행/);

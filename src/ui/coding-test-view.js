@@ -356,7 +356,11 @@ function renderExecutionReport({
     return `<p class="coding-test-results-state">${mode === "submit" ? isJava ? "전체 공개 JUnit 테스트를 확인하고 있습니다…" : "제출 테스트를 채점하고 있습니다…" : isJava ? "첫 공개 JUnit 그룹을 확인하고 있습니다…" : "실행 테스트를 확인하고 있습니다…"}</p>`;
   }
   if (!report) {
-    return `<p class="coding-test-results-state">${isJava ? `빠른 실행은 첫 공개 JUnit 메서드 그룹 ${runCount}개를 확인합니다. 전체 확인은 이 기기에 포함된 공개 그룹 ${submitCount}개를 모두 실행합니다.` : `코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 브라우저에 포함된 공개 테스트 ${submitCount}개를 모두 채점합니다.`}</p>`;
+    return `<div class="coding-test-results-empty">
+      <strong>코드를 작성하고 실행해 보세요</strong>
+      <p class="coding-test-results-state">${isJava ? `빠른 실행은 첫 공개 JUnit 메서드 그룹 ${runCount}개를 확인합니다. 전체 확인은 이 기기에 포함된 공개 그룹 ${submitCount}개를 모두 실행합니다.` : `코드를 실행하면 ${runCount}개 실행 테스트를 확인할 수 있습니다. 제출 시에는 브라우저에 포함된 공개 테스트 ${submitCount}개를 모두 채점합니다.`}</p>
+      <p class="coding-test-results-placeholder">실행 결과는 이곳에서 이어서 확인해요 <span>대기 중</span></p>
+    </div>`;
   }
 
   const outcome = normalizeOutcome(report?.outcome);
@@ -457,6 +461,10 @@ function renderExamples(examples) {
       </div>
     </section>
   `;
+}
+
+function renderLineNumbers(source) {
+  return Array.from({ length: Math.max(15, String(source).split("\n").length) }, (_, index) => index + 1).join("\n");
 }
 
 function renderJavaSupport(problem) {
@@ -650,76 +658,85 @@ export function renderCodingTestView({
   const runTestCount = isJava
     ? Math.min(1, publicTestCount)
     : toStringArray(problem?.runTestIds).length;
-  const runButtonLabel = isJava ? "첫 공개 그룹 실행" : "테스트 실행";
-  const submitButtonLabel = isJava ? "전체 공개 테스트 확인" : "제출 및 채점";
+  const runButtonLabel = "실행";
+  const submitButtonLabel = "전체 채점";
+  const runButtonDescription = isJava ? "첫 공개 JUnit 그룹 실행" : "실행 테스트 확인";
+  const submitButtonDescription = isJava ? "전체 공개 JUnit 그룹 채점" : "전체 공개 테스트 채점";
 
   return `
     <main class="main-area coding-test-main" id="lesson-content" tabindex="-1">
       <div class="coding-test-container">
         <header class="coding-test-header">
-          <a class="coding-test-back-link" href="${escapeHtml(listHref)}">← 문제 목록</a>
-          <div class="eyebrow">
-            <span>${escapeHtml(languageName)}</span>
-            <span aria-hidden="true">·</span>
-            <span>${escapeHtml(collectionTitle)}</span>
-          </div>
+          <nav class="coding-test-breadcrumb" aria-label="현재 위치"><a href="${escapeHtml(listHref)}">← 문제 목록</a><span aria-hidden="true">/</span><span>코딩테스트</span></nav>
           <div class="coding-test-title-row">
-            <div>
-              <p>${escapeHtml(getDifficultyLabel(problem?.difficulty))} · ${escapeHtml(typeLabel)} · 약 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</p>
+            <div class="coding-test-title-main">
+              <span class="coding-test-language-badge">${escapeHtml(languageName)}</span>
               <h1 id="coding-test-title" tabindex="-1">${escapeHtml(problem?.title ?? "코딩테스트 문제")}</h1>
+              <span class="coding-test-level-badge">${escapeHtml(getDifficultyLabel(problem?.difficulty))}</span>
+              <span class="sr-only">${escapeHtml(collectionTitle)} · ${escapeHtml(typeLabel)} · 예상 풀이 시간 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</span>
             </div>
-            <span class="coding-test-solved-badge${isSolved ? " is-solved" : ""}">${isSolved ? "풀이 완료" : "미풀이"}</span>
+            <div class="coding-test-title-side">
+              <span class="coding-test-solved-badge${isSolved ? " is-solved" : ""}">${isSolved ? "풀이 완료" : "미풀이"}</span>
+              ${isJava ? renderJavaBrowserPreparation({ id: "coding-test-java", state: javaPreparationState, message: javaPreparationMessage, supportMessage: javaPreparationSupport, compact: true }) : ""}
+            </div>
           </div>
-          <p class="coding-test-summary">${escapeHtml(problem?.summary ?? "")}</p>
           ${routeNotice ? `<p class="coding-test-route-notice" role="status">${escapeHtml(routeNotice)}</p>` : ""}
-          ${relatedQuest ? `<p><a class="coding-test-back-link" href="${escapeHtml(relatedQuest.href)}">관련 준비 연습: ${escapeHtml(relatedQuest.title)}</a></p>` : ""}
         </header>
 
-        ${isJava ? renderJavaBrowserPreparation({ id: "coding-test-java", state: javaPreparationState, message: javaPreparationMessage, supportMessage: javaPreparationSupport }) : ""}
-
-        <div class="coding-test-workspace">
-          <article class="coding-test-problem-panel" aria-labelledby="coding-test-description-title">
+        <div class="coding-test-workspace" data-coding-test-workspace>
+          <article class="coding-test-problem-panel" id="coding-test-problem-panel" aria-labelledby="coding-test-description-title">
+            <header class="coding-test-panelbar" data-coding-test-problem-bar><h2>문제 설명</h2><span>${escapeHtml(typeLabel)} · 약 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</span></header>
+            <div class="coding-test-problem-scroll" data-coding-test-problem-scroll>
             <section class="coding-test-section">
-              <p class="coding-test-section-label">문제 설명</p>
-              <h2 id="coding-test-description-title">구현할 기능</h2>
+              <p class="coding-test-section-label">문제</p>
+              <h2 id="coding-test-description-title">이렇게 동작하도록 만들어 보세요</h2>
+              ${problem?.summary ? `<p class="coding-test-summary">${escapeHtml(problem.summary)}</p>` : ""}
               <p class="coding-test-description">${escapeHtml(problem?.description ?? "")}</p>
             </section>
+            <h2 class="coding-test-contract-heading">입출력 계약</h2>
             ${isJava ? renderCodeQuestFunctionContract(problem) : renderFunctionContract(problem)}
             ${isJava ? renderCodeQuestExamples(problem, evaluationKind) : renderExamples(problem?.examples)}
-            ${isJava ? renderJavaPublicTests(problem, executionAvailable) : ""}
             ${isJava ? renderJavaSupport(problem) : ""}
+            ${relatedQuest ? `<p class="coding-test-related-quest"><a href="${escapeHtml(relatedQuest.href)}">관련 준비 연습: ${escapeHtml(relatedQuest.title)}</a></p>` : ""}
+            </div>
           </article>
 
-          <div class="coding-test-run-column">
-            ${isJava ? renderLegacyDraft(legacyDraft, hasCodingTestDraft) : ""}
-            <section class="coding-test-editor-panel" aria-labelledby="coding-test-editor-title" aria-busy="${String(isRunning)}">
-              <header>
-                <div>
-                  <p class="coding-test-section-label">코드 작성</p>
-                  <h2 id="coding-test-editor-title">${escapeHtml(languageName)} 편집기</h2>
-                </div>
-                <span data-coding-test-run-summary>${javaExecutionPending ? "작성 전용" : isJava ? `빠른 확인 ${runTestCount}개 그룹 · 전체 ${publicTestCount}개 그룹` : `실행 ${runTestCount}개 · 제출 ${publicTestCount}개`}</span>
+          <div class="coding-test-splitter" data-coding-test-splitter="columns" role="separator" tabindex="0" aria-label="문제와 코드 영역 크기 조절" aria-orientation="vertical" aria-controls="coding-test-problem-panel coding-test-run-column" aria-valuemin="0" aria-valuemax="100" aria-valuenow="44"></div>
+          <div class="coding-test-run-column" id="coding-test-run-column">
+            <section class="coding-test-editor-panel" id="coding-test-editor-panel" aria-labelledby="coding-test-editor-title" aria-busy="${String(isRunning)}">
+              <header class="coding-test-filebar" data-coding-test-filebar>
+                <h2 id="coding-test-editor-title"><span aria-hidden="true">⌘</span> ${isJava ? "Solution.java" : "solution.js"}</h2>
+                ${isRunning ? "" : '<button class="button button--secondary" type="button" data-coding-test-reset aria-label="초기 코드로 되돌리기">초기화 ↺</button>'}
               </header>
               <label class="coding-test-editor-label" id="coding-test-source-label" for="coding-test-source">${isJava ? "Solution.java 전체 소스" : `${escapeHtml(problem?.entryPoint ?? "함수")} 함수 코드`}</label>
               <div class="coding-test-editor-shell${isRunning ? " is-readonly" : ""}" data-coding-test-editor-shell>
+                <pre class="coding-test-line-numbers" data-coding-test-line-numbers aria-hidden="true">${renderLineNumbers(source)}</pre>
                 <pre class="coding-test-source-highlight syntax-code" aria-hidden="true"><code class="language-${isJava ? "java" : "javascript"}" data-coding-test-source-highlight>${renderHighlightedCode(source, isJava ? "java" : "javascript")}</code></pre>
                 <textarea id="coding-test-source" data-coding-test-source aria-labelledby="coding-test-source-label" aria-describedby="coding-test-editor-help coding-test-draft-status" rows="18" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"${editorReadonly}>${escapeHtml(source)}</textarea>
               </div>
-              <p class="coding-test-editor-help" id="coding-test-editor-help" data-coding-test-editor-help>${javaExecutionPending ? "지금은 Java 풀이를 작성하고 저장할 수 있습니다. 실행과 완료 처리는 Java 실행 환경이 준비된 뒤 제공됩니다." : isJava ? "빠른 확인과 전체 확인은 이 기기에 포함된 공개 JUnit 메서드 그룹만 실행합니다." : "실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다."}</p>
-              ${javaConnection ? `<div class="coding-test-route-notice" role="status"><p>${escapeHtml(javaConnection.message)}</p>${javaConnection.canConnect ? '<button class="button button--secondary" type="button" data-java-connect>로컬 Java 연결</button>' : ""}${javaConnection.needsReload ? '<button class="button button--secondary" type="button" data-java-reload>초안 저장 후 새로고침</button>' : ""}</div>` : ""}
-              <p class="coding-test-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(normalizedDraftStatus)}</p>
-              <div class="coding-test-actions">
-                <button class="button button--secondary" type="button" data-coding-test-run aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : runButtonLabel}</button>
-                <button class="button button--primary" type="button" data-coding-test-submit aria-busy="${String(isRunning && mode === "submit")}"${actionsDisabled}>${isRunning && mode === "submit" ? "채점 중…" : submitButtonLabel}</button>
-                ${isRunning ? `<button class="button button--danger" type="button" data-coding-test-cancel${cancelRequested ? " disabled" : ""}>${cancelRequested ? "취소하는 중…" : "실행 취소"}</button>` : '<button class="button button--secondary" type="button" data-coding-test-reset>초기 코드로 되돌리기</button>'}
+              <div class="coding-test-editor-footer">
+                <div class="coding-test-editor-status">
+                  <p class="coding-test-editor-help" id="coding-test-editor-help" data-coding-test-editor-help>${javaExecutionPending ? "지금은 Java 풀이를 작성하고 저장할 수 있습니다. 실행과 완료 처리는 Java 실행 환경이 준비된 뒤 제공됩니다." : isJava ? "빠른 확인과 전체 확인은 이 기기에 포함된 공개 JUnit 메서드 그룹만 실행합니다." : "실행과 제출 채점에 사용하는 모든 테스트는 이 브라우저에 포함된 공개 테스트입니다."}</p>
+                  ${javaConnection ? `<div class="coding-test-route-notice" role="status"><p>${escapeHtml(javaConnection.message)}</p>${javaConnection.canConnect ? '<button class="button button--secondary" type="button" data-java-connect>로컬 Java 연결</button>' : ""}${javaConnection.needsReload ? '<button class="button button--secondary" type="button" data-java-reload>초안 저장 후 새로고침</button>' : ""}</div>` : ""}
+                  <p class="coding-test-draft-status${normalizedDraftStatus === "failed" || normalizedDraftStatus === "memory" ? " is-warning" : ""}" id="coding-test-draft-status" data-coding-test-draft-status>${getCodingTestDraftStatusMessage(normalizedDraftStatus)}</p>
+                  <div class="coding-test-inline-error" data-coding-test-error role="alert">${uiError ? escapeHtml(uiError) : ""}</div>
+                </div>
+                <div class="coding-test-actions" data-coding-test-actionbar>
+                  <span data-coding-test-run-summary>${javaExecutionPending ? "작성 전용" : isJava ? `빠른 확인 ${runTestCount}개 그룹 · 전체 ${publicTestCount}개 그룹` : `실행 ${runTestCount}개 · 제출 ${publicTestCount}개`}</span>
+                  <div class="coding-test-action-buttons">
+                    <button class="button button--secondary" type="button" data-coding-test-run aria-label="${runButtonDescription}" title="${runButtonDescription}" aria-busy="${String(isRunning && mode === "run")}"${actionsDisabled}>${isRunning && mode === "run" ? "실행 중…" : runButtonLabel}</button>
+                    <button class="button button--primary" type="button" data-coding-test-submit aria-label="${submitButtonDescription}" title="${submitButtonDescription}" aria-busy="${String(isRunning && mode === "submit")}"${actionsDisabled}>${isRunning && mode === "submit" ? "채점 중…" : submitButtonLabel}</button>
+                    ${isRunning ? `<button class="button button--danger" type="button" data-coding-test-cancel${cancelRequested ? " disabled" : ""}>${cancelRequested ? "취소하는 중…" : "실행 취소"}</button>` : ""}
+                  </div>
+                </div>
               </div>
-              <div class="coding-test-inline-error" data-coding-test-error role="alert">${uiError ? escapeHtml(uiError) : ""}</div>
             </section>
 
-            <section class="coding-test-results-panel" data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title" aria-busy="${String(isRunning)}">
-              <header class="coding-test-results-heading">
-                <p class="coding-test-section-label">${isJava ? "이 기기 공개 JUnit 확인" : "브라우저 공개 채점"}</p>
+            <div class="coding-test-splitter" data-coding-test-splitter="rows" role="separator" tabindex="0" aria-label="코드와 실행 결과 영역 크기 조절" aria-orientation="horizontal" aria-controls="coding-test-editor-panel coding-test-results-panel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="64"></div>
+            <section class="coding-test-results-panel" id="coding-test-results-panel" data-coding-test-results tabindex="-1" role="region" aria-labelledby="coding-test-results-title" aria-busy="${String(isRunning)}">
+              <header class="coding-test-results-heading" data-coding-test-results-bar>
                 <h2 id="coding-test-results-title">실행 결과</h2>
+                <span>${isJava ? "공개 JUnit" : "공개 테스트"}</span>
               </header>
               ${renderExecutionReport({
                 problem,
@@ -734,6 +751,14 @@ export function renderCodingTestView({
             </section>
           </div>
         </div>
+        <details class="coding-test-public-tests" data-coding-test-public-tests>
+          <summary>공개 테스트 원문 보기 · ${publicTestCount}개${isJava ? " 그룹" : ""}</summary>
+          <div class="coding-test-public-tests-content">
+            ${isJava ? renderJavaPublicTests(problem, executionAvailable) : `<pre class="syntax-code" tabindex="0" aria-label="공개 테스트 데이터"><code class="language-javascript">${renderHighlightedCode(JSON.stringify(problem?.publicTests ?? [], null, 2), "javascript")}</code></pre>`}
+            ${isJava && problem?.executionMode !== "draft-only" && typeof problem?.publicTestSource === "string" ? `<details class="quest-public-tests"><summary>공개 Test.java 전체 소스 보기</summary><pre class="syntax-code" tabindex="0" aria-label="공개 테스트 전체 소스"><code class="language-java">${renderHighlightedCode(problem.publicTestSource, "java")}</code></pre></details><div><button class="button button--secondary" type="button" data-quest-public-source-download>공개 Test.java 다운로드</button><span class="sr-only" data-quest-public-source-status role="status" aria-live="polite"></span></div>` : ""}
+          </div>
+        </details>
+        ${isJava ? renderLegacyDraft(legacyDraft, hasCodingTestDraft) : ""}
       </div>
     </main>
   `;
