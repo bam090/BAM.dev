@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { JAVA_BROWSER_ASSET_MANIFEST } from "../src/grading/java-browser-assets.js";
-import { compileJava } from "../src/grading/java-browser-compiler.js";
+import { clearJavaCompileCache, compileJava } from "../src/grading/java-browser-compiler.js";
 import { initializeJavaRuntime } from "../src/workers/java-browser-runtime.js";
+import { JavaBrowserProvider } from "../src/grading/java-browser-provider.js";
 
 const assets = {
   runtime: JAVA_BROWSER_ASSET_MANIFEST.runtime.map((spec, index) => ({
@@ -23,6 +24,8 @@ const java17Class = Buffer.from([0xca, 0xfe, 0xba, 0xbe, 0, 0, 0, 61]).toString(
 const java21Class = Buffer.from([0xca, 0xfe, 0xba, 0xbe, 0, 0, 0, 65]).toString("base64");
 
 function installWorker(t, reply) {
+  clearJavaCompileCache();
+  t.after(clearJavaCompileCache);
   const previous = Object.getOwnPropertyDescriptor(globalThis, "Worker");
   const workers = [];
   class FakeWorker {
@@ -153,4 +156,95 @@ test("공통 bootstrap은 누락·중복·query가 있는 runtime cache를 설�
     index === 1 ? { ...asset, url: validShape[0].url } : asset)), /올바르지/u);
   await assert.rejects(initializeJavaRuntime(validShape.map((asset, index) =>
     index === 1 ? { ...asset, url: `${asset.url}?bypass=1` } : asset)), /올바르지/u);
+});
+
+
+test("RAM1 cache는 동일 소스만 재사용하고 class 바이트를 복사한다", async (t) => {
+  const workers = installWorker(t, (worker) => worker.send({
+    status: "compiled", diagnostics: [], classesBase64: {
+      Solution: java17Class, "Solution$Nested": java17Class, ["__proto__"]: java17Class,
+    },
+  }));
+  const input = { source: "class Solution {}" };
+  const first = await compileJava(input, { assets });
+  first.classes.Solution[0] = 0;
+  first.classes["__proto__"][0] = 0;
+  const second = await compileJava(input, { assets });
+  assert.equal(workers.length, 1);
+  assert.equal(Object.getPrototypeOf(second.classes), null);
+  assert.equal(second.classes.Solution[0], 0xca);
+  assert.equal(second.classes["__proto__"][0], 0xca);
+  second.classes.Solution[1] = 0;
+  const third = await compileJava(input, { assets });
+  assert.equal(third.classes.Solution[1], 0xfe);
+  assert.notEqual(first.classes.Solution, second.classes.Solution);
+  assert.notEqual(second.classes.Solution, third.classes.Solution);
+});
+
+test("RAM1 cache는 소스·자산 identity 변경에 miss하고 실패·취소를 저장하지 않는다", async (t) => {
+  const workers = installWorker(t, (worker, request) => worker.send(
+    request.sources[0].source.includes("broken")
+      ? { status: "compile_error", diagnostics: [{ message: "invalid", line: 1, column: 1 }], classesBase64: {} }
+      : { status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class } },
+  ));
+  const good = { source: "class Solution {}" };
+  await compileJava(good, { assets });
+  await compileJava({ source: "class Solution { broken }" }, { assets });
+  assert.equal(workers.length, 2);
+  await compileJava(good, { assets });
+  assert.equal(workers.length, 2, "컴파일 오류가 이전 성공 항목을 덮어쓰면 안 됩니다.");
+  await compileJava({ source: "class Solution { int n; }" }, { assets });
+  assert.equal(workers.length, 3);
+  await compileJava(good, { assets });
+  assert.equal(workers.length, 4, "가장 최근 성공 항목 한 개만 보존해야 합니다.");
+  await compileJava(good, { assets: { ...assets } });
+  assert.equal(workers.length, 5, "자산 객체가 교체되면 다시 컴파일해야 합니다.");
+  const controller = new AbortController();
+  controller.abort();
+  await assert.rejects(compileJava(good, { assets, signal: controller.signal }), { code: "cancelled" });
+  assert.equal(workers.length, 5);
+});
+
+test("RAM1 cache clear와 provider dispose는 hit·진행 중 응답을 무효화한다", async (t) => {
+  let delayedCount = 0;
+  const workers = installWorker(t, (worker, request) => {
+    if (request.sources[0].source === "class Solution { int n; }" && ++delayedCount === 1) return;
+    worker.send({ status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class } });
+  });
+  const input = { source: "class Solution {}" };
+  await compileJava(input, { assets });
+  const hit = compileJava(input, { assets });
+  clearJavaCompileCache();
+  await assert.rejects(hit, { code: "cancelled" });
+  await compileJava(input, { assets });
+  assert.equal(workers.length, 2);
+  const provider = new JavaBrowserProvider();
+  provider.dispose();
+  await compileJava(input, { assets });
+  assert.equal(workers.length, 3);
+  const pending = compileJava({ source: "class Solution { int n; }" }, { assets });
+  assert.equal(workers.length, 4);
+  clearJavaCompileCache();
+  workers[3].send({ status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class } });
+  await pending;
+  await compileJava({ source: "class Solution { int n; }" }, { assets });
+  assert.equal(workers.length, 5, "clear 후 도착한 성공 응답은 cache에 넣지 않아야 합니다.");
+});
+
+
+test("RAM1 cache는 취소된 Worker의 늦은 성공을 저장하지 않는다", async (t) => {
+  const workers = installWorker(t, (worker, request) => {
+    if (workers.length === 1) return;
+    worker.send({ status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class } });
+  });
+  const controller = new AbortController();
+  const input = { source: "class Solution { long value; }" };
+  const pending = compileJava(input, { assets, signal: controller.signal });
+  controller.abort();
+  await assert.rejects(pending, { code: "cancelled" });
+  workers[0].send({ status: "compiled", diagnostics: [], classesBase64: { Solution: java17Class } });
+  const retried = await compileJava(input, { assets });
+  assert.equal(retried.status, "compiled");
+  assert.equal(workers.length, 2);
+  assert.equal(workers[0].terminated, true);
 });
