@@ -1,244 +1,307 @@
-# 동적 계획법 2
+# 동적 계획법 2: 두 정보로 상태 만들고 선택 복원하기
 
 ## 학습 목표
 
-- 두 개의 정보가 필요한 문제를 2차원 DP 상태로 표현할 수 있습니다.
-- 상태, 점화식, 초기값과 계산 순서를 2차원 표에서 연결해 설명할 수 있습니다.
-- 필요한 이전 상태가 제한적일 때 2차원 표를 1차원 배열로 줄일 수 있습니다.
-- 이전 선택을 저장해 최종 값뿐 아니라 실제 선택 과정도 복원할 수 있습니다.
+- 행과 열처럼 두 정보가 필요한 문제를 2차원 DP 표로 풀고 이전 선택을 저장해 실제 경로를 복원할 수 있습니다.
+- 계산에 필요한 이전 값만 남겨 2차원 표를 한 행짜리 배열로 줄일 수 있습니다.
 
 ## 한줄 요약
 
-상태를 구분하는 정보를 표에 담고, 계산에 필요한 이전 값과 경로 복원에 필요한 선택 정보를 목적에 맞게 남깁니다.
+상태를 구분하는 데 정보가 두 개 필요하면 2차원 표를 만들고 경로가 필요하면 선택한 방향을 함께 저장하며 최종 값만 필요하면 한 행만 남겨 메모리를 줄입니다.
 
 ## 먼저 확인할 개념
 
-[이분 탐색과 동적 계획법 1](#/learn/algorithm/binary-search-and-dynamic-programming)에서 상태·점화식·초기값을 먼저 확인하세요.
-Java의 [배열](#/learn/java/wiki-arrays)과 [숫자 타입](#/learn/java/wiki-numeric-operations)을 사용해 비용을 저장합니다.
+[동적 계획법: 작은 답을 저장해 큰 답 만들기](#/learn/algorithm/binary-search-and-dynamic-programming) · [Java로 DP 표 채우기](#/learn/algorithm/dp-java) · [시뮬레이션: 규칙을 그대로 코드로 옮기기](#/learn/algorithm/implementation-and-string-simulation)
 
-## 개념 연결
+## 두 정보가 필요한 상태
 
-- 선행: `algo.dynamic-programming`, `java.arrays`, `java.control-flow`, `java.numeric-operations`
-- 이 단원: `algo.dynamic-programming-advanced`
-- 후속: `algo.weighted-graph`, `algo.shortest-path`, `algo.dijkstra`
+**2차원 DP**는 상태 하나를 두 개의 번호로 구분해 2차원 표에 답을 저장하는 동적 계획법입니다.
+앞 문서에서는 `dp[i]`처럼 계단 번호 하나로 상태를 구분했습니다.
+그런데 위치가 행과 열로 정해지는 문제에서는 번호 하나만으로는 어느 칸의 답인지 알 수 없습니다.
+그래서 `best[r][c]`처럼 두 번호로 상태를 나타냅니다.
 
-## 두 개의 정보가 필요한 상태
+예를 들어 배달 로봇이 비용이 적힌 격자의 왼쪽 위에서 출발해 오른쪽 아래까지 가는 문제를 떠올려 보세요.
+로봇은 오른쪽이나 아래로만 한 칸씩 움직이고 지나간 칸의 비용을 모두 더합니다.
+이 문서는 이 격자 하나로 끝까지 설명합니다.
 
-동적 계획법 1에서는 `ways[step]`처럼 한 번호로 작은 문제를 구분했습니다.
-현재 위치가 행과 열로 정해진다면 둘 중 하나를 빼서는 어느 위치의 답인지 구별할 수 없습니다.
-상태에 필요한 정보를 빠뜨리면 서로 다른 작은 문제를 같은 것으로 취급하게 됩니다.
+![3×3 비용 격자. 첫 행은 1·4·2이고 둘째 행은 2·1·5이고 셋째 행은 3·2·1이다. 왼쪽 위가 출발이고 오른쪽 아래가 도착이다. 오른쪽에는 1행 1열 칸에 위쪽 0행 1열과 왼쪽 1행 0열에서만 화살표가 들어오는 모습이 있다.](content/assets/algorithm/dp-advanced-grid.png)
 
-이번에는 비용이 적힌 격자의 왼쪽 위에서 오른쪽 아래로 이동합니다.
-한 번에 오른쪽 또는 아래로만 움직이고, 시작 칸을 포함해 방문한 칸의 비용을 모두 더합니다.
+그림 오른쪽처럼 로봇은 어느 칸이든 위쪽이나 왼쪽에서만 들어옵니다.
+오른쪽과 아래로만 움직이기 때문입니다.
+이 점이 점화식을 세우는 열쇠가 됩니다.
 
-`best[row][column]`은 **시작 칸부터 `(row, column)`까지의 최소 누적 비용**입니다.
-행과 열이 모두 필요하므로 2차원 상태를 사용합니다.
-2차원 DP라고 입력이 반드시 격자일 필요는 없으며, 상태를 구분하는 정보의 개수가 기준입니다.
+## 2차원 DP 설계
 
-**먼저 관찰해 보세요.** 오른쪽과 아래쪽으로만 이동한다면 `(1, 1)`에는 어느 두 칸에서 올 수 있을까요?
-목적지의 최소 비용만 아는 것과 그 비용으로 이동한 경로까지 아는 것은 같은 정보일까요?
-
-## 초기값·점화식·계산 순서
-
-시작 상태는 `best[0][0] = costs[0][0]`입니다.
-현재 칸에는 위쪽과 왼쪽에서만 올 수 있으므로 두 이전 비용 중 작은 값에 현재 비용을 더합니다.
+상태부터 한 문장으로 정합니다.
+`best[r][c]`는 **출발부터 `r`행 `c`열까지 오는 최소 누적 비용**입니다.
+`r`행 `c`열에 오기 직전은 위쪽 칸이거나 왼쪽 칸이므로 두 칸의 답 중 작은 쪽에 지금 칸의 비용을 더합니다.
 
 ```text
-현재 칸의 최소 비용 = 현재 칸의 비용 + min(위쪽의 최소 비용, 왼쪽의 최소 비용)
+best[r][c] = cost[r][c] + min(best[r - 1][c], best[r][c - 1])
 ```
 
-첫 행에는 위쪽 칸이, 첫 열에는 왼쪽 칸이 없습니다.
-존재하지 않는 방향은 `0`이 아니라 도달 불가 표시인 `INF`로 둬야 실제 경로보다 싸게 선택되는 일을 막을 수 있습니다.
+![왼쪽은 cost 격자이고 가운데는 best 표로 첫 행은 1·5·7이고 둘째 행은 3·4·9이고 셋째 행은 6·6·7이다. best의 1행 1열은 위쪽 5와 왼쪽 3 중 작은 3에 cost 1을 더해 4가 된다. 표는 위 행부터 왼쪽에서 오른쪽으로 채운다.](content/assets/algorithm/dp-advanced-table.png)
 
-Java의 정수형에는 무한대 값이 없습니다.
-예제는 `long` 누적 비용을 사용하고 `Long.MAX_VALUE`를 도달 불가 표시 `INF`로 예약합니다.
-유효한 경로 비용은 `INF`보다 작아야 하며, `INF`에 칸 비용을 더하지 않습니다.
-`Math.addExact()`는 누적 덧셈이 `long` 범위를 넘으면 조용히 잘못된 값을 만드는 대신 예외를 냅니다.
+초기값과 계산 순서도 그림에서 읽을 수 있습니다.
 
-위쪽과 왼쪽 상태가 먼저 준비되도록 **위에서 아래로, 각 행에서는 왼쪽에서 오른쪽으로** 계산합니다.
-
-## 비용과 이전 선택을 함께 저장하기
-
-최소 비용 표만으로는 어떤 이전 칸을 선택했는지 바로 알 수 없습니다.
-`previous[row][column]`에 현재 최솟값을 만들 때 선택한 이전 좌표를 저장합니다.
-목표에서 시작 칸까지 이전 좌표를 따라간 뒤 순서를 뒤집으면 이동 경로가 됩니다.
-
-위쪽과 왼쪽 비용이 같으면 예제는 위쪽을 고릅니다.
-어느 쪽을 골라도 최소 비용은 같지만 복원되는 경로는 달라질 수 있습니다.
-
-## 비용만 필요할 때 한 행만 남기기
-
-현재 칸을 계산하는 데 필요한 값은 바로 위쪽과 현재 행의 왼쪽뿐입니다.
-최종 비용만 필요하다면 한 행 크기인 `long[] best`를 덮어쓰며 사용할 수 있습니다.
-
-| 배열 위치 | 갱신 직전 담고 있는 값 |
+| 정할 것 | 배달 로봇 예제에서 |
 | --- | --- |
-| `best[column]` | 이전 행의 같은 열, 즉 위쪽 값 |
-| `best[column - 1]` | 이미 갱신한 현재 행의 왼쪽 값 |
+| 초기값 | `best[0][0] = cost[0][0]` |
+| 첫 행 | 위쪽 칸이 없으므로 왼쪽에서만 옵니다 |
+| 첫 열 | 왼쪽 칸이 없으므로 위쪽에서만 옵니다 |
+| 계산 순서 | 위 행부터 각 행은 왼쪽에서 오른쪽으로 채웁니다 |
 
-왼쪽에서 오른쪽으로 계산해야 이 관계가 유지됩니다.
-반대로 계산하면 왼쪽 값이 아직 이전 행의 값이므로 다른 점화식을 계산하게 됩니다.
-이 배열만 남기면 선택 정보가 사라져 전체 경로를 바로 복원할 수 없습니다.
+계산 순서가 중요한 이유는 칸을 채울 때 위쪽과 왼쪽 칸이 이미 채워져 있어야 하기 때문입니다.
+위 행부터 왼쪽에서 오른쪽으로 채우면 이 조건이 늘 지켜집니다.
 
-## Java 예제: 경로를 보관하는 방법과 비용만 보관하는 방법
+## 선택 복원
 
-정식 Java 25 예제입니다.
-입력은 한 칸 이상의 직사각형 `int` 비용 격자이며 벽은 없습니다.
-누적 비용은 `long`으로 저장합니다.
-오른쪽·아래로만 이동하므로 음수 칸 비용이 있어도 순환 없이 앞선 상태로부터 계산할 수 있습니다.
-
-`Cell`은 좌표를, `RouteResult`는 비용·경로·표를 함께 보관하는 결과 객체입니다.
-두 메서드가 같은 격자에서 같은 최소 비용을 내는지 비교해 보세요.
+`best` 표로 최소 비용이 7이라는 것은 알 수 있습니다.
+그런데 어느 칸을 지나야 7이 되는지는 표만 보고 바로 알 수 없습니다.
+그래서 칸을 채울 때마다 위쪽과 왼쪽 중 어느 쪽을 골랐는지를 `from` 표에 함께 적어 둡니다.
+이렇게 저장한 선택을 따라가 실제 답을 만드는 일을 **선택 복원** 또는 **경로 복원**이라고 합니다.
 
 ```java
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-public class DynamicProgrammingExample {
-    static final long INF = Long.MAX_VALUE;
-
-    static final class Cell {
-        final int row;
-        final int column;
-
-        Cell(int row, int column) {
-            this.row = row;
-            this.column = column;
-        }
-
-        @Override
-        public String toString() {
-            return "(" + row + ", " + column + ")";
-        }
-    }
-
-    static final class RouteResult {
-        final long cost;
-        final List<Cell> path;
-        final long[][] table;
-
-        RouteResult(long cost, List<Cell> path, long[][] table) {
-            this.cost = cost;
-            this.path = path;
-            this.table = table;
-        }
-    }
-
-    static RouteResult findCheapestRoute(int[][] costs) {
-        int rows = costs.length;
-        int columns = costs[0].length;
-        long[][] best = new long[rows][columns];
-        for (long[] row : best) Arrays.fill(row, INF);
-        Cell[][] previous = new Cell[rows][columns];
-        best[0][0] = costs[0][0];
-
-        for (int row = 0; row < rows; row++) {
-            for (int column = 0; column < columns; column++) {
-                if (row == 0 && column == 0) continue;
-                long fromTop = row > 0 ? best[row - 1][column] : INF;
-                long fromLeft = column > 0 ? best[row][column - 1] : INF;
-                long earlierCost = Math.min(fromTop, fromLeft);
-                if (earlierCost == INF) continue;
-                best[row][column] = Math.addExact(earlierCost, costs[row][column]);
-                previous[row][column] = fromTop <= fromLeft
-                        ? new Cell(row - 1, column) : new Cell(row, column - 1);
-            }
-        }
-
-        List<Cell> path = new ArrayList<>();
-        Cell position = new Cell(rows - 1, columns - 1);
-        while (position != null) {
-            path.add(position);
-            position = previous[position.row][position.column];
-        }
-        Collections.reverse(path);
-        return new RouteResult(best[rows - 1][columns - 1], path, best);
-    }
-
-    static long findCheapestCost(int[][] costs) {
-        int columns = costs[0].length;
-        long[] best = new long[columns];
-        Arrays.fill(best, INF);
-        for (int row = 0; row < costs.length; row++) {
-            for (int column = 0; column < columns; column++) {
-                if (row == 0 && column == 0) {
-                    best[0] = costs[0][0];
-                    continue;
-                }
-                long fromTop = best[column];
-                long fromLeft = column > 0 ? best[column - 1] : INF;
-                long earlierCost = Math.min(fromTop, fromLeft);
-                if (earlierCost == INF) continue;
-                best[column] = Math.addExact(earlierCost, costs[row][column]);
-            }
-        }
-        return best[columns - 1];
-    }
-
-    public static void main(String[] args) {
-        int[][] costs = {{1, 4, 2}, {2, 1, 5}, {3, 2, 1}};
-        RouteResult route = findCheapestRoute(costs);
-        System.out.println(route.cost);
-        System.out.println(route.path);
-        System.out.println(Arrays.deepToString(route.table));
-        System.out.println(findCheapestCost(costs));
-    }
+if (r == 0 && c == 0) {
+    best[r][c] = cost[r][c];
+} else if (r == 0) {
+    best[r][c] = best[r][c - 1] + cost[r][c];
+    from[r][c] = 'L';
+} else if (c == 0) {
+    best[r][c] = best[r - 1][c] + cost[r][c];
+    from[r][c] = 'U';
+} else if (best[r - 1][c] <= best[r][c - 1]) {
+    best[r][c] = best[r - 1][c] + cost[r][c];
+    from[r][c] = 'U';
+} else {
+    best[r][c] = best[r][c - 1] + cost[r][c];
+    from[r][c] = 'L';
 }
 ```
 
-예상 출력:
+`U`는 위쪽에서 왔다는 뜻이고 `L`은 왼쪽에서 왔다는 뜻입니다.
+위쪽과 왼쪽의 비용이 같으면 위쪽을 고르도록 `<=`를 썼습니다.
+어느 쪽을 골라도 최소 비용은 같지만 복원되는 경로는 달라질 수 있습니다.
 
-```text
-7
-[(0, 0), (1, 0), (1, 1), (2, 1), (2, 2)]
-[[1, 5, 7], [3, 4, 9], [6, 6, 7]]
-7
+![best 표의 칸마다 어디서 왔는지 U 또는 L이 적혀 있다. 도착 2행 2열은 L이라 2행 1열로 가고 그 칸은 U라 1행 1열로 가고 그 칸은 L이라 1행 0열로 가고 그 칸은 U라 출발 0행 0열에 닿는다. 지나간 칸은 빨간색이고 비용은 1 더하기 2 더하기 1 더하기 2 더하기 1로 7이다.](content/assets/algorithm/dp-advanced-restore.png)
+
+복원은 도착 칸에서 출발해 `from`을 따라 거꾸로 걷습니다.
+`U`면 한 행 위로 가고 `L`이면 한 열 왼쪽으로 가다가 출발 칸에 닿으면 멈춥니다.
+이렇게 모은 칸은 도착부터 출발 순서이므로 마지막에 뒤집습니다.
+
+```java
+static List<String> restorePath(int n, int m) {
+    List<String> path = new ArrayList<>();
+    int r = n - 1;
+    int c = m - 1;
+    while (true) {
+        path.add("(" + r + "," + c + ")");
+        if (r == 0 && c == 0) break;
+        if (from[r][c] == 'U') r--;
+        else c--;
+    }
+    Collections.reverse(path);
+    return path;
+}
 ```
 
-## 실행 흐름에서 확인할 지점
+그림의 빨간 칸을 보고 출력될 경로를 먼저 적어 보세요.
 
-1. 시작 칸은 `1`입니다. 첫 행은 왼쪽에서만 올 수 있어 `[1, 5, 7]`이 됩니다.
-2. 두 번째 행의 첫 칸은 위에서 내려와 `3`이 됩니다. 가운데 칸은 위쪽 `5`보다 왼쪽 `3`을 선택해 `4`가 됩니다.
-3. 두 번째 행은 `[3, 4, 9]`, 마지막 행은 `[6, 6, 7]`입니다.
-4. 목표에서 이전 좌표를 따라가면 `(2, 2) → (2, 1) → (1, 1) → (1, 0) → (0, 0)`입니다.
-5. 이 순서를 뒤집은 경로의 비용은 `1 + 2 + 1 + 2 + 1 = 7`입니다.
-6. 1차원 배열도 행을 처리할 때마다 `[1, 5, 7]`, `[3, 4, 9]`, `[6, 6, 7]`로 바뀝니다.
+```text
+best 표: [[1, 5, 7], [3, 4, 9], [6, 6, 7]]
+최소 비용: 7
+경로: [(0,0), (1,0), (1,1), (2,1), (2,2)]
+```
 
-두 방식의 시간은 모두 `O(rows × columns)`입니다.
-경로와 표를 보관하면 추가 공간은 `O(rows × columns)`이고, 비용만 계산하는 두 번째 방식은 `O(columns)`입니다.
+도착 칸에서 거꾸로 따라가는 이유는 `from`의 각 칸에 그 칸까지 가장 싸게 오는 직전 칸이 적혀 있기 때문입니다.
+출발에서 앞으로 가며 매번 싼 칸을 고르면 당장은 싸도 나중에 비싼 칸을 만날 수 있습니다.
+반면 `from`은 끝까지 계산한 최적의 답에서 나온 선택이라서 거꾸로 따라가면 항상 최소 비용 경로가 나옵니다.
 
-## 흔한 실수와 직접 확인하기
+## 한 행만 남기기
 
-- `best`를 무엇의 최솟값인지 좌표까지 포함해 한 문장으로 설명하지 못하면 서로 다른 상태를 섞기 쉽습니다.
-- 없는 방향의 비용을 `0`으로 두면 가짜 경로가 선택될 수 있습니다. 실제 비용 `0`과 `INF`를 구분하세요.
-- 같은 행 배열을 여러 행에 대입하면 한 칸 수정이 다른 행에도 영향을 줍니다. 예제처럼 `new long[rows][columns]`로 만들고 행마다 초기화하세요.
-- 1차원 배열을 오른쪽부터 갱신하거나 갱신 순서를 바꾸면 필요한 이전 값이 달라집니다.
-- 최소 비용만 남겨 놓고 경로를 바로 출력할 수 있다고 생각하지 마세요. 선택 정보가 있는지 확인해야 합니다.
+경로 없이 최소 비용만 필요할 때도 있습니다.
+이때는 표 전체를 들고 있을 필요가 없습니다.
+칸 하나를 채우는 데 필요한 값은 바로 위쪽과 바로 왼쪽뿐이기 때문입니다.
 
-한 칸, 한 행, 한 열인 격자에서 초기값과 이전 위치를 추적해 보세요.
-두 방향의 이전 비용이 같은 칸에서는 어떤 경로를 선택하며 왜 최소 비용은 바뀌지 않는지도 설명해 보세요.
-메모리를 줄이기 전에 최종 비용만 필요한지 경로도 필요한지 먼저 정하세요.
+그래서 한 행 크기의 배열 `row` 하나를 두고 행마다 왼쪽에서 오른쪽으로 덮어씁니다.
+이렇게 이전 행 자리에 다음 행을 덮어써 메모리를 줄이는 방법을 흔히 **롤링 배열**이라고 부릅니다.
 
-## 이어서 학습하기
+![배열 한 줄 row를 행마다 덮어쓰는 그림. 0행 뒤에는 1·5·7이고 1행 뒤에는 3·4·9이고 2행 뒤에는 6·6·7이다. 오른쪽은 1행 1열을 계산하는 순간으로 row의 0번 칸은 이미 이번 행의 새 값 3이고 1번 칸은 아직 이전 행의 옛 값 5이다. 둘 중 작은 3에 1을 더한 4를 1번 칸에 덮어쓴다.](content/assets/algorithm/dp-advanced-one-row.png)
 
-[가중 그래프와 다익스트라](#/learn/algorithm/weighted-graphs-dijkstra)에서 연결된 정점의 거리 후보를 갱신하는 방법을 확인하세요.
-DP의 계산 순서와 달리, 그래프에서는 간선 조건에 맞는 처리 순서를 따로 정해야 합니다.
+그림 오른쪽처럼 `row[c]`를 덮어쓰기 직전에는 `row[c]`에 이전 행의 값이 남아 있습니다.
+이것이 위쪽 값입니다.
+그리고 `row[c - 1]`은 방금 이번 행의 값으로 바뀌었으므로 왼쪽 값입니다.
+
+```java
+static int oneRowCost(int[][] cost) {
+    int m = cost[0].length;
+    int[] row = new int[m];
+    for (int r = 0; r < cost.length; r++) {
+        for (int c = 0; c < m; c++) {
+            if (r == 0 && c == 0) row[c] = cost[r][c];
+            else if (r == 0) row[c] = row[c - 1] + cost[r][c];
+            else if (c == 0) row[c] = row[c] + cost[r][c];
+            else row[c] = Math.min(row[c], row[c - 1]) + cost[r][c];
+        }
+        System.out.println(r + "행 뒤 row: " + Arrays.toString(row));
+    }
+    return row[m - 1];
+}
+```
+
+행이 끝날 때마다 `row`가 `best` 표의 그 행과 같아지는지 확인해 보세요.
+
+```text
+0행 뒤 row: [1, 5, 7]
+1행 뒤 row: [3, 4, 9]
+2행 뒤 row: [6, 6, 7]
+한 행으로 구한 비용: 7
+```
+
+`best` 표의 세 행과 똑같이 바뀌고 최종 비용도 7입니다.
+두 방법 모두 칸을 한 번씩 채우므로 시간은 `O(n × m)`입니다.
+반면 메모리는 표 전체가 `O(n × m)`이고 한 행만 남기면 `O(m)`입니다.
+
+다만 한 행만 남기면 이전 행의 선택이 사라져 경로를 복원할 수 없습니다.
+그래서 메모리를 줄이기 전에 최종 값만 필요한지 경로도 필요한지 먼저 정합니다.
+또 계산 순서를 오른쪽에서 왼쪽으로 바꾸면 `row[c - 1]`에 아직 이전 행의 값이 남아 있어 전혀 다른 식을 계산하게 됩니다.
+
+> [!note]- 전체 코드 보기
+> 이 문서의 예제를 하나로 합친 프로그램입니다.
+> `DeliveryRoute.java`로 저장해 실행해 볼 수 있습니다.
+>
+> ```java
+> import java.util.ArrayList;
+> import java.util.Arrays;
+> import java.util.Collections;
+> import java.util.List;
+>
+> public class DeliveryRoute {
+>     static int[][] best;
+>     static char[][] from;
+>
+>     static void fillTable(int[][] cost) {
+>         int n = cost.length;
+>         int m = cost[0].length;
+>         best = new int[n][m];
+>         from = new char[n][m];
+>         for (int r = 0; r < n; r++) {
+>             for (int c = 0; c < m; c++) {
+>                 if (r == 0 && c == 0) {
+>                     best[r][c] = cost[r][c];
+>                 } else if (r == 0) {
+>                     best[r][c] = best[r][c - 1] + cost[r][c];
+>                     from[r][c] = 'L';
+>                 } else if (c == 0) {
+>                     best[r][c] = best[r - 1][c] + cost[r][c];
+>                     from[r][c] = 'U';
+>                 } else if (best[r - 1][c] <= best[r][c - 1]) {
+>                     best[r][c] = best[r - 1][c] + cost[r][c];
+>                     from[r][c] = 'U';
+>                 } else {
+>                     best[r][c] = best[r][c - 1] + cost[r][c];
+>                     from[r][c] = 'L';
+>                 }
+>             }
+>         }
+>     }
+>
+>     static List<String> restorePath(int n, int m) {
+>         List<String> path = new ArrayList<>();
+>         int r = n - 1;
+>         int c = m - 1;
+>         while (true) {
+>             path.add("(" + r + "," + c + ")");
+>             if (r == 0 && c == 0) break;
+>             if (from[r][c] == 'U') r--;
+>             else c--;
+>         }
+>         Collections.reverse(path);
+>         return path;
+>     }
+>
+>     static int oneRowCost(int[][] cost) {
+>         int m = cost[0].length;
+>         int[] row = new int[m];
+>         for (int r = 0; r < cost.length; r++) {
+>             for (int c = 0; c < m; c++) {
+>                 if (r == 0 && c == 0) row[c] = cost[r][c];
+>                 else if (r == 0) row[c] = row[c - 1] + cost[r][c];
+>                 else if (c == 0) row[c] = row[c] + cost[r][c];
+>                 else row[c] = Math.min(row[c], row[c - 1]) + cost[r][c];
+>             }
+>             System.out.println(r + "행 뒤 row: " + Arrays.toString(row));
+>         }
+>         return row[m - 1];
+>     }
+>
+>     public static void main(String[] args) {
+>         int[][] cost = {
+>             {1, 4, 2},
+>             {2, 1, 5},
+>             {3, 2, 1}
+>         };
+>
+>         fillTable(cost);
+>         System.out.println("best 표: " + Arrays.deepToString(best));
+>         System.out.println("최소 비용: " + best[2][2]);
+>         System.out.println("경로: " + restorePath(3, 3));
+>         System.out.println("한 행으로 구한 비용: " + oneRowCost(cost));
+>     }
+> }
+> ```
+>
+> ```text
+> best 표: [[1, 5, 7], [3, 4, 9], [6, 6, 7]]
+> 최소 비용: 7
+> 경로: [(0,0), (1,0), (1,1), (2,1), (2,2)]
+> 0행 뒤 row: [1, 5, 7]
+> 1행 뒤 row: [3, 4, 9]
+> 2행 뒤 row: [6, 6, 7]
+> 한 행으로 구한 비용: 7
+> ```
+
+## 코딩테스트 적용
+
+2차원 DP는 격자 밖에서도 자주 나옵니다.
+표의 두 번호가 무엇을 뜻하는지만 바뀔 뿐 설계 순서는 이 문서와 같습니다.
+
+| 문제 유형 | 상태 `dp[a][b]`의 뜻 | 직전 상태 |
+| --- | --- | --- |
+| 격자 최소 비용 | `a`행 `b`열까지의 최소 비용 | 위쪽 칸 · 왼쪽 칸 |
+| 장애물이 있는 격자 경로 수 | `a`행 `b`열까지 오는 경로 수 | 위쪽 칸 · 왼쪽 칸 · 장애물 칸은 0 |
+| 배낭 문제 | 물건 `a`개까지 보고 무게 `b` 이하로 담은 최대 가치 | 물건 `a`를 담지 않은 상태 · 담은 상태 |
+| 두 문자열 비교 | 앞 문자열 `a`글자와 뒤 문자열 `b`글자까지의 답 | 한 글자씩 줄인 상태 |
+| 단계별 선택 | `a`단계에서 `b`번을 골랐을 때의 최고 점수 | 앞 단계에서 이어질 수 있는 선택들 |
+
+문제를 풀 때는 아래 순서로 정리하면 흔들리지 않습니다.
+
+1. 상태를 두 번호로 한 문장에 적습니다.
+2. 지금 칸에 오기 직전의 상태를 모두 적어 점화식을 세웁니다.
+3. 직전 상태가 없는 첫 행·첫 열이나 갈 수 없는 칸의 값을 정합니다.
+4. 직전 상태가 먼저 채워지는 계산 순서를 정합니다.
+5. 답만 필요한지 선택 과정도 필요한지 보고 `from` 표를 둘지 한 행만 남길지 정합니다.
+
+## 정리
+
+- 상태를 구분하는 데 정보가 두 개 필요하면 `best[r][c]` 같은 2차원 표를 만듭니다.
+- 직전 상태가 먼저 채워지도록 위 행부터 왼쪽에서 오른쪽으로 계산합니다.
+- 선택한 방향을 `from` 표에 저장하면 도착에서 거꾸로 따라가 실제 경로를 복원할 수 있습니다.
+- 최종 값만 필요하면 한 행짜리 배열을 덮어써서 메모리를 `O(m)`으로 줄이지만 경로는 복원할 수 없습니다.
+
+## 이어서 연습하기
+
+[장애물을 피해 가는 배송 경로 수](#/coding-tests/java/bridge-dyn-03)에서 장애물 칸을 0으로 두고 경로 수 표를 채워 봅니다.
+[마지막 조립 부품 고르기](#/coding-tests/java/bridge-dyn-04)에서 단계와 선택 두 정보로 상태를 만들어 봅니다.
 
 ## 공식 자료
 
-- [NIST: Dynamic Programming](https://xlinux.nist.gov/dads/HTML/dynamicprog.html)
-- [Java 25: Arrays.fill](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Arrays.html)
-- [Java 25: Math.addExact](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Math.html)
-- [Java 25: Collections.reverse](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Collections.html)
-- [Java 언어 명세 25: 배열](https://docs.oracle.com/javase/specs/jls/se25/html/jls-10.html)
-
-공식 자료 확인일: 2026-09-14. 기존 BAM.dev 격자·경로·비용 비교를 유지하고 Java의 정수 누적과 배열 표현으로 재구성했습니다.
+- [Java 25 API: Arrays](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Arrays.html)
+- [Java 25 API: Collections](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Collections.html)
 
 ## 핵심 질문 답
 
-상태가 행과 열처럼 두 정보로 결정되면 두 정보를 모두 인덱스로 담아 작은 문제를 구분합니다.
-각 상태의 뜻과 초기값을 정한 뒤 필요한 이전 상태가 먼저 준비되는 순서로 점화식을 계산합니다.
-예제는 위쪽과 왼쪽의 최소 비용 중 작은 값에 현재 비용을 더하므로 위에서 아래로, 왼쪽에서 오른쪽으로 계산합니다.
-최종 비용만 필요하면 한 행을 덮어쓸 수 있지만, 경로도 필요하면 선택한 이전 좌표를 보관하고 목표에서 거꾸로 따라간 뒤 뒤집어야 합니다.
+행과 열처럼 상태를 구분하는 정보가 두 개면 두 정보를 인덱스로 쓰는 2차원 표를 만들고 한 칸의 뜻을 한 문장으로 정합니다.
+직전 상태인 위쪽과 왼쪽 중 작은 값에 지금 비용을 더하는 점화식을 세우고 첫 행·첫 열을 따로 처리한 뒤 위 행부터 왼쪽에서 오른쪽으로 채웁니다.
+실제 경로가 필요하면 칸마다 고른 방향을 `from` 표에 저장해 도착에서 거꾸로 따라간 뒤 뒤집습니다.
+최종 값만 필요하면 한 행짜리 배열을 왼쪽에서 오른쪽으로 덮어써 메모리를 줄입니다.

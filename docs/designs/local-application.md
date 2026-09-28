@@ -14,14 +14,24 @@
 - `DEC-JAVA-IMPLEMENTATION-01` 적용: Java 코딩테스트 로컬 runner는 Java 25로 작성하는 BAM.dev 제품 구성요소다. runner의 구체 구조와 연결 방식은 `DEC-JAVA-RUNNER-01`을 기다린다.
 - `DEC-SPRING-BOOT-01` 적용: 앱 본체와 Java 코딩테스트 runner에는 Spring Boot를 포함하지 않는다. 교안은 정적 자산이고 실제 Spring Boot 실행은 외부 웹과제에서 시작한다.
 - `DEC-FRONTEND-01` 적용: 목표 UI 소스는 HTML·CSS 기반의 React·TypeScript를 사용하고 JavaScript도 유지한다. 현재 Vanilla JavaScript·Worker·도메인 로직은 작은 화면·경계부터 점진 이관하며 설치 shell이나 Java runner와 합치지 않는다.
-- `[현재 사실]` 현재 앱은 정적 HTML·CSS·Vanilla JavaScript지만 설치 프로그램은 아니다. 개발용 Node HTTP 서버를 실행하고 브라우저에서 `localhost`를 연다.
+- `[현재 사실]` 현재 앱은 정적 HTML·CSS·Vanilla JavaScript지만 설치 프로그램은 아니다. 공개 GitHub Pages 또는 개발용 Node HTTP 서버의 `localhost`를 브라우저에서 연다.
 - `[현재 사실]` 현재 `package.json`에는 React·TypeScript와 전용 프런트엔드 빌드 도구 의존성이 없다.
-- `[현재 사실]` 현재 Java 제품 소스, Maven·Gradle 설정과 Java 로컬 runner 구현은 없다.
+- `[현재 사실]` 별도 미게시 로컬 작업에서 Java 제품 runner·감독 코드·SBPL 후보를 추가했고 후속 runtime·Java 미실행 앱 검증을 인수했다. 검증 커널의 로컬 Java Quest prototype 활성 UI 검증은 독립 PASS다. Maven·Gradle 설정은 없다.
 - `[현재 사실]` 현재 검증 장비는 macOS 14.8.3·Apple Silicon(arm64)이다. 이 사실은 지원 OS 약속이 아니다.
-- `[현재 사실]` Electron·DMG prototype, 관련 의존성과 패키지 산출물은 아직 없다.
+- `[현재 사실]` Electron 로컬 `.app` 생성·ad-hoc 서명은 통과했다. Java 실행·독립 앱 동작 PASS와 구분하며 DMG는 자동 승인 검토 거부로 생성하지 않았다.
 - `[확인 필요]` 공식 지원 OS, 최종 desktop shell·설치 파일 형식, 서명·업데이트와 백업 방식은 prototype 증거 검토 뒤 정한다.
 
 개발용 localhost와 제품 운영 서버를 구분한다. 개발자가 검증을 위해 로컬 서버를 쓰는 것은 가능하지만, 최종 사용자가 Node, Docker, 포트, 데이터베이스 또는 터미널 명령을 관리해야 한다면 설치형 완료로 보지 않는다.
+
+## Java 실행을 위한 첫 로컬 prototype
+
+`[확정 결정]` [DEC-JAVA-QUEST-RUNTIME-01](../roadmap.md#2026-09-15-java-실행-지원-결정)은 첫 Java Quest 실제 실행과 그에 필요한 로컬 Electron prototype의 착수를 승인한다. 정식 지원 OS·서명·업데이트·M4/M6 전체 승인은 범위에 포함하지 않는다. 이번 완료 목표는 현재 Mac의 로컬 `.app`에서 번들 JDK로 첫 Quest를 실행하고 공개 결과·초안/진도·격리·취소·오프라인 경계를 검증하는 것이다. **현재 검증 커널의 Java Quest prototype은 활성 UI·취소·창 닫기·재시작 복원을 독립 PASS**했다. 정식 설치본과 공식 지원 OS의 완료를 뜻하지 않는다. 근거는 [runtime 작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#2026-09-22-활성-java-quest-앱-검증-pass)를 따른다. 초기 DMG 후보는 자동 승인 검토가 Java 실행 지원과 별도 설치·패키징 범위라고 거부했으므로 재시도하지 않고 필수 완료 gate에서 분리했다.
+
+정확한 runtime 배포판·버전·checksum·라이선스 보존·패키지 경로·IPC·프로세스 격리·자원 제한은 [ADR 0005](../decisions/0005-java-quest-local-runtime.md) 한 곳에서 관리한다. Electron 44.3.0과 Temurin 25.0.4.1+1의 공식 archive를 고정해 `.app` 안에 넣으며 시스템 JDK를 요구하지 않는다. 로컬 `.app` 조립에는 별도 패키저 의존성 없이 기존 정적 빌드와 Node 내장 파일 기능을 사용한다. Java 제품 실행 단위는 Java 25 `BamQuestRunner` 후보이며 JVM 감시·OS 연결은 shell 바깥 기능과 분리한다.
+
+`[현재 사실]` 환경·artifact SHA/version/라이선스와 Java 제품 runner의 무격리 컴파일은 통과했다. 이후 호스트에서 허용된 실제 sandbox javac 실행은 `UEs` 상태로 남아 SIGKILL 뒤 종료·reap을 확인하지 못했다. 독립 진단에서도 원인이 특정되지 않았고 새 Java/JDK 실행·profile 시도를 중지했다. 무격리 fallback은 없으며 capability는 고정 false다. `.app` 빌드·ad-hoc 서명이 실제 Java/앱 실행 지원을 증명하지 않는다. 정확한 환경·hash·잔여 프로세스 관찰·재개 조건은 [작업 카드](../work-items/2026-09-15-java-code-quest-runtime.md#격리-실패와-재개-조건)를 따른다.
+
+첫 app origin은 `bam://app`이고 브라우저 `localhost`의 기존 localStorage를 자동 공유하지 않는다. 이 prototype은 사용자 브라우저 기록을 읽거나 초기화하지 않는다. 앱 origin 안에서 초안·완료와 theme가 재실행 후 남는지 확인하며 다른 origin으로의 이전·export/import·정식 업데이트 경로는 이번 구현 완료와 구분한다.
 
 ## 서버 없음의 의미
 
@@ -34,7 +44,7 @@
 
 GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 외부 배포 채널은 사용할 수 있다. 다만 이는 BAM.dev가 운영하는 런타임 서버가 아니며, 이미 설치한 핵심 앱의 학습 흐름은 네트워크 없이 동작해야 한다.
 
-핵심 앱의 교안·문제·테스트·기대값·평가기와 진도를 설치본과 사용자 기기 안에 두므로 개인 학습 MVP에는 BAM.dev 런타임 서버가 필요하지 않다. 외부 웹과제도 최초 clone·fetch로 고정된 공개 검증을 받은 뒤 로컬에서 실행하며 평가 시점에 BAM.dev 서버를 호출하지 않는다. 대신 공인 점수, 변조 방지, 답안 비밀성, 부정행위 방지, 신원 확인, 중앙 제출 감사·복구와 기기 간 동기화는 제공하지 않는다. 로컬 결과를 인증·대회·보상 근거로 표현하지 않는다.
+핵심 앱의 교안·문제·테스트·기대값·평가기와 진도를 설치본과 사용자 기기 안에 두므로 개인 학습 MVP에는 BAM.dev 런타임 서버가 필요하지 않다. 외부 웹과제는 [밤위키 원본 활용 계약](web-assignments.md)의 승인된 전달 방식으로 고정 시작점·공개 검증을 확보한 뒤 로컬에서 실행하며 평가 시점에 BAM.dev 서버를 호출하지 않는다. 대신 공인 점수, 변조 방지, 답안 비밀성, 부정행위 방지, 신원 확인, 중앙 제출 감사·복구와 기기 간 동기화는 제공하지 않는다. 로컬 결과를 인증·대회·보상 근거로 표현하지 않는다.
 
 ## 목표 실행 구조
 
@@ -46,7 +56,7 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 ├── 공개 로컬 평가기
 │   ├── JavaScript one-shot Worker
 │   └── Java 25 제품 코드인 코딩테스트 로컬 runner 목표(번들 JDK 사용·미구현)
-├── Java 컴파일·실행 도구체인 목표(JDK 25 LTS·정식 Java 25·미구현)
+├── Java 컴파일·실행 도구체인 목표(JDK 25 후보 번들·검증 커널의 Java Quest prototype PASS)
 └── 사용자 데이터 저장 경계
     ├── 진도·설정
     ├── Quest 초안·결과 요약
@@ -61,6 +71,8 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 `[확정 결정]` 첫 설치형 버전은 사용자가 관리하는 수신 포트를 요구하지 않는다. `[제안]` 번들 자산은 앱 전용 origin 또는 자원 프로토콜로 읽고 외부에서 접근 가능한 네트워크 포트를 열지 않는다. 선택한 shell의 기술 제약 때문에 내부 프로세스가 필요하면 수명주기, 접근 범위, 인증, 포트 노출과 종료를 별도 ADR에서 설명해야 한다.
 
 ## 우선 capability prototype 계약
+
+2026-09-15 착수한 첫 Java Quest의 구체 실행 범위·제한은 위 [첫 로컬 prototype](#java-실행을-위한-첫-로컬-prototype)을 따른다. 아래 전체 설치형 capability 중 Java **코딩테스트** 콘텐츠 실행과 공식 설치 지원 등 이번 범위 밖 항목을 첫 Quest 완료의 선행 조건으로 확대하지 않는다. 첫 shell이 공유하는 origin·기존 Worker·저장·renderer 격리의 직접 영향 검증은 유지한다.
 
 이 prototype은 설치 기술을 채택하거나 MVP 지원 OS를 선언하기 위한 구현이 아니라, 결정에 필요한 증거를 만드는 제한된 실험이다. 입력은 현재 정적 빌드, 공개 평가기, `localStorage` 저장소, 현재 검증 장비와 [`reference-audit.md`](../reference-audit.md#설치-shell-후보-조사)의 후보 조사다. Electron·DMG 하나만 먼저 검증하며, 병렬로 Windows·Linux·Intel Mac 패키지나 Tauri prototype을 만들지 않는다. Electron 후보가 아래 필수 gate를 안전하게 만족하지 못할 때만 후보 선택 단계로 돌아간다.
 
@@ -103,13 +115,13 @@ GitHub Releases나 과제 저장소처럼 정적 파일을 처음 내려받는 �
 
 ## 콘텐츠와 웹과제 배포
 
-핵심 교안·객관식·Code Quest·코딩테스트 콘텐츠는 각 계약을 유지한 채 설치 파일에 포함해 오프라인으로 제공한다. 웹과제는 [`web-assignments.md`](web-assignments.md)의 별도 Git 저장소에서 clone할 수 있다.
+핵심 교안·객관식·Code Quest·코딩테스트 콘텐츠는 각 계약을 유지한 채 설치 파일에 포함해 오프라인으로 제공한다. 웹과제는 [`web-assignments.md`](web-assignments.md)의 밤위키 원본 활용 계약에 따라 고정 시작 버전과 승인된 전달 방식을 별도로 정한다.
 
 이 둘의 오프라인 보장은 다르다.
 
 - 핵심 앱: 설치 뒤 네트워크 없이 사용
-- Git 웹과제: 최초 clone·fetch로 pinned starter·solution commit을 확보할 때는 네트워크가 필요하고, 확보 뒤에는 오프라인 구현·검증·정답 비교 가능
-- 완전 오프라인 과제 시작: starter·solution snapshot과 비-Git 비교 안내를 설치 파일이나 별도 archive에 포함해야 하며 아직 결정되지 않음
+- Git 웹과제: 원본의 고정 시작점·공개 검증·도구/의존성과 승인된 비교 자료를 사전 확보한다. 원격 전달을 택했을 때의 최초 clone·fetch와 이후 오프라인 실행 경계를 구분한다.
+- 완전 오프라인 과제 시작: 선정 원본·필요 도구·의존성을 설치 파일이나 별도 묶음으로 제공할지 미결정이며 이미 있는 로컬 과제에 원격 공개를 강제하지 않는다.
 
 BAM.dev 화면은 GitHub API 성공을 전제로 진입하거나 진도를 계산하지 않는다.
 
@@ -160,7 +172,7 @@ BAM.dev 화면은 GitHub API 성공을 전제로 진입하거나 진도를 계�
 | --- | --- |
 | [`DEC-DESKTOP-01`](../roadmap.md#bam-결정-대기-목록) | prototype PASS·FAIL, 패키지 크기·첫 실행 시간, 격리·오프라인·데이터 보존 결과와 서명·notarization 비용 |
 | [`DEC-FRONTEND-MIGRATION-01`](../roadmap.md#bam-결정-대기-목록) | React·TypeScript·빌드 도구 후보와 정확한 버전·라이선스, 정적 출력·CSP·Worker·기존 route·진도 공존, 첫 이관 경계와 rollback 결과 |
-| [`DEC-WEB-OFFLINE-01`](../roadmap.md#bam-결정-대기-목록) | starter·solution snapshot과 Spring Boot 빌드 의존성 cache를 포함할 때의 설치 크기와 무네트워크 과제 시작 결과 |
+| [`DEC-WEB-OFFLINE-01`](../roadmap.md#bam-결정-대기-목록) | 선정 원본의 시작 버전·공개 검증·승인된 비교 자료와 빌드 의존성을 포함할 때의 설치 크기·무네트워크 시작 결과 |
 | [`DEC-JAVA-RUNNER-01`](../roadmap.md#bam-결정-대기-목록) | JDK 25 LTS의 정확한 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책, 컴파일·IPC·격리 계약, 패키지 크기와 지원 OS별 prototype 결과 |
 | [`DEC-JAVA-01`](../roadmap.md#bam-결정-대기-목록) | Java 정식 교안 과정·Code Quest·웹과제와 Spring Boot 과정의 MVP 포함 시점·교안 범위·Code Quest 여부 |
 

@@ -193,7 +193,69 @@ test("채점 후 선택지를 잠그고 정답·선택한 오답의 근거를 �
   assert.doesNotMatch(html, /비교식은 boolean을 반환합니다/);
   assert.match(html, /오답 · 내 선택/);
   assert.match(html, /data-quiz-next aria-disabled="false"/);
+  assert.match(html, /data-quiz-question-retry>이 문제 다시 풀기<\/button>/);
   assert.match(html, /aria-valuenow="7"/);
+});
+
+test("전부 보기와 전체 채점에서도 오답 카드만 같은 카드 재도전을 제공한다", () => {
+  const questions = ["wrong", "correct", "pending"].map((suffix) => ({
+    ...question,
+    id: `quiz-javascript-${suffix}`,
+  }));
+  const questionStates = [
+    { question: questions[0], currentIndex: 0, selectedOptionId: "b", gradedAnswer: { ...gradedAnswer, questionId: questions[0].id } },
+    { question: questions[1], currentIndex: 1, selectedOptionId: "a", gradedAnswer: { ...gradedAnswer, questionId: questions[1].id, selectedOptionId: "a", isCorrect: true } },
+    { question: questions[2], currentIndex: 2, selectedOptionId: "b", gradedAnswer: null },
+  ];
+  const html = renderQuestion({
+    question: questions[0],
+    currentIndex: 0,
+    total: 3,
+    answeredCount: 2,
+    viewMode: "all",
+    gradingMode: "batch",
+    questionStates,
+  });
+  const cards = html.split(/<section[^>]*data-quiz-question-id="/).slice(1);
+  assert.equal((html.match(/data-quiz-question-retry/g) ?? []).length, 1);
+  assert.match(html, /답한 1개 채점/);
+  assert.match(html, /미채점 선택 1문항 · 미응답 0문항/);
+  assert.match(cards[0], /data-quiz-question-retry>이 문제 다시 풀기/);
+  assert.doesNotMatch(cards[1], /data-quiz-question-retry/);
+  assert.doesNotMatch(cards[2], /data-quiz-question-retry/);
+
+  const blocked = renderQuestion({
+    question: questions[0],
+    total: 1,
+    selectedOptionId: "b",
+    gradedAnswer: { ...gradedAnswer, questionId: questions[0].id },
+    canRetryQuestions: false,
+  });
+  assert.doesNotMatch(blocked, /data-quiz-question-retry/);
+});
+
+test("재채점과 완료 결과는 첫 오답을 표시하고 초기화된 카드는 정답·해설을 숨긴다", () => {
+  const firstAttempt = { selectedOptionId: "b", isCorrect: false };
+  const retriedCorrect = renderQuestion({
+    selectedOptionId: "a",
+    gradedAnswer: { ...gradedAnswer, selectedOptionId: "a", isCorrect: true },
+    firstAttempt,
+  });
+  assert.match(retriedCorrect, /첫 응답 오답 · 재도전 정답/);
+
+  const retriedWrong = renderQuestion({ selectedOptionId: "b", gradedAnswer, firstAttempt });
+  assert.match(retriedWrong, /첫 응답 오답 · 재도전 오답/);
+
+  const reset = renderQuestion({ firstAttempt });
+  assert.doesNotMatch(reset, /첫 응답 오답|정답 설명|quiz-option-feedback|is-correct|data-quiz-question-retry/);
+  assert.equal((reset.match(/data-quiz-option[^>]* disabled/g) ?? []).length, 0);
+
+  const result = renderQuizResultView({
+    summary: { correct: 1, total: 1, percent: 100, incorrectQuestionIds: [] },
+    questionResults: [{ prompt: question.prompt, isCorrect: true, firstAttempt }],
+  });
+  assert.match(result, /<strong>정답<\/strong>[\s\S]*첫 응답 오답 · 재도전 정답/);
+  assert.doesNotMatch(result, /data-quiz-question-retry/);
 });
 
 test("다른 보기 해설은 사용자가 펼친 경우 모두 보이며 펼침 상태를 전달한다", () => {

@@ -1,5 +1,7 @@
 # Web Project 저작 계약
 
+`[현재 사실]` 이 문서는 기존 인앱 HTML·CSS 과제의 유효한 평가·저장 계약이다. 앞으로 사용할 밤위키 원본 외부 과제의 연결은 [별도 설계](designs/web-assignments.md)를 따른다. 외부 연결·검증 완료 전에는 기존 콘텐츠·초안·진도를 삭제하거나 이 계약이 자동 폐기됐다고 해석하지 않는다.
+
 `[현재 사실]` 이 문서는 현재 앱 안에서 동작하는 Web Project v1의 구현 계약이다. HTML과 CSS를 함께 작성해 작은 화면을 완성하며, 브라우저 안에서만 실행하고 학습자 JavaScript와 외부 리소스를 허용하지 않는다. 콘텐츠 원본은 `content/web-projects/index.json`, JSON Schema는 `content/schema/web-project.schema.json`, 방어적 런타임 검증은 `src/core/web-project.js`가 담당한다.
 
 `[확정 결정]` 목표 웹과제는 HTML·CSS·JavaScript·Java 실습 폴더를 별도 Git 저장소에서 받아 로컬 도구로 구현하는 흐름이다. 그 목표 설계는 [`designs/web-assignments.md`](designs/web-assignments.md)가 담당한다. 기존 초안·진도와 검증 경로의 병행·이관·종료가 결정되기 전에는 이 현재 계약을 삭제하거나 목표 계약으로 바꾸지 않는다.

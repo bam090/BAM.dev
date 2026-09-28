@@ -86,7 +86,8 @@
       "shortName": "ALGO",
       "status": "available",
       "accent": "java",
-      "description": "Java 25를 기준으로 기본 자료구조부터 그래프와 동적 계획법까지 문제 해결 원리를 익힙니다."
+      "description": "Java 25를 기준으로 기본 자료구조부터 그래프와 동적 계획법까지 문제 해결 원리를 익힙니다.",
+      "unitNumberStart": 0
     },
     {
       "id": "spring",
@@ -429,31 +430,1035 @@
       "archivedFromCatalog": true
     },
     {
+      "id": "algo-00-data-structures-algorithms",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "data-structures-and-algorithms",
+      "title": "자료구조와 알고리즘: 시간 복잡도로 고르기",
+      "summary": "자료구조는 데이터를 담는 방식이고 알고리즘은 문제를 푸는 절차이며 시간 복잡도는 입력이 커질 때 그 절차가 얼마나 느려지는지를 나타냅니다.",
+      "essentialQuestion": "같은 문제를 푸는 여러 방법 중 무엇이 더 빠른지 어떻게 판단할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "자료구조와 알고리즘이 각각 무엇이고 코딩테스트에서 왜 함께 배우는지 설명할 수 있습니다.",
+        "시간 복잡도와 빅오 표기를 읽고 대표적인 복잡도의 빠르기를 비교할 수 있습니다."
+      ],
+      "estimatedMinutes": 8,
+      "conceptIds": [
+        "algo.data-structure",
+        "algo.time-complexity"
+      ],
+      "contentFile": "content/lessons/algorithm/data-structures-and-algorithms.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-26"
+      },
+      "keyword": "자료구조와 알고리즘"
+    },
+    {
+      "id": "algo-00-time-complexity-in-code",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "time-complexity-in-code",
+      "title": "코드에서 시간 복잡도 계산하기",
+      "summary": "반복문이 몇 겹인지와 반복할 때마다 범위가 어떻게 줄어드는지를 보면 시간 복잡도가 나오고 이를 입력 크기와 비교하면 풀이가 시간 안에 끝날지 알 수 있습니다.",
+      "essentialQuestion": "코드를 보고 이 풀이가 시간 안에 끝날지 어떻게 알 수 있나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "반복문의 모양과 Java 컬렉션 메서드를 보고 코드의 시간 복잡도를 계산하고 입력 크기에 맞는 풀이인지 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 8,
+      "conceptIds": [
+        "algo.complexity-analysis"
+      ],
+      "contentFile": "content/lessons/algorithm/time-complexity-in-code.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-26"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-00-data-structures-algorithms"
+    },
+    {
+      "id": "algo-01-array",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "array",
+      "title": "배열: 번호로 바로 꺼내는 자료구조",
+      "summary": "배열은 같은 타입의 값을 정해진 개수의 칸에 번호 순서대로 담는 자료구조이고 번호로는 바로 꺼내지만 중간에 넣거나 빼려면 뒤의 원소를 옮겨야 합니다.",
+      "essentialQuestion": "배열은 왜 번호로 꺼내기는 빠르고 중간에 넣거나 빼기는 느릴까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "배열에서 인덱스로 값을 꺼내는 일이 `O(1)`이고 중간에 넣거나 빼는 일이 `O(n)`인 이유를 설명할 수 있습니다.",
+        "1차원 배열과 2차원 배열에서 원하는 칸을 인덱스로 찾을 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.array"
+      ],
+      "contentFile": "content/lessons/algorithm/array.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "배열"
+    },
+    {
+      "id": "algo-list-conditions",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "list-and-conditions",
+      "title": "ArrayList와 LinkedList: 같은 목록을 만드는 두 방법",
+      "summary": "`ArrayList`는 내부 배열을 써서 번호로 꺼내기가 빠르고 `LinkedList`는 노드를 이어 써서 맨 앞에 넣고 빼기가 빠르며 보통은 `ArrayList`를 고릅니다.",
+      "essentialQuestion": "같은 List 메서드라도 ArrayList와 LinkedList에서 걸리는 시간이 왜 다르며 어떤 구현을 골라야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`ArrayList`와 `LinkedList`의 내부 구조와 연산별 복잡도를 비교하고 상황에 맞는 구현을 고를 수 있습니다.",
+        "반복문과 조건문으로 목록에서 조건에 맞는 값만 골라 새 목록에 담을 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.list",
+        "algo.condition"
+      ],
+      "contentFile": "content/lessons/algorithm/list-and-conditions.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-01-array"
+    },
+    {
+      "id": "algo-01-two-pointers",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "two-pointers-sliding-window",
+      "title": "투 포인터와 슬라이딩 윈도우: 배열을 한 번에 훑기",
+      "summary": "투 포인터는 정렬된 배열의 양 끝에서 답이 될 수 없는 쪽을 버리며 좁혀 가고 슬라이딩 윈도우는 연속 구간을 밀며 빠지는 값과 들어오는 값만 반영해서 둘 다 배열을 `O(n)`에 훑습니다.",
+      "essentialQuestion": "투 포인터와 슬라이딩 윈도우는 어떻게 두 겹 반복을 배열 한 번 훑기로 줄일까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "정렬된 배열에서 투 포인터로 두 값의 합을 찾고 `O(n²)`이 `O(n)`으로 줄어드는 이유를 설명할 수 있습니다.",
+        "연속 구간 문제에서 길이가 고정된 윈도우와 길이가 바뀌는 윈도우를 구분해 구현할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.two-pointers",
+        "algo.sliding-window"
+      ],
+      "contentFile": "content/lessons/algorithm/two-pointers-sliding-window.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "algo-01-array"
+    },
+    {
+      "id": "js-10-stack-queue",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 3,
+      "slug": "stack-and-queue",
+      "title": "스택: 나중에 넣은 것부터 꺼내기",
+      "summary": "스택은 가장 나중에 넣은 값을 가장 먼저 꺼내는 LIFO 자료구조이고 넣기·꺼내기·보기가 모두 맨 위 한곳에서 `O(1)`에 일어납니다.",
+      "essentialQuestion": "스택은 값을 어떤 순서로 꺼내며 어떤 문제에서 스택을 떠올려야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "스택의 LIFO 규칙과 `push`·`pop`·`peek`이 스택을 어떻게 바꾸는지 설명할 수 있습니다.",
+        "괄호 짝 맞추기나 되돌리기처럼 가장 최근 값을 먼저 처리해야 하는 문제에서 스택을 떠올릴 수 있습니다."
+      ],
+      "estimatedMinutes": 25,
+      "conceptIds": [
+        "algo.stack"
+      ],
+      "contentFile": "content/lessons/algorithm/stack-and-queue.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "스택"
+    },
+    {
+      "id": "algo-02-stack-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "stack-java",
+      "title": "Java로 스택 쓰기: ArrayDeque",
+      "summary": "Java에서 스택은 `Deque<E> stack = new ArrayDeque<>()`로 만들고 `push`·`pop`·`peek`으로 맨 앞을 top처럼 쓰며 빈 스택의 `pop`은 예외를 던지고 `peek`은 `null`을 돌려줍니다.",
+      "essentialQuestion": "Java에서 스택은 무엇으로 만들고 빈 스택과 괄호 검사는 어떻게 다룰까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`ArrayDeque`의 `push`·`pop`·`peek`·`isEmpty`로 스택을 만들고 빈 스택에서 각 메서드가 어떻게 동작하는지 구분할 수 있습니다.",
+        "`Stack` 클래스 대신 `Deque`를 쓰는 이유를 설명하고 `ArrayDeque`로 괄호 검사를 구현할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.stack-java"
+      ],
+      "contentFile": "content/lessons/algorithm/stack-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-10-stack-queue"
+    },
+    {
+      "id": "algo-03-queue",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 4,
+      "slug": "queue",
+      "title": "큐: 먼저 온 순서대로 꺼내는 자료구조",
+      "summary": "큐는 먼저 넣은 값을 먼저 꺼내는 FIFO 자료구조이고 뒤에 넣고 앞에서 꺼내기 때문에 들어온 순서대로 처리해야 하는 대기열과 BFS에 씁니다.",
+      "essentialQuestion": "먼저 들어온 것부터 처리해야 할 때 큐는 어떤 규칙으로 값을 넣고 꺼낼까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "큐의 FIFO 순서와 offer·poll·peek이 하는 일을 설명하고 같은 입력에서 스택과 꺼내는 순서가 어떻게 다른지 비교할 수 있습니다.",
+        "대기열 처리나 너비 우선 탐색처럼 먼저 들어온 것부터 처리해야 하는 문제에서 큐를 떠올릴 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.queue"
+      ],
+      "contentFile": "content/lessons/algorithm/queue.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "큐"
+    },
+    {
+      "id": "algo-03-queue-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "queue-java",
+      "title": "Java로 큐 쓰기: Queue와 ArrayDeque",
+      "summary": "Java에서는 `Queue` 인터페이스 변수에 `ArrayDeque` 객체를 담아 큐를 만들고 `offer`·`poll`·`peek`으로 넣고 꺼내고 확인합니다.",
+      "essentialQuestion": "Java에서 큐를 만들고 빈 큐까지 안전하게 다루려면 어떤 클래스와 메서드를 골라야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`Queue`와 `ArrayDeque`로 큐를 만들고 빈 큐에서 예외를 던지는 메서드와 특별한 값을 돌려주는 메서드를 구분해 쓸 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.queue-java"
+      ],
+      "contentFile": "content/lessons/algorithm/queue-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-03-queue"
+    },
+    {
+      "id": "algo-hash-map-set",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 5,
+      "slug": "hash-map-set",
+      "title": "해시: 키로 바로 찾는 자료구조",
+      "summary": "해시는 키로 버킷 번호를 계산해 저장 위치를 바로 찾는 방법이고 이 방법으로 만든 Map은 키에 값을 붙이며 Set은 중복 없는 값을 모읍니다.",
+      "essentialQuestion": "해시는 어떻게 키만 보고 값을 거의 한 번에 찾고 Map과 Set은 이 원리를 어떻게 쓸까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "해시 함수·버킷·충돌이 무엇인지 설명하고 해시로 찾기가 평균 `O(1)`인 이유를 말할 수 있습니다.",
+        "키에 값을 붙이는 Map과 중복 없이 모으는 Set을 구분하고 equals와 hashCode를 함께 맞춰야 하는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 20,
+      "conceptIds": [
+        "algo.hashing",
+        "algo.map-collection",
+        "algo.set-collection"
+      ],
+      "contentFile": "content/lessons/algorithm/hash-map-set.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "해시"
+    },
+    {
+      "id": "algo-dictionary",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "dictionary",
+      "title": "HashMap·HashSet 쓰기: 키로 세고 중복 막기",
+      "summary": "`HashMap`은 키로 값을 저장하고 찾는 해시 Map이고 `HashSet`은 같은 값을 한 번만 담는 해시 Set이며 둘은 빈도 세기와 중복 확인에 가장 많이 쓰입니다.",
+      "essentialQuestion": "Java에서 값의 빈도를 세고 중복을 막을 때 HashMap과 HashSet의 어떤 메서드를 어떻게 써야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`HashMap`의 put·get·getOrDefault·merge로 값을 저장하고 빈도를 셀 수 있고 없는 키와 `null` 값을 `containsKey`로 구분할 수 있습니다.",
+        "`HashSet`의 add·contains로 중복을 확인하고 순서가 필요할 때 `LinkedHashMap`·`TreeMap`을 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 8,
+      "conceptIds": [
+        "algo.dictionary"
+      ],
+      "contentFile": "content/lessons/algorithm/dictionary.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-hash-map-set"
+    },
+    {
+      "id": "algo-09-tree",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 6,
+      "slug": "tree-basics",
+      "title": "트리: 부모와 자식으로 이어진 구조",
+      "summary": "트리는 사이클 없이 부모와 자식으로 이어진 계층 구조이고 순회는 한 갈래를 끝까지 내려가는 DFS와 가까운 층부터 도는 BFS로 나뉩니다.",
+      "essentialQuestion": "부모와 자식으로 이어진 구조를 빠뜨리지 않고 어떤 순서로 방문할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "예제 트리에서 루트·부모·자식·리프와 깊이·높이를 찾을 수 있습니다.",
+        "깊이 우선(DFS)과 너비 우선(BFS) 순회의 차이를 설명하고 상황에 맞는 순회를 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 60,
+      "conceptIds": [
+        "algo.tree",
+        "algo.tree-traversal"
+      ],
+      "contentFile": "content/lessons/algorithm/tree-basics.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-26"
+      },
+      "keyword": "트리"
+    },
+    {
+      "id": "algo-tree-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "tree-java",
+      "title": "Java에서 트리 활용하기: TreeMap·TreeSet",
+      "summary": "TreeMap과 TreeSet은 Java가 제공하는 이진 탐색 트리이고 값을 항상 크기 순서로 정렬해 둡니다.",
+      "essentialQuestion": "정렬된 순서나 가까운 값을 빨리 찾아야 할 때 Java에서 무엇을 쓰나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "정렬된 순서나 가까운 값 조회가 필요할 때 TreeMap·TreeSet을 골라 쓸 수 있습니다."
+      ],
+      "estimatedMinutes": 6,
+      "conceptIds": [
+        "algo.tree-map"
+      ],
+      "contentFile": "content/lessons/algorithm/tree-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-26"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-09-tree"
+    },
+    {
+      "id": "algo-03-priority-queue",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "priority-queue-heap",
+      "title": "우선순위 큐와 힙: 가장 급한 값부터 꺼내기",
+      "summary": "우선순위 큐는 우선순위가 가장 높은 값부터 꺼내는 큐이고 Java의 `PriorityQueue`는 이를 최소 힙으로 구현해 넣기와 꺼내기를 `O(log n)`에 처리합니다.",
+      "essentialQuestion": "값이 계속 들어오는 중에 매번 가장 작은 값을 빠르게 꺼내려면 무엇을 쓰고 그것은 어떻게 동작할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "최소 힙이 배열에 저장되는 모양과 값을 넣고 꺼낼 때 `O(log n)`만큼 자리를 바꾸는 과정을 설명할 수 있습니다.",
+        "`PriorityQueue`로 최소 힙과 최대 힙을 만들고 작업 스케줄과 k번째 값 찾기 문제에 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.heap",
+        "algo.priority-queue"
+      ],
+      "contentFile": "content/lessons/algorithm/priority-queue-heap.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "algo-09-tree"
+    },
+    {
+      "id": "algo-06-union-find",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 7,
+      "slug": "union-find",
+      "title": "집합: 유니온 파인드로 그룹 합치기",
+      "summary": "유니온 파인드는 원소마다 부모를 적어 둔 배열로 그룹을 표현하고 대표를 찾는 find와 두 그룹을 잇는 union으로 두 원소가 같은 그룹인지 빠르게 답합니다.",
+      "essentialQuestion": "여러 원소를 그룹으로 나누고 합칠 때 두 원소가 같은 그룹인지 어떻게 빠르게 알 수 있을까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "부모 배열에서 find로 대표를 찾고 union으로 두 그룹을 합치는 과정을 따라갈 수 있습니다.",
+        "경로 압축과 크기 기준 합치기가 find를 빠르게 만드는 이유를 설명하고 연결 요소 수 세기와 사이클 판별에 유니온 파인드를 쓸 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.union-find"
+      ],
+      "contentFile": "content/lessons/algorithm/union-find.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "집합"
+    },
+    {
+      "id": "algo-06-union-find-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "union-find-java",
+      "title": "Java로 유니온 파인드 구현하기",
+      "summary": "Java에는 유니온 파인드 클래스가 없어서 `parent`·`size` 배열과 `find`·`union` 메서드를 가진 작은 클래스를 직접 만들어 씁니다.",
+      "essentialQuestion": "Java로 유니온 파인드를 어떻게 구현하고 연결 요소 수와 사이클을 어떻게 판별할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`int[] parent`·`int[] size`로 경로 압축과 크기 기준 합치기를 갖춘 유니온 파인드를 Java로 구현하고 연결 요소 수 세기와 사이클 판별에 쓸 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.union-find-java"
+      ],
+      "contentFile": "content/lessons/algorithm/union-find-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-06-union-find"
+    },
+    {
+      "id": "js-13-bfs-dfs",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 8,
+      "slug": "bfs-dfs-graph-grid",
+      "title": "그래프와 BFS·DFS",
+      "summary": "그래프는 정점과 간선으로 이루어진 연결 구조이고 BFS는 가까운 정점부터 방문하며 DFS는 한 길을 끝까지 따라가고 사이클이 있을 수 있어 visited로 이미 본 정점을 표시합니다.",
+      "essentialQuestion": "연결된 대상을 그래프로 어떻게 저장하고 BFS와 DFS로 빠짐없이 한 번씩 방문할 수 있을까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "정점·간선·방향·가중치로 그래프를 설명하고 인접 리스트와 인접 행렬 중 알맞은 표현을 고를 수 있습니다.",
+        "그래프에서 BFS와 DFS의 방문 순서를 따라가고 사이클 때문에 방문 표시가 필요한 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": [
+        "algo.graph-representation",
+        "algo.bfs",
+        "algo.dfs",
+        "algo.grid-traversal"
+      ],
+      "contentFile": "content/lessons/algorithm/bfs-dfs-graph-grid.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "그래프"
+    },
+    {
+      "id": "algo-07-grid-traversal",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "grid-traversal",
+      "title": "Java로 그래프와 격자 탐색하기",
+      "summary": "Java에서는 `ArrayList`를 겹쳐 인접 리스트를 만들고 `ArrayDeque`를 큐로 쓰면 BFS가 되고 스택으로 쓰면 DFS가 되며 격자는 `dr`·`dc` 방향 배열로 이웃 칸을 계산합니다.",
+      "essentialQuestion": "Java에서 그래프와 격자를 어떤 도구로 저장하고 BFS·DFS로 탐색할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`List<List<Integer>>` 인접 리스트와 `ArrayDeque`로 BFS·DFS를 구현하고 방향 배열과 범위 검사로 2차원 격자에서 최소 이동 횟수를 구할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.grid-bfs"
+      ],
+      "contentFile": "content/lessons/algorithm/grid-traversal.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-13-bfs-dfs"
+    },
+    {
+      "id": "algo-12-dijkstra",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "weighted-graphs-dijkstra",
+      "title": "가중 그래프와 다익스트라",
+      "summary": "다익스트라는 음수 간선이 없는 가중 그래프에서 우선순위 큐로 지금까지 가장 가까운 정점을 꺼내 확정하고 그 정점의 간선으로 이웃의 거리를 줄여 나가며 최단 거리를 구합니다.",
+      "essentialQuestion": "간선마다 비용이 다른 그래프에서 출발점부터 각 정점까지 가장 싼 길을 어떻게 구할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "거리 배열과 간선 완화로 가장 가까운 후보부터 확정하는 다익스트라를 따라가고 `PriorityQueue`로 구현할 수 있습니다.",
+        "음수 간선이 있으면 다익스트라를 쓸 수 없는 이유를 설명하고 벨만-포드가 필요한 상황을 구분할 수 있습니다."
+      ],
+      "estimatedMinutes": 75,
+      "conceptIds": [
+        "algo.weighted-graph",
+        "algo.shortest-path",
+        "algo.dijkstra"
+      ],
+      "contentFile": "content/lessons/algorithm/weighted-graphs-dijkstra.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "js-13-bfs-dfs"
+    },
+    {
+      "id": "algo-07-bellman-ford",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 3,
+      "slug": "bellman-ford",
+      "title": "벨만-포드: 음수 간선이 있는 최단 경로",
+      "summary": "벨만-포드는 모든 간선을 정점 수보다 하나 적은 횟수만큼 반복해서 완화해 음수 간선이 있어도 최단 거리를 구하고 그 뒤에도 거리가 줄어들면 음수 사이클이 있다고 판단합니다.",
+      "essentialQuestion": "음수 간선이 있는 그래프에서 최단 거리를 어떻게 구하고 음수 사이클을 어떻게 알아낼까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "모든 간선을 `V - 1`번 완화하는 벨만-포드로 음수 간선이 있는 그래프의 최단 거리를 구하고 한 번 더 완화해 음수 사이클을 찾을 수 있습니다.",
+        "다익스트라와 벨만-포드를 가중치 조건과 시간 복잡도로 비교해 문제에 맞는 쪽을 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.bellman-ford"
+      ],
+      "contentFile": "content/lessons/algorithm/bellman-ford.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "js-13-bfs-dfs"
+    },
+    {
+      "id": "js-12-brute-force-backtracking",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 9,
+      "slug": "brute-force-backtracking-recursion",
+      "title": "백트래킹: 선택하고 되돌아오며 모든 경우 찾기",
+      "summary": "백트래킹은 재귀로 한 갈래씩 선택해 끝까지 내려간 뒤 선택을 되돌려 다른 갈래를 확인하는 완전 탐색이고 정답이 될 수 없는 갈래는 가지치기로 일찍 멈춥니다.",
+      "essentialQuestion": "가능한 모든 경우를 빠짐없이 확인하면서도 정답이 될 수 없는 갈래를 줄이려면 재귀와 백트래킹을 어떻게 구성해야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "완전 탐색·재귀·백트래킹의 관계를 설명하고 선택 트리로 탐색 순서를 따라갈 수 있습니다.",
+        "선택·재귀 호출·되돌리기로 백트래킹을 구성하고 정답이 될 수 없는 갈래를 가지치기할 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": [
+        "algo.brute-force",
+        "algo.recursion",
+        "algo.backtracking"
+      ],
+      "contentFile": "content/lessons/algorithm/brute-force-backtracking-recursion.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "백트래킹"
+    },
+    {
+      "id": "algo-08-permutations-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "permutations-combinations-java",
+      "title": "Java로 순열·조합 만들기",
+      "summary": "순열은 방문 표시로 이미 고른 원소를 건너뛰고 조합은 시작 인덱스로 뒤쪽 원소만 고르며 둘 다 경로에 넣고 재귀한 뒤 빼서 되돌립니다.",
+      "essentialQuestion": "Java에서 순열·조합·부분집합을 빠짐없이 중복 없이 만들려면 방문 표시·시작 인덱스·경로를 어떻게 다뤄야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`boolean[] visited`·시작 인덱스·`List` 경로로 순열·조합·부분집합을 만들고 결과를 복사해 모을 수 있습니다.",
+        "순서를 따지는지와 몇 개를 고르는지를 보고 순열·조합·부분집합 중 알맞은 모양을 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.permutation-combination"
+      ],
+      "contentFile": "content/lessons/algorithm/permutations-combinations-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-12-brute-force-backtracking"
+    },
+    {
+      "id": "js-11-sorting-window",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 10,
+      "slug": "sorting-two-pointers-sliding-window",
+      "title": "정렬 알고리즘: 값을 순서대로 늘어놓기",
+      "summary": "정렬은 값을 기준에 따라 순서대로 늘어놓는 일이고 삽입·병합·힙·계수 정렬은 순서를 만드는 방법이 달라서 속도·메모리·안정성이 서로 다릅니다.",
+      "essentialQuestion": "삽입·병합·힙·계수 정렬은 각각 어떻게 값을 순서대로 놓으며 속도·메모리·안정성은 어떻게 다를까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "삽입·병합·힙·계수 정렬이 값을 어떤 방법으로 순서대로 놓는지 같은 배열로 따라가며 설명할 수 있습니다.",
+        "시간 복잡도·추가 메모리·안정성을 기준으로 정렬 알고리즘을 비교하고 상황에 맞는 정렬을 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": [
+        "algo.sorting"
+      ],
+      "contentFile": "content/lessons/algorithm/sorting-two-pointers-sliding-window.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "정렬"
+    },
+    {
+      "id": "algo-09-sort-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "sort-java",
+      "title": "Java로 정렬하기: Arrays.sort·List.sort·Comparator",
+      "summary": "Java는 배열을 `Arrays.sort`로 리스트를 `List.sort`로 정렬하고 정렬 기준은 `Comparator`의 `comparing`·`thenComparing`·`reversed`로 조립합니다.",
+      "essentialQuestion": "Java에서 배열과 리스트를 원하는 기준으로 정렬하려면 어떤 메서드와 Comparator를 어떻게 써야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`Arrays.sort`·`Collections.sort`·`List.sort`로 배열과 리스트를 정렬하고 `Comparator`로 내림차순과 여러 기준을 지정할 수 있습니다.",
+        "기본형 배열과 객체 정렬의 알고리즘·안정성 차이를 알고 문제에 맞는 정렬 방법을 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.sort-java"
+      ],
+      "contentFile": "content/lessons/algorithm/sort-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-11-sorting-window"
+    },
+    {
+      "id": "algo-09-binary-search",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "binary-search",
+      "title": "이분 탐색: 정렬된 범위를 절반씩 버리며 찾기",
+      "summary": "이분 탐색은 정렬된 범위의 가운데를 확인해 답이 있을 수 없는 절반을 버리는 탐색이고 값뿐 아니라 조건이 바뀌는 경계와 문제의 답 자체도 `O(log n)` 번의 확인으로 찾습니다.",
+      "essentialQuestion": "정렬된 범위나 가능 여부가 한 번만 바뀌는 문제에서 이분 탐색으로 값·경계·답을 빠르게 찾으려면 어떻게 해야 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "정렬된 배열에서 `lo`·`hi`·`mid`로 범위를 절반씩 줄여 값과 경계(lower bound)를 찾고 `Arrays.binarySearch`의 반환값을 해석할 수 있습니다.",
+        "조건이 한 번 바뀐 뒤 계속 유지되는 문제에서 답의 범위를 이분 탐색하는 매개변수 탐색을 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.binary-search"
+      ],
+      "contentFile": "content/lessons/algorithm/binary-search.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "js-11-sorting-window"
+    },
+    {
+      "id": "algo-09-topological-sort",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 3,
+      "slug": "topological-sort",
+      "title": "위상 정렬: 선후 관계를 지키며 작업 순서 정하기",
+      "summary": "위상 정렬은 먼저 끝나야 하는 작업이 항상 앞에 오도록 방향 그래프의 노드를 한 줄로 늘어놓는 방법이고 진입 차수가 0인 노드부터 큐로 꺼내며 사이클이 있으면 순서를 만들 수 없습니다.",
+      "essentialQuestion": "선후 관계가 있는 작업들을 모든 관계를 지키는 순서로 늘어놓으려면 어떻게 하고 그런 순서가 없는 경우는 어떻게 알아낼까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "진입 차수를 세고 큐로 진입 차수가 0인 작업부터 꺼내는 칸 알고리즘으로 위상 정렬 순서를 만들 수 있습니다.",
+        "정렬된 작업 수로 사이클을 찾아내고 위상 정렬이 불가능한 경우를 판단할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.topological-sort"
+      ],
+      "contentFile": "content/lessons/algorithm/topological-sort.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "js-11-sorting-window"
+    },
+    {
       "id": "js-08-implementation-simulation",
       "languageId": "java",
       "courseId": "algorithm",
-      "order": 12,
+      "order": 11,
       "slug": "implementation-and-string-simulation",
-      "title": "구현과 문자열 시뮬레이션",
-      "summary": "문제의 규칙을 상태와 변화 순서로 나누어 코드로 정확하게 옮깁니다.",
-      "essentialQuestion": "긴 문제 설명을 빠뜨리지 않고 실행 가능한 단계로 바꾸려면 어떻게 할까요?",
+      "title": "시뮬레이션: 규칙을 그대로 코드로 옮기기",
+      "summary": "시뮬레이션은 문제에 적힌 규칙을 순서대로 적용해 상태를 바꿔 가는 풀이이고 격자 문제에서는 행렬 연산·좌표 연산·대칭과 회전 연산이 기본 도구입니다.",
+      "essentialQuestion": "긴 규칙 설명을 코드로 옮기려면 무엇을 나누고 격자에서 행렬·좌표·대칭·회전 연산을 어떻게 계산하나요?",
+      "answerHeading": "핵심 질문 답",
       "objectives": [
-        "구현과 시뮬레이션 문제가 무엇을 평가하는지 설명할 수 있습니다.",
-        "문제의 입력, 상태, 한 단계의 변화와 출력을 구분할 수 있습니다.",
-        "문자열 입력을 필요한 단위로 나누고 순서대로 처리할 수 있습니다.",
-        "경계값과 상태 갱신 순서를 예제로 검증할 수 있습니다."
+        "시뮬레이션 문제를 상태·규칙·순서로 나누어 코드로 옮길 수 있습니다.",
+        "격자에서 행렬 곱셈·방향 벡터 이동·대칭과 회전의 인덱스 변환을 계산할 수 있습니다."
       ],
       "estimatedMinutes": 50,
       "conceptIds": [
-        "algo.simulation",
-        "algo.string-processing"
+        "algo.simulation"
       ],
       "contentFile": "content/lessons/algorithm/implementation-and-string-simulation.md",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-09-27"
       },
-      "answerHeading": "핵심 질문 답"
+      "keyword": "시뮬레이션"
+    },
+    {
+      "id": "algo-10-string-simulation",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "string-simulation",
+      "title": "문자열 시뮬레이션: Java로 명령 문자열 처리하기",
+      "summary": "문자열 시뮬레이션은 입력 문자열을 명령 조각으로 나눈 뒤 바꿀 수 없는 `String` 대신 `StringBuilder`에 명령을 차례로 적용해 상태를 바꿔 갑니다.",
+      "essentialQuestion": "명령 문자열을 풀이용 데이터로 바꾸고 순서대로 적용하려면 Java의 어떤 문자열 도구를 어떻게 써야 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "명령 문자열을 `split`·`trim`·`Integer.parseInt`로 나누고 `StringBuilder`에 순서대로 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.string-processing"
+      ],
+      "contentFile": "content/lessons/algorithm/string-simulation.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-08-implementation-simulation"
+    },
+    {
+      "id": "js-15-binary-search-dp",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 12,
+      "slug": "binary-search-and-dynamic-programming",
+      "title": "동적 계획법: 작은 답을 저장해 큰 답 만들기",
+      "summary": "동적 계획법은 같은 작은 문제가 여러 번 나올 때 그 답을 한 번만 계산해 저장하고 저장한 답을 모아 큰 문제의 답을 만드는 방법입니다.",
+      "essentialQuestion": "어떤 문제에 동적 계획법을 쓰고 작은 답을 어떻게 저장해 큰 답을 만드나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "겹치는 부분 문제와 최적 부분 구조를 보고 동적 계획법이 맞는 문제인지 판단할 수 있습니다.",
+        "상태·점화식·초기값·계산 순서를 정하고 메모이제이션과 타뷸레이션의 차이를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": [
+        "algo.dynamic-programming"
+      ],
+      "contentFile": "content/lessons/algorithm/binary-search-and-dynamic-programming.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "동적 계획법"
+    },
+    {
+      "id": "algo-11-dp-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "dp-java",
+      "title": "Java로 DP 표 채우기",
+      "summary": "Java에서 DP 표는 배열로 만들고 답의 크기에 맞춰 `int`와 `long`을 고르며 두 정보가 필요하면 2차원 배열을 쓰고 재귀로 풀 때는 메모 배열을 `-1`로 채워 둡니다.",
+      "essentialQuestion": "Java에서 DP 표를 어떤 배열로 만들고 어떻게 채워야 틀린 값 없이 답을 구하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "문제에 맞는 `int[]`·`long[]`·2차원 배열로 DP 표를 만들고 반복문이나 재귀와 메모 배열로 채울 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.dp-table"
+      ],
+      "contentFile": "content/lessons/algorithm/dp-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-15-binary-search-dp"
+    },
+    {
+      "id": "algo-11-dynamic-programming-advanced",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "dynamic-programming-advanced",
+      "title": "동적 계획법 2: 두 정보로 상태 만들고 선택 복원하기",
+      "summary": "상태를 구분하는 데 정보가 두 개 필요하면 2차원 표를 만들고 경로가 필요하면 선택한 방향을 함께 저장하며 최종 값만 필요하면 한 행만 남겨 메모리를 줄입니다.",
+      "essentialQuestion": "두 정보로 결정되는 상태는 어떻게 표로 만들고 최적 경로 복원과 메모리 절약은 어떻게 하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "행과 열처럼 두 정보가 필요한 문제를 2차원 DP 표로 풀고 이전 선택을 저장해 실제 경로를 복원할 수 있습니다.",
+        "계산에 필요한 이전 값만 남겨 2차원 표를 한 행짜리 배열로 줄일 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": [
+        "algo.dynamic-programming-advanced"
+      ],
+      "contentFile": "content/lessons/algorithm/dynamic-programming-advanced.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "js-15-binary-search-dp"
+    },
+    {
+      "id": "js-14-heap-greedy",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 13,
+      "slug": "heap-and-greedy",
+      "title": "그리디: 지금 가장 좋은 선택으로 답 만들기",
+      "summary": "그리디는 매 순간 가장 좋아 보이는 선택을 하고 되돌아보지 않는 방법이고 그 선택이 뒤의 최적 답을 해치지 않는다는 근거가 있을 때만 정답이 됩니다.",
+      "essentialQuestion": "지금 가장 좋아 보이는 선택이 전체의 정답이 되는지는 어떻게 판단하나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "그리디가 답이 되는 조건을 설명하고 반례로 그리디가 틀리는 경우를 찾을 수 있습니다.",
+        "회의실 배정에서 끝나는 시간이 빠른 회의부터 고르는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 70,
+      "conceptIds": [
+        "algo.greedy"
+      ],
+      "contentFile": "content/lessons/algorithm/heap-and-greedy.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "그리디"
+    },
+    {
+      "id": "algo-12-greedy-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "greedy-java",
+      "title": "Java로 그리디 선택 구현하기",
+      "summary": "Java의 그리디는 `Comparator.comparingInt`로 기준을 정해 정렬한 뒤 앞에서부터 고르거나 `PriorityQueue`에 넣어 매번 가장 좋은 값을 꺼내는 두 모양으로 구현합니다.",
+      "essentialQuestion": "Java에서 그리디 선택 기준을 어떤 API로 코드에 옮기나요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`Comparator`로 정렬 기준을 정해 앞에서부터 고르고 `PriorityQueue`로 매번 가장 좋은 값을 꺼내 그리디를 구현할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.greedy-java"
+      ],
+      "contentFile": "content/lessons/algorithm/greedy-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "js-14-heap-greedy"
+    },
+    {
+      "id": "algo-06-number-theory-geometry",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 14,
+      "slug": "number-theory-and-geometry",
+      "title": "나머지와 최대공약수",
+      "summary": "나머지는 나누고 남은 수이고 덧셈·곱셈 중간에 나머지를 구해도 결과가 같으며 최대공약수는 큰 수를 작은 수로 나눈 나머지로 바꿔 가는 유클리드 호제법으로 빠르게 구합니다.",
+      "essentialQuestion": "나머지로 큰 수를 다루고 두 수의 최대공약수를 빠르게 구하려면 어떻게 할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "나머지 연산의 성질을 써서 큰 수의 덧셈·곱셈 결과를 나머지로 계산할 수 있습니다.",
+        "유클리드 호제법으로 최대공약수와 최소공배수를 구하고 계산이 빨리 끝나는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 65,
+      "conceptIds": [
+        "algo.number-theory"
+      ],
+      "contentFile": "content/lessons/algorithm/number-theory-and-geometry.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "keyword": "수학"
+    },
+    {
+      "id": "algo-13-prime",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 1,
+      "slug": "prime",
+      "title": "소수: 제곱근까지 나누기와 에라토스테네스의 체",
+      "summary": "소수는 1과 자기 자신만 약수로 가지는 수이고 수 하나는 `√n`까지만 나눠 보면 판별되며 범위 안의 소수를 모두 구할 때는 배수를 지워 나가는 에라토스테네스의 체를 씁니다.",
+      "essentialQuestion": "어떤 수가 소수인지와 범위 안의 소수를 어떻게 빠르게 찾을까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "소수 판별을 `√n`까지만 나눠 봐도 되는 이유를 약수의 짝으로 설명할 수 있습니다.",
+        "에라토스테네스의 체로 범위 안의 소수를 한꺼번에 구하고 한 수씩 판별하는 방법과 복잡도를 비교할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.prime"
+      ],
+      "contentFile": "content/lessons/algorithm/prime.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "concept",
+      "parentLessonId": "algo-06-number-theory-geometry"
+    },
+    {
+      "id": "algo-13-combinatorics",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 2,
+      "slug": "combinatorics",
+      "title": "경우의 수: 순열과 조합 공식",
+      "summary": "경우의 수는 동시에 할 수 없는 일은 더하고 이어서 하는 일은 곱해서 세며 순서가 중요하면 순열로 세고 순서가 상관없으면 조합으로 셉니다.",
+      "essentialQuestion": "어떤 일이 일어나는 경우의 수를 하나씩 만들지 않고 어떻게 셀까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "합의 법칙과 곱의 법칙을 구분하고 순열·조합·팩토리얼 공식으로 경우의 수를 셀 수 있습니다.",
+        "파스칼의 삼각형으로 조합 값을 큰 곱셈 없이 구하는 이유를 설명할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.combinatorics"
+      ],
+      "contentFile": "content/lessons/algorithm/combinatorics.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "concept",
+      "parentLessonId": "algo-06-number-theory-geometry"
+    },
+    {
+      "id": "algo-13-bits",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 3,
+      "slug": "base-and-bits",
+      "title": "진법과 비트: 2진수와 비트 연산",
+      "summary": "2진수는 수를 0과 1의 자리로 나타낸 것이고 비트 연산은 그 자리끼리 계산하므로 정수 하나로 여러 개의 켜짐과 꺼짐을 한꺼번에 담고 다룰 수 있습니다.",
+      "essentialQuestion": "정수 하나의 비트로 여러 원소의 집합을 어떻게 나타내고 다룰까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "10진수를 2진수로 바꾸고 비트 연산자 `&`·`|`·`^`·`~`·`<<`·`>>`의 결과를 자리마다 계산할 수 있습니다.",
+        "정수 하나의 비트로 집합을 나타내고 원소 추가·제거·확인과 부분집합 나열을 할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.bit"
+      ],
+      "contentFile": "content/lessons/algorithm/base-and-bits.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "concept",
+      "parentLessonId": "algo-06-number-theory-geometry"
+    },
+    {
+      "id": "algo-13-geometry",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 4,
+      "slug": "coordinate-geometry",
+      "title": "좌표와 기하: 거리와 외적",
+      "summary": "좌표 문제는 두 점의 차이로 만든 벡터로 계산하며 거리는 제곱한 채로 비교하고 세 점의 방향은 외적의 부호로 정수 계산만으로 판별합니다.",
+      "essentialQuestion": "좌표만으로 두 점의 거리와 세 점의 방향을 어떻게 정확히 계산할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "두 점 사이의 거리를 제곱한 값으로 비교하고 좌표 범위에 맞는 정수 타입을 고를 수 있습니다.",
+        "벡터의 외적 부호로 세 점이 시계 방향·반시계 방향·일직선 중 어느 쪽인지 판별할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.geometry"
+      ],
+      "contentFile": "content/lessons/algorithm/coordinate-geometry.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "concept",
+      "parentLessonId": "algo-06-number-theory-geometry"
+    },
+    {
+      "id": "algo-13-integer-java",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 5,
+      "slug": "integer-java",
+      "title": "Java로 정수 계산하기: 오버플로와 나머지",
+      "summary": "Java의 정수는 범위를 넘으면 조용히 엉뚱한 값이 되므로 중간값의 크기를 먼저 가늠해 `long`·나머지 연산·`Math`의 정확한 계산 메서드·`BigInteger` 중에서 고릅니다.",
+      "essentialQuestion": "Java에서 큰 정수를 계산할 때 오버플로와 음수 나머지를 어떻게 피할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "`int`·`long`의 범위와 오버플로를 알고 `Math`의 정확한 계산 메서드·`floorMod`·`BigInteger` 중 상황에 맞는 도구를 고를 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.integer-java"
+      ],
+      "contentFile": "content/lessons/algorithm/integer-java.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "application",
+      "parentLessonId": "algo-06-number-theory-geometry"
+    },
+    {
+      "id": "algo-13-fast-power",
+      "languageId": "java",
+      "courseId": "algorithm",
+      "order": 6,
+      "slug": "fast-power",
+      "title": "빠른 거듭제곱: 지수를 반씩 줄이기",
+      "summary": "빠른 거듭제곱은 `aⁿ`을 `a^(n/2)`의 제곱으로 바꾸거나 지수를 2진수로 나눠 곱해서 곱셈 횟수를 `n`번에서 약 `log n`번으로 줄입니다.",
+      "essentialQuestion": "지수가 매우 큰 거듭제곱의 나머지를 어떻게 빠르게 구할까요?",
+      "answerHeading": "핵심 질문 답",
+      "objectives": [
+        "분할 정복과 지수의 2진수 표현으로 `aⁿ % m`을 `O(log n)`에 구하는 과정을 단계별로 설명할 수 있습니다.",
+        "빠른 거듭제곱으로 큰 지수의 나머지와 나눗셈 대신 곱할 역원을 구해 코딩테스트 문제에 적용할 수 있습니다."
+      ],
+      "estimatedMinutes": 10,
+      "conceptIds": [
+        "algo.fast-power"
+      ],
+      "contentFile": "content/lessons/algorithm/fast-power.md",
+      "source": {
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-27"
+      },
+      "documentKind": "advanced",
+      "parentLessonId": "algo-06-number-theory-geometry"
     },
     {
       "id": "js-09-hash-map-set",
@@ -482,371 +1487,6 @@
         "verifiedAt": "2026-08-23"
       },
       "archivedFromCatalog": true
-    },
-    {
-      "id": "algo-list-conditions",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 1,
-      "slug": "list-and-conditions",
-      "title": "리스트와 조건문: 여러 값에서 조건에 맞는 값 찾기",
-      "summary": "`List`는 값의 순서를 유지하고, 반복문은 각 값을 읽으며, 조건문은 그 값을 처리할지 고릅니다.",
-      "essentialQuestion": "여러 점수에서 조건에 맞는 값만 처리하려면 목록·반복·조건의 역할을 어떻게 나누어야 할까요?",
-      "answerHeading": "핵심 질문 답",
-      "objectives": [
-        "`List<Integer>`와 `ArrayList`로 여러 점수를 저장하고 위치와 개수를 확인할 수 있습니다.",
-        "`for`로 값을 차례대로 읽고 `if`로 조건에 맞는 값만 처리할 수 있습니다."
-      ],
-      "estimatedMinutes": 10,
-      "conceptIds": [
-        "algo.list",
-        "algo.condition"
-      ],
-      "contentFile": "content/lessons/algorithm/list-and-conditions.md",
-      "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-14",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/01 배열(Array)과 List.md",
-        "sha256": "9f595cd43ca83bc6445f101f238fbc31848f79739843c0879df6c13bffe5c9ad",
-        "importedAt": "2026-09-14",
-        "importMode": "derived"
-      }
-    },
-    {
-      "id": "algo-dictionary",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 2,
-      "slug": "dictionary",
-      "title": "딕셔너리: 키로 값 저장하고 찾기",
-      "summary": "딕셔너리는 키에 값을 연결하는 구조이며, Java에서는 `Map`을 구현한 객체로 저장·조회하고 키의 존재를 확인합니다.",
-      "essentialQuestion": "키로 값을 저장하고 조회할 때 키가 없는 경우와 값이 null인 경우를 어떻게 구분할까요?",
-      "answerHeading": "핵심 질문 답",
-      "objectives": [
-        "`Map`과 `HashMap`의 역할을 구분하고 `put()`과 `get()`으로 키에 연결된 값을 저장·조회할 수 있습니다.",
-        "`containsKey()`로 키가 없는 경우와 값이 `null`로 저장된 경우를 구분할 수 있습니다."
-      ],
-      "estimatedMinutes": 8,
-      "conceptIds": [
-        "algo.dictionary"
-      ],
-      "contentFile": "content/lessons/algorithm/dictionary.md",
-      "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-14",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/03 해시(Hash)와 Map·Set.md",
-        "sha256": "db4763b9f6a854f4ac78ec2f1967d1957144fce7e591269302b8cdba6eba1aea",
-        "importedAt": "2026-09-14",
-        "importMode": "derived"
-      }
-    },
-    {
-      "id": "js-10-stack-queue",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 3,
-      "slug": "stack-and-queue",
-      "title": "스택과 큐: 값을 꺼내는 순서",
-      "summary": "스택은 마지막에 넣은 값을, 큐는 먼저 넣은 값을 꺼내며, `ArrayDeque`에 적용하는 메서드 조합으로 그 순서를 지킵니다.",
-      "essentialQuestion": "마지막에 넣은 값과 먼저 넣은 값 중 무엇을 꺼내야 하며, Java 객체로 그 순서와 빈 상태를 어떻게 다룰까요?",
-      "answerHeading": "핵심 질문 답",
-      "objectives": [
-        "스택의 LIFO와 큐의 FIFO 순서를 구분하고 다음 처리 대상에 맞게 선택할 수 있습니다.",
-        "`Deque`와 `ArrayDeque`로 스택·큐를 만들고 넣기·확인·꺼내기·빈 상태를 구분할 수 있습니다."
-      ],
-      "estimatedMinutes": 25,
-      "conceptIds": [
-        "algo.stack",
-        "algo.queue"
-      ],
-      "contentFile": "content/lessons/algorithm/stack-and-queue.md",
-      "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-14",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/02 스택·큐(Stack - Queue).md",
-        "sha256": "e0b40b77a32ee9c8c1ba884d7b57dde0d5b7e097b8975db6ad27ef8d228cbc24",
-        "importedAt": "2026-09-14",
-        "importMode": "derived"
-      }
-    },
-    {
-      "id": "algo-hash-map-set",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 4,
-      "slug": "hash-map-set",
-      "title": "해시와 Map·Set",
-      "summary": "해시는 찾을 후보를 좁히고 동등성 비교로 같은 값을 확인하며, `Map`은 키별 정보, `Set`은 중복 없는 원소를 보관합니다.",
-      "essentialQuestion": "키별 횟수와 중복 여부를 함께 다룰 때 해시·동등성·Map·Set은 각각 무엇을 맡을까요?",
-      "answerHeading": "핵심 질문 답",
-      "objectives": [
-        "해시와 동등성 비교가 후보를 좁히고 같은 키를 구분하는 과정을 설명할 수 있습니다.",
-        "횟수를 저장하는 `Map`과 존재 여부를 저장하는 `Set`을 조합할 수 있습니다.",
-        "`HashMap`·`HashSet`의 순회 순서와 평균 비용에 대한 보장 범위를 구분할 수 있습니다."
-      ],
-      "estimatedMinutes": 20,
-      "conceptIds": [
-        "algo.hashing",
-        "algo.map-collection",
-        "algo.set-collection"
-      ],
-      "contentFile": "content/lessons/algorithm/hash-map-set.md",
-      "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-14",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/05 알고리즘 개념/03 해시(Hash)와 Map·Set.md",
-        "sha256": "db4763b9f6a854f4ac78ec2f1967d1957144fce7e591269302b8cdba6eba1aea",
-        "importedAt": "2026-09-14",
-        "importMode": "derived"
-      }
-    },
-    {
-      "id": "js-11-sorting-window",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 6,
-      "slug": "sorting-two-pointers-sliding-window",
-      "title": "정렬·투 포인터·슬라이딩 윈도우",
-      "summary": "값의 순서로 버릴 범위를 판단하고, 연속 구간은 빠지는 값과 들어오는 값만 반영해 탐색량을 줄입니다.",
-      "essentialQuestion": "모든 조합을 다시 확인하지 않고 필요한 값과 연속 구간을 찾으려면 어떻게 할까요?",
-      "objectives": [
-        "Java의 숫자 기본 정렬과 비교자가 필요한 정렬을 구분할 수 있습니다.",
-        "투 포인터의 두 위치가 어떤 조건으로 이동하는지 추적할 수 있습니다.",
-        "슬라이딩 윈도우의 구간 합을 이전 값에서 갱신할 수 있습니다.",
-        "정렬 여부와 연속 구간 조건을 문제에서 먼저 확인할 수 있습니다."
-      ],
-      "estimatedMinutes": 65,
-      "conceptIds": [
-        "algo.sorting",
-        "algo.two-pointers",
-        "algo.sliding-window"
-      ],
-      "contentFile": "content/lessons/algorithm/sorting-two-pointers-sliding-window.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "js-12-brute-force-backtracking",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 7,
-      "slug": "brute-force-backtracking-recursion",
-      "title": "완전 탐색·백트래킹·재귀",
-      "summary": "후보를 빠짐없이 만드는 구조를 먼저 정하고, 종료 조건·상태 복원·안전한 가지치기로 재귀 탐색을 관리합니다.",
-      "essentialQuestion": "모든 후보를 빠뜨리지 않으면서 불필요한 탐색을 줄이려면 어떻게 할까요?",
-      "objectives": [
-        "완전 탐색이 가능한 후보를 모두 확인하는 방식임을 설명할 수 있습니다.",
-        "재귀 메서드의 종료 조건과 더 작은 다음 문제를 작성할 수 있습니다.",
-        "선택, 재귀 호출, 선택 취소로 백트래킹 상태를 복원할 수 있습니다.",
-        "정답을 버리지 않는 조건에서만 가지치기를 적용할 수 있습니다."
-      ],
-      "estimatedMinutes": 65,
-      "conceptIds": [
-        "algo.brute-force",
-        "algo.recursion",
-        "algo.backtracking"
-      ],
-      "contentFile": "content/lessons/algorithm/brute-force-backtracking-recursion.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "js-13-bfs-dfs",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 10,
-      "slug": "bfs-dfs-graph-grid",
-      "title": "BFS·DFS와 그래프·격자 탐색",
-      "summary": "연결 관계를 그래프로 표현하고 너비 우선과 깊이 우선으로 방문합니다.",
-      "essentialQuestion": "서로 연결된 정점이나 격자 칸을 빠뜨리거나 반복하지 않고 어떻게 탐색할까요?",
-      "objectives": [
-        "정점과 간선, 인접 리스트의 관계를 설명할 수 있습니다.",
-        "BFS가 큐로 층별 탐색하는 흐름을 추적할 수 있습니다.",
-        "DFS가 스택이나 재귀로 한 경로를 깊게 탐색하는 흐름을 추적할 수 있습니다.",
-        "격자를 그래프로 보고 방문 표시와 경계 검사를 적용할 수 있습니다."
-      ],
-      "estimatedMinutes": 70,
-      "conceptIds": [
-        "algo.graph-representation",
-        "algo.bfs",
-        "algo.dfs",
-        "algo.grid-traversal"
-      ],
-      "contentFile": "content/lessons/algorithm/bfs-dfs-graph-grid.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "js-14-heap-greedy",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 5,
-      "slug": "heap-and-greedy",
-      "title": "힙과 그리디",
-      "summary": "힙은 우선하는 값을 위에 유지하고, 그리디는 현재 선택을 확정해도 전체 답을 잃지 않는 근거가 있을 때 사용합니다.",
-      "essentialQuestion": "가장 작은 값을 반복해서 꺼내거나 현재 최선의 선택을 확정하려면 무엇을 확인해야 할까요?",
-      "objectives": [
-        "최소 힙의 부모와 자식 사이 순서 규칙을 설명할 수 있습니다.",
-        "배열에서 힙의 부모와 자식 인덱스를 계산할 수 있습니다.",
-        "그리디가 현재 선택을 되돌리지 않는 문제 해결 방식임을 설명할 수 있습니다.",
-        "그리디 선택이 항상 정답인지 근거와 반례를 확인할 수 있습니다."
-      ],
-      "estimatedMinutes": 70,
-      "conceptIds": [
-        "algo.heap",
-        "algo.priority-queue",
-        "algo.greedy"
-      ],
-      "contentFile": "content/lessons/algorithm/heap-and-greedy.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "js-15-binary-search-dp",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 9,
-      "slug": "binary-search-and-dynamic-programming",
-      "title": "이분 탐색과 동적 계획법 1",
-      "summary": "이분 탐색은 답이 있을 경계를 좁히고, 동적 계획법은 뜻이 정해진 작은 상태의 답을 저장해 반복 계산을 줄입니다.",
-      "essentialQuestion": "탐색 범위와 반복 계산을 줄이려면 어떤 상태와 규칙을 저장해야 할까요?",
-      "objectives": [
-        "이분 탐색이 적용되는 정렬·단조 조건을 확인할 수 있습니다.",
-        "반열린 구간의 left, middle, right 변화를 추적할 수 있습니다.",
-        "DP의 상태, 점화식, 초기값과 계산 순서를 설명할 수 있습니다.",
-        "메모이제이션과 바텀업 방식의 공통 목적을 설명할 수 있습니다."
-      ],
-      "estimatedMinutes": 70,
-      "conceptIds": [
-        "algo.binary-search",
-        "algo.dynamic-programming"
-      ],
-      "contentFile": "content/lessons/algorithm/binary-search-and-dynamic-programming.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "algo-06-number-theory-geometry",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 8,
-      "slug": "number-theory-and-geometry",
-      "title": "정수론과 기하학",
-      "summary": "나머지로 정수의 공약수 관계를 줄여 가고, 같은 기준점에서 만든 두 벡터의 외적으로 세 점의 방향을 판단합니다.",
-      "essentialQuestion": "정수의 공약수와 세 점의 방향을 어떤 관계와 입력 조건으로 계산하나요?",
-      "objectives": [
-        "약수와 배수의 관계를 나머지로 설명할 수 있습니다.",
-        "유클리드 알고리즘으로 두 양의 정수의 최대공약수를 구할 수 있습니다.",
-        "좌표와 외적 값을 이용해 세 점의 방향을 구분할 수 있습니다.",
-        "정수 범위와 좌표계 같은 입력 조건을 먼저 확인할 수 있습니다."
-      ],
-      "estimatedMinutes": 65,
-      "conceptIds": [
-        "algo.number-theory",
-        "algo.geometry"
-      ],
-      "contentFile": "content/lessons/algorithm/number-theory-and-geometry.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "algo-09-tree",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 11,
-      "slug": "tree-basics",
-      "title": "트리",
-      "summary": "계층 구조의 용어와 깊이 우선·레벨 순회 흐름을 익힙니다.",
-      "essentialQuestion": "부모와 자식으로 이어진 구조를 빠뜨리지 않고 어떤 순서로 방문할까요?",
-      "objectives": [
-        "트리의 노드·간선·루트·부모·자식·리프를 설명할 수 있습니다.",
-        "노드의 깊이와 트리의 높이를 간선 수 기준으로 구할 수 있습니다.",
-        "전위 순회와 레벨 순회의 방문 순서를 추적할 수 있습니다.",
-        "재귀 스택과 큐를 사용한 트리 순회의 차이를 설명할 수 있습니다."
-      ],
-      "estimatedMinutes": 60,
-      "conceptIds": [
-        "algo.tree",
-        "algo.tree-traversal"
-      ],
-      "contentFile": "content/lessons/algorithm/tree-basics.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "algo-11-dynamic-programming-advanced",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 13,
-      "slug": "dynamic-programming-advanced",
-      "title": "동적 계획법 2",
-      "summary": "여러 정보가 필요한 상태를 표로 만들고 메모리 절약과 선택 복원까지 확장합니다.",
-      "essentialQuestion": "상태가 두 가지 정보로 결정될 때 계산과 선택 과정을 어떻게 저장할까요?",
-      "objectives": [
-        "두 개의 정보가 필요한 문제를 2차원 DP 상태로 표현할 수 있습니다.",
-        "상태, 점화식, 초기값과 계산 순서를 2차원 표에서 연결해 설명할 수 있습니다.",
-        "필요한 이전 상태가 제한적일 때 2차원 표를 1차원 배열로 줄일 수 있습니다.",
-        "이전 선택을 저장해 최종 값뿐 아니라 실제 선택 과정도 복원할 수 있습니다."
-      ],
-      "estimatedMinutes": 70,
-      "conceptIds": [
-        "algo.dynamic-programming-advanced"
-      ],
-      "contentFile": "content/lessons/algorithm/dynamic-programming-advanced.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
-    },
-    {
-      "id": "algo-12-dijkstra",
-      "languageId": "java",
-      "courseId": "algorithm",
-      "order": 14,
-      "slug": "weighted-graphs-dijkstra",
-      "title": "가중 그래프와 다익스트라",
-      "summary": "음수가 아닌 가중 그래프에서 우선순위 큐로 최소 경로 비용을 구합니다.",
-      "essentialQuestion": "이동 비용이 서로 다를 때 시작점에서 각 정점까지의 최소 비용을 어떻게 찾을까요?",
-      "objectives": [
-        "가중 그래프의 경로 비용과 가중치가 없는 그래프의 간선 수를 구분할 수 있습니다.",
-        "간선 완화가 거리 후보를 더 작은 값으로 갱신하는 과정임을 설명할 수 있습니다.",
-        "다익스트라의 음수가 아닌 가중치 조건과 최소 우선순위 큐의 역할을 설명할 수 있습니다.",
-        "더 짧은 거리를 다시 넣을 때 생기는 오래된 큐 항목을 찾아 건너뛸 수 있습니다."
-      ],
-      "estimatedMinutes": 75,
-      "conceptIds": [
-        "algo.weighted-graph",
-        "algo.shortest-path",
-        "algo.dijkstra"
-      ],
-      "contentFile": "content/lessons/algorithm/weighted-graphs-dijkstra.md",
-      "source": {
-        "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
-      },
-      "answerHeading": "핵심 질문 답"
     },
     {
       "id": "html-01-document-structure",
@@ -2936,12 +3576,12 @@
       "courseId": "javascript",
       "order": 31,
       "slug": "wiki-async-await",
-      "title": "async·await와 실패 처리",
-      "summary": "async는 Promise를 반환하고 await는 현재 함수의 이어질 실행을 미루며 rejection을 받을 자리를 만듭니다.",
+      "title": "async·await로 비동기 결과 기다리기",
+      "summary": "async·await는 Promise의 결과가 도착할 때까지 기다렸다가 다음 줄을 실행하게 해 주는 문법입니다.",
       "essentialQuestion": "async 함수의 결과와 실패는 호출한 쪽에서 어떻게 받아야 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "async의 호출 결과를 기다리고 Promise의 실패를 await 경계나 catch에서 처리할 수 있습니다."
+        "async 함수에서 await로 비동기 결과를 기다리고 실패를 try·catch로 처리할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
@@ -2949,12 +3589,8 @@
       ],
       "contentFile": "content/lessons/javascript/wiki-async-await.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/03 JavaScript/08 비동기 흐름.md",
-        "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
-        "importedAt": "2026-09-14",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-26"
       }
     },
     {

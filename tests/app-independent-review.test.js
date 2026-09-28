@@ -385,13 +385,16 @@ test("탐색 사이드바는 실제 주제의 가까운 문서와 성공한 최�
   app.handleClick(click("[data-sidebar-catalog]", { dataset: { sidebarCatalog: "learn" } }));
   await app.openRoute();
   assert.equal(window.location.hash, "#/learn");
-  assert.match(app.root.innerHTML, /HTML · 15개 문서/);
+  assert.match(app.root.innerHTML, /HTML · 15개 키워드/);
   app.handleChange({ target: { closest: (selector) => selector === "[data-sidebar-topic]" ? { value: "css" } : null } });
   const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
   assert.deepEqual(app.catalogFilters.learn, { topicId: "css", query: "" });
   assert.deepEqual(app.catalogFilters.review, { topicId: null, query: "" });
-  assert.match(main, /class="catalog-card" href="#\/learn\/css\//);
-  assert.doesNotMatch(main, /class="catalog-card" href="#\/learn\/html\//);
+  // 학습문서는 주제를 고르면 그 주제의 키워드 카드가 나온다.
+  const cssKeywordIds = app.curriculum.lessons.filter((lesson) => lesson.courseId === "css" && !lesson.archivedFromCatalog).map((lesson) => lesson.id);
+  const shownKeywordIds = [...main.matchAll(/data-catalog-keyword="([^"]+)"/g)].map((match) => match[1]);
+  assert.ok(shownKeywordIds.length > 0);
+  assert.ok(shownKeywordIds.every((id) => cssKeywordIds.includes(id)));
   assert.deepEqual(app.progressRepository.getProgress().completedLessonIds, []);
   assert.deepEqual(app.progressRepository.getProgress().quizAttempts, []);
 });
@@ -416,6 +419,8 @@ test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를
     await followService(app, "learn");
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topicId }, disabled: false }));
     if (documentHash) {
+      const documentLesson = app.curriculum.lessons.find((lesson) => `#/learn/${lesson.courseId}/${lesson.slug}` === documentHash);
+      app.handleClick(click("[data-catalog-keyword]", { dataset: { catalogKeyword: documentLesson.id } }));
       assert.ok(app.root.innerHTML.includes(`class="catalog-card" href="${documentHash}"`));
       window.location.hash = documentHash;
       await app.openRoute();
@@ -520,7 +525,7 @@ test("문서와 문제에서 검색·주제 선택·초기화가 동작하고 �
     input.value = "";
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "javascript" }, disabled: false }));
     assert.deepEqual(app.catalogFilters[kind], { topicId: "javascript", query: "" });
-    assert.match(app.root.innerHTML, /class="catalog-card"/);
+    assert.match(app.root.innerHTML, kind === "learn" ? /data-catalog-keyword=/ : /class="catalog-card"/);
   }
   assert.deepEqual(app.catalogFilters.learn, { topicId: "javascript", query: "" });
   assert.ok(focused >= 4, "검색과 초기화 이후 검색 입력 초점을 유지한다.");

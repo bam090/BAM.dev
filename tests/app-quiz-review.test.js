@@ -8,6 +8,7 @@ import {
 
 const fixedClock = () => new Date("2026-09-09T12:00:00.000Z");
 const curriculum = {
+  courses: [],
   languages: [{ id: "javascript", name: "JavaScript", status: "available" }],
   lessons: [
     { id: "lesson-functions", languageId: "javascript", conceptIds: ["js.functions"] },
@@ -60,28 +61,62 @@ function installBrowser(t, fetchImplementation = async () => ({ ok: true, json: 
   }
 }
 
-function createHarness(storage = new MemoryStorage()) {
+function createHarness(storage = new MemoryStorage(), reviewSessionRepository = null) {
   const app = Object.create(BamLearningApp.prototype);
   const repository = new LocalStorageProgressRepository(storage, fixedClock);
   const announcements = [];
   const errors = [];
+  const reviewSnapshots = [];
+  const activeReviewRepository = reviewSessionRepository ?? {
+    save(saved) {
+      reviewSnapshots.push(structuredClone(saved));
+      return "saved";
+    },
+  };
+  const focusEvents = [];
   Object.assign(app, {
     curriculum,
-    root: { innerHTML: "" },
+    root: { innerHTML: "", querySelector() { return null; }, querySelectorAll() { return []; } },
     renderSequence: 0,
     currentView: "review",
     quizCollection: structuredClone(collection),
     quizLessonId: "lesson-functions",
     progressRepository: repository,
+    reviewSessionRepository: activeReviewRepository,
+    reviewSaveStatus: "saved",
+    reviewStorageConflict: false,
+    reviewNeedsRestart: false,
     syncMenuState() {},
     renderQuiz() {},
-    focusQuizQuestion() {},
-    focusQuizResult() {},
+    focusQuizQuestion() { focusEvents.push("question"); },
+    focusQuizResult() { focusEvents.push("result"); },
     announce(message) { announcements.push(message); },
     renderFatalError(error) { errors.push(error.message); },
   });
   app.startQuizSession(app.getScopedQuizQuestions(), "all");
-  return { app, repository, announcements, errors };
+  return { app, repository, announcements, errors, reviewSnapshots, focusEvents };
+}
+
+function elementInQuestion(questionId) {
+  return {
+    closest(selector) {
+      return selector === "[data-quiz-question-id]"
+        ? { dataset: { quizQuestionId: questionId } }
+        : null;
+    },
+  };
+}
+
+function retryButtonInQuestion(questionId) {
+  const card = { dataset: { quizQuestionId: questionId } };
+  const button = {
+    closest(selector) {
+      if (selector === "[data-quiz-question-retry]") return button;
+      if (selector === "[data-quiz-question-id]") return card;
+      return null;
+    },
+  };
+  return button;
 }
 
 function answerCurrent(app, optionId) {
@@ -227,4 +262,163 @@ test("저장 실패에도 완료 결과를 유지하고 실패 상태를 표시�
   assert.equal(app.quizSession.screen, "result");
   assert.equal(app.quizSession.summary.correct, 1);
   assert.equal(app.quizSession.persistenceStatus, "failed");
+});
+
+test("오답 즉시 재도전은 대상 카드만 초기화하고 세션 범위·순서·방식을 보존한다", (t) => {
+  installBrowser(t);
+  const { app, reviewSnapshots, announcements, focusEvents } = createHarness();
+  const [firstQuestion, secondQuestion] = app.quizSession.questions;
+  const sessionId = app.quizSession.id;
+  app.quizSession.viewMode = "all";
+  app.quizSession.gradingMode = "batch";
+
+  app.quizSession.selectedOptionIds.set(firstQuestion.id, "c");
+  app.gradeCurrentQuizQuestion();
+  app.quizSession.expandedQuestionIds.add(firstQuestion.id);
+  app.quizSession.currentIndex = 1;
+  app.quizSession.selectedOptionIds.set(secondQuestion.id, "a");
+  app.gradeCurrentQuizQuestion();
+
+  assert.equal(app.handleQuizClick({ target: retryButtonInQuestion(firstQuestion.id) }), true);
+  assert.equal(app.quizSession.id, sessionId);
+  assert.deepEqual(app.quizSession.questions.map(({ id }) => id), [firstQuestion.id, secondQuestion.id]);
+  assert.equal(app.quizSession.mode, "all");
+  assert.equal(app.quizSession.viewMode, "all");
+  assert.equal(app.quizSession.gradingMode, "batch");
+  assert.equal(app.quizSession.screen, "question");
+  assert.equal(app.quizSession.recordAttempted, false);
+  assert.equal(app.quizSession.currentIndex, 0);
+  assert.equal(app.quizSession.selectedOptionIds.has(firstQuestion.id), false);
+  assert.equal(app.quizSession.gradedAnswers.has(firstQuestion.id), false);
+  assert.equal(app.quizSession.expandedQuestionIds.has(firstQuestion.id), false);
+  assert.equal(app.quizSession.selectedOptionIds.get(secondQuestion.id), "a");
+  assert.equal(app.quizSession.gradedAnswers.get(secondQuestion.id).isCorrect, true);
+  assert.deepEqual(app.quizSession.firstAttemptByQuestion.get(firstQuestion.id), {
+    selectedOptionId: "c",
+    isCorrect: false,
+  });
+  assert.deepEqual(reviewSnapshots.at(-1).firstAttemptByQuestion, [[firstQuestion.id, {
+    selectedOptionId: "c",
+    isCorrect: false,
+  }]]);
+  assert.deepEqual(reviewSnapshots.at(-1).gradedQuestionIds, [secondQuestion.id]);
+  assert.match(announcements.at(-1), /다시 풀 수 있습니다/);
+  assert.equal(focusEvents.at(-1), "question");
+});
+
+test("첫 오답은 연속 재도전에도 불변이고 정답·미채점·완료 카드는 재도전하지 않는다", (t) => {
+  installBrowser(t);
+  const { app } = createHarness();
+  const [firstQuestion, secondQuestion] = app.quizSession.questions;
+  const firstElement = elementInQuestion(firstQuestion.id);
+
+  app.quizSession.selectedOptionIds.set(firstQuestion.id, "c");
+  app.gradeCurrentQuizQuestion();
+  assert.equal(app.retryCurrentQuizQuestion(firstElement), true);
+  assert.equal(app.retryCurrentQuizQuestion(firstElement), false, "초기화된 미채점 카드는 다시 초기화하지 않는다.");
+
+  app.quizSession.selectedOptionIds.set(firstQuestion.id, "b");
+  app.gradeCurrentQuizQuestion();
+  assert.equal(app.retryCurrentQuizQuestion(firstElement), true);
+  assert.deepEqual(app.quizSession.firstAttemptByQuestion.get(firstQuestion.id), {
+    selectedOptionId: "c",
+    isCorrect: false,
+  });
+
+  app.quizSession.selectedOptionIds.set(firstQuestion.id, "a");
+  app.gradeCurrentQuizQuestion();
+  assert.equal(app.retryCurrentQuizQuestion(firstElement), false);
+  assert.equal(app.quizSession.gradedAnswers.get(firstQuestion.id).isCorrect, true);
+
+  app.quizSession.currentIndex = 1;
+  assert.equal(app.retryCurrentQuizQuestion(elementInQuestion(secondQuestion.id)), false);
+  app.quizSession.selectedOptionIds.set(secondQuestion.id, "b");
+  app.gradeCurrentQuizQuestion();
+  app.quizSession.screen = "result";
+  assert.equal(app.retryCurrentQuizQuestion(elementInQuestion(secondQuestion.id)), false);
+  assert.equal(app.quizSession.selectedOptionIds.get(secondQuestion.id), "b");
+});
+
+test("재도전 저장 실패는 오답 상태를 되돌리고 충돌은 차단하며 메모리 저장은 성공시킨다", (t) => {
+  installBrowser(t);
+  const failing = createHarness(undefined, {
+    save() { throw new Error("저장 공간 부족"); },
+  });
+  const failingQuestion = failing.app.getCurrentQuizQuestion();
+  failing.app.quizSession.selectedOptionIds.set(failingQuestion.id, "b");
+  failing.app.gradeCurrentQuizQuestion();
+  failing.app.quizSession.expandedQuestionIds.add(failingQuestion.id);
+  failing.app.quizSession.currentIndex = 1;
+
+  assert.equal(failing.app.retryCurrentQuizQuestion(elementInQuestion(failingQuestion.id)), false);
+  assert.equal(failing.app.quizSession.currentIndex, 1);
+  assert.equal(failing.app.quizSession.selectedOptionIds.get(failingQuestion.id), "b");
+  assert.equal(failing.app.quizSession.gradedAnswers.get(failingQuestion.id).isCorrect, false);
+  assert.equal(failing.app.quizSession.expandedQuestionIds.has(failingQuestion.id), true);
+  assert.equal(failing.app.quizSession.firstAttemptByQuestion.has(failingQuestion.id), false);
+  assert.equal(failing.app.reviewSaveStatus, "failed");
+  assert.match(failing.announcements.at(-1), /이전 오답 상태를 유지/);
+
+  let conflictSaveCount = 0;
+  const conflicted = createHarness(undefined, { save() { conflictSaveCount += 1; return "saved"; } });
+  const conflictedQuestion = conflicted.app.getCurrentQuizQuestion();
+  conflicted.app.quizSession.selectedOptionIds.set(conflictedQuestion.id, "b");
+  conflicted.app.gradeCurrentQuizQuestion();
+  conflicted.app.reviewStorageConflict = true;
+  assert.equal(conflicted.app.retryCurrentQuizQuestion(elementInQuestion(conflictedQuestion.id)), false);
+  assert.equal(conflictSaveCount, 0);
+  assert.equal(conflicted.app.quizSession.gradedAnswers.has(conflictedQuestion.id), true);
+
+  const memory = createHarness(undefined, { save() { return "memory"; } });
+  const memoryQuestion = memory.app.getCurrentQuizQuestion();
+  memory.app.quizSession.selectedOptionIds.set(memoryQuestion.id, "b");
+  memory.app.gradeCurrentQuizQuestion();
+  assert.equal(memory.app.retryCurrentQuizQuestion(elementInQuestion(memoryQuestion.id)), true);
+  assert.equal(memory.app.reviewSaveStatus, "memory");
+  assert.equal(memory.app.quizSession.gradedAnswers.has(memoryQuestion.id), false);
+});
+
+test("전체 채점 재도전은 미채점으로 돌아가며 완료 기록과 최근 결과는 현재 답과 첫 오답을 분리한다", (t) => {
+  installBrowser(t);
+  const storage = new MemoryStorage();
+  const { app, repository } = createHarness(storage);
+  const [firstQuestion, secondQuestion] = app.quizSession.questions;
+  app.quizSession.viewMode = "all";
+  app.quizSession.gradingMode = "batch";
+  app.quizSession.selectedOptionIds.set(firstQuestion.id, "b");
+  app.quizSession.selectedOptionIds.set(secondQuestion.id, "a");
+  app.gradePendingQuizQuestions();
+  assert.equal(app.quizSession.gradedAnswers.size, 2);
+
+  assert.equal(app.retryCurrentQuizQuestion(elementInQuestion(firstQuestion.id)), true);
+  assert.equal(app.quizSession.currentIndex, 0);
+  assert.equal(app.quizSession.gradedAnswers.size, 1);
+  assert.equal(app.quizSession.selectedOptionIds.has(firstQuestion.id), false);
+  assert.equal(app.quizSession.selectedOptionIds.get(secondQuestion.id), "a");
+  app.finishQuizSession();
+  assert.equal(repository.getProgress().quizAttempts.length, 0, "재도전 미채점 문항을 완료로 기록하지 않는다.");
+
+  app.quizSession.selectedOptionIds.set(firstQuestion.id, "a");
+  app.gradePendingQuizQuestions();
+  app.finishQuizSession();
+  app.finishQuizSession();
+  const persisted = new LocalStorageProgressRepository(storage, fixedClock).getProgress();
+  assert.equal(persisted.quizAttempts.length, 1);
+  assert.equal(persisted.quizAttempts[0].score, 2);
+  assert.deepEqual(persisted.incorrectQuestionIds, []);
+  assert.deepEqual(persisted.quizAttempts[0].answers[0].firstAttempt, {
+    selectedOptionId: "b",
+    isCorrect: false,
+  });
+
+  app.showRecentQuizResult();
+  assert.equal(app.quizSession.screen, "result");
+  assert.equal(app.quizSession.recordAttempted, true);
+  assert.equal(app.quizSession.summary.correct, 2);
+  assert.deepEqual(app.quizSession.firstAttemptByQuestion.get(firstQuestion.id), {
+    selectedOptionId: "b",
+    isCorrect: false,
+  });
+  assert.equal(app.retryCurrentQuizQuestion(elementInQuestion(firstQuestion.id)), false);
+  assert.equal(repository.getProgress().quizAttempts.length, 1, "최근 결과 재열기는 완료 기록을 중복 생성하지 않는다.");
 });

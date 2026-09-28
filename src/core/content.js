@@ -1,3 +1,5 @@
+const DOCUMENT_KINDS = ["concept", "application", "advanced"];
+
 const REQUIRED_LESSON_FIELDS = [
   "id",
   "courseId",
@@ -98,6 +100,9 @@ export function validateCurriculum(curriculum) {
     if (!["available", "sample", "planned"].includes(course.status)) {
       errors.push(`${label}.status가 올바르지 않습니다.`);
     }
+    if (course.unitNumberStart !== undefined && ![0, 1].includes(course.unitNumberStart)) {
+      errors.push(`${label}.unitNumberStart는 0 또는 1이어야 합니다.`);
+    }
   }
 
   const lessonIds = new Set();
@@ -184,6 +189,18 @@ export function validateCurriculum(curriculum) {
     if (!Array.isArray(lesson?.conceptIds) || lesson.conceptIds.length === 0) {
       errors.push(`${label}.conceptIds에는 한 개 이상의 개념 ID가 필요합니다.`);
     }
+    if (lesson?.documentKind !== undefined && !DOCUMENT_KINDS.includes(lesson.documentKind)) {
+      errors.push(`${label}.documentKind는 ${DOCUMENT_KINDS.join(", ")} 중 하나여야 합니다.`);
+    }
+    if (lesson?.keyword !== undefined && (typeof lesson.keyword !== "string" || !lesson.keyword.trim())) {
+      errors.push(`${label}.keyword는 비어 있지 않은 문자열이어야 합니다.`);
+    }
+    if (lesson?.parentLessonId === undefined && getDocumentKind(lesson) !== "concept") {
+      errors.push(`${label}: 활용·심화 문서에는 parentLessonId가 필요합니다.`);
+    }
+    if (lesson?.parentLessonId !== undefined && lesson?.keyword !== undefined) {
+      errors.push(`${label}: 하위 문서는 keyword 대신 부모 문서의 keyword를 따릅니다.`);
+    }
     if (!/^content\/lessons\/.+\.md$/.test(lesson?.contentFile ?? "")) {
       errors.push(`${label}.contentFile 경로가 올바르지 않습니다.`);
     } else if (
@@ -199,11 +216,32 @@ export function validateCurriculum(curriculum) {
     lessonsByCourse.get(lesson?.courseId).push(lesson);
   }
 
-  for (const [courseId, lessons] of lessonsByCourse) {
-    const orders = lessons.map((lesson) => lesson.order).sort((a, b) => a - b);
-    const expected = Array.from({ length: orders.length }, (_, index) => index + 1);
-    if (orders.some((order, index) => order !== expected[index])) {
+  // 대표 개념문서의 order는 과정의 단원 번호이고 하위 문서의 order는 부모 문서 안의 순서다.
+  const hasContinuousOrder = (group) => group
+    .map((lesson) => lesson.order)
+    .sort((a, b) => a - b)
+    .every((order, index) => order === index + 1);
+  const lessonsById = new Map(curriculum.lessons.map((lesson) => [lesson?.id, lesson]));
+  for (const [courseId, courseLessons] of lessonsByCourse) {
+    const unitLessons = courseLessons.filter((lesson) => lesson?.parentLessonId === undefined);
+    if (!hasContinuousOrder(unitLessons)) {
       errors.push(`${courseId} 과정 교안의 order는 1부터 연속되어야 합니다.`);
+    }
+    const childrenByParent = new Map();
+    for (const child of courseLessons.filter((lesson) => lesson?.parentLessonId !== undefined)) {
+      const parent = lessonsById.get(child.parentLessonId);
+      if (!parent || parent.courseId !== courseId) {
+        errors.push(`${child.id}.parentLessonId는 같은 과정의 교안을 가리켜야 합니다.`);
+      } else if (parent.parentLessonId !== undefined || getDocumentKind(parent) !== "concept") {
+        errors.push(`${child.id}.parentLessonId는 키워드를 대표하는 개념문서를 가리켜야 합니다.`);
+      }
+      if (!childrenByParent.has(child.parentLessonId)) childrenByParent.set(child.parentLessonId, []);
+      childrenByParent.get(child.parentLessonId).push(child);
+    }
+    for (const [parentId, children] of childrenByParent) {
+      if (!hasContinuousOrder(children)) {
+        errors.push(`${parentId}의 하위 문서 order는 1부터 연속되어야 합니다.`);
+      }
     }
   }
 
@@ -238,13 +276,50 @@ export function getCourse(curriculum, courseId) {
 export function getLessonsForCourse(curriculum, courseId) {
   return curriculum.lessons
     .filter((lesson) => lesson.courseId === courseId)
-    .sort((a, b) => a.order - b.order);
+    .sort(compareLessonReadingOrder(curriculum));
 }
 
 export function getLessonsForLanguage(curriculum, languageId) {
   return curriculum.lessons
     .filter((lesson) => lesson.languageId === languageId)
-    .sort((a, b) => a.order - b.order);
+    .sort(compareLessonReadingOrder(curriculum));
+}
+
+export function getDocumentKind(lesson) {
+  return lesson?.documentKind ?? "concept";
+}
+
+// 키워드를 대표하는 개념문서. 하위 문서라면 부모를, 아니라면 자기 자신을 돌려준다.
+export function getUnitLesson(curriculum, lesson) {
+  if (lesson?.parentLessonId === undefined) return lesson ?? null;
+  return curriculum.lessons.find((item) => item.id === lesson.parentLessonId) ?? null;
+}
+
+export function getChildLessons(curriculum, unitLesson) {
+  return curriculum.lessons
+    .filter((lesson) => lesson.parentLessonId === unitLesson?.id)
+    .sort(compareLessonReadingOrder(curriculum));
+}
+
+export function getLessonKeyword(curriculum, lesson) {
+  const unit = getUnitLesson(curriculum, lesson);
+  return unit?.keyword ?? unit?.title ?? "";
+}
+
+// 읽는 순서: 단원 번호 → 같은 단원 안에서는 대표 개념문서 → 추가 개념 → 활용 → 심화 → 부모 안의 order.
+// 하위 문서가 없는 교안은 기존처럼 order 순서 그대로다.
+export function compareLessonReadingOrder(curriculum) {
+  const byId = new Map(curriculum.lessons.map((lesson) => [lesson.id, lesson]));
+  const readingKey = (lesson) => {
+    const parent = lesson.parentLessonId === undefined ? null : byId.get(lesson.parentLessonId);
+    if (!parent) return [lesson.order, 0, 0];
+    return [parent.order, 1 + DOCUMENT_KINDS.indexOf(getDocumentKind(lesson)), lesson.order];
+  };
+  return (left, right) => {
+    const a = readingKey(left);
+    const b = readingKey(right);
+    return a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+  };
 }
 
 export async function loadCurriculum(fetchImplementation = globalThis.fetch) {

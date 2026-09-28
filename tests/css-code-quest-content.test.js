@@ -5,6 +5,7 @@ import {
   assertValidWebCodeQuestCollection,
   createWebCodeQuestExecutionRequest,
   findWebCodeQuestSourceIssue,
+  getWebAssertionExpected,
   validateWebCodeQuestCollection,
   WEB_CODE_QUEST_EVALUATION_KINDS,
 } from "../src/core/web-code-quest.js";
@@ -23,6 +24,22 @@ const schema = JSON.parse(
 
 const HINT_STAGES = ["concept", "observation", "implementation"];
 const NON_PUBLIC_TEST_TERMS = /비밀\s*테스트|숨김\s*테스트|secret\s*tests?|hidden\s*tests?/iu;
+const NODE_EVALUATED_ASSERTION_KINDS = new Set([
+  "rule-declaration",
+  "media-rule-declaration",
+]);
+const LEGACY_QUEST_IDS = [
+  "quest-css-learning-notice",
+  "quest-css-profile-card-box",
+  "quest-css-product-card-layout",
+  "quest-css-responsive-course-grid",
+];
+const NEW_QUEST_IDS = [
+  "quest-css-cascade-status",
+  "quest-css-readable-overflow",
+  "quest-css-visible-keyboard-focus",
+  "quest-css-column-axis-alignment",
+];
 
 function resolveLocalReference(reference) {
   assert.match(reference, /^#\//, `지원하지 않는 스키마 참조입니다: ${reference}`);
@@ -236,7 +253,7 @@ function assertUnique(values, message) {
   assert.equal(new Set(values).size, values.length, message);
 }
 
-async function evaluateSource(quest, source, requestSuffix) {
+async function evaluateSource(quest, source, requestSuffix, independentTests = null) {
   const request = createWebCodeQuestExecutionRequest(
     collection,
     quest,
@@ -244,8 +261,16 @@ async function evaluateSource(quest, source, requestSuffix) {
     `verify-${quest.slug}-${requestSuffix}`,
   );
   const results = [];
+  const tests = independentTests
+    ? independentTests.map((item) => ({
+        id: item.id,
+        assertion: item.assertion,
+        expected: getWebAssertionExpected(item.assertion),
+      }))
+    : request.tests;
 
-  for (const publicTest of request.tests) {
+  for (const publicTest of tests.filter((item) =>
+    NODE_EVALUATED_ASSERTION_KINDS.has(item.assertion.kind))) {
     const actual = await evaluateCssStyleAssertion(
       {
         source: request.source,
@@ -274,7 +299,16 @@ test("CSS Code Quest 컬렉션이 JSON Schema와 런타임 계약을 통과한�
 test("Quest 메타데이터·공개 검사·실패 설명·힌트가 독립적인 학습 계약을 이룬다", () => {
   assert.equal(collection.evaluationKind, WEB_CODE_QUEST_EVALUATION_KINDS.CSS);
   assert.equal(collection.languageId, "css");
-  assert.equal(collection.quests.length, 4);
+  assert.deepEqual(
+    collection.quests.slice(0, LEGACY_QUEST_IDS.length).map((quest) => quest.id),
+    LEGACY_QUEST_IDS,
+    "기존 CSS Quest ID와 순서를 보존해야 합니다.",
+  );
+  assert.deepEqual(
+    collection.quests.slice(LEGACY_QUEST_IDS.length).map((quest) => quest.id),
+    NEW_QUEST_IDS,
+    "새 CSS Quest는 기존 Quest 뒤에 승인된 순서로 추가해야 합니다.",
+  );
   assertUnique(collection.quests.map((quest) => quest.id), "Quest ID가 중복됩니다.");
   assertUnique(collection.quests.map((quest) => quest.slug), "Quest slug가 중복됩니다.");
 
@@ -285,14 +319,13 @@ test("Quest 메타데이터·공개 검사·실패 설명·힌트가 독립적�
       quest.publicTests.length >= 4 && quest.publicTests.length <= 6,
       `${quest.id}: 공개 검사는 4~6개여야 합니다.`,
     );
-    assert.ok(
-      quest.publicTests.every((publicTest) =>
-        new Set(["rule-declaration", "media-rule-declaration"]).has(
-          publicTest.assertion.kind,
-        ),
-      ),
-      `${quest.id}: 선언 위치까지 판정할 수 있는 CSS 검사만 사용해야 합니다.`,
-    );
+    if (LEGACY_QUEST_IDS.includes(quest.id)) {
+      assert.ok(
+        quest.publicTests.every((publicTest) =>
+          NODE_EVALUATED_ASSERTION_KINDS.has(publicTest.assertion.kind)),
+        `${quest.id}: 기존 공개 검사의 선언 판정 계약을 보존해야 합니다.`,
+      );
+    }
     const testIds = quest.publicTests.map((publicTest) => publicTest.id);
     const explanationIds = quest.failureExplanations.map((item) => item.testId);
     assert.deepEqual(
@@ -323,7 +356,7 @@ test("Quest 메타데이터·공개 검사·실패 설명·힌트가 독립적�
   assertUnique(allTestIds, "서로 다른 Quest의 공개 검사 ID가 중복됩니다.");
 });
 
-test("기준 답안 fixture는 모든 공개 검사를 통과한다", async () => {
+test("기준 답안 fixture는 Node에서 실행 가능한 공개 검사를 통과한다", async () => {
   assert.deepEqual(
     Object.keys(cssCodeQuestSolutionFixtures).toSorted(),
     collection.quests.map((quest) => quest.id).toSorted(),
@@ -368,14 +401,87 @@ test("대표 오답은 의도한 공개 검사에서만 실패한다", async () 
         `${quest.id}/${wrong.id}: 대표 오답이 안전한 CSS 범위를 벗어납니다.`,
       );
       const results = await evaluateSource(quest, wrong.source, wrong.id);
+      const publicTestIds = new Set(quest.publicTests.map((item) => item.id));
+      const nodeEvaluatedTestIds = new Set(
+        quest.publicTests
+          .filter((item) => NODE_EVALUATED_ASSERTION_KINDS.has(item.assertion.kind))
+          .map((item) => item.id),
+      );
+      assert.ok(wrong.expectedFailingPublicTestIds.length >= 1, `${quest.id}/${wrong.id}`);
+      assert.ok(
+        wrong.expectedFailingPublicTestIds.every((id) => publicTestIds.has(id)),
+        `${quest.id}/${wrong.id}: 없는 공개 검사를 실패 대상으로 지정했습니다.`,
+      );
       const failingIds = results
         .filter((result) => !result.passed)
         .map((result) => result.id)
         .toSorted();
       assert.deepEqual(
         failingIds,
-        wrong.expectedFailingPublicTestIds.toSorted(),
-        `${quest.id}/${wrong.id}: 의도한 공개 검사 실패 집합과 다릅니다.`,
+        wrong.expectedFailingPublicTestIds
+          .filter((id) => nodeEvaluatedTestIds.has(id))
+          .toSorted(),
+        `${quest.id}/${wrong.id}: Node에서 실행 가능한 공개 검사 실패 집합과 다릅니다.`,
+      );
+    }
+  }
+});
+
+test("새 CSS fixture는 공개 검사와 다른 독립 사례를 기록한다", async () => {
+  for (const quest of collection.quests.filter((item) => NEW_QUEST_IDS.includes(item.id))) {
+    const fixture = cssCodeQuestSolutionFixtures[quest.id];
+    assert.ok(fixture.verificationCases.length >= 1, `${quest.id}: 독립 사례가 필요합니다.`);
+    const publicTestIds = new Set(quest.publicTests.map((item) => item.id));
+    const publicAssertions = new Set(
+      quest.publicTests.map((item) => JSON.stringify(item.assertion)),
+    );
+
+    for (const verificationCase of fixture.verificationCases) {
+      assert.equal(
+        findWebCodeQuestSourceIssue(WEB_CODE_QUEST_EVALUATION_KINDS.CSS, verificationCase.source),
+        null,
+        `${quest.id}/${verificationCase.id}: 독립 CSS source가 안전하지 않습니다.`,
+      );
+      assert.equal(
+        findWebCodeQuestSourceIssue(
+          WEB_CODE_QUEST_EVALUATION_KINDS.HTML,
+          verificationCase.fixtureHtml,
+          { fixture: true },
+        ),
+        null,
+        `${quest.id}/${verificationCase.id}: 독립 HTML fixture가 안전하지 않습니다.`,
+      );
+      assert.ok(verificationCase.tests.length >= 1, `${quest.id}/${verificationCase.id}`);
+      assert.ok(
+        verificationCase.expectedFailingTestIds.every((id) =>
+          verificationCase.tests.some((item) => item.id === id)),
+        `${quest.id}/${verificationCase.id}: 없는 독립 검사를 실패 대상으로 지정했습니다.`,
+      );
+      for (const independentTest of verificationCase.tests) {
+        assert.ok(!publicTestIds.has(independentTest.id), `${quest.id}: 독립 테스트 ID가 중복됩니다.`);
+        assert.ok(
+          !publicAssertions.has(JSON.stringify(independentTest.assertion)),
+          `${quest.id}: 독립 assertion이 공개 검사와 중복됩니다.`,
+        );
+      }
+
+      const results = await evaluateSource(
+        quest,
+        verificationCase.source,
+        verificationCase.id,
+        verificationCase.tests,
+      );
+      const nodeEvaluatedTestIds = new Set(
+        verificationCase.tests
+          .filter((item) => NODE_EVALUATED_ASSERTION_KINDS.has(item.assertion.kind))
+          .map((item) => item.id),
+      );
+      assert.deepEqual(
+        results.filter((result) => !result.passed).map((result) => result.id).toSorted(),
+        verificationCase.expectedFailingTestIds
+          .filter((id) => nodeEvaluatedTestIds.has(id))
+          .toSorted(),
+        `${quest.id}/${verificationCase.id}: Node에서 실행 가능한 독립 검사 결과가 다릅니다.`,
       );
     }
   }

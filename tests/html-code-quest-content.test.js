@@ -6,6 +6,7 @@ import {
   assertValidWebCodeQuestCollection,
   createWebCodeQuestExecutionRequest,
   findWebCodeQuestSourceIssue,
+  getWebAssertionExpected,
   validateWebCodeQuestCollection,
 } from "../src/core/web-code-quest.js";
 import { BrowserWebCodeQuestRunner } from "../src/grading/browser-web-code-quest-runner.js";
@@ -24,7 +25,7 @@ const schema = JSON.parse(
   ),
 );
 
-const EXPECTED_QUEST_LINKS = [
+const LEGACY_QUEST_LINKS = [
   {
     id: "quest-html-document-structure",
     lessonId: "html-01-document-structure",
@@ -60,6 +61,11 @@ const EXPECTED_QUEST_LINKS = [
     lessonId: "html-05-review-practice",
     conceptIds: ["html.document-planning", "html.accessibility-audit"],
   },
+];
+const NEW_QUEST_IDS = [
+  "quest-html-description-pairs",
+  "quest-html-single-choice-group",
+  "quest-html-form-value-states",
 ];
 
 const VOID_ELEMENTS = new Set([
@@ -151,27 +157,36 @@ function parseHtmlFragment(source) {
 }
 
 function parseCompoundSelector(selector) {
+  const negatedAttributes = [...selector.matchAll(
+    /:not\(\[([A-Za-z_:][A-Za-z0-9_.:-]*)\]\)/gu,
+  )].map((match) => match[1].toLowerCase());
+  const positiveSelector = selector.replaceAll(/:not\(\[[^\]]+\]\)/gu, "");
   const tagName = /^[A-Za-z][A-Za-z0-9-]*/u.exec(selector)?.[0]?.toLowerCase() ?? null;
-  const ids = [...selector.matchAll(/#([A-Za-z_][A-Za-z0-9_-]*)/gu)].map(
+  const nthChild = Number.parseInt(/:nth-child\((\d+)\)/u.exec(selector)?.[1] ?? "", 10);
+  const firstChild = /:first-child\b/u.test(selector);
+  const ids = [...positiveSelector.matchAll(/#([A-Za-z_][A-Za-z0-9_-]*)/gu)].map(
     (match) => match[1],
   );
-  const classes = [...selector.matchAll(/\.([A-Za-z_][A-Za-z0-9_-]*)/gu)].map(
+  const classes = [...positiveSelector.matchAll(/\.([A-Za-z_][A-Za-z0-9_-]*)/gu)].map(
     (match) => match[1],
   );
-  const attributes = [...selector.matchAll(
+  const attributes = [...positiveSelector.matchAll(
     /\[([A-Za-z_:][A-Za-z0-9_.:-]*)(?:=(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\]/gu,
   )].map((match) => ({
     name: match[1].toLowerCase(),
     expected: match[2] ?? match[3] ?? match[4],
   }));
-  const unsupported = selector
+  const unsupported = positiveSelector
     .replace(/^[A-Za-z][A-Za-z0-9-]*/u, "")
+    .replace(/^\*/u, "")
     .replace(/#[A-Za-z_][A-Za-z0-9_-]*/gu, "")
     .replace(/\.[A-Za-z_][A-Za-z0-9_-]*/gu, "")
     .replace(/\[[^\]]+\]/gu, "")
+    .replace(/:nth-child\(\d+\)/gu, "")
+    .replace(/:first-child\b/gu, "")
     .trim();
   assert.equal(unsupported, "", `테스트용 DOM이 지원하지 않는 선택자입니다: ${selector}`);
-  return { tagName, ids, classes, attributes };
+  return { tagName, ids, classes, attributes, negatedAttributes, nthChild, firstChild };
 }
 
 function matchesCompoundSelector(node, selector) {
@@ -180,6 +195,13 @@ function matchesCompoundSelector(node, selector) {
   if (parsed.ids.some((id) => node.getAttribute("id") !== id)) return false;
   const classNames = new Set((node.getAttribute("class") ?? "").split(/\s+/u).filter(Boolean));
   if (parsed.classes.some((className) => !classNames.has(className))) return false;
+  if (parsed.negatedAttributes.some((name) => node.getAttribute(name) !== null)) return false;
+  if (parsed.firstChild || Number.isInteger(parsed.nthChild)) {
+    const elementSiblings = node.parent.children.filter((child) => typeof child !== "string");
+    const childPosition = elementSiblings.indexOf(node) + 1;
+    if (parsed.firstChild && childPosition !== 1) return false;
+    if (Number.isInteger(parsed.nthChild) && childPosition !== parsed.nthChild) return false;
+  }
   return parsed.attributes.every(({ name, expected }) => {
     const actual = node.getAttribute(name);
     return expected === undefined ? actual !== null : actual === expected;
@@ -199,23 +221,68 @@ function collectElementDescendants(root) {
   return elements;
 }
 
-function matchesChildSelectorChain(node, selectorParts) {
-  let current = node;
-  for (let index = selectorParts.length - 1; index >= 0; index -= 1) {
-    if (!current || !matchesCompoundSelector(current, selectorParts[index])) return false;
-    current = current.parent?.tagName ? current.parent : null;
+function parseSelectorChain(selector) {
+  const parts = [];
+  let compound = "";
+  let quote = null;
+  let bracketDepth = 0;
+  let direct = false;
+  const pushCompound = () => {
+    if (!compound.trim()) return;
+    parts.push({ selector: compound.trim(), direct: parts.length > 0 && direct });
+    compound = "";
+    direct = false;
+  };
+
+  for (const character of selector.trim()) {
+    if (quote) {
+      compound += character;
+      if (character === quote) quote = null;
+    } else if (character === '"' || character === "'") {
+      quote = character;
+      compound += character;
+    } else if (character === "[") {
+      bracketDepth += 1;
+      compound += character;
+    } else if (character === "]") {
+      bracketDepth -= 1;
+      compound += character;
+    } else if (bracketDepth === 0 && character === ">") {
+      pushCompound();
+      direct = true;
+    } else if (bracketDepth === 0 && /\s/u.test(character)) {
+      pushCompound();
+    } else {
+      compound += character;
+    }
   }
-  return true;
+  pushCompound();
+  return parts;
+}
+
+function matchesSelectorChain(node, selectorParts, index = selectorParts.length - 1) {
+  if (!node || !matchesCompoundSelector(node, selectorParts[index].selector)) return false;
+  if (index === 0) return true;
+
+  let ancestor = node.parent?.tagName ? node.parent : null;
+  if (selectorParts[index].direct) {
+    return matchesSelectorChain(ancestor, selectorParts, index - 1);
+  }
+  while (ancestor) {
+    if (matchesSelectorChain(ancestor, selectorParts, index - 1)) return true;
+    ancestor = ancestor.parent?.tagName ? ancestor.parent : null;
+  }
+  return false;
 }
 
 function createQueryableFragment(source) {
   const root = parseHtmlFragment(source);
   const elements = collectElementDescendants(root);
   const querySelectorAll = (selector) => {
-    const selectorParts = selector.split(">").map((part) => part.trim());
-    assert.ok(selectorParts.every(Boolean), `비어 있는 선택자 구간입니다: ${selector}`);
+    const selectorParts = parseSelectorChain(selector);
+    assert.ok(selectorParts.length > 0, `비어 있는 선택자 구간입니다: ${selector}`);
     return elements.filter((element) =>
-      matchesChildSelectorChain(element, selectorParts),
+      matchesSelectorChain(element, selectorParts),
     );
   };
   return {
@@ -256,19 +323,30 @@ function createMiniDomParser() {
   };
 }
 
-async function gradeSource(quest, source, requestId) {
+async function gradeSource(quest, source, requestId, independentTests = null) {
   const runner = new BrowserWebCodeQuestRunner({
     environment: {
       documentRef: createMiniDomDocument(),
       domParserFactory: createMiniDomParser,
     },
   });
-  const request = createWebCodeQuestExecutionRequest(
+  let request = createWebCodeQuestExecutionRequest(
     collection,
     quest,
     source,
     requestId,
   );
+  if (independentTests) {
+    request = {
+      ...request,
+      tests: independentTests.map((item) => ({
+        id: item.id,
+        label: item.label,
+        assertion: item.assertion,
+        expected: getWebAssertionExpected(item.assertion),
+      })),
+    };
+  }
   return runner.run(request);
 }
 
@@ -284,18 +362,23 @@ test("HTML Code Quest 컬렉션이 새 스키마와 런타임 계약을 충족�
   assert.equal(collection.languageId, "html");
 });
 
-test("다섯 Quest가 교안 순서와 개념에 연결되고 직접 HTML 작성 범위를 다룬다", () => {
-  assert.equal(collection.quests.length, 5);
+test("기존 다섯 Quest를 보존하고 새 Quest를 마지막 순서에 추가한다", () => {
   assert.deepEqual(
-    collection.quests.map(({ id, lessonId, conceptIds }) => ({ id, lessonId, conceptIds })),
-    EXPECTED_QUEST_LINKS,
+    collection.quests
+      .slice(0, LEGACY_QUEST_LINKS.length)
+      .map(({ id, lessonId, conceptIds }) => ({ id, lessonId, conceptIds })),
+    LEGACY_QUEST_LINKS,
+  );
+  assert.deepEqual(
+    collection.quests.slice(LEGACY_QUEST_LINKS.length).map((quest) => quest.id),
+    NEW_QUEST_IDS,
   );
   assert.deepEqual(
     collection.quests.map((quest) => quest.order),
-    [1, 2, 3, 4, 5],
+    collection.quests.map((_quest, index) => index + 1),
   );
   assert.deepEqual(
-    collection.quests.map((quest) => quest.slug),
+    collection.quests.slice(0, LEGACY_QUEST_LINKS.length).map((quest) => quest.slug),
     [
       "document-structure",
       "descriptive-navigation",
@@ -305,7 +388,7 @@ test("다섯 Quest가 교안 순서와 개념에 연결되고 직접 HTML 작성
     ],
   );
 
-  for (const quest of collection.quests) {
+  for (const quest of collection.quests.slice(0, LEGACY_QUEST_LINKS.length)) {
     assert.match(quest.starterCode, /<[a-z]/iu, `${quest.id}: HTML 시작 코드가 필요합니다.`);
     assert.ok(
       quest.estimatedMinutes >= 20 && quest.estimatedMinutes <= 30,
@@ -317,15 +400,17 @@ test("다섯 Quest가 교안 순서와 개념에 연결되고 직접 HTML 작성
 test("공개 테스트·실패 설명·힌트가 학습자에게 완전하게 공개된다", () => {
   const allTestIds = [];
   for (const quest of collection.quests) {
-    assert.ok(
-      quest.publicTests.length >= 4 && quest.publicTests.length <= 6,
-      `${quest.id}: 공개 테스트는 4~6개여야 합니다.`,
-    );
-    assert.equal(
-      quest.requirements.length,
-      quest.publicTests.length,
-      `${quest.id}: 요구사항과 공개 테스트가 일대일이어야 합니다.`,
-    );
+    if (LEGACY_QUEST_LINKS.some((item) => item.id === quest.id)) {
+      assert.ok(
+        quest.publicTests.length >= 4 && quest.publicTests.length <= 6,
+        `${quest.id}: 기존 공개 테스트는 4~6개여야 합니다.`,
+      );
+      assert.equal(
+        quest.requirements.length,
+        quest.publicTests.length,
+        `${quest.id}: 기존 요구사항과 공개 테스트가 일대일이어야 합니다.`,
+      );
+    }
     assert.deepEqual(
       quest.failureExplanations.map((item) => item.testId).sort(),
       quest.publicTests.map((item) => item.id).sort(),
@@ -357,6 +442,7 @@ test("시작 코드·예시·검증 fixture가 외부 리소스 없이 안전 �
       ...quest.examples.map((example) => example.source),
       fixture.referenceSource,
       ...fixture.representativeWrongSolutions.map((wrong) => wrong.source),
+      ...(fixture.verificationCases ?? []).map((verificationCase) => verificationCase.source),
     ];
     for (const source of sources) {
       assert.equal(
@@ -376,12 +462,25 @@ test("모든 기준 답안은 통과하고 대표 오답은 지정된 공개 테
 
   for (const quest of collection.quests) {
     const fixture = htmlCodeQuestSolutionFixtures[quest.id];
+    if (NEW_QUEST_IDS.includes(quest.id)) {
+      const starterReport = await gradeSource(
+        quest,
+        quest.starterCode,
+        `verify-${quest.slug}-starter`,
+      );
+      assert.notEqual(starterReport.outcome, "passed", `${quest.id}: 시작 코드가 완성 답안입니다.`);
+    }
     const referenceReport = await gradeSource(
       quest,
       fixture.referenceSource,
       `verify-${quest.slug}-reference`,
     );
-    assert.equal(referenceReport.outcome, "passed", `${quest.id}: 기준 답안이 실패했습니다.`);
+    const failedReference = referenceReport.tests.find((result) => result.outcome !== "passed");
+    assert.equal(
+      referenceReport.outcome,
+      "passed",
+      `${quest.id}: 기준 답안이 실패했습니다. ${failedReference?.error?.message ?? ""}`,
+    );
     assert.ok(
       referenceReport.tests.every((result) => result.outcome === "passed"),
       `${quest.id}: 통과하지 못한 기준 답안 테스트가 있습니다.`,
@@ -405,6 +504,43 @@ test("모든 기준 답안은 통과하고 대표 오답은 지정된 공개 테
         actualFailingTestIds,
         wrong.expectedFailingPublicTestIds,
         `${quest.id}/${wrong.id}: 예상 실패 공개 테스트와 다릅니다.`,
+      );
+    }
+
+    const verificationCases = fixture.verificationCases ?? [];
+    if (NEW_QUEST_IDS.includes(quest.id)) {
+      assert.ok(verificationCases.length >= 1, `${quest.id}: 독립 검증 사례가 필요합니다.`);
+    }
+    const publicTestIds = new Set(quest.publicTests.map((item) => item.id));
+    const publicAssertions = new Set(
+      quest.publicTests.map((item) => JSON.stringify(item.assertion)),
+    );
+    for (const verificationCase of verificationCases) {
+      assert.ok(verificationCase.tests.length >= 1, `${quest.id}/${verificationCase.id}`);
+      assert.equal(
+        findWebCodeQuestSourceIssue(collection.evaluationKind, verificationCase.source),
+        null,
+        `${quest.id}/${verificationCase.id}: 독립 source가 안전하지 않습니다.`,
+      );
+      for (const independentTest of verificationCase.tests) {
+        assert.ok(!publicTestIds.has(independentTest.id), `${quest.id}: 독립 테스트 ID가 중복됩니다.`);
+        assert.ok(
+          !publicAssertions.has(JSON.stringify(independentTest.assertion)),
+          `${quest.id}: 독립 assertion이 공개 테스트와 중복됩니다.`,
+        );
+      }
+      const verificationReport = await gradeSource(
+        quest,
+        verificationCase.source,
+        `verify-${quest.slug}-${verificationCase.id}`,
+        verificationCase.tests,
+      );
+      assert.deepEqual(
+        verificationReport.tests
+          .filter((result) => result.outcome === "wrong_answer")
+          .map((result) => result.testId),
+        verificationCase.expectedFailingTestIds,
+        `${quest.id}/${verificationCase.id}: 독립 사례 결과가 다릅니다.`,
       );
     }
   }

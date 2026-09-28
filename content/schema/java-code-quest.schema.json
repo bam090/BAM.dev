@@ -1,0 +1,751 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bam.dev/schema/java-code-quest.schema.json",
+  "title": "BAM.dev Java Code Quest collection",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "contractVersion",
+    "languageId",
+    "evaluationKind",
+    "title",
+    "quests"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractVersion": { "const": 1 },
+    "languageId": { "const": "java" },
+    "evaluationKind": { "const": "java-static-method-v1" },
+    "title": { "type": "string", "minLength": 1 },
+    "quests": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 73,
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/quest" },
+          { "$ref": "#/$defs/draftQuest" }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "stableId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "conceptId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(?:\\.[a-z][a-z0-9-]*)+$"
+    },
+    "nonEmptyText": { "type": "string", "minLength": 1 },
+    "quest": {
+      "type": "object",
+      "required": [
+        "id",
+        "slug",
+        "revision",
+        "order",
+        "lessonId",
+        "conceptIds",
+        "difficulty",
+        "estimatedMinutes",
+        "title",
+        "summary",
+        "instructions",
+        "functionContract",
+        "entryPoint",
+        "javaContract",
+        "starterCode",
+        "examples",
+        "publicTests",
+        "failureExplanations",
+        "hints",
+        "commonMistakes"
+      ],
+      "properties": {
+        "id": {
+          "enum": [
+            "quest-java-total-price",
+            "quest-java-bridge-arr-01",
+            "quest-java-bridge-arr-02",
+            "quest-java-bridge-que-01"
+          ]
+        },
+        "slug": { "$ref": "#/$defs/stableId" },
+        "revision": { "const": 1 },
+        "order": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "lessonId": {
+          "enum": [
+            "java-concept-numeric-operations",
+            "java-concept-arrays",
+            "java-concept-control-flow",
+            "java-concept-deque"
+          ]
+        },
+        "conceptIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "java.numeric-operations",
+              "java.arrays",
+              "java.control-flow",
+              "java.deque"
+            ]
+          }
+        },
+        "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+        "estimatedMinutes": { "type": "integer", "minimum": 1 },
+        "title": { "$ref": "#/$defs/nonEmptyText" },
+        "summary": { "$ref": "#/$defs/nonEmptyText" },
+        "instructions": { "$ref": "#/$defs/nonEmptyText" },
+        "functionContract": { "$ref": "#/$defs/javaFunctionContract" },
+        "entryPoint": { "enum": ["totalPrice", "solve"] },
+        "javaContract": {
+          "type": "object",
+          "required": ["sourceFile", "className"],
+          "properties": {
+            "sourceFile": { "const": "Solution.java" },
+            "className": { "const": "Solution" }
+          },
+          "additionalProperties": false
+        },
+        "starterCode": { "$ref": "#/$defs/nonEmptyText" },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3
+        },
+        "publicTests": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 6
+        },
+        "failureExplanations": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 6,
+          "items": { "$ref": "#/$defs/failureExplanation" }
+        },
+        "hints": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/hint" }
+        },
+        "commonMistakes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/commonMistake" }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["id"],
+            "properties": { "id": { "const": "quest-java-total-price" } }
+          },
+          "then": {
+            "properties": {
+              "slug": { "const": "total-price" },
+              "order": { "const": 1 },
+              "lessonId": { "const": "java-concept-numeric-operations" },
+              "conceptIds": {
+                "minItems": 1,
+                "maxItems": 1,
+                "items": { "const": "java.numeric-operations" }
+              },
+              "functionContract": { "$ref": "#/$defs/functionContract" },
+              "entryPoint": { "const": "totalPrice" },
+              "examples": { "items": { "$ref": "#/$defs/example" } },
+              "publicTests": { "items": { "$ref": "#/$defs/publicTest" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["id"],
+            "properties": { "id": { "const": "quest-java-bridge-arr-01" } }
+          },
+          "then": {
+            "properties": {
+              "slug": { "const": "bridge-arr-01" },
+              "order": { "const": 2 },
+              "lessonId": { "const": "java-concept-arrays" },
+              "conceptIds": {
+                "minItems": 1,
+                "maxItems": 1,
+                "items": { "const": "java.arrays" }
+              },
+              "functionContract": { "$ref": "#/$defs/arr01FunctionContract" },
+              "entryPoint": { "const": "solve" },
+              "examples": { "items": { "$ref": "#/$defs/observedArr01Example" } },
+              "publicTests": { "items": { "$ref": "#/$defs/observedArr01PublicTest" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["id"],
+            "properties": { "id": { "const": "quest-java-bridge-arr-02" } }
+          },
+          "then": {
+            "properties": {
+              "slug": { "const": "bridge-arr-02" },
+              "order": { "const": 3 },
+              "lessonId": { "const": "java-concept-control-flow" },
+              "conceptIds": {
+                "minItems": 1,
+                "maxItems": 1,
+                "items": { "const": "java.control-flow" }
+              },
+              "functionContract": { "$ref": "#/$defs/arr02FunctionContract" },
+              "entryPoint": { "const": "solve" },
+              "examples": { "items": { "$ref": "#/$defs/arr02Example" } },
+              "publicTests": { "items": { "$ref": "#/$defs/arr02PublicTest" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["id"],
+            "properties": { "id": { "const": "quest-java-bridge-que-01" } }
+          },
+          "then": {
+            "properties": {
+              "slug": { "const": "bridge-que-01" },
+              "order": { "const": 4 },
+              "lessonId": { "const": "java-concept-deque" },
+              "conceptIds": {
+                "minItems": 1,
+                "maxItems": 1,
+                "items": { "const": "java.deque" }
+              },
+              "functionContract": { "$ref": "#/$defs/que01FunctionContract" },
+              "entryPoint": { "const": "solve" },
+              "examples": { "items": { "$ref": "#/$defs/observedQue01Example" } },
+              "publicTests": { "items": { "$ref": "#/$defs/observedQue01PublicTest" } }
+            }
+          }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "draftQuest": {
+      "type": "object",
+      "required": [
+        "id",
+        "slug",
+        "revision",
+        "order",
+        "lessonId",
+        "conceptIds",
+        "difficulty",
+        "estimatedMinutes",
+        "title",
+        "summary",
+        "instructions",
+        "functionContract",
+        "entryPoint",
+        "javaContract",
+        "starterCode",
+        "examples",
+        "executionMode",
+        "publicTestSource",
+        "publicTests",
+        "hints",
+        "commonMistakes"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^quest-java-[a-z0-9]+(?:-[a-z0-9]+)*$"
+        },
+        "slug": { "$ref": "#/$defs/stableId" },
+        "revision": { "const": 1 },
+        "order": { "type": "integer", "minimum": 5, "maximum": 73 },
+        "lessonId": { "$ref": "#/$defs/stableId" },
+        "conceptIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/conceptId" }
+        },
+        "difficulty": { "enum": ["beginner", "intermediate", "advanced"] },
+        "estimatedMinutes": { "type": "integer", "minimum": 1 },
+        "title": { "$ref": "#/$defs/nonEmptyText" },
+        "summary": { "$ref": "#/$defs/nonEmptyText" },
+        "instructions": { "$ref": "#/$defs/nonEmptyText" },
+        "functionContract": { "$ref": "#/$defs/draftFunctionContract" },
+        "entryPoint": {
+          "type": "string",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+        },
+        "javaContract": { "$ref": "#/$defs/javaContract" },
+        "starterCode": { "$ref": "#/$defs/nonEmptyText" },
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/draftExample" }
+        },
+        "executionMode": { "const": "draft-only" },
+        "publicTestSource": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "publicTests": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "items": { "$ref": "#/$defs/sourcePublicTest" }
+        },
+        "hints": {
+          "type": "array",
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/hint" }
+        },
+        "commonMistakes": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/commonMistake" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "javaContract": {
+      "type": "object",
+      "required": ["sourceFile", "className"],
+      "properties": {
+        "sourceFile": { "const": "Solution.java" },
+        "className": { "const": "Solution" }
+      },
+      "additionalProperties": false
+    },
+    "draftFunctionContract": {
+      "type": "object",
+      "required": ["parameters", "returns", "constraints"],
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "$ref": "#/$defs/draftParameter" }
+        },
+        "returns": { "$ref": "#/$defs/draftReturn" },
+        "constraints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyText" }
+        },
+        "complexity": {
+          "type": "object",
+          "required": ["time", "space"],
+          "properties": {
+            "time": { "$ref": "#/$defs/nonEmptyText" },
+            "space": { "$ref": "#/$defs/nonEmptyText" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "draftParameter": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type": { "$ref": "#/$defs/draftJavaType" },
+        "description": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "draftReturn": {
+      "type": "object",
+      "required": ["type", "description"],
+      "properties": {
+        "type": { "$ref": "#/$defs/draftJavaType" },
+        "description": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "draftJavaType": {
+      "enum": [
+        "int",
+        "long",
+        "double",
+        "boolean",
+        "String",
+        "int[]",
+        "long[]",
+        "double[]",
+        "String[]",
+        "int[][]",
+        "boolean[][]",
+        "String[][]"
+      ]
+    },
+    "draftExample": {
+      "type": "object",
+      "required": ["args", "expected", "explanation"],
+      "properties": {
+        "args": { "type": "array", "minItems": 1, "maxItems": 5 },
+        "expected": {},
+        "explanation": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "sourcePublicTest": {
+      "type": "object",
+      "required": ["id", "label", "assertionSource"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "$ref": "#/$defs/nonEmptyText" },
+        "assertionSource": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        }
+      },
+      "additionalProperties": false
+    },
+    "javaFunctionContract": {
+      "type": "object",
+      "required": ["parameters", "returns", "constraints", "complexity"],
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/javaParameter" }
+        },
+        "returns": {
+          "type": "object",
+          "required": ["type", "description"],
+          "properties": {
+            "type": { "enum": ["long", "int", "int[]"] },
+            "description": { "$ref": "#/$defs/nonEmptyText" }
+          },
+          "additionalProperties": false
+        },
+        "constraints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyText" }
+        },
+        "complexity": {
+          "type": "object",
+          "required": ["time", "space"],
+          "properties": {
+            "time": { "$ref": "#/$defs/nonEmptyText" },
+            "space": { "$ref": "#/$defs/nonEmptyText" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "javaParameter": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type": { "enum": ["int", "int[]"] },
+        "description": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "functionContract": {
+      "type": "object",
+      "required": ["parameters", "returns", "constraints", "complexity"],
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "$ref": "#/$defs/parameter" }
+        },
+        "returns": {
+          "type": "object",
+          "required": ["type", "description"],
+          "properties": {
+            "type": { "const": "long" },
+            "description": { "$ref": "#/$defs/nonEmptyText" }
+          },
+          "additionalProperties": false
+        },
+        "constraints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/nonEmptyText" }
+        },
+        "complexity": {
+          "type": "object",
+          "required": ["time", "space"],
+          "properties": {
+            "time": { "$ref": "#/$defs/nonEmptyText" },
+            "space": { "$ref": "#/$defs/nonEmptyText" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "arr01FunctionContract": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            { "properties": { "name": { "const": "readings" }, "type": { "const": "int[]" } } },
+            { "properties": { "name": { "const": "slotNumber" }, "type": { "const": "int" } } },
+            { "properties": { "name": { "const": "correctedValue" }, "type": { "const": "int" } } }
+          ]
+        },
+        "returns": { "properties": { "type": { "const": "int[]" } } }
+      }
+    },
+    "arr02FunctionContract": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "prefixItems": [
+            { "properties": { "name": { "const": "values" }, "type": { "const": "int[]" } } },
+            { "properties": { "name": { "const": "minimum" }, "type": { "const": "int" } } },
+            { "properties": { "name": { "const": "maximum" }, "type": { "const": "int" } } }
+          ]
+        },
+        "returns": { "properties": { "type": { "const": "int" } } }
+      }
+    },
+    "que01FunctionContract": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "prefixItems": [
+            { "properties": { "name": { "const": "order" }, "type": { "const": "int[]" } } }
+          ]
+        },
+        "returns": { "properties": { "type": { "const": "int[]" } } }
+      }
+    },
+    "parameter": {
+      "type": "object",
+      "required": ["name", "type", "description"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "type": { "const": "int" },
+        "description": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "javaIntArgs": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "type": "integer",
+        "minimum": -2147483648,
+        "maximum": 2147483647
+      }
+    },
+    "decimalLong": {
+      "type": "string",
+      "pattern": "^(?:0|-?[1-9][0-9]*)$"
+    },
+    "example": {
+      "type": "object",
+      "required": ["args", "expected", "explanation"],
+      "properties": {
+        "args": { "$ref": "#/$defs/javaIntArgs" },
+        "expected": { "$ref": "#/$defs/decimalLong" },
+        "explanation": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "publicTest": {
+      "type": "object",
+      "required": ["id", "label", "args", "expected"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "$ref": "#/$defs/nonEmptyText" },
+        "args": { "$ref": "#/$defs/javaIntArgs" },
+        "expected": { "$ref": "#/$defs/decimalLong" }
+      },
+      "additionalProperties": false
+    },
+    "javaInt": {
+      "type": "integer",
+      "minimum": -2147483648,
+      "maximum": 2147483647
+    },
+    "returnedIntArray": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": { "$ref": "#/$defs/javaInt" }
+    },
+    "arr01InputArray": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "type": "integer", "minimum": -1000, "maximum": 1000 }
+    },
+    "arr02InputArray": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "type": "integer", "minimum": -10000, "maximum": 10000 }
+    },
+    "que01InputArray": {
+      "type": "array",
+      "maxItems": 100000,
+      "items": { "type": "integer", "minimum": -1000000, "maximum": 1000000 }
+    },
+    "arr01Args": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "$ref": "#/$defs/arr01InputArray" },
+        { "type": "integer", "minimum": 1, "maximum": 100 },
+        { "type": "integer", "minimum": -1000, "maximum": 1000 }
+      ]
+    },
+    "arr02Args": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        { "$ref": "#/$defs/arr02InputArray" },
+        { "$ref": "#/$defs/javaInt" },
+        { "$ref": "#/$defs/javaInt" }
+      ]
+    },
+    "que01Args": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "prefixItems": [{ "$ref": "#/$defs/que01InputArray" }]
+    },
+    "requiredArrayObservations": {
+      "type": "object",
+      "required": ["argument0Unchanged", "returnNotArgument0"],
+      "properties": {
+        "argument0Unchanged": { "const": true },
+        "returnNotArgument0": { "const": true }
+      },
+      "additionalProperties": false
+    },
+    "observedArr01Example": {
+      "type": "object",
+      "required": ["args", "expected", "explanation", "observations"],
+      "properties": {
+        "args": { "$ref": "#/$defs/arr01Args" },
+        "expected": { "$ref": "#/$defs/returnedIntArray" },
+        "explanation": { "$ref": "#/$defs/nonEmptyText" },
+        "observations": { "$ref": "#/$defs/requiredArrayObservations" }
+      },
+      "additionalProperties": false
+    },
+    "observedArr01PublicTest": {
+      "type": "object",
+      "required": ["id", "label", "args", "expected", "observations"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "$ref": "#/$defs/nonEmptyText" },
+        "args": { "$ref": "#/$defs/arr01Args" },
+        "expected": { "$ref": "#/$defs/returnedIntArray" },
+        "observations": { "$ref": "#/$defs/requiredArrayObservations" }
+      },
+      "additionalProperties": false
+    },
+    "arr02Example": {
+      "type": "object",
+      "required": ["args", "expected", "explanation"],
+      "properties": {
+        "args": { "$ref": "#/$defs/arr02Args" },
+        "expected": { "$ref": "#/$defs/javaInt" },
+        "explanation": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "arr02PublicTest": {
+      "type": "object",
+      "required": ["id", "label", "args", "expected"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "$ref": "#/$defs/nonEmptyText" },
+        "args": { "$ref": "#/$defs/arr02Args" },
+        "expected": { "$ref": "#/$defs/javaInt" }
+      },
+      "additionalProperties": false
+    },
+    "observedQue01Example": {
+      "type": "object",
+      "required": ["args", "expected", "explanation", "observations"],
+      "properties": {
+        "args": { "$ref": "#/$defs/que01Args" },
+        "expected": { "$ref": "#/$defs/returnedIntArray" },
+        "explanation": { "$ref": "#/$defs/nonEmptyText" },
+        "observations": { "$ref": "#/$defs/requiredArrayObservations" }
+      },
+      "additionalProperties": false
+    },
+    "observedQue01PublicTest": {
+      "type": "object",
+      "required": ["id", "label", "args", "expected", "observations"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "label": { "$ref": "#/$defs/nonEmptyText" },
+        "args": { "$ref": "#/$defs/que01Args" },
+        "expected": { "$ref": "#/$defs/returnedIntArray" },
+        "observations": { "$ref": "#/$defs/requiredArrayObservations" }
+      },
+      "additionalProperties": false
+    },
+    "failureExplanation": {
+      "type": "object",
+      "required": ["testId", "message"],
+      "properties": {
+        "testId": { "$ref": "#/$defs/stableId" },
+        "message": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "hint": {
+      "type": "object",
+      "required": ["level", "stage", "title", "content"],
+      "properties": {
+        "level": { "type": "integer", "minimum": 1 },
+        "stage": { "enum": ["concept", "observation", "implementation"] },
+        "title": { "$ref": "#/$defs/nonEmptyText" },
+        "content": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    },
+    "commonMistake": {
+      "type": "object",
+      "required": ["id", "title", "explanation"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stableId" },
+        "title": { "$ref": "#/$defs/nonEmptyText" },
+        "explanation": { "$ref": "#/$defs/nonEmptyText" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

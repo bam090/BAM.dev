@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   getCodeQuestDraftStatusMessage,
@@ -63,6 +64,57 @@ function render(overrides = {}) {
     currentIndex: 0,
     total: 5,
     source: quest.starterCode,
+    ...overrides,
+  });
+}
+
+function renderJava(overrides = {}) {
+  const largeValues = [...Array.from({ length: 24 }, (_, index) => index), 987654];
+  const javaQuest = {
+    ...quest,
+    id: "quest-java-bridge-que-01",
+    slug: "bridge-que-01",
+    title: "대기 순서 한 칸 돌리기",
+    entryPoint: "solve",
+    starterCode: "public class Solution {\n    public static int[] solve(int[] order) {\n        return new int[] {};\n    }\n}\n",
+    functionContract: {
+      ...quest.functionContract,
+      parameters: [{ name: "order", type: "int[]", description: "순번 배열입니다." }],
+      returns: { type: "int[]", description: "한 칸 돌린 새 배열입니다." },
+    },
+    examples: [{
+      args: [[3, 9]],
+      expected: [9, 3],
+      explanation: "맨 앞 값을 맨 뒤로 보냅니다.",
+      observations: { argument0Unchanged: true, returnNotArgument0: true },
+    }],
+    publicTests: [
+      {
+        id: "java-bridge-que-01-large-view",
+        label: "큰 배열 공개 조건",
+        args: [largeValues],
+        expected: [...largeValues.slice(1), largeValues[0]],
+        observations: { argument0Unchanged: true, returnNotArgument0: true },
+      },
+      {
+        id: "java-bridge-que-01-small-view",
+        label: "작은 배열 공개 조건",
+        args: [[3, 9]],
+        expected: [9, 3],
+        observations: { argument0Unchanged: true, returnNotArgument0: true },
+      },
+    ],
+  };
+  return renderCodeQuestView({
+    languageId: "java",
+    languageName: "Java",
+    collectionTitle: "Java Code Quest",
+    evaluationKind: "java-static-method-v1",
+    quest: javaQuest,
+    currentIndex: 0,
+    total: 4,
+    source: javaQuest.starterCode,
+    executionAvailable: false,
     ...overrides,
   });
 }
@@ -158,6 +210,119 @@ test("Quest 편집기와 JSON 예제는 원본 입력을 유지하며 안전하�
   assert.match(html, new RegExp(`<textarea[^>]*>${quest.starterCode.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}<\\/textarea>`));
 });
 
+test("JavaScript 함수형 예제는 이름 있는 열에서 JSON 타입과 설명 번호를 보존한다", () => {
+  const typedQuest = structuredClone(quest);
+  typedQuest.functionContract.parameters = [
+    { name: "emptyList", type: "array", description: "빈 배열입니다." },
+    { name: "numericText", type: "string", description: "숫자 모양 문자열입니다." },
+    { name: "count", type: "integer", description: "실제 숫자입니다." },
+    { name: "missing", type: "null", description: "빈 값입니다." },
+    { name: "enabled", type: "boolean", description: "선택 상태입니다." },
+    { name: "payload", type: "object", description: "JSON 객체입니다." },
+  ];
+  typedQuest.functionContract.returns = { type: "object", description: "결과 객체입니다." };
+  typedQuest.examples = [
+    {
+      args: [[], "7", 7, null, false, { raw: "<tag>" }],
+      expected: { ok: true },
+      explanation: "각 값의 JSON 타입을 그대로 비교합니다.",
+    },
+    {
+      args: [[], "0", 0, null, true, {}],
+      expected: { ok: false },
+    },
+  ];
+
+  const html = render({ quest: typedQuest });
+  const table = html.match(/<table class="quest-example-table">[\s\S]*?<\/table>/)?.[0] ?? "";
+  let previousHeader = -1;
+
+  for (const header of ["예제", "emptyList", "numericText", "count", "missing", "enabled", "payload", "return"]) {
+    const position = table.indexOf(header);
+    assert.ok(position > previousHeader, `${header} 열이 계약 순서대로 있어야 합니다.`);
+    previousHeader = position;
+  }
+
+  assert.equal((table.match(/<th scope="col">/g) ?? []).length, 8);
+  assert.equal((table.match(/<th scope="row">/g) ?? []).length, 2);
+  assert.equal((table.match(/<td>/g) ?? []).length, 14);
+  assert.match(table, /<span class="code-line">\[\]<\/span>/);
+  assert.match(table, /code-token--string[^>]*>&quot;7&quot;</);
+  assert.match(table, /code-token--number[^>]*>7</);
+  assert.match(table, /code-token--literal[^>]*>null</);
+  assert.match(table, /code-token--literal[^>]*>false</);
+  assert.match(table, /&quot;raw&quot;[\s\S]*&quot;&lt;tag&gt;&quot;/);
+  assert.doesNotMatch(html, /<tag>/);
+  assert.match(html, /<ol class="quest-example-explanations">[\s\S]*<li class="quest-prose" value="1"><strong>예제 1 설명<\/strong>/);
+  assert.doesNotMatch(html, /예제 2 설명/);
+});
+
+test("대표 Java Quest와 long 반환 pilot은 타입·전체 공개 사례·원본 접근을 보존한다", async () => {
+  const collection = JSON.parse(
+    await readFile(new URL("../content/quests/java.json", import.meta.url), "utf8"),
+  );
+  const expectedQuests = new Map([
+    ["quest-java-bridge-arr-01", { parameters: ["readings", "slotNumber", "correctedValue"], examples: 2, downloads: 1 }],
+    ["quest-java-bridge-arr-02", { parameters: ["values", "minimum", "maximum"], examples: 2, downloads: 1 }],
+    ["quest-java-bridge-que-01", { parameters: ["order"], examples: 2, downloads: 1 }],
+    ["quest-java-total-price", { parameters: ["price", "quantity", "shippingFee"], examples: 3, downloads: 0 }],
+  ]);
+  const rendered = new Map();
+
+  for (const [questId, expected] of expectedQuests) {
+    const javaQuest = collection.quests.find(({ id }) => id === questId);
+    const html = renderJava({ quest: javaQuest });
+    const table = html.match(/<table class="quest-example-table">[\s\S]*?<\/table>/)?.[0] ?? "";
+    const publicDetails = html.match(/<details class="quest-public-tests">[\s\S]*?<\/section>/)?.[0] ?? "";
+    rendered.set(questId, { html, table });
+
+    assert.ok(javaQuest, `${questId} 기준 자료가 있어야 합니다.`);
+    let previousHeader = -1;
+    for (const header of ["예제", ...expected.parameters, "return"]) {
+      const position = table.indexOf(header);
+      assert.ok(position > previousHeader, `${questId}의 ${header} 열 순서가 계약과 같아야 합니다.`);
+      previousHeader = position;
+    }
+    assert.equal((table.match(/<th scope="col">/g) ?? []).length, expected.parameters.length + 2);
+    assert.equal((table.match(/<th scope="row">/g) ?? []).length, expected.examples);
+    assert.equal((table.match(/<td>/g) ?? []).length, (expected.parameters.length + 1) * expected.examples);
+    for (let number = 1; number <= expected.examples; number += 1) {
+      assert.match(html, new RegExp(`<li class="quest-prose" value="${number}"><strong>예제 ${number} 설명<\\/strong>`));
+    }
+    for (const parameterName of expected.parameters) {
+      assert.match(table, new RegExp(`<th scope="col"><code>${parameterName}<\\/code><\\/th>`));
+      assert.match(publicDetails, new RegExp(`<dt><code>${parameterName}<\\/code>`));
+    }
+    assert.match(table, /<th scope="col"><code>return<\/code><\/th>/);
+    assert.match(html, /모든 입력과 반환값·추가 확인 조건을 공개합니다[\s\S]*<details class="quest-public-tests">\s*<summary>공개 테스트 6개 보기<\/summary>/);
+    assert.doesNotMatch(html, /<details class="quest-public-tests"[^>]*\bopen\b/);
+    assert.equal((html.match(/data-quest-public-data data-quest-test-index=/g) ?? []).length, 6 - expected.downloads);
+    assert.equal((html.match(/data-quest-public-download data-quest-test-index=/g) ?? []).length, expected.downloads);
+    if (expected.downloads) {
+      assert.match(html, /data-quest-public-download-status role="status" aria-live="polite"/);
+    }
+    for (const [index, publicTest] of javaQuest.publicTests.entries()) {
+      assert.ok(html.includes(`${index + 1}. ${publicTest.label}`));
+    }
+    const observationCount = javaQuest.publicTests.filter(({ observations }) => observations).length;
+    assert.equal((html.match(/<h4>공개 추가 관찰<\/h4>/g) ?? []).length, observationCount);
+  }
+
+  const longTable = rendered.get("quest-java-total-price").table;
+  assert.match(longTable, /code-token--number[^>]*>4000003000<\/span>/);
+  assert.doesNotMatch(longTable, /code-token--string[^>]*>&quot;4000003000&quot;/);
+
+  const countTable = rendered.get("quest-java-bridge-arr-02").table;
+  assert.match(countTable, /<span class="code-line">\[\]<\/span>/);
+  assert.match(countTable, /code-token--number[^>]*>0<\/span>/);
+
+  const queueHtml = rendered.get("quest-java-bridge-que-01").html;
+  assert.match(queueHtml, /<code>order<\/code><small>order 총 100000개 · 처음 20개까지 표시<\/small>/);
+  assert.doesNotMatch(queueHtml, /(?:&quot;|")…(?:&quot;|")/);
+  assert.doesNotMatch(queueHtml, /code-token--number[^>]*>99999<\/span>/);
+  assert.ok(queueHtml.length < 100_000, `큰 공개 배열이 DOM을 ${queueHtml.length}자로 늘리면 안 됩니다.`);
+});
+
 test("실행 중에는 편집과 중복 실행을 막고 실제 취소 버튼만 제공한다", () => {
   const html = render({ isRunning: true });
   assert.match(html, /quest-run-panel[^>]*aria-busy="true"/);
@@ -166,6 +331,38 @@ test("실행 중에는 편집과 중복 실행을 막고 실제 취소 버튼만
   assert.match(html, /data-quest-cancel/);
   assert.doesNotMatch(html, /data-quest-reset/);
   assert.doesNotMatch(html, /data-quest-results/);
+});
+
+test("Java 실행 준비 중에도 문제·힌트·편집기와 공개 데이터 hook을 유지한다", () => {
+  const source = "public class Solution { /* 저장할 초안 */ }";
+  const first = renderJava({ source, visibleHintCount: 1 });
+  const rerendered = renderJava({ source: `${source}\n// 계속 작성`, visibleHintCount: 2 });
+
+  for (const html of [first, rerendered]) {
+    assert.match(html, /Java 실행 준비 중 · 코드 작성·저장 가능/);
+    assert.match(html, /data-quest-source[^>]*>/);
+    assert.doesNotMatch(html, /data-quest-source[^>]*readonly/);
+    assert.match(html, /data-quest-run[^>]*disabled/);
+    assert.match(html, /data-quest-reset/);
+    assert.match(html, /<details class="quest-public-tests">\s*<summary>공개 테스트 2개 보기<\/summary>/);
+    assert.match(html, /<code>order<\/code><small>order 총 25개 · 처음 20개까지 표시<\/small>/);
+    assert.doesNotMatch(html, /(?:&quot;|")…(?:&quot;|")/);
+    assert.doesNotMatch(html, /987654/);
+    assert.match(html, /첫 번째 인수의 원본 값 보존/);
+    assert.match(html, /입력과 다른 새 배열 반환/);
+    assert.match(html, /data-quest-public-download data-quest-test-index="0"/);
+    assert.match(html, /전체 공개 원본 JSON에는 인수와 기대값·추가 관찰이 포함됩니다/);
+    assert.match(html, /data-quest-public-download-status role="status" aria-live="polite"/);
+    assert.doesNotMatch(html, /<details[^>]*data-quest-public-data[^>]*data-quest-test-index="0"/);
+    assert.match(html, /<details[^>]*data-quest-public-data data-quest-test-index="1">\s*<summary>전체 공개 데이터 보기<\/summary>/);
+    assert.match(html, /data-quest-public-data-output[^>]*><\/textarea>/);
+  }
+  assert.match(first, /조건 나누기/);
+  assert.doesNotMatch(first, /경계 관찰/);
+  assert.match(rerendered, /조건 나누기/);
+  assert.match(rerendered, /경계 관찰/);
+  assert.match(first, /public class Solution \{ \/\* 저장할 초안 \*\/ \}/);
+  assert.match(rerendered, /\/\/ 계속 작성/);
 });
 
 test("힌트는 개념→관찰→구현 순서로 한 단계씩만 DOM에 공개한다", () => {

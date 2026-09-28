@@ -93,7 +93,6 @@ export function renderWebProjectListView({ title = "Web Project", items = [] } =
         <article class="web-project-card">
           <div class="web-project-card-meta">
             <span>${escapeHtml(project.difficulty ?? "beginner")}</span>
-            <span>${safeCount(project.estimatedMinutes)}분</span>
             <span>HTML · CSS</span>
           </div>
           <h2><a href="${escapeHtml(href ?? "#/web-projects")}">${escapeHtml(project.title ?? "Web Project")}</a></h2>
@@ -256,7 +255,7 @@ export function renderWebProjectView({
   return `
     <main class="web-project-page" id="lesson-content" tabindex="-1" aria-labelledby="web-project-title">
       <header class="web-project-header">
-        <p class="eyebrow">Web Project · ${safeCount(project.estimatedMinutes)}분</p>
+        <p class="eyebrow">Web Project</p>
         <h1 id="web-project-title">${escapeHtml(project.title)}</h1>
         <p>${escapeHtml(project.summary)}</p>
       </header>

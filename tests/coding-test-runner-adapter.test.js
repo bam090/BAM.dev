@@ -10,6 +10,9 @@ import {
 const collection = JSON.parse(
   await readFile(new URL("../content/coding-tests/javascript.json", import.meta.url), "utf8"),
 );
+const javaCollection = JSON.parse(
+  await readFile(new URL("../content/coding-tests/java.json", import.meta.url), "utf8"),
+);
 const problem = collection.problems[0];
 
 function createInput(mode, overrides = {}) {
@@ -139,6 +142,31 @@ test("허용되지 않은 mode와 컬렉션 밖 문제를 실행 전에 거부�
     /컬렉션에 속하지 않습니다/,
   );
   assert.throws(() => new CodingTestRunnerAdapter({}), /run\(\)/);
+});
+
+test("Java run·submit은 브라우저 runner 호출 전에 모두 거부한다", async () => {
+  const javaProblem = javaCollection.problems[0];
+  let runnerCalls = 0;
+  const adapter = new CodingTestRunnerAdapter({
+    async run() {
+      runnerCalls += 1;
+      throw new Error("Java 소스가 Worker에 들어가면 안 됩니다.");
+    },
+  });
+
+  for (const mode of ["run", "submit"]) {
+    await assert.rejects(
+      () => adapter.run({
+        collection: javaCollection,
+        problem: javaProblem,
+        source: javaProblem.starterCode,
+        requestId: `java-${mode}-blocked`,
+        mode,
+      }),
+      /현재 앱에서 실행할 수 없습니다/,
+    );
+  }
+  assert.equal(runnerCalls, 0);
 });
 
 test("runner가 요청과 다른 식별자나 suite를 반환하면 결과를 거부한다", () => {

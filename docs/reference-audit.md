@@ -1,5 +1,7 @@
 # 참고자료 감사 기록
 
+날짜별 출처·비교·미반입 기록은 해당 시점의 이력이다. 현재 시각 기준은 [승인 시안](designs/visual-design.md#승인된-탐색-시안-적용), Algorithm Bridge 반입과 검증은 [CT 전환](work-items/2026-09-15-algorithm-bridge-coding-tests.md), 웹과제 원본 방향은 [최신 출처 확인](#밤위키-웹과제-원본-확인-2026-09-15)을 따른다. 과거 부재·미복제 기록을 현재 상태로 해석하지 않는다.
+
 ## 프로젝트 색상 참고
 
 - bam이 직접 선택한 팔레트: `Ocean Blue Serenity`, 2026-08-29
@@ -132,4 +134,12 @@ HTML·CSS 객관식과 Quest는 위 교안의 안정적인 `lessonId`·`conceptI
 - 공식문서 확인 기록일: 2026-08-18
 - 2026-09-14 복원 출처: `db1a5f430f45fc0f60277a0a1ddc7f38fc21c7a0`의 기존 Java 교안 5개와 `docs/references/java-official-sources.md`를 바이트 그대로 복원하고 보관 목록으로만 등록했습니다.
 
-Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했습니다. 이는 과거 출처 확인 기록이며 MVP의 컴파일 기준을 뜻하지 않습니다. Java 코딩테스트는 `DEC-JAVA-CODING-TEST-01`에 따라 MVP 목표로 확정됐지만 콘텐츠·runner·설치 지원은 아직 없습니다. 패키지 내부 고정 JDK 제공은 [`DEC-JAVA-RUNTIME-01`](roadmap.md#2026-09-02-확정-제품-결정), JDK 25 LTS 계열의 정식 Java 25 언어·표준 API와 preview 금지는 [`DEC-JAVA-VERSION-02`](roadmap.md#2026-09-04-확정-제품-결정)로 확정됐습니다. 현재 Java 샘플은 MVP 편입 전에 Java 25 기준 출처·컴파일 적합성을 다시 검증해야 하고, 정확한 JDK 배포판·재배포 라이선스·패치 버전·보안 업데이트 정책과 컴파일·호출·IPC·격리·OS별 패키징은 [`DEC-JAVA-RUNNER-01`](roadmap.md#bam-결정-대기-목록) 결정 대기입니다. Java 정식 교안 과정·Code Quest·웹과제의 시점은 별도 [`DEC-JAVA-01`](roadmap.md#bam-결정-대기-목록) 결정 대기다.
+당시 Java 샘플은 [Java Language Specification SE 26의 타입](https://docs.oracle.com/javase/specs/jls/se26/html/jls-4.html)과 [메서드 선언](https://docs.oracle.com/javase/specs/jls/se26/html/jls-8.html#jls-8.4)을 확인했다. 이 URL은 과거 출처 기록이며 현재 Java 25 기준을 바꾸지 않는다. 이후 [JS·Java 개념 전환](work-items/2026-09-14-js-java-concepts-and-review.md)으로 정적 Java 과정을 제공했고 [CT 전환](work-items/2026-09-15-algorithm-bridge-coding-tests.md)으로 원본 문제의 열람·작성·저장을 추가했다. 별도 로컬 Java runner 후보는 격리 실패로 비활성이며 실제 실행·정식 설치는 미완료다. Java 25·preview 금지, 정확한 후보 artifact와 재개 조건은 [런타임 ADR](decisions/0005-java-quest-local-runtime.md), 정식 제품 범위는 [로드맵](roadmap.md#bam-결정-대기-목록)을 따른다. 날짜별 샘플 검증을 현재 교안·Java 컴파일 전체 PASS로 확대하지 않는다.
+
+## 밤위키 웹과제 원본 확인 (2026-09-15)
+
+`[현재 사실]` 읽기 전용 자료 조사에서 밤위키 `schema/자동운영/웹과제-운영.md`의 2026-09-14 확정 운영 방식을 확인했다. 원본 SHA-256은 `dac40d6dd34bcdfccd99b02cfd5337a9360d572b12ff1a13f1997b0258c093a1`이다. 한 과제 프로젝트·한 Git, 개념별/종합 독립 시작 브랜치, 같은 루트 README, 고정 시작 commit·버전·AI 제공 범위와 원격 공개 별도 경계는 [BAM 웹과제 계약](designs/web-assignments.md)에 반영한다.
+
+확인한 비SQL 웹코딩 원본 후보는 `wiki/outputs/review/study-tools/v1/명세.md`의 스터디 도구함과 `wiki/outputs/review/study-meetup-20260910/v1/pin-명세.md`의 스터디 안내판이다. 보존 명세·starter와 실제 사용자 풀이 폴더를 구분했다. 후자의 README는 독립 연습과 Java 21·Spring Boot·로컬 공개 검증을 안내하지만 실제 브랜치/commit·기동·검사를 이번에 실행하지 않았다. BAM의 Java 25 계약 변경이나 후보의 BAM 반입·제공 완료를 뜻하지 않는다.
+
+개인 경험 본문·사용자 풀이를 전수 열람하거나 복제하지 않았다. SQL/ERD·Excalidraw/PNG를 반입하지 않았고 원본 운영·예약·템플릿을 수정하지 않았다. 선택할 과제·고정 시작 버전·BAM ID·선수 연결·전달/공개·실행/오프라인 계약은 후속 미결정이다. 이 조사와 문서 정리는 콘텐츠 전체의 교육적 검증이 아니다. 근거는 `/tmp/bam-project-data-web-audit.md`와 해당 manifest다.

@@ -736,6 +736,439 @@
           "explanation": "어떤 변경이 어떤 요구사항을 해결했는지 확인하기 어렵습니다. 구조, 목록, 폼처럼 작은 단위로 수정하고 다시 검사하세요."
         }
       ]
+    },
+    {
+      "id": "quest-html-description-pairs",
+      "slug": "description-pairs",
+      "revision": 1,
+      "order": 6,
+      "lessonId": "html-notes-lists",
+      "conceptIds": [
+        "html.lists"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 8,
+      "title": "이름과 설명을 짝으로 연결하기",
+      "summary": "정보의 이름과 값을 설명 목록의 순서로 표현합니다.",
+      "instructions": "설명 목록 dl을 작성하세요. id는 course-info입니다. 직접 자식 네 개를 dt, dd, dt, dd 순서로 두고, 각각 형식, HTML, 실습, Code Quest라는 내용을 넣습니다. 순서가 있는 절차나 행·열 표가 아니라 이름 뒤에 설명을 잇는 문제입니다. 선수 개념: HTML 요소와 목록.",
+      "starterCode": "<!-- 형식: HTML / 실습: Code Quest를 설명 목록으로 작성하세요. -->",
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "개념 떠올리기",
+          "content": "목록은 들여쓰기 모양보다 항목 사이의 관계를 표현합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "작은 사례 비교하기",
+          "content": "형식 뒤에는 HTML, 실습 뒤에는 Code Quest라는 설명이 바로 이어져야 합니다. 이름만 먼저 모으면 짝의 흐름이 달라집니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "구현 방향 잡기",
+          "content": "dl 안에서 이름 역할의 dt와 설명 역할의 dd를 번갈아 작성하고 두 쌍의 내용을 넣으세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "description-uses-bullets",
+          "title": "모든 항목을 같은 역할로 표시함",
+          "explanation": "이름과 설명은 단순 항목 네 개와 다른 관계입니다."
+        },
+        {
+          "id": "description-groups-terms-first",
+          "title": "이름을 모두 먼저 나열함",
+          "explanation": "각 이름 뒤에 해당 설명이 이어지는지 확인하세요."
+        }
+      ],
+      "requirements": [
+        "dl#course-info를 정확히 한 개 작성합니다.",
+        "dl#course-info의 직접 자식은 정확히 네 개이고 dt, dd, dt, dd 순서입니다.",
+        "첫 dt에는 형식, 첫 dd에는 HTML, 둘째 dt에는 실습, 둘째 dd에는 Code Quest를 포함합니다.",
+        "공개 검사는 지정한 요소·순서·텍스트 관계를 확인하며 HTML 문법이나 접근성 전체를 보장하지 않습니다."
+      ],
+      "examples": [
+        {
+          "source": "<p>이름: 장소 / 설명: 학습실</p>",
+          "explanation": "이름과 설명이라는 두 역할을 관찰하는 자료입니다. 제출할 답안에서는 문제의 네 내용을 설명 목록으로 구조화하세요."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "description-pairs-single-list",
+          "label": "설명 목록 한 개",
+          "assertion": {
+            "kind": "selector-count",
+            "selector": "dl#course-info",
+            "expected": 1
+          }
+        },
+        {
+          "id": "description-pairs-child-count",
+          "label": "직접 자식 네 개",
+          "assertion": {
+            "kind": "selector-count",
+            "selector": "dl#course-info > *",
+            "expected": 4
+          }
+        },
+        {
+          "id": "description-pairs-pair-1",
+          "label": "1번째 dt의 내용",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "dl#course-info > dt:nth-child(1)",
+            "expected": "형식"
+          }
+        },
+        {
+          "id": "description-pairs-pair-2",
+          "label": "2번째 dd의 내용",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "dl#course-info > dd:nth-child(2)",
+            "expected": "HTML"
+          }
+        },
+        {
+          "id": "description-pairs-pair-3",
+          "label": "3번째 dt의 내용",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "dl#course-info > dt:nth-child(3)",
+            "expected": "실습"
+          }
+        },
+        {
+          "id": "description-pairs-pair-4",
+          "label": "4번째 dd의 내용",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "dl#course-info > dd:nth-child(4)",
+            "expected": "Code Quest"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "description-pairs-single-list",
+          "message": "dl 요소의 id와 개수를 확인하세요. 같은 id를 여러 곳에 붙이지 않습니다."
+        },
+        {
+          "testId": "description-pairs-child-count",
+          "message": "이름 두 개와 설명 두 개가 목록의 직접 자식인지 확인하세요."
+        },
+        {
+          "testId": "description-pairs-pair-1",
+          "message": "직접 자식의 이름·설명 순서와 그 자리에 들어간 내용을 함께 확인하세요."
+        },
+        {
+          "testId": "description-pairs-pair-2",
+          "message": "직접 자식의 이름·설명 순서와 그 자리에 들어간 내용을 함께 확인하세요."
+        },
+        {
+          "testId": "description-pairs-pair-3",
+          "message": "직접 자식의 이름·설명 순서와 그 자리에 들어간 내용을 함께 확인하세요."
+        },
+        {
+          "testId": "description-pairs-pair-4",
+          "message": "직접 자식의 이름·설명 순서와 그 자리에 들어간 내용을 함께 확인하세요."
+        }
+      ]
+    },
+    {
+      "id": "quest-html-single-choice-group",
+      "slug": "single-choice-group",
+      "revision": 1,
+      "order": 7,
+      "lessonId": "html-notes-form-controls",
+      "conceptIds": [
+        "html.form-controls"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 12,
+      "title": "하나만 고르는 입력 그룹 만들기",
+      "summary": "하나의 질문에 속한 radio들을 같은 제출 이름과 서로 다른 값으로 연결합니다.",
+      "instructions": "form#pace-form 안에 학습 속도를 하나만 선택할 수 있는 그룹을 작성하세요. fieldset#pace-group의 첫 자식 legend는 학습 속도입니다. 두 radio의 id는 pace-steady, pace-fast이고 name은 둘 다 pace입니다. value는 각각 steady, fast입니다. 명시적 label의 for를 각 id와 연결하고 문구를 차근차근, 빠르게로 작성하세요. 시작 코드의 제출 버튼을 유지합니다. 이 실습은 마크업 관계만 확인하며 실제 선택·전송은 실행하지 않습니다. 선수 개념: 레이블, 제출 이름, 폼 컨트롤.",
+      "starterCode": "<form id=\"pace-form\">\n  <!-- 질문과 두 선택지를 작성하세요. -->\n  <button type=\"submit\">선택 완료</button>\n</form>",
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "개념 떠올리기",
+          "content": "하나만 고르는 질문과 여러 항목을 독립적으로 고르는 질문은 입력 관계가 다릅니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "작은 사례 비교하기",
+          "content": "두 radio의 name이 같은지, value는 서로 다른지 비교하세요. 레이블의 for는 제출 이름이 아니라 입력 id와 연결됩니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "구현 방향 잡기",
+          "content": "form 안에 fieldset과 첫 자식 legend를 두고, 두 radio와 각각의 명시적 label을 작성합니다. name은 공유하고 id와 value는 구별합니다."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "radio-splits-name",
+          "title": "선택마다 name을 다르게 지정함",
+          "explanation": "같은 질문의 radio는 하나의 그룹 이름을 공유해야 합니다."
+        },
+        {
+          "id": "radio-uses-checkbox",
+          "title": "독립 선택 입력을 사용함",
+          "explanation": "각 항목을 따로 켜는 입력은 하나만 고르는 질문과 다릅니다."
+        },
+        {
+          "id": "radio-duplicates-value",
+          "title": "두 선택의 제출값이 같음",
+          "explanation": "화면 문구가 달라도 같은 value를 보내면 선택 결과를 구별할 수 없습니다."
+        }
+      ],
+      "requirements": [
+        "form#pace-form 안에 fieldset#pace-group을 둡니다. fieldset의 첫 자식 legend는 학습 속도를 포함합니다.",
+        "fieldset의 직접 자식으로 지정된 두 input을 작성하고 모두 type=radio, name=pace로 연결합니다.",
+        "첫 입력 id=pace-steady, value=steady, 둘째 입력 id=pace-fast, value=fast로 작성합니다. 두 입력의 배치 순서는 자유입니다.",
+        "fieldset의 직접 자식 label 두 개를 for로 각 id에 연결하고 차근차근, 빠르게를 각각 포함합니다.",
+        "form의 직접 자식 button은 type=submit이며 선택 완료를 포함합니다. required는 이번 문제의 요구가 아닙니다."
+      ],
+      "examples": [
+        {
+          "source": "<p>질문: 학습 속도 / 선택: 차근차근 또는 빠르게</p>",
+          "explanation": "선택지는 둘이지만 동시에 고르는 답은 하나입니다. 화면의 문구와 제출할 value는 서로 다른 역할입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "single-choice-group-legend",
+          "label": "그룹의 첫 자식 질문",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#pace-form fieldset#pace-group > legend:first-child",
+            "expected": "학습 속도"
+          }
+        },
+        {
+          "id": "single-choice-group-steady-control",
+          "label": "차근차근 입력의 타입·이름·값",
+          "assertion": {
+            "kind": "selector-exists",
+            "selector": "form#pace-form fieldset#pace-group > input#pace-steady[type=\"radio\"][name=\"pace\"][value=\"steady\"]"
+          }
+        },
+        {
+          "id": "single-choice-group-fast-control",
+          "label": "빠르게 입력의 타입·이름·값",
+          "assertion": {
+            "kind": "selector-exists",
+            "selector": "form#pace-form fieldset#pace-group > input#pace-fast[type=\"radio\"][name=\"pace\"][value=\"fast\"]"
+          }
+        },
+        {
+          "id": "single-choice-group-steady-label",
+          "label": "차근차근 레이블 연결",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#pace-form fieldset#pace-group > label[for=\"pace-steady\"]",
+            "expected": "차근차근"
+          }
+        },
+        {
+          "id": "single-choice-group-fast-label",
+          "label": "빠르게 레이블 연결",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#pace-form fieldset#pace-group > label[for=\"pace-fast\"]",
+            "expected": "빠르게"
+          }
+        },
+        {
+          "id": "single-choice-group-submit",
+          "label": "제출 버튼",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#pace-form > button[type=\"submit\"]",
+            "expected": "선택 완료"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "single-choice-group-legend",
+          "message": "지정 form 안의 fieldset에서 첫 자식 legend와 질문 문구를 확인하세요."
+        },
+        {
+          "testId": "single-choice-group-steady-control",
+          "message": "pace-steady 입력의 type, name, value가 각각 radio, pace, steady인지 비교하세요."
+        },
+        {
+          "testId": "single-choice-group-fast-control",
+          "message": "pace-fast 입력의 type, name, value를 확인하세요. 같은 질문은 name을 공유하고 value로 선택을 구별합니다."
+        },
+        {
+          "testId": "single-choice-group-steady-label",
+          "message": "for는 입력 id에 연결합니다. 지정 그룹 안의 레이블과 문구를 확인하세요."
+        },
+        {
+          "testId": "single-choice-group-fast-label",
+          "message": "for는 입력 id에 연결합니다. 제출 name과 혼동하지 마세요."
+        },
+        {
+          "testId": "single-choice-group-submit",
+          "message": "지정 form 안에 시작 코드의 제출 버튼과 type·문구를 유지하세요."
+        }
+      ]
+    },
+    {
+      "id": "quest-html-form-value-states",
+      "slug": "form-value-states",
+      "revision": 1,
+      "order": 8,
+      "lessonId": "html-notes-form-submission",
+      "conceptIds": [
+        "html.form-control-states"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 10,
+      "title": "수정할 수 없는 입력의 상태 구별하기",
+      "summary": "수정을 막되 제출에 남길 값과 제출에서 제외할 값을 서로 다른 상태로 표현합니다.",
+      "instructions": "예약 코드와 이전 코드는 모두 사용자가 수정할 수 없어야 합니다. 예약 코드는 일반 폼 제출에 포함할 값이므로 readonly를, 이전 코드는 제출에서 제외할 값이므로 disabled를 사용하세요. 시작 코드의 id, type, name, value, 레이블과 제출 버튼은 유지합니다. 두 상태를 동시에 붙이지 않습니다. 공개 검사는 상태 속성·연결만 확인하며 실제 제출이나 서버 전송은 실행하지 않습니다. 선수 개념: 입력 name, 레이블, 폼 제출 상태.",
+      "starterCode": "<form id=\"booking-form\">\n  <label for=\"booking-code\">예약 코드</label>\n  <input id=\"booking-code\" type=\"text\" name=\"bookingCode\" value=\"BAM-204\">\n  <label for=\"old-code\">이전 코드</label>\n  <input id=\"old-code\" type=\"text\" name=\"oldCode\" value=\"OLD-10\">\n  <button type=\"submit\">확인</button>\n</form>",
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "개념 떠올리기",
+          "content": "수정을 막는다는 조건 뒤에 제출에 포함할지도 따로 판단합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "작은 사례 비교하기",
+          "content": "두 입력은 같은 text 타입이어도 제출에 참여하는 의도가 다릅니다. 회색 스타일만 바꾸어서는 상태가 생기지 않습니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "구현 방향 잡기",
+          "content": "제출에 남길 예약 코드에는 readonly를, 제외할 이전 코드에는 disabled를 지정합니다. boolean 속성은 값이 false라는 문자열이어도 존재 자체가 적용된다는 점을 확인하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "states-disable-both",
+          "title": "두 입력을 모두 disabled로 만듦",
+          "explanation": "제출에 남겨야 하는 값까지 제외됩니다."
+        },
+        {
+          "id": "states-readonly-both",
+          "title": "두 입력을 모두 readonly로 만듦",
+          "explanation": "제출에서 제외할 의도가 readonly만으로 표현되지는 않습니다."
+        },
+        {
+          "id": "states-disabled-false",
+          "title": "disabled=false면 꺼진다고 생각함",
+          "explanation": "HTML boolean 속성은 false라는 문자열을 넣어도 존재하면 적용됩니다."
+        }
+      ],
+      "requirements": [
+        "form#booking-form은 정확히 한 개이며 시작 코드의 직접 자식 입력·레이블·버튼을 유지합니다.",
+        "예약 코드 input#booking-code는 type=text, name=bookingCode, value=BAM-204입니다. readonly가 있고 disabled는 없어야 합니다.",
+        "이전 코드 input#old-code는 type=text, name=oldCode, value=OLD-10입니다. disabled가 있고 readonly는 없어야 합니다.",
+        "각 label의 for는 입력 id와 같고 예약 코드, 이전 코드 문구를 각각 포함합니다. button은 type=submit이고 확인을 포함합니다."
+      ],
+      "examples": [
+        {
+          "source": "<p>수정 불가 + 제출 포함 / 수정 불가 + 제출 제외</p>",
+          "explanation": "둘 다 수정할 수 없지만 제출에 참여하는지는 다릅니다. 이 실습에서는 그 의도를 나타내는 HTML 속성만 검사합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "form-value-states-single-form",
+          "label": "예약 폼 한 개",
+          "assertion": {
+            "kind": "selector-count",
+            "selector": "form#booking-form",
+            "expected": 1
+          }
+        },
+        {
+          "id": "form-value-states-booking-control",
+          "label": "제출에 남길 예약 코드",
+          "assertion": {
+            "kind": "selector-exists",
+            "selector": "form#booking-form > input#booking-code[type=\"text\"][name=\"bookingCode\"][value=\"BAM-204\"][readonly]:not([disabled])"
+          }
+        },
+        {
+          "id": "form-value-states-old-control",
+          "label": "제출에서 제외할 이전 코드",
+          "assertion": {
+            "kind": "selector-exists",
+            "selector": "form#booking-form > input#old-code[type=\"text\"][name=\"oldCode\"][value=\"OLD-10\"][disabled]:not([readonly])"
+          }
+        },
+        {
+          "id": "form-value-states-booking-label",
+          "label": "예약 코드 레이블",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#booking-form > label[for=\"booking-code\"]",
+            "expected": "예약 코드"
+          }
+        },
+        {
+          "id": "form-value-states-old-label",
+          "label": "이전 코드 레이블",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#booking-form > label[for=\"old-code\"]",
+            "expected": "이전 코드"
+          }
+        },
+        {
+          "id": "form-value-states-submit",
+          "label": "확인 버튼",
+          "assertion": {
+            "kind": "text-includes",
+            "selector": "form#booking-form > button[type=\"submit\"]",
+            "expected": "확인"
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "form-value-states-single-form",
+          "message": "예약 입력을 담는 지정 form은 한 개만 둡니다."
+        },
+        {
+          "testId": "form-value-states-booking-control",
+          "message": "예약 입력의 기본 속성을 유지하고 readonly만 추가하세요. disabled가 함께 있으면 일반 제출에서 빠집니다."
+        },
+        {
+          "testId": "form-value-states-old-control",
+          "message": "이전 입력의 기본 속성을 유지하고 disabled만 추가하세요. disabled=\"false\"도 존재하면 적용됩니다."
+        },
+        {
+          "testId": "form-value-states-booking-label",
+          "message": "레이블의 for와 예약 입력 id의 연결을 유지하세요."
+        },
+        {
+          "testId": "form-value-states-old-label",
+          "message": "레이블의 for와 이전 입력 id의 연결을 유지하세요."
+        },
+        {
+          "testId": "form-value-states-submit",
+          "message": "시작 코드의 제출 버튼과 문구를 유지하세요."
+        }
+      ]
     }
   ]
 }

@@ -1,247 +1,269 @@
-# 힙과 그리디
+# 그리디: 지금 가장 좋은 선택으로 답 만들기
 
 ## 학습 목표
 
-- 최소 힙의 부모와 자식 사이 순서 규칙을 설명할 수 있습니다.
-- 배열에서 힙의 부모와 자식 인덱스를 계산할 수 있습니다.
-- 그리디가 현재 선택을 되돌리지 않는 문제 해결 방식임을 설명할 수 있습니다.
-- 그리디 선택이 항상 정답인지 근거와 반례를 확인할 수 있습니다.
+- 그리디가 답이 되는 조건을 설명하고 반례로 그리디가 틀리는 경우를 찾을 수 있습니다.
+- 회의실 배정에서 끝나는 시간이 빠른 회의부터 고르는 이유를 설명할 수 있습니다.
 
 ## 한줄 요약
 
-힙은 우선하는 값을 위에 유지하고, 그리디는 현재 선택을 확정해도 전체 답을 잃지 않는 근거가 있을 때 사용합니다.
+그리디는 매 순간 가장 좋아 보이는 선택을 하고 되돌아보지 않는 방법이고 그 선택이 뒤의 최적 답을 해치지 않는다는 근거가 있을 때만 정답이 됩니다.
 
 ## 먼저 확인할 개념
 
-- [순서 있는 List의 크기와 삭제](#/learn/java/wiki-lists): `ArrayList`의 `add`, `get`, `set`, `remove`를 사용합니다.
-- [람다와 함수형 인터페이스](#/learn/java/wiki-lambdas): 두 값을 비교하는 동작을 전달합니다.
-- [스택과 큐](#/learn/algorithm/stack-and-queue): 먼저 들어온 순서와 우선순위를 구분합니다.
+[정렬 알고리즘: 값을 순서대로 늘어놓기](#/learn/algorithm/sorting-two-pointers-sliding-window) · [동적 계획법: 작은 답을 저장해 큰 답 만들기](#/learn/algorithm/binary-search-and-dynamic-programming)
 
-## 개념 연결
+## 그리디란
 
-- 선행: `algo.list`, `algo.dictionary`, `algo.hashing`
-- 이 단원: `algo.heap`, `algo.priority-queue`, `algo.greedy`
-- 후속: `algo.sorting`, `algo.two-pointers`, `algo.brute-force`
+**그리디**는 답을 만드는 매 단계에서 지금 가장 좋아 보이는 선택 하나를 고르고 그 선택을 다시 바꾸지 않는 방법입니다.
+영어 greedy는 욕심쟁이라는 뜻이라서 **탐욕 알고리즘**이라고도 부릅니다.
+가능한 경우를 모두 따져 보는 완전 탐색이나 이전 상태를 모두 비교하는 동적 계획법보다 훨씬 빠르고 코드도 짧습니다.
 
-## 힙은 전체를 정렬하지 않고 맨 앞의 값을 관리한다
+여기서 **가장 좋아 보이는 선택**은 문제마다 정하는 기준입니다.
+가장 큰 값·가장 빨리 끝나는 것·가장 싼 것처럼 한 가지 기준으로 줄을 세워 앞에서부터 고르는 경우가 많습니다.
 
-대기 중인 작업에서 매번 가장 급한 작업을 골라야 한다면 모든 값을 다시 살펴보는 일을 줄이고 싶습니다.
-**우선순위 큐**는 들어온 시각이 아니라 정한 우선순위에 따라 다음 값을 꺼내는 규칙입니다.
-일반 큐의 FIFO와 다르며, 우선순위가 같은 값끼리의 입력 순서도 자동으로 보장하지 않습니다.
-
-**최소 힙**은 각 부모가 자신의 자식보다 작거나 같은 완전 이진 트리입니다.
-완전 이진 트리는 위쪽부터, 같은 높이에서는 왼쪽부터 빈자리 없이 채운 트리입니다.
-이 규칙을 따라 루트까지 올라가면 루트가 가장 작은 값임을 알 수 있습니다.
-형제나 서로 다른 가지 사이에는 순서 조건이 없으므로 힙 전체가 오름차순 배열인 것은 아닙니다.
-
-0부터 시작하는 배열 인덱스 `index`의 관계는 다음과 같습니다.
-
-| 위치 | 계산 | 먼저 확인할 조건 |
-| --- | --- | --- |
-| 부모 | `(index - 1) / 2` | `index > 0`이어야 부모가 있음 |
-| 왼쪽 자식 | `index * 2 + 1` | 계산한 인덱스가 현재 크기보다 작음 |
-| 오른쪽 자식 | `index * 2 + 2` | 계산한 인덱스가 현재 크기보다 작음 |
-
-여기서 `/`는 음수가 아닌 `int`끼리의 정수 나눗셈입니다.
-삽입은 맨 끝에 값을 넣고 부모와 비교하며 위로 올립니다.
-삭제는 루트를 꺼내고 마지막 값을 루트로 옮긴 뒤, 더 작은 자식과 비교하며 아래로 내립니다.
-힙 순서를 복구하는 비교·교환은 한 번에 높이만큼 진행하므로 `O(log n)`입니다.
-아래 `ArrayList` 기반 삽입은 내부 배열을 늘리는 비용까지 포함하면 분할 상환 기준으로 설명합니다.
-
-## Java에서 우선순위 큐 생성하고 사용하기
-
-알고리즘 문제를 풀 때는 `PriorityQueue<Integer> queue = new PriorityQueue<>();`로 정수 최소 우선순위 큐를 만들 수 있습니다.
-`Integer`의 자연 순서는 숫자의 오름차순이므로 작은 값이 먼저 나옵니다.
-큰 값부터 필요하면 생성자에 `Comparator.reverseOrder()`를 전달합니다.
-
-| 목적 | 사용 방법 | 결과·주의점 |
-| --- | --- | --- |
-| 값 넣기 | `queue.offer(5)` | 우선순위에 맞춰 보관 |
-| 다음 값 확인 | `queue.peek()` | 제거하지 않으며 비었으면 `null` |
-| 다음 값 꺼내기 | `queue.poll()` | 제거하며 비었으면 `null` |
-| 빈 상태 확인 | `queue.isEmpty()` | 비었으면 `true` |
-| 현재 개수 | `queue.size()` | 저장한 원소 수 |
-
-`PriorityQueue`에는 `null`을 넣을 수 없습니다.
-빈 큐의 `poll()` 결과를 `int`에 바로 대입하면 `null`의 자동 언박싱 때문에 예외가 납니다.
-꺼내기 전에 빈 상태를 확인하거나 `Integer`로 받아 `null`을 구분합니다.
-`for-each` 순회나 큐 자체의 출력은 우선순위순이라는 보장이 없으며, 순서대로 처리하려면 `poll()`을 반복합니다.
-
-객체의 우선순위는 `Comparator`로 정합니다.
-예를 들어 종료 시각 기준은 `Comparator.comparingInt((Meeting meeting) -> meeting.end)`로 표현합니다.
-두 `int`를 빼서 비교하면 큰 값에서 오버플로가 날 수 있으므로 `Integer.compare`나 `comparingInt`를 사용합니다.
-
-## 그리디는 현재 선택을 되돌리지 않는다
-
-**그리디**는 매 단계에서 선택 기준에 맞는 하나를 확정하고 이후에 되돌리지 않는 전략입니다.
-힙은 값을 관리하는 자료구조이고 그리디는 답을 고르는 전략이므로, 힙을 쓴다고 자동으로 올바른 그리디가 되지는 않습니다.
-
-겹치지 않는 회의를 최대한 많이 고른다고 합시다.
-회의는 `start < end`인 시간 구간이며, 앞 회의가 끝나는 시각에 다음 회의를 시작할 수 있습니다.
-모든 회의의 가치는 동일하고 **선택 개수**를 최대화합니다.
-
-종료 시각이 가장 빠른 회의를 고르면 뒤에 남는 시간이 줄지 않습니다.
-어떤 최적 일정의 첫 회의를 이 회의로 바꾸어도 뒤의 회의들을 유지할 수 있습니다.
-같은 논리를 남은 회의에 반복할 수 있으므로 이 조건에서는 현재 선택을 확정할 수 있습니다.
-
-회의마다 보상이 다르고 총보상을 최대화한다면 이 기준을 그대로 적용할 수 없습니다.
-예를 들어 `[0, 2)`의 보상이 `1`, `[0, 3)`의 보상이 `100`이면 빨리 끝나는 회의를 고른 결과가 최대 보상이 아닙니다.
-선택하려는 값이 개수인지 보상인지부터 확인해야 합니다.
-
-## 예제: 직접 만든 힙과 표준 큐, 회의 선택
-
-`5 → 2 → 7 → 1`을 넣을 때 `1`이 부모와 두 번 자리를 바꾸는 모습을 먼저 예상해 보세요.
-다음 Java 25 예제는 힙의 내부 움직임을 직접 구현한 뒤, 같은 꺼내기 결과를 표준 `PriorityQueue`에서도 확인하는 구성입니다.
-회의 선택은 모든 회의를 한 번 정렬하면 되므로 힙을 억지로 사용하지 않습니다.
-코드는 `HeapAndGreedyExample.java` 파일 하나로 구성할 수 있습니다.
+예를 들어 스터디 카페를 운영하면서 손님에게 거스름돈을 주고 스터디룸 예약을 받는 장면을 떠올려 보세요.
+이 문서는 이 스터디 카페 하나로 끝까지 설명합니다.
+먼저 거스름돈부터 보겠습니다.
+동전 개수를 가장 적게 해서 1,260원을 거슬러 주려면 큰 동전부터 쓸 수 있는 만큼 쓰면 됩니다.
 
 ```java
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.PriorityQueue;
-
-public class HeapAndGreedyExample {
-    static void swap(List<Integer> heap, int left, int right) {
-        int temporary = heap.get(left);
-        heap.set(left, heap.get(right));
-        heap.set(right, temporary);
-    }
-
-    static void pushMinHeap(List<Integer> heap, int value) {
-        heap.add(value);
-        int index = heap.size() - 1;
-        while (index > 0) {
-            int parent = (index - 1) / 2;
-            if (heap.get(parent) <= heap.get(index)) break;
-            swap(heap, parent, index);
-            index = parent;
+static List<Integer> giveChange(int amount, int[] coins) {
+    List<Integer> used = new ArrayList<>();
+    for (int coin : coins) {
+        while (amount >= coin) {
+            amount -= coin;
+            used.add(coin);
         }
     }
-
-    static Integer popMinHeap(List<Integer> heap) {
-        if (heap.isEmpty()) return null;
-        int minimum = heap.get(0);
-        int last = heap.remove(heap.size() - 1);
-        if (heap.isEmpty()) return minimum;
-        heap.set(0, last);
-
-        int index = 0;
-        // 내부 노드에서만 자식 인덱스를 계산한다.
-        while (index < heap.size() / 2) {
-            int left = index * 2 + 1;
-            int right = left + 1;
-            int smaller = left;
-            if (right < heap.size() && heap.get(right) < heap.get(left)) {
-                smaller = right;
-            }
-            if (heap.get(index) <= heap.get(smaller)) break;
-            swap(heap, index, smaller);
-            index = smaller;
-        }
-        return minimum;
-    }
-
-    static final class Meeting {
-        final String name;
-        final int start;
-        final int end;
-
-        Meeting(String name, int start, int end) {
-            if (start >= end) throw new IllegalArgumentException("start < end");
-            this.name = name;
-            this.start = start;
-            this.end = end;
-        }
-    }
-
-    static List<String> selectMeetings(List<Meeting> meetings) {
-        List<Meeting> ordered = new ArrayList<>(meetings);
-        ordered.sort(Comparator.comparingInt((Meeting meeting) -> meeting.end)
-                .thenComparingInt(meeting -> meeting.start));
-        List<String> selected = new ArrayList<>();
-        int lastEnd = Integer.MIN_VALUE;
-        for (Meeting meeting : ordered) {
-            if (meeting.start < lastEnd) continue;
-            selected.add(meeting.name);
-            lastEnd = meeting.end;
-        }
-        return selected;
-    }
-
-    public static void main(String[] args) {
-        List<Integer> heap = new ArrayList<>();
-        PriorityQueue<Integer> queue = new PriorityQueue<>();
-        for (int value : new int[]{5, 2, 7, 1, 4}) {
-            pushMinHeap(heap, value);
-            queue.offer(value);
-        }
-        List<Integer> fromHeap = new ArrayList<>();
-        List<Integer> fromQueue = new ArrayList<>();
-        while (!heap.isEmpty()) fromHeap.add(popMinHeap(heap));
-        while (!queue.isEmpty()) fromQueue.add(queue.poll());
-        System.out.println(fromHeap);
-        System.out.println(fromQueue);
-        System.out.println(popMinHeap(heap));
-
-        List<Meeting> meetings = List.of(
-                new Meeting("E", 5, 8), new Meeting("A", 1, 4),
-                new Meeting("D", 6, 7), new Meeting("B", 3, 5),
-                new Meeting("C", 4, 6));
-        System.out.println(selectMeetings(meetings));
-        System.out.println(meetings.get(0).name);
-    }
+    return used;
 }
 ```
 
-예상 출력:
+동전이 500·100·50·10원일 때 몇 개가 나올지 먼저 세어 보세요.
 
 ```text
-[1, 2, 4, 5, 7]
-[1, 2, 4, 5, 7]
-null
-[A, C, D]
-E
+1260원: [500, 500, 100, 100, 50, 10]
 ```
 
-## 실행 흐름에서 볼 상태
+500원 두 개로 1,000원을 채우고 남은 260원을 100원 두 개·50원 하나·10원 하나로 채워 모두 6개입니다.
+매번 남은 금액에 들어가는 가장 큰 동전을 고르는 것이 이 문제의 가장 좋아 보이는 선택입니다.
 
-힙에 `1`을 추가한 직후 `[2, 5, 7, 1]`은 `[2, 1, 7, 5]`, `[1, 2, 7, 5]`로 변합니다.
-루트만 확인하는 것이 아니라 부모와 자식의 규칙을 복구한 결과입니다.
-루트를 꺼낸 뒤에도 마지막 값을 내려 보내며 이 규칙을 다시 지킵니다.
+## 그리디가 답이 되는 조건
 
-회의는 종료 시각으로 `A → B → C → D → E` 순서가 됩니다.
-`A`를 선택한 뒤 `B`는 겹쳐 건너뛰고, `C`와 `D`는 각각 직전 회의가 끝나는 시각에 시작하므로 선택합니다.
-`E`는 `D`와 겹칩니다.
-`new ArrayList<>(meetings)`로 목록을 복사했으므로 원본의 첫 회의는 계속 `E`입니다.
-객체까지 복제한 것은 아니지만 이 예제는 회의 객체의 값을 바꾸지 않습니다.
+그런데 매 순간 좋아 보이는 선택이 전체로도 가장 좋은 답이라는 보장은 없습니다.
+그리디가 정답이 되려면 두 가지 성질이 필요합니다.
 
-## 흔한 실수와 확인할 지점
+| 조건 | 뜻 | 거스름돈에서 |
+| --- | --- | --- |
+| 탐욕 선택 속성 | 지금 가장 좋아 보이는 선택을 해도 최적 답으로 가는 길이 남아 있습니다 | 가장 큰 동전을 먼저 써도 최소 개수로 끝낼 수 있습니다 |
+| 최적 부분 구조 | 하나를 고른 뒤 남은 문제도 같은 방식으로 가장 좋게 풀면 전체가 가장 좋습니다 | 500원을 쓰고 남은 760원도 최소 개수로 거슬러 주면 됩니다 |
 
-- 힙이나 `PriorityQueue` 전체가 정렬됐다고 생각하면 출력 순서를 잘못 해석합니다. 부모·자식 규칙과 반복 `poll()`을 구분하세요.
-- 자식이 있는지 확인하지 않고 읽으면 인덱스 오류가 납니다. 왼쪽·오른쪽 경계를 각각 확인하세요.
-- 작은 값이 빠른 우선순위인지 큰 값이 빠른 우선순위인지 정하지 않으면 큐가 반대로 작동합니다. 비교 기준을 먼저 적으세요.
-- 빈 힙의 `null`을 숫자로 사용하지 마세요. 직접 만든 힙도 표준 큐도 꺼낼 값이 없는 경우를 구분합니다.
-- 현재 이익이 크다는 설명만으로 그리디를 확정하지 마세요. 앞의 선택을 교체해도 이후 최적해를 잃지 않는 근거나 반례를 확인하세요.
+**최적 부분 구조**는 [동적 계획법](#/learn/algorithm/binary-search-and-dynamic-programming)에서도 본 성질입니다.
+두 방법의 차이는 **탐욕 선택 속성**에 있습니다.
+동적 계획법은 이전 상태를 모두 비교해서 고르지만 그리디는 기준 하나로 바로 고르고 끝냅니다.
+그래서 그리디는 이 속성이 성립한다는 근거가 있을 때만 쓸 수 있습니다.
 
-## 이어서 학습하기
+## 그리디가 실패하는 경우
 
-[정렬·투 포인터·슬라이딩 윈도우](#/learn/algorithm/sorting-two-pointers-sliding-window)에서 순서를 만든 뒤 탐색량을 줄이는 방법을 이어서 봅니다.
-이 예제의 회의 시작·종료 시각을 한 번 바꾸고, 코드를 실행하기 전에 선택 결과가 달라지는 이유를 설명해 보세요.
+거스름돈 그리디가 늘 맞는 것은 아닙니다.
+동전 종류가 바뀌면 같은 코드가 틀린 답을 냅니다.
+
+![왼쪽은 동전 500·100·50·10원으로 1260원을 큰 동전부터 골라 6개로 거슬러 주는 모습이고 가장 적은 개수이다. 오른쪽은 동전 500·400·100원으로 800원을 거슬러 줄 때 그리디는 500원 하나와 100원 셋으로 4개를 쓰지만 최적은 400원 두 개로 2개인 모습](content/assets/algorithm/greedy-coins.png)
+
+스터디 카페에 400원짜리 동전이 있다고 해 보겠습니다.
+800원을 거슬러 줄 때 그리디는 가장 큰 500원을 먼저 고릅니다.
+남은 300원은 100원 세 개로 채우니 모두 4개입니다.
+
+```text
+800원: [500, 100, 100, 100]
+```
+
+하지만 400원 두 개면 2개로 끝납니다.
+처음에 500원을 고른 순간 400원 두 개로 가는 길이 사라졌기 때문입니다.
+즉 이 동전 종류에서는 탐욕 선택 속성이 성립하지 않습니다.
+
+반면 500·100·50·10원은 큰 동전이 작은 동전의 배수라서 큰 동전 하나를 작은 동전 여러 개로 바꾸면 개수만 늘어납니다.
+그래서 큰 동전을 먼저 써도 손해가 없고 그리디가 늘 정답입니다.
+동전 종류가 이 조건을 만족하지 않으면 금액마다 가능한 경우를 모두 비교하는 동적 계획법으로 풀어야 합니다.
+
+## 회의실 배정
+
+이번에는 스터디룸 예약입니다.
+스터디룸은 하나뿐이고 예약 요청이 여러 개 들어왔을 때 시간이 겹치지 않게 가장 많은 예약을 받으려고 합니다.
+앞 예약이 끝나는 시각에 다음 예약이 바로 시작해도 됩니다.
+이 문제를 **회의실 배정** 문제라고 부릅니다.
+
+가장 좋아 보이는 선택의 기준으로 몇 가지를 떠올릴 수 있습니다.
+빨리 시작하는 예약·짧은 예약·빨리 끝나는 예약입니다.
+정답이 되는 기준은 **끝나는 시간이 빠른 예약부터** 고르는 것입니다.
+
+![0부터 10까지의 시간 축에 예약 A 1~4 · B 3~5 · C 0~6 · D 5~7 · E 8~9 · F 5~9를 끝나는 시간 순서로 놓은 그림. A를 고르고 B와 C는 A가 끝나기 전에 시작해 건너뛰고 D를 고르고 E를 고르고 F는 E가 끝나기 전에 시작해 건너뛰어 모두 3개를 고른다.](content/assets/algorithm/greedy-meetings.png)
+
+그림처럼 예약을 끝나는 시간 순서로 줄 세운 뒤 앞에서부터 봅니다.
+마지막으로 고른 예약이 끝난 뒤에 시작하는 예약이면 고르고 아니면 건너뜁니다.
+
+| 차례 | 예약 | 시작 ≥ 마지막 끝? | 결과 | 마지막 끝 |
+| --- | --- | --- | --- | --- |
+| 1 | A 1~4 | 1 ≥ 0 | 선택 | 4 |
+| 2 | B 3~5 | 3 < 4 | 건너뜀 | 4 |
+| 3 | C 0~6 | 0 < 4 | 건너뜀 | 4 |
+| 4 | D 5~7 | 5 ≥ 4 | 선택 | 7 |
+| 5 | E 8~9 | 8 ≥ 7 | 선택 | 9 |
+| 6 | F 5~9 | 5 < 9 | 건너뜀 | 9 |
+
+코드로 옮기면 정렬 한 번과 반복문 한 번입니다.
+예약 하나는 이름·시작·끝을 담은 `Meeting` 레코드로 나타냅니다.
+
+```java
+static List<String> selectMeetings(List<Meeting> meetings) {
+    List<Meeting> sorted = new ArrayList<>(meetings);
+    sorted.sort((a, b) -> Integer.compare(a.end(), b.end()));
+    List<String> selected = new ArrayList<>();
+    int lastEnd = 0;
+    for (Meeting m : sorted) {
+        if (m.start() >= lastEnd) {
+            selected.add(m.name());
+            lastEnd = m.end();
+        }
+    }
+    return selected;
+}
+```
+
+위 표를 보면서 고른 예약의 이름을 먼저 적어 보세요.
+
+```text
+고른 회의: [A, D, E]
+```
+
+정렬이 `O(n log n)`이고 반복은 `O(n)`이므로 전체는 `O(n log n)`입니다.
+가능한 조합을 모두 확인하는 완전 탐색은 예약이 `n`개면 `2ⁿ`가지를 봐야 하므로 그리디가 훨씬 빠릅니다.
+
+그렇다면 다른 기준은 왜 안 될까요?
+각 기준이 틀리는 예를 하나씩 보면 알 수 있습니다.
+
+![왼쪽은 시작이 빠른 예약부터 고르면 0~6인 C가 먼저 뽑혀 C와 E 2개만 고르게 되는 반례이고 끝이 빠른 기준은 A·D·E 3개이다. 오른쪽은 짧은 예약부터 고르면 4~6인 Q가 0~5인 P와 5~10인 R에 모두 겹쳐 Q 하나만 고르게 되는 반례이고 끝이 빠른 기준은 P·R 2개이다.](content/assets/algorithm/greedy-meeting-counterexamples.png)
+
+빨리 시작하는 예약은 길게 이어질 수 있어서 다른 예약을 여러 개 막습니다.
+짧은 예약도 하필 두 예약 사이에 걸치면 둘을 모두 막습니다.
+반면 빨리 끝나는 예약을 고르면 뒤에 남는 시간이 가장 길어집니다.
+
+## 그리디의 정당성 확인
+
+그리디는 기준을 잘못 고르면 틀린 답을 내면서도 코드는 멀쩡히 돌아갑니다.
+그래서 기준을 정했다면 그 기준이 맞다는 근거를 확인하는 과정이 필요합니다.
+이것을 그리디의 **정당성** 확인이라고 합니다.
+
+가장 많이 쓰는 근거는 **바꿔치기**입니다.
+어떤 최적 답이 있다고 할 때 그 답의 첫 선택을 그리디가 고른 것으로 바꿔도 여전히 최적 답이라는 것을 보이는 방법입니다.
+
+회의실 배정으로 확인해 보겠습니다.
+어떤 최적 일정의 첫 예약이 X라고 해 보겠습니다.
+그리디가 고른 A는 모든 예약 중에서 가장 빨리 끝나므로 A는 X보다 늦게 끝나지 않습니다.
+그래서 X를 A로 바꿔도 X 뒤에 있던 예약들과 겹치지 않고 예약 개수도 그대로입니다.
+남은 예약에도 같은 논리를 반복하면 그리디의 답이 최적 답과 개수가 같아집니다.
+
+바꿔치기 근거가 떠오르지 않을 때는 **반례**를 먼저 찾아봅니다.
+예약 3~4개·동전 2~3종류처럼 작은 입력을 몇 개 만들어 손으로 모든 경우를 따져 보고 그리디의 답과 비교합니다.
+거스름돈의 400원이나 회의실의 짧은 예약처럼 반례가 하나라도 나오면 그 기준은 틀린 것입니다.
+여러 입력을 시험해도 반례가 나오지 않으면 그 기준에 대한 믿음이 커지고 그때 바꿔치기 근거를 다시 정리해 봅니다.
+
+> [!note]- 전체 코드 보기
+> 이 문서의 예제를 하나로 합친 프로그램입니다.
+> `StudyCafeGreedy.java`로 저장해 실행해 볼 수 있습니다.
+>
+> ```java
+> import java.util.ArrayList;
+> import java.util.List;
+>
+> public class StudyCafeGreedy {
+>     static List<Integer> giveChange(int amount, int[] coins) {
+>         List<Integer> used = new ArrayList<>();
+>         for (int coin : coins) {
+>             while (amount >= coin) {
+>                 amount -= coin;
+>                 used.add(coin);
+>             }
+>         }
+>         return used;
+>     }
+>
+>     record Meeting(String name, int start, int end) {}
+>
+>     static List<String> selectMeetings(List<Meeting> meetings) {
+>         List<Meeting> sorted = new ArrayList<>(meetings);
+>         sorted.sort((a, b) -> Integer.compare(a.end(), b.end()));
+>         List<String> selected = new ArrayList<>();
+>         int lastEnd = 0;
+>         for (Meeting m : sorted) {
+>             if (m.start() >= lastEnd) {
+>                 selected.add(m.name());
+>                 lastEnd = m.end();
+>             }
+>         }
+>         return selected;
+>     }
+>
+>     public static void main(String[] args) {
+>         System.out.println("1260원: " + giveChange(1260, new int[] {500, 100, 50, 10}));
+>         System.out.println("800원: " + giveChange(800, new int[] {500, 400, 100}));
+>
+>         List<Meeting> meetings = List.of(
+>             new Meeting("A", 1, 4),
+>             new Meeting("B", 3, 5),
+>             new Meeting("C", 0, 6),
+>             new Meeting("D", 5, 7),
+>             new Meeting("E", 8, 9),
+>             new Meeting("F", 5, 9)
+>         );
+>         System.out.println("고른 회의: " + selectMeetings(meetings));
+>     }
+> }
+> ```
+>
+> ```text
+> 1260원: [500, 500, 100, 100, 50, 10]
+> 800원: [500, 100, 100, 100]
+> 고른 회의: [A, D, E]
+> ```
+
+## 그리디의 활용
+
+코딩테스트에서 그리디는 대부분 **정렬한 뒤 앞에서부터 고르기** 모양으로 나옵니다.
+무엇을 기준으로 정렬하느냐가 문제의 핵심입니다.
+
+| 문제 | 가장 좋아 보이는 선택 | 근거 |
+| --- | --- | --- |
+| 회의실 배정 | 끝나는 시간이 빠른 예약 | 뒤에 남는 시간이 가장 깁니다 |
+| 배수 관계인 동전으로 거스름돈 | 가장 큰 동전 | 큰 동전을 작은 동전으로 바꾸면 개수만 늘어납니다 |
+| 정해진 개수를 가장 싸게 사기 | 가장 싼 물건 | 비싼 물건을 싼 물건으로 바꾸면 비용이 줄어듭니다 |
+| 나눌 수 있는 물건을 가방에 담기 | 무게당 가치가 큰 물건 | 같은 무게라면 가치가 큰 쪽이 낫습니다 |
+| 구간 전체를 가장 적은 덮개로 덮기 | 빈 곳을 덮으며 가장 멀리 가는 덮개 | 멀리 갈수록 남은 구간이 짧아집니다 |
+
+매 단계에서 남은 것 중 가장 좋은 것을 계속 꺼내야 하는 문제는 [우선순위 큐](#/learn/algorithm/priority-queue-heap)를 함께 씁니다.
+Java에서 정렬 기준을 정하고 우선순위 큐로 그리디를 구현하는 방법은 [Java로 그리디 선택 구현하기](#/learn/algorithm/greedy-java)에서 알아봅니다.
+
+## 정리
+
+- 그리디는 매 단계에서 기준 하나로 가장 좋아 보이는 선택을 하고 되돌리지 않습니다.
+- 탐욕 선택 속성과 최적 부분 구조가 함께 있을 때만 그리디가 정답이 됩니다.
+- 동전 500·400·100원으로 800원을 거슬러 주는 경우처럼 반례가 하나라도 있으면 그 기준은 틀린 것입니다.
+- 회의실 배정은 끝나는 시간이 빠른 예약부터 고르고 바꿔치기로 그 기준이 맞다는 것을 확인합니다.
+
+## 이어서 연습하기
+
+[Java로 그리디 선택 구현하기](#/learn/algorithm/greedy-java)에서 `Comparator`와 `PriorityQueue`로 그리디를 구현해 봅니다.
+[점검실 예약 고르기](#/coding-tests/java/bridge-gre-01)에서 겹치지 않는 예약을 가장 많이 골라 봅니다.
+[실습 키트 싸게 준비하기](#/coding-tests/java/bridge-gre-02)에서 가장 싼 것부터 고르는 그리디를 연습합니다.
 
 ## 공식 자료
 
-- [Oracle Java 25: PriorityQueue](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/PriorityQueue.html): 자연 순서·비교자, 빈 큐와 순회 계약.
-- [Oracle Java 25: Comparator](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Comparator.html): 숫자 필드 비교와 동률 기준 연결.
-- [Oracle Java 25: ArrayList](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/ArrayList.html): 목록 복사와 원소 변경·삭제.
-- [Princeton Algorithms: Priority Queues](https://algs4.cs.princeton.edu/24pq/): 힙의 순서와 위·아래로 복구하는 원리.
-
-공식 자료 확인일: 2026-09-14. 기존 BAM.dev 교안의 개념과 예제를 Java 25 기준으로 재구성했습니다.
+- [Java 25 API: List](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html)
 
 ## 핵심 질문 답
 
-가장 작은 값을 반복해서 꺼내려면 부모가 자식보다 작거나 같은 최소 힙 규칙을 유지하거나, 자연 순서의 `PriorityQueue<Integer>`를 사용합니다.
-전체 배열의 정렬이나 FIFO를 기대하지 않고 비교 기준과 빈 상태의 반환값을 확인해야 합니다.
-
-현재의 선택을 확정하는 그리디는 그 선택으로 뒤의 최적해를 잃지 않는다는 근거가 필요합니다.
-같은 가치의 회의 개수를 최대화할 때는 가장 일찍 끝나는 회의를 고르면 남은 시간을 줄이지 않지만, 회의별 보상이 다르면 같은 기준이 성립하지 않습니다.
+그리디는 매 단계에서 정한 기준으로 지금 가장 좋아 보이는 선택을 하고 되돌리지 않는 방법입니다.
+그 선택을 해도 최적 답으로 가는 길이 남아 있다는 탐욕 선택 속성이 있어야 정답이 됩니다.
+동전 500·400·100원으로 800원을 거슬러 주는 경우처럼 작은 반례가 하나라도 있으면 그 기준은 틀린 것이고 이때는 동적 계획법 같은 다른 방법을 씁니다.
+회의실 배정처럼 최적 답의 첫 선택을 그리디의 선택으로 바꿔도 손해가 없음을 보이면 그리디가 맞다고 확인할 수 있습니다.

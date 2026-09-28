@@ -25,6 +25,10 @@ export function buildQuestHash(languageId, slug) {
   return `#/quest/${encodeURIComponent(languageId)}/${encodeURIComponent(slug)}`;
 }
 
+export function buildQuestCatalogHash() {
+  return "#/quest";
+}
+
 export function buildCodingTestListHash() {
   return "#/coding-tests";
 }
@@ -88,6 +92,11 @@ export function parseQuestHash(hash) {
   } catch {
     return null;
   }
+}
+
+export function parseQuestCatalogHash(hash) {
+  const cleanHash = String(hash ?? "").split("?")[0].replace(/^#/, "");
+  return /^\/quest\/?$/u.test(cleanHash) ? { kind: "list" } : null;
 }
 
 export function parseCodingTestHash(hash) {

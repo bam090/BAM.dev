@@ -9,8 +9,10 @@ const { concepts } = await load("../content/review-concepts.json");
 const collections = new Map(await Promise.all(["html", "css", "javascript", "java"].map(async (id) => [id, await load(`../content/quizzes/${id}.json`)])));
 const options = { curriculum, concepts, collections };
 
-test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공한다", () => {
-  const html = renderLearningHome();
+test("홈은 학습문서·객관식·Code Quest의 독립 진입을 제공한다", () => {
+  const html = renderLearningHome({
+    questOverview: { completedCount: 4, totalCount: 18 },
+  });
   const title = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1] ?? "";
   assert.equal(title.replace(/<[^>]+>/g, "").trim(), "배운 개념이 내 것이 되는 곳.");
   assert.doesNotMatch(title, /<br\b|,/);
@@ -19,10 +21,13 @@ test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공�
     "지금 필요한 공부부터 바로 시작하세요!", "01 / LEARN", "개념별 학습문서", "주제별 학습문서를 통해",
     "개념을 읽고 예제를 살펴보세요.", "핵심 질문에 내 말로 답해 봅니다.", "02 / PRACTICE",
     "객관식 문제 풀어보기", "얼마나 이해했을까?", "문제를 풀고 선택한 답의 이유를 확인하세요.",
-    "헷갈리는 개념은 바로 다시 읽을 수 있어요.", "읽고 이해하기", "스스로 답하기", "개념 다시 보기", "나의 속도로, 필요한 만큼",
+    "헷갈리는 개념은 바로 다시 읽을 수 있어요.", "03 / CODE QUEST", "짧은 코드로 확인하기",
+    "배운 개념을 직접 작성하며", "공개된 실행 결과와 피드백으로 이해를 확인하세요.", "4/18개 실행 가능 Quest 완료",
+    "읽고 이해하기", "스스로 답하기", "개념 다시 보기", "나의 속도로, 필요한 만큼",
   ]) assert.ok(html.includes(phrase), phrase);
   assert.match(html, /href="#\/learn"[^>]*>[\s\S]*?학습문서 읽기/);
   assert.match(html, /href="#\/review"[^>]*>[\s\S]*?객관식 문제 풀기/);
+  assert.match(html, /href="#\/quest"[^>]*>[\s\S]*?Code Quest 탐색/);
   assert.match(html, /궁금한 개념은 문서로 읽고 이해한 내용은 문제로 확인하세요\.<br\s*\/?>\s*지금 필요한 공부부터 바로 시작하세요!/);
   assert.match(html, /개념을 읽고 예제를 살펴보세요\.<br\s*\/?>\s*핵심 질문에 내 말로 답해 봅니다\./);
   assert.match(html, /문제를 풀고 선택한 답의 이유를 확인하세요\.<br\s*\/?>\s*헷갈리는 개념은 바로 다시 읽을 수 있어요\./);
@@ -31,8 +36,8 @@ test("홈은 학습문서와 객관식의 독립 진입을 동등하게 제공�
 
 test("문서 목록은 활성 문서만 나열하고 보관 교안의 메타데이터와 깊은 URL은 남긴다", () => {
   const all = getLearningCatalogItems(options);
-  assert.equal(curriculum.lessons.length, 187);
-  assert.equal(all.length, 160);
+  assert.equal(curriculum.lessons.length, 213);
+  assert.equal(all.length, 186);
   assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 27);
   for (const lesson of curriculum.lessons) {
     assert.equal(all.some((item) => item.href === `#/learn/${lesson.courseId}/${lesson.slug}`), !lesson.archivedFromCatalog, lesson.id);
@@ -57,8 +62,10 @@ test("문서와 문제 첫 화면은 검색 다음에 주제 선택을 보여 �
     assert.deepEqual([...html.matchAll(/data-catalog-topic="([^"]+)"/g)].map((match) => match[1]),
       ["html", "css", "javascript", "java", "spring", "algorithm", "all", "cs", "typescript", "react"]);
     const selected = renderLearningCatalog({ ...options, kind, filters: { topicId: "html" } });
-    assert.match(selected, /class="catalog-card"/);
-    assert.ok(selected.indexOf("data-catalog-topic") < selected.indexOf('class="catalog-card"'));
+    // 학습문서는 주제를 고르면 키워드 카드가, 키워드를 고르면 문서 카드가 나온다.
+    const nextStep = kind === "learn" ? "data-catalog-keyword" : 'class="catalog-card"';
+    assert.ok(selected.includes(nextStep));
+    assert.ok(selected.indexOf("data-catalog-topic") < selected.indexOf(nextStep));
     const htmlButton = selected.match(/<button\b[^>]*data-catalog-topic="html"[^>]*>/)?.[0] ?? "";
     assert.match(htmlButton, /aria-pressed="true"/);
   }
@@ -74,7 +81,8 @@ test("JavaScript 주제는 활성 개념 문서와 runtime을 보여 주고 보�
   assert.ok(javascript.some((item) => item.href === "#/learn/javascript/javascript-and-runtime"));
   assert.ok(javascript.every((item) => !item.href.includes("/algorithm/")));
   const algorithm = getLearningCatalogItems({ ...options, topicId: "algorithm" });
-  assert.equal(algorithm.length, 14);
+  assert.equal(algorithm.filter((item) => item.isUnit).length, 14);
+  assert.equal(algorithm.length, 40);
   assert.ok(curriculum.lessons.filter((lesson) => lesson.courseId === "algorithm").every((lesson) => lesson.languageId === "java"));
   assert.ok(algorithm.every((item) => item.href.startsWith("#/learn/algorithm/")));
   assert.ok(getLearningCatalogItems({ ...options, topicId: "java" }).every((item) => !item.href.includes("/algorithm/")));
@@ -93,7 +101,7 @@ test("준비 중 주제와 문제 자료 없는 주제는 제공 중인 카드�
     }
     const java = renderLearningCatalog({ ...options, kind, filters: { topicId: "java" } });
     assert.doesNotMatch(java, /샘플/);
-    assert.match(java, /class="catalog-card"/);
+    assert.match(java, kind === "learn" ? /data-catalog-keyword=/ : /class="catalog-card"/);
   }
   const review = renderLearningCatalog({ ...options, kind: "review" });
   const algorithmButton = review.match(/<button\b[^>]*data-catalog-topic="algorithm"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
@@ -149,7 +157,7 @@ test("Security·JPA를 포함한 Spring 문서 46개·92문항은 Java 주제와
     const html = renderLearningCatalog({ ...options, kind, filters: { topicId: "spring" } });
     const button = html.match(/<button\b[^>]*data-catalog-topic="spring"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
     assert.match(button, /Spring · Spring Boot/);
-    assert.match(button, kind === "learn" ? /46개 문서/ : /92문제/);
+    assert.match(button, kind === "learn" ? /46개 키워드/ : /92문제/);
     assert.doesNotMatch(button, /disabled|준비 중|자료 없음/);
     assert.doesNotMatch(html, /개별 채점/);
   }
@@ -274,4 +282,26 @@ test("검색어·제목·요약·저장 제목은 HTML로 실행하지 않고 �
   const home = renderLearningHome({ saved: { scope: { languageId: "javascript" }, questionIds: ["one"], title: "<svg onload=alert(1)>" } });
   assert.match(home, /&lt;svg/);
   assert.doesNotMatch(home, /<svg/);
+});
+
+test("학습문서는 주제 → 키워드 → 문서 카드로 펼쳐지고 키워드는 개념문서 순서와 하위 문서 수를 따른다", () => {
+  const topic = renderLearningCatalog({ ...options, filters: { topicId: "algorithm" } });
+  const keywordIds = [...topic.matchAll(/data-catalog-keyword="([^"]+)"/g)].map((match) => match[1]);
+  const unitIds = curriculum.lessons
+    .filter((lesson) => lesson.courseId === "algorithm" && lesson.parentLessonId === undefined)
+    .sort((a, b) => a.order - b.order)
+    .map((lesson) => lesson.id);
+  assert.deepEqual(keywordIds, unitIds, "키워드 카드는 개념문서 order 순서");
+  assert.doesNotMatch(topic, /class="catalog-card"/);
+  assert.match(topic, /알고리즘 · 14개 키워드/);
+  const treeButton = topic.match(/<button\b[^>]*data-catalog-keyword="algo-09-tree"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+  assert.match(treeButton, /<strong>트리<\/strong><span>3개 문서<\/span>/);
+  const topicButton = topic.match(/<button\b[^>]*data-catalog-topic="algorithm"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+  assert.match(topicButton, /14개 키워드/, "하위 문서는 주제의 키워드 수에 더하지 않는다");
+
+  const keyword = renderLearningCatalog({ ...options, filters: { topicId: "algorithm", keywordId: "algo-09-tree" } });
+  const cardHrefs = [...keyword.matchAll(/class="catalog-card" href="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(cardHrefs, ["#/learn/algorithm/tree-basics", "#/learn/algorithm/tree-java", "#/learn/algorithm/priority-queue-heap"]);
+  assert.match(keyword, /<span class="catalog-kind">개념<\/span>[\s\S]*<span class="catalog-kind">활용<\/span>/);
+  assert.match(keyword, /트리 · 3개 문서/);
 });

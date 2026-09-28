@@ -476,10 +476,10 @@ test("분리한 알고리즘 기초 문서는 질문·접힌 직접답·이전�
   assert.equal(resolveLessonRoute(curriculum, "#/learn/algorithm/hash-map-set").id, "algo-hash-map-set");
   assert.equal(resolveLessonRoute(curriculum, "#/learn/javascript/hash-map-set").id, "js-09-hash-map-set");
   const expected = [
-    ["algo-list-conditions", ["dictionary"]],
-    ["algo-dictionary", ["list-and-conditions", "stack-and-queue"]],
-    ["js-10-stack-queue", ["dictionary", "hash-map-set"]],
-    ["algo-hash-map-set", ["stack-and-queue", "heap-and-greedy"]],
+    ["algo-list-conditions", ["array", "two-pointers-sliding-window"]],
+    ["algo-dictionary", ["hash-map-set", "tree-basics"]],
+    ["js-10-stack-queue", ["two-pointers-sliding-window", "stack-java"]],
+    ["algo-hash-map-set", ["queue-java", "dictionary"]],
   ];
 
   for (const [id, adjacentSlugs] of expected) {

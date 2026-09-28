@@ -1,3 +1,4 @@
+import { compareLessonReadingOrder, getDocumentKind, getLessonKeyword, getUnitLesson } from "../core/content.js";
 import { buildLessonHash } from "../core/navigation.js";
 import { buildKeywordReviewHash, getKeywordReviewScope, getReviewDocumentLesson } from "../core/review-navigation.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
@@ -15,6 +16,8 @@ export const CATALOG_TOPICS = [
   { id: "react", title: "React", planned: true },
 ];
 
+export const DOCUMENT_KIND_LABELS = { concept: "개념", application: "활용", advanced: "심화" };
+
 export function getCourseTopic(course) {
   return course.categoryId === "language" ? course.languageId : course.categoryId;
 }
@@ -28,12 +31,26 @@ export function renderReviewResume(saved) {
   </aside>`;
 }
 
-export function renderLearningHome({ saved = null } = {}) {
+export function renderLearningHome({ saved = null, questOverview = null } = {}) {
+  const questCount = Math.max(0, Number.isInteger(questOverview?.totalCount) ? questOverview.totalCount : 0);
+  const executableQuestCount = Math.min(
+    questCount,
+    Math.max(0, Number.isInteger(questOverview?.executableCount) ? questOverview.executableCount : questCount),
+  );
+  const draftOnlyQuestCount = Math.min(
+    questCount - executableQuestCount,
+    Math.max(0, Number.isInteger(questOverview?.draftOnlyCount) ? questOverview.draftOnlyCount : 0),
+  );
+  const completedQuestCount = Math.min(
+    executableQuestCount,
+    Math.max(0, Number.isInteger(questOverview?.completedCount) ? questOverview.completedCount : 0),
+  );
   return `<main class="main-area service-main" id="lesson-content" tabindex="-1">
     <section class="service-intro"><p class="eyebrow">개념을 이해하는 개발 공부</p><h1>배운 개념이 <span>내 것이 되는 곳.</span></h1><p>궁금한 개념은 문서로 읽고 이해한 내용은 문제로 확인하세요.<br>지금 필요한 공부부터 바로 시작하세요!</p></section>
     <div class="service-cards">
       <article class="service-card"><span class="service-card-number">01 / LEARN</span><h2>개념별 학습문서</h2><p><span class="service-card-intro">주제별 학습문서를 통해</span>개념을 읽고 예제를 살펴보세요.<br>핵심 질문에 내 말로 답해 봅니다.</p><a class="button button--primary" href="#/learn">학습문서 읽기 <span aria-hidden="true">↗</span></a></article>
       <article class="service-card"><span class="service-card-number">02 / PRACTICE</span><h2>객관식 문제 풀어보기</h2><p><span class="service-card-intro">얼마나 이해했을까?</span>문제를 풀고 선택한 답의 이유를 확인하세요.<br>헷갈리는 개념은 바로 다시 읽을 수 있어요.</p><a class="button button--secondary" href="#/review">객관식 문제 풀기 <span aria-hidden="true">↗</span></a></article>
+      <article class="service-card"><span class="service-card-number">03 / CODE QUEST</span><h2>짧은 코드로 확인하기</h2><p><span class="service-card-intro">배운 개념을 직접 작성하며</span>공개된 실행 결과와 피드백으로 이해를 확인하세요.<br>${completedQuestCount}/${executableQuestCount}개 실행 가능 Quest 완료${draftOnlyQuestCount ? `<br>Java ${draftOnlyQuestCount}개 실행 준비 중 · 코드 작성·저장 가능` : ""}</p><a class="button button--secondary" href="#/quest">Code Quest 탐색 <span aria-hidden="true">↗</span></a></article>
     </div>
     <div class="service-study-path"><span>읽고 이해하기 <span aria-hidden="true">→</span> 스스로 답하기 <span aria-hidden="true">→</span> 개념 다시 보기</span><span>나의 속도로, 필요한 만큼</span></div>
     ${renderReviewResume(saved)}
@@ -45,9 +62,13 @@ export function getLearningCatalogItems({ curriculum, collections = new Map(), c
     curriculum.categories.some((category) => category.id === course.categoryId && category.status !== "planned") &&
     (topicId === "all" || getCourseTopic(course) === topicId));
   const search = query.trim().toLocaleLowerCase("ko");
+  const courseIndex = new Map(curriculum.courses.map((course, index) => [course.id, index]));
+  const readingOrder = compareLessonReadingOrder(curriculum);
   const items = curriculum.lessons.filter((lesson) => allowedCourses.some((course) => course.id === lesson.courseId) &&
     (kind !== "learn" || !lesson.archivedFromCatalog) &&
-    (courseId === "all" || lesson.courseId === courseId)).flatMap((lesson) => {
+    (courseId === "all" || lesson.courseId === courseId))
+    .sort((left, right) => courseIndex.get(left.courseId) - courseIndex.get(right.courseId) || readingOrder(left, right))
+    .flatMap((lesson) => {
     const course = allowedCourses.find((item) => item.id === lesson.courseId);
     const collection = collections.get(lesson.languageId);
     const questions = (collection?.questions ?? []).filter((question) => question.lessonId === lesson.id);
@@ -57,7 +78,10 @@ export function getLearningCatalogItems({ curriculum, collections = new Map(), c
     const labels = [...new Set(related.map((concept) => concept.title))];
     if (kind === "learn") {
       const matches = [course.name, lesson.title, lesson.summary, ...labels, ...related.map((concept) => concept.excerpt), ...lesson.conceptIds].join(" ").toLocaleLowerCase("ko").includes(search);
-      return matches ? [{ title: lesson.title, summary: lesson.summary, courseName: course.name, topicId: getCourseTopic(course), sample: course.status === "sample", href: buildLessonHash(lesson.courseId, lesson.slug), count: lesson.estimatedMinutes, labels }] : [];
+      const unit = getUnitLesson(curriculum, lesson);
+      return matches ? [{ title: lesson.title, summary: lesson.summary, courseName: course.name, topicId: getCourseTopic(course), sample: course.status === "sample", href: buildLessonHash(lesson.courseId, lesson.slug), labels,
+        lessonId: lesson.id, unitId: unit?.id ?? lesson.id, isUnit: lesson.parentLessonId === undefined, documentKind: getDocumentKind(lesson), keyword: getLessonKeyword(curriculum, lesson),
+        unitNumberStart: course.unitNumberStart ?? 1 }] : [];
     }
     if (questions.length && related.length === 0) {
       if (![lesson.title, lesson.summary, course.name, ...lesson.conceptIds, ...questions.map((question) => question.prompt)].join(" ").toLocaleLowerCase("ko").includes(search)) return [];
@@ -94,12 +118,26 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
     .map(getCourseTopic) : [];
   const topicButtons = CATALOG_TOPICS.map((topic) => {
     const topicItems = topic.id === "all" ? allItems : allItems.filter((item) => item.topicId === topic.id);
-    const count = isReview ? topicItems.reduce((sum, item) => sum + item.count, 0) : topicItems.length;
+    const count = isReview ? topicItems.reduce((sum, item) => sum + item.count, 0) : topicItems.filter((item) => item.isUnit).length;
     const sample = topicItems.length > 0 && topicItems.every((item) => item.sample);
     const failed = topic.id === "all" ? failedTopics.length > 0 : failedTopics.includes(topic.id);
-    const status = failed ? (count ? "일부 불러오기 실패" : "불러오기 실패") : count ? `${count}${isReview ? "문제" : "개 문서"}${sample ? " · 샘플" : ""}` : topic.planned ? "준비 중" : "자료 없음";
+    const status = failed ? (count ? "일부 불러오기 실패" : "불러오기 실패") : count ? `${count}${isReview ? "문제" : "개 키워드"}${sample ? " · 샘플" : ""}` : topic.planned ? "준비 중" : "자료 없음";
     return `<button class="catalog-topic" type="button" data-catalog-topic="${topic.id}" aria-pressed="${topic.id === topicId}"${count === 0 && topic.id !== "all" ? " disabled" : ""}><strong>${topic.title}</strong><span>${status}</span>${topic.id === topicId ? '<span class="catalog-topic-selected">선택됨</span>' : ""}</button>`;
   }).join("");
+  const usesKeywordFlow = !isReview && topicId !== null && topicId !== "all" && !query.trim();
+  const keywordUnits = usesKeywordFlow ? items.filter((item) => item.isUnit) : [];
+  const selectedKeyword = keywordUnits.find((item) => item.lessonId === filters.keywordId) ?? null;
+  const documentItems = usesKeywordFlow ? items.filter((item) => item.unitId === selectedKeyword?.lessonId) : items;
+  const keywordButtons = keywordUnits.map((unit) => {
+    const documentCount = items.filter((item) => item.unitId === unit.lessonId).length;
+    const isSelected = unit === selectedKeyword;
+    return `<button class="catalog-topic catalog-keyword" type="button" data-catalog-keyword="${escapeHtml(unit.lessonId)}" aria-pressed="${isSelected}"><strong>${renderInlineCodeText(unit.keyword)}</strong><span>${documentCount}개 문서</span>${isSelected ? '<span class="catalog-topic-selected">선택됨</span>' : ""}</button>`;
+  }).join("");
+  const countText = usesKeywordFlow
+    ? selectedKeyword ? `${selectedKeyword.keyword} · ${documentItems.length}개 문서` : `${selectedTopic?.title} · ${keywordUnits.length}개 키워드`
+    : `${selectedTopic?.title ?? "전체"} · ${items.length}${isReview ? `개 문제 묶음 · ${items.reduce((sum, item) => sum + item.count, 0)}문제` : "개 문서"}`;
+  const showDocuments = !usesKeywordFlow || selectedKeyword !== null;
+  const kindBadge = (item) => isReview ? "" : ` · <span class="catalog-kind">${DOCUMENT_KIND_LABELS[item.documentKind]}</span>${usesKeywordFlow ? "" : ` · ${renderInlineCodeText(item.keyword)}`}`;
   return `<main class="main-area service-main" id="lesson-content" tabindex="-1">
     <header class="catalog-header"><p class="eyebrow">${isReview ? "바로 풀고, 개념을 확인하세요" : "궁금한 개념부터 읽어 보세요"}</p><h1>${isReview ? "객관식 문제" : "학습문서"}</h1><p>${isReview ? "주제를 고른 뒤 키워드별 문제를 풀어보세요. 풀이 중에도 관련 학습문서를 확인할 수 있어요." : "배우고 싶은 주제를 고르거나 키워드로 필요한 학습자료를 찾아보세요."}</p></header>
     ${isReview ? renderReviewResume(saved) : ""}
@@ -111,8 +149,9 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
     </form>
     <section class="catalog-topics" aria-labelledby="catalog-topics-title"><h2 id="catalog-topics-title">주제 선택</h2><div class="catalog-topic-options">${topicButtons}</div></section>
     ${failedLanguages.length ? `<p class="catalog-notice" role="status">${escapeHtml(failedLanguages.join(", "))} 문제를 불러오지 못했습니다. <button type="button" class="text-button" data-retry>다시 불러오기</button></p>` : ""}
-    ${hasSelection ? `<p class="catalog-count" role="status">${selectedTopic?.title ?? "전체"} · ${items.length}${isReview ? `개 문제 묶음 · ${items.reduce((sum, item) => sum + item.count, 0)}문제` : "개 문서"}</p>` : ""}
-    ${items.length ? `<div class="catalog-grid">${items.map((item) => `<a class="catalog-card" href="${escapeHtml(item.href)}"><div class="eyebrow">${escapeHtml(item.courseName)}${item.sample ? " · 샘플" : ""}</div><h2>${renderInlineCodeText(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${item.labels.length ? `<p class="catalog-keywords">${item.labels.map(renderInlineCodeText).join(" · ")}</p>` : ""}<span class="catalog-card-action">${item.count}${isReview ? "문제 풀기" : "분 · 문서 읽기"} <span aria-hidden="true">→</span></span></a>`).join("")}</div>` : hasSelection ? `<section class="catalog-empty"><h2>검색 결과가 없어요.</h2><p>다른 키워드로 찾거나 주제 선택을 바꿔 보세요.</p></section>` : `<section class="catalog-empty"><h2>주제를 선택해 주세요.</h2><p>위에서 배우고 싶은 주제를 고르면 ${isReview ? "문제 묶음이" : "학습문서가"} 보여요.<br>키워드 검색으로 바로 시작할 수도 있어요.</p></section>`}
+    ${usesKeywordFlow ? `<section class="catalog-topics catalog-keyword-picker" aria-labelledby="catalog-keywords-title"><h2 id="catalog-keywords-title">키워드 선택</h2><div class="catalog-topic-options">${keywordButtons}</div></section>` : ""}
+    ${hasSelection ? `<p class="catalog-count" role="status">${countText}</p>` : ""}
+    ${!showDocuments ? `<p class="catalog-keyword-hint">키워드를 고르면 그 키워드의 개념·활용·심화 문서가 나옵니다.</p>` : documentItems.length ? `<div class="catalog-grid">${documentItems.map((item) => `<a class="catalog-card" href="${escapeHtml(item.href)}"><div class="eyebrow">${escapeHtml(item.courseName)}${item.sample ? " · 샘플" : ""}${kindBadge(item)}</div><h2>${renderInlineCodeText(item.title)}</h2><p>${escapeHtml(item.summary)}</p>${item.labels.length ? `<p class="catalog-keywords">${item.labels.map(renderInlineCodeText).join(" · ")}</p>` : ""}<span class="catalog-card-action">${isReview ? `${item.count}문제 풀기` : "문서 읽기"} <span aria-hidden="true">→</span></span></a>`).join("")}</div>` : hasSelection ? `<section class="catalog-empty"><h2>검색 결과가 없어요.</h2><p>다른 키워드로 찾거나 주제 선택을 바꿔 보세요.</p></section>` : `<section class="catalog-empty"><h2>주제를 선택해 주세요.</h2><p>위에서 배우고 싶은 주제를 고르면 ${isReview ? "문제 묶음이" : "학습문서가"} 보여요.<br>키워드 검색으로 바로 시작할 수도 있어요.</p></section>`}
     ${isReview ? "" : '<footer class="catalog-source-note">일부 학습문서는 밤위키 학습자료를 바탕으로 작성했습니다.</footer>'}
   </main>`;
 }

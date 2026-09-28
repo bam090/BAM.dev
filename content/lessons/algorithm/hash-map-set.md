@@ -1,145 +1,367 @@
-# 해시와 Map·Set
+# 해시: 키로 바로 찾는 자료구조
 
 ## 학습 목표
 
-- 해시와 동등성 비교가 후보를 좁히고 같은 키를 구분하는 과정을 설명할 수 있습니다.
-- 횟수를 저장하는 `Map`과 존재 여부를 저장하는 `Set`을 조합할 수 있습니다.
-- `HashMap`·`HashSet`의 순회 순서와 평균 비용에 대한 보장 범위를 구분할 수 있습니다.
+- 해시 함수·버킷·충돌이 무엇인지 설명하고 해시로 찾기가 평균 `O(1)`인 이유를 말할 수 있습니다.
+- 키에 값을 붙이는 Map과 중복 없이 모으는 Set을 구분하고 equals와 hashCode를 함께 맞춰야 하는 이유를 설명할 수 있습니다.
 
 ## 한줄 요약
 
-해시는 찾을 후보를 좁히고 동등성 비교로 같은 값을 확인하며, `Map`은 키별 정보, `Set`은 중복 없는 원소를 보관합니다.
+해시는 키로 버킷 번호를 계산해 저장 위치를 바로 찾는 방법이고 이 방법으로 만든 Map은 키에 값을 붙이며 Set은 중복 없는 값을 모읍니다.
 
 ## 먼저 확인할 개념
 
-[딕셔너리: 키로 값 저장하고 찾기](#/learn/algorithm/dictionary), [equals와 hashCode: 객체의 동일성과 동등성](#/learn/java/wiki-equality-hashing), [Set과 Map으로 중복·키 다루기](#/learn/java/wiki-sets-maps)를 먼저 확인해 보세요.
+[자료구조와 알고리즘](#/learn/algorithm/data-structures-and-algorithms) · [배열](#/learn/algorithm/array) · [equals와 hashCode: 객체의 동일성과 동등성](#/learn/java/wiki-equality-hashing)
 
-## 개념 연결
+## 해시란
 
-- 선행: `algo.list`, `algo.condition`, `algo.dictionary`, `java.equality-hashing`
-- 이 단원: `algo.hashing`, `algo.map-collection`, `algo.set-collection`
-- 후속: `algo.heap`, `algo.priority-queue`, `algo.greedy`
+**해시**는 키를 계산해서 나온 번호로 값을 저장할 칸을 정하고 찾을 때도 같은 계산으로 그 칸에 바로 가는 방법입니다.
+여기서 **키**는 값을 찾을 때 쓰는 이름표이고 키로 번호를 만드는 계산을 **해시 함수**라고 합니다.
+해시 함수가 만든 번호는 **해시값**이라고 하고 값을 담아 두는 칸 하나하나는 **버킷**이라고 합니다.
 
-## 해시는 모든 값을 비교하기 전에 후보를 좁힌다
+해시가 필요한 이유는 배열에서 값을 찾는 방법과 비교하면 보입니다.
+배열은 몇 번째 칸에 있는지 모르면 처음부터 하나씩 비교해야 해서 `O(n)`이 걸립니다.
+반면 해시는 키만 알면 칸 번호를 계산할 수 있어서 다른 칸을 볼 필요가 없습니다.
 
-여러 투표에서 간식별 득표 수를 매번 처음부터 세는 대신 `간식 이름 → 표 수`를 기억할 수 있습니다.
-**해시 함수**는 키에서 **해시값**을 만들고, 해시 테이블은 그 값을 이용해 후보 묶음인 **버킷**을 좁힙니다.
-해시값 자체가 항상 최종 저장 위치인 것은 아닙니다.
+예를 들어 스터디 모임에서 사람마다 출석 횟수를 적어 둔다고 해 보겠습니다.
+이름을 키로 삼아 보관함 번호를 계산하고 그 보관함에 출석 횟수를 넣어 두는 것입니다.
+이 문서는 민지·도윤·서아·하준 네 사람의 출석 기록 하나로 끝까지 설명합니다.
 
-`null`이 아닌 키를 찾는 흐름을 따라가 보세요.
+## 해시 함수와 버킷
 
-1. 키의 `hashCode()`로 해시코드를 얻습니다.
-2. 해시코드를 이용해 키가 있을 만한 후보 버킷을 좁힙니다.
-3. 후보의 키가 `equals()` 기준으로 같은지 확인합니다.
-4. 같은 키를 찾으면 연결된 값을 사용합니다.
+해시 함수가 이름으로 칸을 정하는 과정을 그림으로 보겠습니다.
+이 문서에서는 버킷을 10개 두고 해시값을 10으로 나눈 나머지를 버킷 번호로 씁니다.
 
-서로 다른 키가 같은 해시코드를 내거나 같은 후보 버킷에 모이는 것을 **해시 충돌**이라고 합니다.
-충돌이 생겼다고 두 키가 같은 키가 되는 것은 아닙니다. 동등성 비교로 구분합니다.
+![민지라는 이름이 해시 함수를 거쳐 해시값 1543492가 되고 10으로 나눈 나머지 2가 버킷 번호가 된다. 오른쪽의 0번부터 9번까지 버킷 가운데 2번 버킷에 민지 → 3이 들어 있다.](content/assets/algorithm/hash-bucket.png)
 
-## equals와 hashCode의 약속을 함께 지킨다
-
-`a.equals(b)`가 `true`이면 두 객체의 해시코드는 반드시 같아야 합니다. 반대로 해시코드가 같다는 사실만으로 두 객체가 동등한 것은 아닙니다.
-직접 만든 키의 동등성을 재정의한다면 `hashCode()`도 같은 기준을 따라야 합니다.
-
-`Object`의 기본 `equals()`는 같은 객체를 가리키는지 판단하지만 `String`은 문자열 내용을 비교합니다.
-따라서 별도로 만든 `String` 객체여도 내용이 같다면 `HashMap`의 같은 키나 `HashSet`의 같은 원소로 취급할 수 있습니다.
-
-키로 저장한 객체의 동등성 기준을 나중에 바꾸면 조회 동작을 믿을 수 없습니다. `Map`은 키로 사용 중인 객체가 `equals()` 결과에 영향을 주도록 변경된 경우의 동작을 정해 두지 않습니다.
-키나 중복 판단 원소에는 `String`처럼 바뀌지 않는 값을 사용하거나 동등성에 쓰는 필드를 변경하지 않도록 합니다.
-
-## 횟수와 존재 여부는 다른 정보다
-
-`Map`과 `Set`은 저장 규칙을 정한 Java 인터페이스이고, `HashMap`과 `HashSet`은 해시를 사용하는 구현체입니다. 모든 `Map`과 `Set`이 해시를 사용하는 것은 아닙니다.
-
-| 필요한 정보 | 구조 | 이 예제에서 저장할 값 |
-| --- | --- | --- |
-| 간식마다 받은 표 수 | `Map<String, Integer>` | 간식 이름과 표 수 |
-| 이미 투표한 사용자 | `Set<String>` | 사용자 ID |
-
-`Set.add()`는 새 원소를 넣으면 `true`, 이미 동등한 원소가 있으면 `false`를 반환합니다. `contains()`는 존재 여부를 확인하고 `size()`는 서로 다른 원소 수를 알려 줍니다.
-반복 횟수가 필요하면 `Set`만으로는 부족하고 `Map`의 값에 횟수를 보관해야 합니다.
-
-## 중복 투표를 제외하고 표 수를 늘린다
-
-먼저 사용자 ID를 `Set`에서 확인하고 새로운 사용자일 때만 `Map`의 표 수를 늘립니다.
-아래 코드를 `SnackVoteDemo.java`에 저장할 수 있습니다. 표 수에는 `null`을 저장하지 않으며, `getOrDefault(snack, 0)`은 아직 저장하지 않은 간식의 시작값을 `0`으로 정합니다.
+Java에서는 모든 객체가 해시값을 돌려주는 `hashCode()` 메서드를 가지고 있습니다.
+네 사람의 이름으로 해시값과 버킷 번호를 직접 구해 보겠습니다.
 
 ```java
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+String[] names = {"민지", "도윤", "서아", "하준"};
+for (String name : names) {
+    int hash = name.hashCode();
+    System.out.println(name + " → 해시값 " + hash + " → " + Math.floorMod(hash, 10) + "번 버킷");
+}
+```
 
-public class SnackVoteDemo {
-    public static void main(String[] args) {
-        Map<String, Integer> votesBySnack = new HashMap<>();
-        Set<String> votedUserIds = new HashSet<>();
+`Math.floorMod(hash, 10)`은 해시값을 10으로 나눈 나머지입니다.
+해시값이 음수여도 나머지가 0부터 9 사이로 나오게 해 줍니다.
 
-        vote(votesBySnack, votedUserIds, "user-01", "호떡");
-        vote(votesBySnack, votedUserIds, "user-02", "붕어빵");
-        vote(votesBySnack, votedUserIds, new String("user-01"), "붕어빵");
+```text
+민지 → 해시값 1543492 → 2번 버킷
+도윤 → 해시값 1477600 → 0번 버킷
+서아 → 해시값 1583016 → 6번 버킷
+하준 → 해시값 1744552 → 2번 버킷
+```
 
-        System.out.println("호떡: " + votesBySnack.getOrDefault("호떡", 0));
-        System.out.println("붕어빵: " + votesBySnack.getOrDefault("붕어빵", 0));
-        System.out.println("투표한 사용자 수: " + votedUserIds.size());
+같은 문자열은 언제 계산해도 같은 해시값이 나옵니다.
+그래서 민지의 출석 횟수를 찾을 때도 다시 계산하면 2번 버킷이 나오고 그 칸만 열어 보면 됩니다.
+
+좋은 해시 함수는 서로 다른 키를 여러 버킷에 고르게 흩어 놓습니다.
+키가 한 버킷에 몰리지 않아야 어느 칸을 열어도 비교할 항목이 적기 때문입니다.
+
+> [!question]- Java의 HashMap도 10으로 나누나요?
+> 아닙니다.
+> 10으로 나누는 계산은 원리를 보여 주려고 이 문서에서 고른 방법입니다.
+> Java의 `HashMap`은 해시값을 한 번 더 섞은 뒤 버킷 수에 맞춰 칸을 정하고 버킷 수도 상황에 따라 늘립니다.
+> 키로 번호를 계산해 칸을 정한다는 원리는 같습니다.
+
+그런데 출력을 다시 보면 민지와 하준이 둘 다 2번 버킷입니다.
+서로 다른 키가 같은 칸을 가리키면 어떻게 해야 할까요?
+
+## 해시 충돌
+
+서로 다른 키가 같은 버킷을 가리키는 일을 **해시 충돌**이라고 합니다.
+버킷 수는 정해져 있고 키는 훨씬 다양하므로 충돌은 피할 수 없습니다.
+그래서 해시는 충돌이 생겨도 키를 구분하는 방법을 함께 가지고 있습니다.
+
+![민지와 하준은 해시값이 다르지만 둘 다 2번 버킷이 된다. 2번 버킷에는 민지 → 3 뒤에 하준 → 5가 줄줄이 이어져 있고 0번에는 도윤 → 1 · 6번에는 서아 → 2가 있다. 같은 버킷의 항목은 equals로 이름을 비교해 찾는다.](content/assets/algorithm/hash-collision.png)
+
+가장 많이 쓰는 방법은 같은 버킷에 들어온 항목을 줄줄이 이어 두는 **체이닝**입니다.
+하준을 찾을 때는 먼저 계산으로 2번 버킷에 간 뒤 그 안에 이어진 항목을 하나씩 보며 이름이 같은지 비교합니다.
+이때 두 키가 정말 같은지 판단하는 메서드가 `equals()`입니다.
+
+정리하면 해시로 값을 찾는 과정은 두 단계입니다.
+
+1. `hashCode()`로 해시값을 구해 버킷을 고릅니다.
+2. 그 버킷 안에서 `equals()`로 같은 키를 찾습니다.
+
+해시값은 후보가 있는 칸을 좁혀 주고 최종 확인은 `equals()`가 합니다.
+그래서 해시값이 같다고 해서 같은 키라는 뜻은 아닙니다.
+
+> [!question]- 해시값까지 완전히 같은 문자열도 있나요?
+> 있습니다.
+> `"Aa"`와 `"BB"`는 서로 다른 문자열인데 해시값이 둘 다 `2112`입니다.
+>
+> ```text
+> Aa와 BB의 해시값: 2112 2112
+> ```
+>
+> 이런 두 키도 같은 버킷에 이어 두고 `equals()`로 구분하므로 값이 섞이지 않습니다.
+> 체이닝 말고 충돌이 나면 비어 있는 다른 버킷을 찾아 넣는 **개방 주소법**도 있습니다.
+
+## 해시의 시간 복잡도
+
+키가 버킷에 고르게 흩어져 있으면 한 버킷에 든 항목은 몇 개 되지 않습니다.
+그래서 해시로 넣기·찾기·지우기는 평균 `O(1)`입니다.
+사람이 네 명이든 10만 명이든 계산 한 번과 몇 번의 비교로 끝나기 때문입니다.
+
+| 상황 | 찾기 비용 | 이유 |
+| --- | --- | --- |
+| 키가 고르게 흩어짐 | 평균 `O(1)` | 버킷마다 항목이 몇 개뿐입니다 |
+| 모든 키가 한 버킷에 몰림 | 최악 `O(n)` | 그 버킷의 항목을 모두 비교해야 합니다 |
+
+항목이 늘어나면 한 버킷에 이어지는 항목도 길어집니다.
+그래서 Java의 `HashMap`은 기본 설정에서 항목 수가 버킷 수의 0.75배를 넘으면 버킷을 약 두 배로 늘리고 항목을 다시 나누어 담습니다.
+다시 담는 순간에는 시간이 조금 더 들지만 자주 일어나지 않아서 평균은 `O(1)`로 유지됩니다.
+
+## 해시의 종류: Map과 Set
+
+해시를 쓰는 자료구조는 무엇을 담느냐에 따라 두 가지로 나뉩니다.
+키에 값을 붙여 두는 **Map**과 값 자체를 중복 없이 모아 두는 **Set**입니다.
+
+![왼쪽 Map은 민지 → 3회 · 도윤 → 1회 · 하준 → 5회처럼 이름마다 출석 횟수를 붙여 두고 키는 겹치지 않지만 값은 겹쳐도 된다. 오른쪽 Set은 오늘 출석한 민지와 도윤만 담고 민지를 한 번 더 넣으려 하면 이미 있어서 넣지 않는다.](content/assets/algorithm/hash-map-set.png)
+
+| | Map | Set |
+| --- | --- | --- |
+| 담는 것 | 키와 값의 짝 | 값 하나 |
+| 중복 | 키는 겹치지 않고 값은 겹쳐도 됩니다 | 같은 값은 한 번만 담깁니다 |
+| 해시를 쓰는 곳 | 키로 버킷을 정합니다 | 값으로 버킷을 정합니다 |
+| 출석 기록에서 | 이름마다 출석 횟수 | 오늘 출석한 사람의 이름 |
+| Java 클래스 | `HashMap` | `HashSet` |
+
+Set이 중복을 막을 수 있는 이유도 해시에 있습니다.
+값을 넣기 전에 해당 버킷에 같은 값이 이미 있는지 `equals()`로 확인하고 있으면 넣지 않기 때문입니다.
+
+```java
+Map<String, Integer> attendance = new HashMap<>();
+attendance.put("민지", 3);
+attendance.put("도윤", 1);
+attendance.put("서아", 2);
+attendance.put("하준", 5);
+System.out.println("민지 출석: " + attendance.get("민지"));
+System.out.println("하준 출석: " + attendance.get("하준"));
+
+Set<String> today = new HashSet<>();
+today.add("민지");
+today.add("도윤");
+today.add("민지");
+System.out.println("오늘 출석한 사람 수: " + today.size());
+System.out.println("서아 출석: " + today.contains("서아"));
+```
+
+앞의 10칸 계산에서 민지와 하준은 같은 버킷이었습니다.
+두 사람의 출석 횟수가 제대로 나올지 그리고 Set에 민지를 두 번 넣으면 몇 명이 될지 예상해 보세요.
+
+```text
+민지 출석: 3
+하준 출석: 5
+오늘 출석한 사람 수: 2
+서아 출석: false
+```
+
+실제 `HashMap`은 10칸 계산과 다르게 칸을 정하므로 두 사람이 다른 버킷에 들어갈 수도 있습니다.
+그래도 같은 버킷에 모이는 키는 `equals()`로 구분하기 때문에 어느 경우든 값이 섞이지 않습니다.
+Set에는 민지를 두 번 넣었지만 한 번만 담겨서 두 명입니다.
+Java에서 `HashMap`과 `HashSet`의 메서드를 쓰는 자세한 방법은 [HashMap·HashSet 쓰기](#/learn/algorithm/dictionary)에서 알아봅니다.
+
+## equals와 hashCode의 약속
+
+지금까지 본 과정에서 `hashCode()`는 버킷을 고르고 `equals()`는 같은 키인지 확인했습니다.
+그래서 두 메서드 사이에는 꼭 지켜야 할 약속이 있습니다.
+**`equals()`로 같은 두 객체는 반드시 같은 `hashCode()`를 돌려줘야 합니다.**
+
+`String`은 이 약속을 이미 지키고 있습니다.
+하지만 직접 만든 클래스를 키로 쓸 때는 두 메서드를 함께 정의해야 합니다.
+
+```java
+static class PlainMember {
+    String name;
+
+    PlainMember(String name) {
+        this.name = name;
+    }
+}
+
+static class Member {
+    String name;
+
+    Member(String name) {
+        this.name = name;
     }
 
-    static void vote(
-            Map<String, Integer> votesBySnack,
-            Set<String> votedUserIds,
-            String userId,
-            String snack
-    ) {
-        if (!votedUserIds.add(userId)) {
-            System.out.println(userId + ": 이미 투표했습니다.");
-            return;
-        }
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof Member member)) return false;
+        return name.equals(member.name);
+    }
 
-        int currentVotes = votesBySnack.getOrDefault(snack, 0);
-        votesBySnack.put(snack, currentVotes + 1);
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }
 ```
 
-예상 출력:
+`PlainMember`는 두 메서드를 정의하지 않은 클래스이고 `Member`는 이름이 같으면 같은 사람으로 보도록 두 메서드를 함께 정의한 클래스입니다.
+두 클래스로 이름이 민지인 객체를 두 번씩 만들어 `HashSet`에 넣어 보겠습니다.
 
-```text
-user-01: 이미 투표했습니다.
-호떡: 1
-붕어빵: 1
-투표한 사용자 수: 2
+```java
+Set<PlainMember> plain = new HashSet<>();
+plain.add(new PlainMember("민지"));
+plain.add(new PlainMember("민지"));
+System.out.println("약속 없는 클래스: " + plain.size() + "명");
+
+Set<Member> members = new HashSet<>();
+members.add(new Member("민지"));
+members.add(new Member("민지"));
+System.out.println("약속을 지킨 클래스: " + members.size() + "명");
 ```
 
-세 번째 호출의 `new String("user-01")`은 별도 객체를 만들지만 내용은 앞의 ID와 같습니다. 이를 관찰하기 위한 예제이며 평소 문자열마다 새 객체를 만들 필요는 없습니다.
-`Set.add()`가 `false`를 반환해 메서드가 끝나므로 붕어빵 표 수는 늘어나지 않습니다.
-`Set`의 판단 결과가 `Map`을 갱신할지 결정한다는 순서를 확인해 보세요.
+```text
+약속 없는 클래스: 2명
+약속을 지킨 클래스: 1명
+```
 
-## 순회 순서와 비용에는 조건이 있다
+`PlainMember`는 `Object`에서 물려받은 기본 `equals()`를 씁니다.
+기본 `equals()`는 이름이 같아도 따로 만든 객체면 다르다고 판단하므로 민지가 두 명으로 담깁니다.
+반면 `Member`는 이름으로 버킷을 고르고 이름으로 비교하므로 두 번째 민지를 같은 사람으로 알아봅니다.
 
-`HashMap`과 `HashSet`은 순회 순서를 보장하지 않습니다. 지금 입력 순서처럼 보여도 같은 순서가 계속 유지된다고 가정하지 않습니다.
-예제는 전체 컬렉션의 출력 순서에 기대지 않고 필요한 키와 개수만 조회합니다.
-입력 순서나 정렬 순서가 결과에 필요하다면 그 순서를 보장하는 구현체를 따로 선택해야 합니다.
+만약 `equals()`만 정의하고 `hashCode()`를 빠뜨리면 약속이 깨집니다.
+같은 민지라도 해시값이 달라서 대부분 다른 버킷을 찾아가고 그 버킷에는 비교할 민지가 없기 때문입니다.
+그래서 `equals()`를 정의할 때는 같은 필드로 `hashCode()`도 함께 정의합니다.
 
-`HashMap`의 `get()`·`put()`, `HashSet`의 `add()`·`contains()` 같은 기본 연산은 해시가 원소를 잘 분산한다는 조건에서 보통 평균 `O(1)`로 설명합니다.
-충돌이 한곳에 몰리거나 저장 공간을 늘려 재배치할 때는 작업량이 커질 수 있으므로 모든 한 번의 연산이 항상 일정한 시간이라고 단정하지 않습니다.
+> [!note]- 전체 코드 보기
+> 이 문서의 예제를 하나로 합친 프로그램입니다.
+> `HashAttendance.java`로 저장해 실행해 볼 수 있습니다.
+>
+> ```java
+> import java.util.HashMap;
+> import java.util.HashSet;
+> import java.util.Map;
+> import java.util.Objects;
+> import java.util.Set;
+>
+> public class HashAttendance {
+>     static class PlainMember {
+>         String name;
+>
+>         PlainMember(String name) {
+>             this.name = name;
+>         }
+>     }
+>
+>     static class Member {
+>         String name;
+>
+>         Member(String name) {
+>             this.name = name;
+>         }
+>
+>         @Override
+>         public boolean equals(Object other) {
+>             if (!(other instanceof Member member)) return false;
+>             return name.equals(member.name);
+>         }
+>
+>         @Override
+>         public int hashCode() {
+>             return Objects.hash(name);
+>         }
+>     }
+>
+>     public static void main(String[] args) {
+>         String[] names = {"민지", "도윤", "서아", "하준"};
+>         for (String name : names) {
+>             int hash = name.hashCode();
+>             System.out.println(name + " → 해시값 " + hash + " → " + Math.floorMod(hash, 10) + "번 버킷");
+>         }
+>
+>         Map<String, Integer> attendance = new HashMap<>();
+>         attendance.put("민지", 3);
+>         attendance.put("도윤", 1);
+>         attendance.put("서아", 2);
+>         attendance.put("하준", 5);
+>         System.out.println("민지 출석: " + attendance.get("민지"));
+>         System.out.println("하준 출석: " + attendance.get("하준"));
+>
+>         Set<String> today = new HashSet<>();
+>         today.add("민지");
+>         today.add("도윤");
+>         today.add("민지");
+>         System.out.println("오늘 출석한 사람 수: " + today.size());
+>         System.out.println("서아 출석: " + today.contains("서아"));
+>
+>         System.out.println("Aa와 BB의 해시값: " + "Aa".hashCode() + " " + "BB".hashCode());
+>
+>         Set<PlainMember> plain = new HashSet<>();
+>         plain.add(new PlainMember("민지"));
+>         plain.add(new PlainMember("민지"));
+>         System.out.println("약속 없는 클래스: " + plain.size() + "명");
+>
+>         Set<Member> members = new HashSet<>();
+>         members.add(new Member("민지"));
+>         members.add(new Member("민지"));
+>         System.out.println("약속을 지킨 클래스: " + members.size() + "명");
+>     }
+> }
+> ```
+>
+> ```text
+> 민지 → 해시값 1543492 → 2번 버킷
+> 도윤 → 해시값 1477600 → 0번 버킷
+> 서아 → 해시값 1583016 → 6번 버킷
+> 하준 → 해시값 1744552 → 2번 버킷
+> 민지 출석: 3
+> 하준 출석: 5
+> 오늘 출석한 사람 수: 2
+> 서아 출석: false
+> Aa와 BB의 해시값: 2112 2112
+> 약속 없는 클래스: 2명
+> 약속을 지킨 클래스: 1명
+> ```
+
+## 해시의 활용
+
+그렇다면 코딩테스트에서는 언제 해시를 떠올려야 할까요?
+단서는 **이미 나왔는지**나 **몇 번 나왔는지**를 빠르게 알아야 한다는 조건입니다.
+
+| 문제의 단서 | 쓰는 것 | 하는 일 |
+| --- | --- | --- |
+| 이미 본 값인지 확인해야 합니다 | Set | 본 값을 담아 두고 `contains`로 확인합니다 |
+| 서로 다른 값이 몇 개인지 셉니다 | Set | 모두 넣은 뒤 크기를 봅니다 |
+| 값마다 몇 번 나왔는지 셉니다 | Map | 값을 키로 두고 횟수를 값으로 둡니다 |
+| 이름이나 ID로 정보를 찾아야 합니다 | Map | ID를 키로 두고 정보를 값으로 둡니다 |
+
+이런 문제를 배열로 풀면 값마다 전체를 다시 훑어서 `O(n²)`이 되기 쉽습니다.
+해시에 담아 두면 확인 한 번이 평균 `O(1)`이라서 전체가 `O(n)`으로 줄어듭니다.
+
+다만 해시는 넣은 순서나 크기 순서를 기억하지 않습니다.
+정렬된 순서나 가장 가까운 값이 필요하면 [트리로 만든 TreeMap](#/learn/algorithm/tree-java)을 씁니다.
+
+## 정리
+
+- 해시는 해시 함수로 키의 버킷 번호를 계산해 그 칸에 바로 가므로 넣기·찾기가 평균 `O(1)`입니다.
+- 서로 다른 키가 같은 버킷을 가리키는 충돌은 같은 칸에 이어 두고 `equals()`로 구분합니다.
+- Map은 키에 값을 붙이고 Set은 같은 값을 한 번만 담으며 Java에서는 `HashMap`과 `HashSet`이 해시로 만든 구현입니다.
+- `equals()`로 같은 객체는 같은 `hashCode()`를 돌려줘야 하므로 두 메서드는 늘 함께 정의합니다.
 
 ## 이어서 연습하기
 
-예제의 상태를 `사용자 ID의 존재 여부`와 `간식별 표 수`로 나누어 설명해 보세요.
-같은 객체인지와 같은 값인지를 다시 확인하려면 [equals와 hashCode: 객체의 동일성과 동등성](#/learn/java/wiki-equality-hashing)을 참고합니다.
-다음 [힙과 그리디](#/learn/algorithm/heap-and-greedy)에서는 입력 순서가 아닌 우선순위로 다음 값을 고릅니다.
+[HashMap·HashSet 쓰기](#/learn/algorithm/dictionary)에서 Java의 해시 메서드를 자세히 써 봅니다.
+[반대 코드 짝이 처음 완성된 위치](#/coding-tests/java/bridge-hsh-01)와 [체험 보드의 서로 다른 배지 채우기](#/coding-tests/java/bridge-set-01)에서 Set으로 이미 나온 값을 확인해 봅니다.
+[두 재고 목록의 남은 차이 수](#/coding-tests/java/bridge-hsh-02)에서 Map으로 횟수를 세어 봅니다.
 
 ## 공식 자료
 
-- [Java SE 25 — Object](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html)
-- [Java SE 25 — Map](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html)
-- [Java SE 25 — HashMap](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html)
-- [Java SE 25 — HashSet](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashSet.html)
-
-사용자 원문 「03 해시(Hash)와 Map·Set」을 바탕으로 작성했습니다. 원문·Java 25 API 확인일: 2026-09-14.
+- [Java 25 API: Object](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Object.html)
+- [Java 25 API: HashMap](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html)
+- [Java 25 API: HashSet](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashSet.html)
 
 ## 핵심 질문 답
 
-해시로 후보 버킷을 좁히고 `equals()`로 같은 키나 원소인지 확인합니다. 동등한 객체는 같은 해시코드를 가져야 하지만 같은 해시코드만으로 동등성이 확정되지는 않습니다.
-횟수처럼 키마다 연결할 정보가 있으면 `Map`, 이미 보았는지만 필요하면 `Set`을 선택합니다. 예제는 사용자 ID를 먼저 확인해 중복을 막고 새 투표만 표 수에 반영합니다.
-`HashMap`·`HashSet`의 순회 순서는 보장되지 않으며 빠른 평균 조회에도 적절한 해시 분산과 동등성 계약이라는 조건이 있습니다.
+해시는 해시 함수로 키의 해시값을 구하고 그 값으로 버킷 번호를 계산해 그 칸에 바로 갑니다.
+서로 다른 키가 같은 버킷에 모이는 충돌이 생기면 같은 칸에 이어 두고 `equals()`로 키를 구분합니다.
+키가 버킷에 고르게 흩어져 있으면 비교할 항목이 몇 개뿐이라 넣기와 찾기가 평균 `O(1)`입니다.
+Map은 이 원리로 키에 값을 붙여 두고 Set은 값으로 버킷을 정해 같은 값이 이미 있으면 넣지 않으며 두 경우 모두 `equals()`로 같은 객체는 같은 `hashCode()`를 돌려줘야 합니다.

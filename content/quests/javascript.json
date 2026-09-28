@@ -1276,6 +1276,665 @@
           "explanation": "Set은 같은 코드가 몇 개 남았는지 알 수 없습니다. 재고 한 개를 요청 여러 개에 반복 사용하면 부족한 요청을 놓칩니다."
         }
       ]
+    },
+    {
+      "id": "quest-javascript-number-only-double",
+      "slug": "number-only-double",
+      "revision": 1,
+      "order": 10,
+      "lessonId": "js-concept-values-types",
+      "conceptIds": [
+        "js.type-identification"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 7,
+      "title": "숫자일 때만 두 배로 만들기",
+      "summary": "값의 실제 타입을 먼저 확인해 자동 변환 없이 숫자만 계산합니다.",
+      "instructions": "`doubleNumberOnly(value)`를 완성하세요. value가 숫자 타입이면 두 배를 반환하고, 그 밖의 값은 null을 반환합니다. 숫자 0도 계산합니다. 문자열 \"3\", false, null, 배열 [3]은 숫자처럼 변환될 수 있어도 이 문제에서는 계산하지 않습니다. 선수 개념: 값과 타입, 조건문, 함수의 반환.",
+      "starterCode": "function doubleNumberOnly(value) {\n  return null;\n}",
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "개념 떠올리기",
+          "content": "겉모양이 아니라 값의 종류에 따라 계산을 허용할지 정합니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "작은 사례 비교하기",
+          "content": "0과 false는 조건식에서 비슷하게 취급될 수 있지만 이 문제의 반환 결과는 다릅니다. \"3\"과 3도 비교해 보세요."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "구현 방향 잡기",
+          "content": "typeof로 확인한 타입이 number인지 조건으로 나눈 뒤, 숫자일 때의 계산 결과와 나머지 경우의 null을 반환합니다."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "double-coerces-input",
+          "title": "먼저 숫자로 변환함",
+          "explanation": "숫자로 바꿀 수 있는 값과 실제 숫자 타입은 다릅니다."
+        },
+        {
+          "id": "double-rejects-zero",
+          "title": "0을 없는 값으로 취급함",
+          "explanation": "참·거짓 조건은 실제 타입을 구별하는 조건을 대신하지 못합니다."
+        }
+      ],
+      "entryPoint": "doubleNumberOnly",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "value",
+            "type": "JSON value",
+            "description": "유한 숫자(-1000~1000), 길이 0~20 문자열, boolean, null 또는 작은 JSON 배열·객체입니다."
+          }
+        ],
+        "returns": {
+          "type": "number | null",
+          "description": "숫자 입력의 두 배 또는 숫자가 아닌 입력을 나타내는 null입니다."
+        },
+        "constraints": [
+          "숫자는 유한하며 -1000 이상 1000 이하입니다.",
+          "배열·객체는 JSON 문자열 길이 100자 이하이며 내부를 순회할 필요가 없습니다.",
+          "문자열을 숫자로 변환하지 않습니다. 0은 유효한 숫자입니다."
+        ],
+        "complexity": {
+          "time": "O(1)",
+          "space": "O(1)"
+        }
+      },
+      "examples": [
+        {
+          "args": [
+            3
+          ],
+          "expected": 6,
+          "explanation": "실제 숫자이므로 두 배를 반환합니다."
+        },
+        {
+          "args": [
+            "3"
+          ],
+          "expected": null,
+          "explanation": "겉모양이 숫자여도 문자열은 계산하지 않습니다."
+        },
+        {
+          "args": [
+            0
+          ],
+          "expected": 0,
+          "explanation": "0도 숫자이므로 결과는 0입니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "number-only-double-positive",
+          "label": "양수",
+          "args": [
+            3
+          ],
+          "expected": 6
+        },
+        {
+          "id": "number-only-double-zero",
+          "label": "숫자 0",
+          "args": [
+            0
+          ],
+          "expected": 0
+        },
+        {
+          "id": "number-only-double-numeric-text",
+          "label": "숫자처럼 보이는 문자열",
+          "args": [
+            "3"
+          ],
+          "expected": null
+        },
+        {
+          "id": "number-only-double-false",
+          "label": "불리언 false",
+          "args": [
+            false
+          ],
+          "expected": null
+        },
+        {
+          "id": "number-only-double-null",
+          "label": "빈 값 null",
+          "args": [
+            null
+          ],
+          "expected": null
+        },
+        {
+          "id": "number-only-double-array",
+          "label": "숫자 하나를 담은 배열",
+          "args": [
+            [
+              3
+            ]
+          ],
+          "expected": null
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "number-only-double-positive",
+          "message": "숫자 입력이 계산 경로에 들어갔는지 확인하세요."
+        },
+        {
+          "testId": "number-only-double-zero",
+          "message": "0은 값이 없다는 뜻이 아닙니다. 타입과 참·거짓 판정을 구분하세요."
+        },
+        {
+          "testId": "number-only-double-numeric-text",
+          "message": "변환한 값이 아니라 처음 받은 값의 타입을 관찰하세요."
+        },
+        {
+          "testId": "number-only-double-false",
+          "message": "false가 계산 과정에서 0으로 변환되지 않았는지 확인하세요."
+        },
+        {
+          "testId": "number-only-double-null",
+          "message": "null은 이 문제에서 계산하지 않는 값입니다."
+        },
+        {
+          "testId": "number-only-double-array",
+          "message": "배열에 숫자가 들어 있어도 배열 자체는 숫자 타입이 아닙니다."
+        }
+      ]
+    },
+    {
+      "id": "quest-javascript-copy-nested-settings",
+      "slug": "copy-nested-settings",
+      "revision": 1,
+      "order": 11,
+      "lessonId": "js-concept-shallow-copy",
+      "conceptIds": [
+        "js.shallow-copy",
+        "js.object-sharing"
+      ],
+      "difficulty": "beginner",
+      "estimatedMinutes": 12,
+      "title": "설정의 변경 전후 함께 남기기",
+      "summary": "중첩된 음량만 바꾼 결과와 변경 전 전체값을 함께 반환합니다.",
+      "instructions": "`previewVolumeChange(profile, volume)`를 완성하세요. 반환 객체의 original에는 입력 profile의 전체값을, updated에는 settings.volume만 새 volume으로 바꾼 전체값을 담습니다. name이나 settings의 다른 속성뿐 아니라 추가 속성도 모두 남겨야 합니다. 공개 검사는 반환한 두 값만 비교합니다. 비채점 자기점검: 함수가 입력 객체 자체를 바꾸지 않는지, 바뀔 경로를 새 객체로 만들었는지 설명해 보세요. 선수 개념: 객체 공유와 얕은 복사.",
+      "starterCode": "function previewVolumeChange(profile, volume) {\n  return { original: profile, updated: profile };\n}",
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "개념 떠올리기",
+          "content": "새 바깥 객체를 만들어도 안쪽 객체를 계속 공유할 수 있습니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "작은 사례 비교하기",
+          "content": "original과 updated의 settings.volume을 함께 비교하세요. 다른 속성은 어느 쪽에서도 사라지면 안 됩니다."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "구현 방향 잡기",
+          "content": "profile의 속성을 유지하면서 settings도 따로 구성하고, 그 안의 volume만 바꿉니다. 변경 전 값과 변경 후 값을 함께 반환하세요."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "copy-shares-inner-settings",
+          "title": "안쪽 설정을 함께 바꿈",
+          "explanation": "바깥 객체만 새로 만들면 settings는 원본과 공유됩니다."
+        },
+        {
+          "id": "copy-drops-extra-properties",
+          "title": "아는 필드만 남김",
+          "explanation": "변경하지 않는 추가 속성도 반환 계약의 일부입니다."
+        }
+      ],
+      "entryPoint": "previewVolumeChange",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "profile",
+            "type": "object",
+            "description": "name 문자열과 settings 객체가 있습니다. settings.volume은 정수 0~10입니다. 바깥과 settings에 추가 JSON 속성이 있을 수 있습니다."
+          },
+          {
+            "name": "volume",
+            "type": "integer",
+            "description": "새 음량으로 사용할 0 이상 10 이하 정수입니다."
+          }
+        ],
+        "returns": {
+          "type": "object",
+          "description": "{ original: 변경 전 전체값, updated: settings.volume만 바뀐 전체값 }"
+        },
+        "constraints": [
+          "profile과 settings는 각각 직접 속성 1~10개이며 전체 JSON 길이는 1000자 이하입니다.",
+          "name과 settings.volume은 항상 존재합니다. 추가 속성은 일반 JSON 데이터이며 모두 보존합니다.",
+          "채점 대상은 반환된 original과 updated의 전체값입니다. 입력 객체의 참조 정체성과 불변성은 별도 자기점검입니다."
+        ],
+        "complexity": {
+          "time": "O(k), k = profile과 settings의 직접 속성 수",
+          "space": "O(k), k = profile과 settings의 직접 속성 수"
+        }
+      },
+      "examples": [
+        {
+          "args": [
+            {
+              "name": "밤",
+              "settings": {
+                "volume": 2
+              }
+            },
+            7
+          ],
+          "expected": {
+            "original": {
+              "name": "밤",
+              "settings": {
+                "volume": 2
+              }
+            },
+            "updated": {
+              "name": "밤",
+              "settings": {
+                "volume": 7
+              }
+            }
+          },
+          "explanation": "두 반환값에서 name은 같고 updated.settings.volume만 7이 됩니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "copy-nested-settings-basic",
+          "label": "음량 변경",
+          "args": [
+            {
+              "name": "밤",
+              "settings": {
+                "volume": 2
+              }
+            },
+            7
+          ],
+          "expected": {
+            "original": {
+              "name": "밤",
+              "settings": {
+                "volume": 2
+              }
+            },
+            "updated": {
+              "name": "밤",
+              "settings": {
+                "volume": 7
+              }
+            }
+          }
+        },
+        {
+          "id": "copy-nested-settings-zero",
+          "label": "최소 음량",
+          "args": [
+            {
+              "name": "솔",
+              "settings": {
+                "volume": 5
+              }
+            },
+            0
+          ],
+          "expected": {
+            "original": {
+              "name": "솔",
+              "settings": {
+                "volume": 5
+              }
+            },
+            "updated": {
+              "name": "솔",
+              "settings": {
+                "volume": 0
+              }
+            }
+          }
+        },
+        {
+          "id": "copy-nested-settings-maximum",
+          "label": "최대 음량",
+          "args": [
+            {
+              "name": "해",
+              "settings": {
+                "volume": 1
+              }
+            },
+            10
+          ],
+          "expected": {
+            "original": {
+              "name": "해",
+              "settings": {
+                "volume": 1
+              }
+            },
+            "updated": {
+              "name": "해",
+              "settings": {
+                "volume": 10
+              }
+            }
+          }
+        },
+        {
+          "id": "copy-nested-settings-same",
+          "label": "같은 음량",
+          "args": [
+            {
+              "name": "달",
+              "settings": {
+                "volume": 4
+              }
+            },
+            4
+          ],
+          "expected": {
+            "original": {
+              "name": "달",
+              "settings": {
+                "volume": 4
+              }
+            },
+            "updated": {
+              "name": "달",
+              "settings": {
+                "volume": 4
+              }
+            }
+          }
+        },
+        {
+          "id": "copy-nested-settings-extra",
+          "label": "바깥과 안쪽 추가 속성",
+          "args": [
+            {
+              "name": "별",
+              "theme": "dark",
+              "settings": {
+                "volume": 3,
+                "muted": false,
+                "labels": [
+                  "학습"
+                ]
+              }
+            },
+            6
+          ],
+          "expected": {
+            "original": {
+              "name": "별",
+              "theme": "dark",
+              "settings": {
+                "volume": 3,
+                "muted": false,
+                "labels": [
+                  "학습"
+                ]
+              }
+            },
+            "updated": {
+              "name": "별",
+              "theme": "dark",
+              "settings": {
+                "volume": 6,
+                "muted": false,
+                "labels": [
+                  "학습"
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "copy-nested-settings-basic",
+          "message": "original의 입력값과 updated의 변경값을 나란히 비교하고, 변경 대상이 아닌 속성이 모두 남았는지 확인하세요."
+        },
+        {
+          "testId": "copy-nested-settings-zero",
+          "message": "original의 입력값과 updated의 변경값을 나란히 비교하고, 변경 대상이 아닌 속성이 모두 남았는지 확인하세요."
+        },
+        {
+          "testId": "copy-nested-settings-maximum",
+          "message": "original의 입력값과 updated의 변경값을 나란히 비교하고, 변경 대상이 아닌 속성이 모두 남았는지 확인하세요."
+        },
+        {
+          "testId": "copy-nested-settings-same",
+          "message": "original의 입력값과 updated의 변경값을 나란히 비교하고, 변경 대상이 아닌 속성이 모두 남았는지 확인하세요."
+        },
+        {
+          "testId": "copy-nested-settings-extra",
+          "message": "알고 있는 필드만 새로 나열하면 추가 속성을 잃을 수 있습니다. 바깥과 settings 안을 각각 확인하세요."
+        }
+      ]
+    },
+    {
+      "id": "quest-javascript-read-string-list",
+      "slug": "read-string-list",
+      "revision": 1,
+      "order": 12,
+      "lessonId": "js-concept-json",
+      "conceptIds": [
+        "js.json"
+      ],
+      "difficulty": "intermediate",
+      "estimatedMinutes": 18,
+      "title": "JSON 문자열 목록의 실패 단계 구분하기",
+      "summary": "JSON 문법을 읽은 뒤 문자열 배열인지 확인하고 실패 위치를 구별합니다.",
+      "instructions": "`readStringList(text)`를 완성하세요. ① JSON 문법을 읽을 수 없으면 {status:\"syntax-error\", values:[]}를 반환합니다. ② 읽은 값이 배열이 아니거나 문자열 아닌 요소가 하나라도 있으면 {status:\"shape-error\", values:[]}를 반환합니다. ③ 문자열만 담긴 배열이면 {status:\"ok\", values:읽은 배열}을 반환합니다. 빈 배열도 성공입니다. 빈 문자열 요소·중복·순서는 그대로 남깁니다. 아래 세 예시에서 실패가 발생한 단계를 먼저 비교하세요. 선수 개념: JSON, 배열, 타입, try/catch.",
+      "starterCode": "function readStringList(text) {\n  return { status: \"shape-error\", values: [] };\n}",
+      "hints": [
+        {
+          "level": 1,
+          "stage": "concept",
+          "title": "개념 떠올리기",
+          "content": "JSON 문법이 맞는지와 프로그램에서 쓸 모양인지는 서로 다른 검사입니다."
+        },
+        {
+          "level": 2,
+          "stage": "observation",
+          "title": "작은 사례 비교하기",
+          "content": "깨진 괄호 \"[\", 유효한 JSON \"[1]\", 빈 목록 \"[]\"의 실패 위치와 성공 여부를 비교하세요."
+        },
+        {
+          "level": 3,
+          "stage": "implementation",
+          "title": "구현 방향 잡기",
+          "content": "JSON.parse의 문법 실패는 try/catch에서 구분합니다. 파싱에 성공한 뒤 Array.isArray와 각 요소의 typeof를 검사하고 해당 상태와 values를 반환합니다."
+        }
+      ],
+      "commonMistakes": [
+        {
+          "id": "json-skips-element-check",
+          "title": "배열이면 모두 허용함",
+          "explanation": "배열이라는 사실만으로 각 요소가 문자열이라는 조건까지 만족하지는 않습니다."
+        },
+        {
+          "id": "json-merges-failure-stages",
+          "title": "문법 실패를 모양 실패로 반환함",
+          "explanation": "문자열을 읽지 못한 경우와 읽은 값의 모양이 다른 경우를 구분합니다."
+        },
+        {
+          "id": "json-rejects-empty-array",
+          "title": "빈 배열을 실패로 판단함",
+          "explanation": "배열 길이가 0이어도 문자열 아닌 요소가 들어 있는 것은 아닙니다."
+        }
+      ],
+      "entryPoint": "readStringList",
+      "functionContract": {
+        "parameters": [
+          {
+            "name": "text",
+            "type": "string",
+            "description": "길이 0~2000인 문자열입니다. JSON 문법이 아닐 수도 있습니다."
+          }
+        ],
+        "returns": {
+          "type": "object",
+          "description": "status는 ok, syntax-error, shape-error 중 하나이며 values는 문자열 배열입니다."
+        },
+        "constraints": [
+          "정상 문자열 배열의 순서·중복·빈 문자열을 그대로 보존합니다.",
+          "빈 배열은 ok입니다. 문법이 맞아도 배열이 아니거나 문자열 이외 요소가 있으면 shape-error입니다.",
+          "실패 두 종류에서는 values가 항상 빈 배열입니다. 파싱 중 던져진 문법 오류를 그대로 밖으로 내보내지 않습니다."
+        ],
+        "complexity": {
+          "time": "O(n), n = 입력 문자열 길이",
+          "space": "O(n), n = 입력 문자열 길이"
+        }
+      },
+      "examples": [
+        {
+          "args": [
+            "[\"함수\",\"배열\"]"
+          ],
+          "expected": {
+            "status": "ok",
+            "values": [
+              "함수",
+              "배열"
+            ]
+          },
+          "explanation": "문법도 맞고 모든 요소가 문자열입니다."
+        },
+        {
+          "args": [
+            "[1]"
+          ],
+          "expected": {
+            "status": "shape-error",
+            "values": []
+          },
+          "explanation": "문법은 맞지만 숫자 요소가 있어 문자열 목록으로 쓸 수 없습니다."
+        },
+        {
+          "args": [
+            "["
+          ],
+          "expected": {
+            "status": "syntax-error",
+            "values": []
+          },
+          "explanation": "배열을 닫지 않아 JSON 문법을 읽는 단계에서 실패합니다."
+        }
+      ],
+      "publicTests": [
+        {
+          "id": "read-string-list-normal",
+          "label": "문자열 두 개",
+          "args": [
+            "[\"함수\",\"배열\"]"
+          ],
+          "expected": {
+            "status": "ok",
+            "values": [
+              "함수",
+              "배열"
+            ]
+          }
+        },
+        {
+          "id": "read-string-list-empty-array",
+          "label": "빈 목록",
+          "args": [
+            "[]"
+          ],
+          "expected": {
+            "status": "ok",
+            "values": []
+          }
+        },
+        {
+          "id": "read-string-list-broken",
+          "label": "깨진 괄호",
+          "args": [
+            "["
+          ],
+          "expected": {
+            "status": "syntax-error",
+            "values": []
+          }
+        },
+        {
+          "id": "read-string-list-null",
+          "label": "유효한 JSON null",
+          "args": [
+            "null"
+          ],
+          "expected": {
+            "status": "shape-error",
+            "values": []
+          }
+        },
+        {
+          "id": "read-string-list-number",
+          "label": "숫자 요소",
+          "args": [
+            "[1]"
+          ],
+          "expected": {
+            "status": "shape-error",
+            "values": []
+          }
+        },
+        {
+          "id": "read-string-list-mixed",
+          "label": "문자열과 불리언 혼합",
+          "args": [
+            "[\"함수\",false]"
+          ],
+          "expected": {
+            "status": "shape-error",
+            "values": []
+          }
+        }
+      ],
+      "failureExplanations": [
+        {
+          "testId": "read-string-list-normal",
+          "message": "JSON 문법을 읽은 단계와 읽은 뒤 배열·요소를 확인한 단계를 구분하세요. 빈 배열은 성공이고, 실패 때 values는 빈 배열입니다."
+        },
+        {
+          "testId": "read-string-list-empty-array",
+          "message": "JSON 문법을 읽은 단계와 읽은 뒤 배열·요소를 확인한 단계를 구분하세요. 빈 배열은 성공이고, 실패 때 values는 빈 배열입니다."
+        },
+        {
+          "testId": "read-string-list-broken",
+          "message": "JSON 문법을 읽은 단계와 읽은 뒤 배열·요소를 확인한 단계를 구분하세요. 빈 배열은 성공이고, 실패 때 values는 빈 배열입니다."
+        },
+        {
+          "testId": "read-string-list-null",
+          "message": "JSON 문법을 읽은 단계와 읽은 뒤 배열·요소를 확인한 단계를 구분하세요. 빈 배열은 성공이고, 실패 때 values는 빈 배열입니다."
+        },
+        {
+          "testId": "read-string-list-number",
+          "message": "JSON 문법을 읽은 단계와 읽은 뒤 배열·요소를 확인한 단계를 구분하세요. 빈 배열은 성공이고, 실패 때 values는 빈 배열입니다."
+        },
+        {
+          "testId": "read-string-list-mixed",
+          "message": "JSON 문법을 읽은 단계와 읽은 뒤 배열·요소를 확인한 단계를 구분하세요. 빈 배열은 성공이고, 실패 때 values는 빈 배열입니다."
+        }
+      ]
     }
   ]
 }

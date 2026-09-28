@@ -510,8 +510,8 @@
       "title": "async·await와 실패 처리",
       "lessonId": "js-concept-async-await",
       "documentLessonId": "js-concept-async-await",
-      "heading": "`async`와 `await`는 Promise 흐름을 순서대로 읽게 한다",
-      "excerpt": "`getCount()`가 숫자 `3`을 반환해도 호출 결과는 Promise다.\n`await`는 결과가 정해질 때까지 `showCount()`의 다음 줄만 미루며 프로그램 전체를 멈추지 않는다."
+      "heading": "실패 처리",
+      "excerpt": "기다리던 작업이 실패하면 `await`한 줄에서 오류가 발생합니다.\n그래서 평소처럼 `try·catch`로 감싸면 실패를 받을 수 있습니다."
     },
     {
       "id": "js.async-state",

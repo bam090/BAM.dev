@@ -1,0 +1,7 @@
+{
+  "name": "bam-dev-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "productName": "BAM.dev",
+  "main": "desktop/main.cjs"
+}

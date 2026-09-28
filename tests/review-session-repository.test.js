@@ -40,6 +40,7 @@ test("중단 저장은 선택과 제출을 구분하고 현재 문제·해설·�
   assert.deepEqual(session.viewport, saved.viewport);
   assert.deepEqual(session.returnContext, saved.returnContext);
   assert.equal(session.recordAttempted, false);
+  assert.equal(session.firstAttemptByQuestion.size, 0, "선택 필드가 없는 기존 v1은 첫 응답을 추정하지 않는다.");
 });
 
 test("기존 v1과 낯선 보기·채점 값은 기본 방식으로 복구하되 풀이 범위와 답은 보존한다", () => {
@@ -76,6 +77,30 @@ test("새 보기·채점 네 조합은 같은 v1 키에서 새 저장소 인스�
   }
 });
 
+test("첫 오답 pair 배열은 현재 답·보기·채점 방식과 분리해 새 저장소 인스턴스까지 복구한다", () => {
+  const storage = new MemoryStorage();
+  const firstAttemptByQuestion = [[questions[0].id, { selectedOptionId: "b", isCorrect: false }]];
+  const saved = snapshot({
+    viewMode: "all",
+    gradingMode: "batch",
+    firstAttemptByQuestion,
+  });
+  new LocalStorageReviewSessionRepository(storage).save(saved);
+
+  const activeSession = new LocalStorageReviewSessionRepository(storage).read();
+  assert.deepEqual(activeSession.firstAttemptByQuestion, firstAttemptByQuestion);
+  const result = restoreReviewSession(activeSession, questions, scope);
+  assert.equal(result.status, "restored");
+  assert.equal(result.session.viewMode, "all");
+  assert.equal(result.session.gradingMode, "batch");
+  assert.equal(result.session.selectedOptionIds.get(questions[0].id), "b");
+  assert.equal(result.session.gradedAnswers.get(questions[0].id).isCorrect, false);
+  assert.deepEqual(result.session.firstAttemptByQuestion.get(questions[0].id), {
+    selectedOptionId: "b",
+    isCorrect: false,
+  });
+});
+
 test("완료 결과 복원은 저장 당시 같은 콘텐츠에서만 허용하고 재완료 기록을 방지한다", () => {
   const saved = snapshot({ screen: "result", gradedQuestionIds: questions.map((question) => question.id) });
   const { status, session } = restoreReviewSession(saved, questions, scope);
@@ -91,12 +116,17 @@ test("최근 완료 결과를 다시 열었다면 당시 정오와 날짜를 현
     screen: "result", gradedQuestionIds: questions.map((question) => question.id),
     completedAt: "2026-09-09T12:00:00.000Z",
     recordedAnswers: questions.map((question) => ({ questionId: question.id, isCorrect: true })),
+    firstAttemptByQuestion: [[questions[0].id, { selectedOptionId: "b", isCorrect: false }]],
   });
   const { status, session } = restoreReviewSession(saved, questions, scope);
   assert.equal(status, "restored");
   assert.equal(session.summary.correct, 2, "현재 보기 기준으로 첫 답이 오답이어도 저장 당시 결과를 보존한다.");
   assert.equal(session.completedAt, saved.completedAt);
   assert.equal(session.recordAttempted, true);
+  assert.deepEqual(session.firstAttemptByQuestion.get(questions[0].id), {
+    selectedOptionId: "b",
+    isCorrect: false,
+  });
   assert.equal(restoreReviewSession({ ...saved, recordedAnswers: [] }, questions, scope).status, "invalid");
 });
 
@@ -128,6 +158,18 @@ test("누락 문항·잘못된 보기·미선택 제출·범위 밖 위치·깨�
     { mode: "unknown" }, { screen: "complete" }, { selectedOptionIds: [[questions[0].id, "z"]] },
     { selectedOptionIds: [["missing", "a"]] }, { selectedOptionIds: [], gradedQuestionIds: [questions[0].id] },
     { gradedQuestionIds: ["missing"] }, { gradedQuestionIds: null }, { selectedOptionIds: {} },
+    { firstAttemptByQuestion: {} },
+    { firstAttemptByQuestion: null },
+    { firstAttemptByQuestion: undefined },
+    { firstAttemptByQuestion: [[questions[0].id]] },
+    { firstAttemptByQuestion: [["missing", { selectedOptionId: "b", isCorrect: false }]] },
+    { firstAttemptByQuestion: [[questions[0].id, { selectedOptionId: "z", isCorrect: false }]] },
+    { firstAttemptByQuestion: [[questions[0].id, { selectedOptionId: "b", isCorrect: true }]] },
+    { firstAttemptByQuestion: [[questions[0].id, { selectedOptionId: "b", isCorrect: false, extra: true }]] },
+    { firstAttemptByQuestion: [
+      [questions[0].id, { selectedOptionId: "b", isCorrect: false }],
+      [questions[0].id, { selectedOptionId: "b", isCorrect: false }],
+    ] },
   ]) {
     assert.equal(restoreReviewSession(snapshot(invalid), questions, scope).status, "invalid", JSON.stringify(invalid));
   }
