@@ -5,6 +5,8 @@ export function getReviewRouteOptions(hash) {
   const params = new URLSearchParams(query);
   return {
     conceptId: params.get("concept") || null,
+    topicId: params.get("topic"),
+    order: params.get("order"),
     returnToken: params.get("review") || null,
     heading: params.get("section") || null,
   };
@@ -13,6 +15,34 @@ export function getReviewRouteOptions(hash) {
 export function buildKeywordReviewHash(languageId, lessonId = null, conceptId = null) {
   const hash = buildReviewHash(languageId, lessonId);
   return conceptId ? `${hash}?concept=${encodeURIComponent(conceptId)}` : hash;
+}
+
+export function buildTopicReviewHash(languageId, topicId, order = null) {
+  const params = new URLSearchParams({ topic: topicId });
+  if (order === "random") params.set("order", order);
+  return `${buildReviewHash(languageId)}?${params}`;
+}
+
+export function buildScopedReviewHash(scope) {
+  return scope.topicId
+    ? buildTopicReviewHash(scope.languageId, scope.topicId, scope.order)
+    : buildKeywordReviewHash(scope.languageId, scope.lessonId, scope.conceptId);
+}
+
+export function getTopicReviewQuestions(curriculum, collection, topicId) {
+  const lessons = new Map(curriculum.lessons.map((lesson) => [lesson.id, lesson]));
+  const activeCategories = new Set(curriculum.categories.filter((item) => item.status !== "planned").map((item) => item.id));
+  const courses = new Map(curriculum.courses.filter((course) => course.status !== "planned" && activeCategories.has(course.categoryId))
+    .map((course) => [course.id, course]));
+  const seen = new Set();
+  return (collection?.questions ?? []).filter((question) => {
+    const lesson = lessons.get(question.lessonId);
+    const course = courses.get(lesson?.courseId);
+    const topic = course?.categoryId === "language" ? course.languageId : course?.categoryId;
+    if (lesson?.languageId !== collection.languageId || topic !== topicId || seen.has(question.id)) return false;
+    seen.add(question.id);
+    return true;
+  });
 }
 
 export function buildReviewLessonHash(lesson, token, heading = null) {

@@ -1,6 +1,6 @@
 import { compareLessonReadingOrder, getDocumentKind, getLessonKeyword, getUnitLesson } from "../core/content.js";
 import { buildLessonHash } from "../core/navigation.js";
-import { buildKeywordReviewHash, getKeywordReviewScope, getReviewDocumentLesson } from "../core/review-navigation.js";
+import { buildKeywordReviewHash, buildScopedReviewHash, buildTopicReviewHash, getKeywordReviewScope, getReviewDocumentLesson, getTopicReviewQuestions } from "../core/review-navigation.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
 
 export const CATALOG_TOPICS = [
@@ -24,7 +24,7 @@ export function getCourseTopic(course) {
 
 export function renderReviewResume(saved) {
   if (!saved?.scope || !saved.questionIds?.length) return "";
-  const href = buildKeywordReviewHash(saved.scope.languageId, saved.scope.lessonId, saved.scope.conceptId);
+  const href = buildScopedReviewHash(saved.scope);
   return `<aside class="resume-card" aria-label="저장된 풀이">
     <div><strong>${saved.screen === "result" ? "마지막 풀이 결과" : "이어서 풀 수 있어요"}</strong><p>${escapeHtml(saved.title ?? "객관식 문제")} · ${saved.gradedQuestionIds?.length ?? 0}/${saved.questionIds.length}문제 채점</p></div>
     <a class="button button--secondary" href="${escapeHtml(href)}">${saved.screen === "result" ? "결과 확인" : "이어서 풀기"}</a>
@@ -112,13 +112,21 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
   const allItems = getLearningCatalogItems({ curriculum, collections, concepts, kind });
   const items = hasSelection ? getLearningCatalogItems({ curriculum, collections, concepts, kind, ...filters, topicId: topicId ?? "all" }) : [];
   const selectedTopic = CATALOG_TOPICS.find((topic) => topic.id === topicId);
+  const reviewTopics = new Map(isReview ? CATALOG_TOPICS.filter((topic) => !topic.planned && topic.id !== "all").map((topic) => {
+    const languages = [...new Set(curriculum.courses.filter((course) => course.status !== "planned" && getCourseTopic(course) === topic.id)
+      .map((course) => course.languageId))];
+    const languageId = languages.length === 1 ? languages[0] : null;
+    return [topic.id, { languageId, questions: languageId ? getTopicReviewQuestions(curriculum, collections.get(languageId), topic.id) : [] }];
+  }) : []);
   const failedTopics = isReview ? curriculum.courses.filter((course) => course.status !== "planned" &&
     curriculum.categories.some((category) => category.id === course.categoryId && category.status !== "planned") &&
     curriculum.languages.some((language) => language.id === course.languageId && failedLanguages.includes(language.name)))
     .map(getCourseTopic) : [];
   const topicButtons = CATALOG_TOPICS.map((topic) => {
     const topicItems = topic.id === "all" ? allItems : allItems.filter((item) => item.topicId === topic.id);
-    const count = isReview ? topicItems.reduce((sum, item) => sum + item.count, 0)
+    const count = isReview ? topic.id === "all"
+      ? [...reviewTopics.values()].reduce((sum, item) => sum + item.questions.length, 0)
+      : reviewTopics.get(topic.id)?.questions.length ?? 0
       : topic.id === "algorithm" ? topicItems.filter((item) => item.isUnit).length : topicItems.length;
     const sample = topicItems.length > 0 && topicItems.every((item) => item.sample);
     const failed = topic.id === "all" ? failedTopics.length > 0 : failedTopics.includes(topic.id);
@@ -135,6 +143,15 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
     const isSelected = unit === selectedKeyword;
     return `<button class="catalog-topic catalog-keyword" type="button" data-catalog-keyword="${escapeHtml(unit.lessonId)}" aria-pressed="${isSelected}"><strong>${renderInlineCodeText(unit.keyword)}</strong><span>${documentCount}개 문서</span>${isSelected ? '<span class="catalog-topic-selected">선택됨</span>' : ""}</button>`;
   }).join("");
+  const selectedReviewTopic = reviewTopics.get(topicId);
+  const reviewTopicReady = selectedReviewTopic?.languageId && selectedReviewTopic.questions.length > 0 && !failedTopics.includes(topicId);
+  const topicActions = isReview && selectedTopic && selectedTopic.id !== "all" && !selectedTopic.planned
+    ? `<div class="quiz-result-actions review-topic-actions" aria-label="${escapeHtml(selectedTopic.title)} 전체 문제 풀기">${[
+        [null, `${selectedTopic.title} 전체 ${selectedReviewTopic?.questions.length ?? 0}문제 풀기`],
+        ["random", `${selectedTopic.title} 전체 ${selectedReviewTopic?.questions.length ?? 0}문제 랜덤으로 풀기`],
+      ].map(([order, label]) => reviewTopicReady
+        ? `<a class="button ${order ? "button--secondary" : "button--primary"}" href="${escapeHtml(buildTopicReviewHash(selectedReviewTopic.languageId, selectedTopic.id, order))}">${escapeHtml(label)}</a>`
+        : `<button class="button button--secondary" type="button" disabled>${escapeHtml(label)}</button>`).join("")}</div>` : "";
   const countText = usesKeywordFlow
     ? selectedKeyword ? `${selectedKeyword.keyword} · ${documentItems.length}개 문서` : `${selectedTopic?.title} · ${keywordUnits.length}개 키워드`
     : `${selectedTopic?.title ?? "전체"} · ${items.length}${isReview ? `개 문제 묶음 · ${items.reduce((sum, item) => sum + item.count, 0)}문제` : "개 문서"}`;
@@ -150,6 +167,7 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
       <p class="catalog-search-scope">${selectedTopic && selectedTopic.id !== "all" ? `${selectedTopic.title}에서 검색합니다. 다른 주제도 찾으려면 전체를 선택하세요.` : "전체 학습자료에서 검색합니다."}</p>
     </form>
     <section class="catalog-topics" aria-labelledby="catalog-topics-title"><h2 id="catalog-topics-title">주제 선택</h2><div class="catalog-topic-options">${topicButtons}</div></section>
+    ${topicActions}
     ${failedLanguages.length ? `<p class="catalog-notice" role="status">${escapeHtml(failedLanguages.join(", "))} 문제를 불러오지 못했습니다. <button type="button" class="text-button" data-retry>다시 불러오기</button></p>` : ""}
     ${usesKeywordFlow ? `<section class="catalog-topics catalog-keyword-picker" aria-labelledby="catalog-keywords-title"><h2 id="catalog-keywords-title">키워드 선택</h2><div class="catalog-topic-options">${keywordButtons}</div></section>` : ""}
     ${hasSelection ? `<p class="catalog-count" role="status">${countText}</p>` : ""}

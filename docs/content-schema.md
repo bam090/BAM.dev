@@ -173,6 +173,8 @@ category ──► course ──► lesson ──► Markdown
 
 ### 진행 세션
 
+`[확정 결정]` 주제 전체 풀이의 선택 범위 필드 `scope.topicId`는 [주제 전체 계약](designs/lesson-review.md#주제-전체-문제-풀기)을 따른다. 실제 교안 소유 과정으로 해당 주제의 문항을 골라 `questionIds`·`contentSignature`를 만들고 URL·복구 범위 비교·문서 왕복·결과 재진입에 같은 주제를 전달한다. 주제/언어 조합과 교안·개념 범위의 중첩을 검증하며 필드가 없는 구 v1은 기존 언어·교안·개념 범위로 복원한다. 랜덤 풀기는 선택 `scope.order` 값 `random`으로 구분하고 부재는 기존 순차 순서다. 실제 문항 순서는 기존 `questionIds`에 저장하며 복구 때 다시 섞지 않는다. `contentSignature`는 섞기 전 정규 주제 문항 배열을 기준으로 하여 랜덤 순서와 콘텐츠 변경을 혼동하지 않는다. 물리 키·정답·문항 ID는 변경하지 않는다.
+
 새 물리 키 `bam.dev.review-session.v1`은 별도 review-session 저장소 인터페이스 뒤에서 **활성 세션 하나**를 보존한다. 기존 `bam.dev.progress.v1`의 완료 시도·오답·다른 제품 진도는 변경하거나 초기화하지 않는다. R1 진행 중 상태와 기존 결과까지 완료한 시도 저장은 서로 다른 역할이다.
 
 | 활성 세션 값 | R1 계약 |

@@ -10,7 +10,9 @@ export function getReviewContentSignature(questions) {
 export function restoreReviewSession(saved, questions, scope) {
   if (!saved || saved.scope?.languageId !== scope.languageId ||
       (saved.scope?.lessonId ?? null) !== (scope.lessonId ?? null) ||
-      (saved.scope?.conceptId ?? null) !== (scope.conceptId ?? null)) return { status: "other-scope" };
+      (saved.scope?.conceptId ?? null) !== (scope.conceptId ?? null) ||
+      (saved.scope?.topicId ?? null) !== (scope.topicId ?? null) ||
+      (saved.scope?.order ?? null) !== (scope.order ?? null)) return { status: "other-scope" };
   if (saved.contentSignature !== getReviewContentSignature(questions)) return { status: "content-changed" };
   try {
     if (typeof saved.id !== "string" || !/^[a-z0-9-]+$/i.test(saved.id) ||
