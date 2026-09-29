@@ -6170,7 +6170,7 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
 
 @media (min-width: 1120px) {
   .learning-shell .review-container.is-question-view {
-    width: min(calc(100% - 32px), 1180px);
+    width: min(calc(100% - 32px), 960px);
   }
 
   .learning-shell .review-container.is-all-view {

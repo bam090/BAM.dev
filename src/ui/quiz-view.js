@@ -54,6 +54,7 @@ export function getQuizSaveStatusMessage(status) {
 export function renderQuizScopeControls({
   lessons = [],
   selectedLessonId = null,
+  allLabel = "이 언어의 전체 문서",
   recentAttempt = null,
   incorrectQuestionCount = 0,
   saveStatus = "saved",
@@ -66,7 +67,7 @@ export function renderQuizScopeControls({
       <summary>문제 범위·지난 결과</summary>
       <label for="quiz-lesson-scope">복습할 학습 문서</label>
       <select id="quiz-lesson-scope" data-quiz-lesson>
-        <option value=""${selectedLessonId ? "" : " selected"}>이 언어의 전체 문서</option>
+        <option value=""${selectedLessonId ? "" : " selected"}>${escapeHtml(allLabel)}</option>
         ${lessons.map((lesson) => `<option value="${escapeHtml(lesson.id)}"${lesson.id === selectedLessonId ? " selected" : ""}>${escapeHtml(lesson.courseName)} · ${escapeHtml(lesson.title)} (${lesson.questionCount}문항)</option>`).join("")}
       </select>
       <div class="quiz-result-actions">
@@ -131,6 +132,7 @@ function renderQuestionHeader({
   incorrectQuestionCount,
   sessionMode,
   viewMode,
+  randomOrder,
 }) {
   const safeTotal = Math.max(0, safeInteger(total));
   const safeAnswered = Math.min(safeTotal, Math.max(0, safeInteger(answeredCount)));
@@ -142,7 +144,7 @@ function renderQuestionHeader({
       <div class="eyebrow">
         <span>${escapeHtml(languageName)}</span>
         <span aria-hidden="true">·</span>
-        <span>${sessionMode === "incorrect" ? "오답 다시 풀기" : "선택한 범위 복습"}</span>
+        <span>${sessionMode === "incorrect" ? "오답 다시 풀기" : "선택한 범위 복습"}${randomOrder ? " · 랜덤 순서" : ""}</span>
       </div>
       <h1>${escapeHtml(title)}</h1>
       ${renderRecentProgress(recentAttempt, incorrectQuestionCount)}
@@ -319,6 +321,7 @@ export function renderQuizQuestionView({
   currentIndex = 0, total = 0, answeredCount = 0,
   selectedOptionId = null, gradedAnswer = null, recentAttempt = null,
   incorrectQuestionCount = 0, sessionMode = "all", scopeControls = "",
+  randomOrder = false,
   lessonHref = null, lessonTitle = "학습 문서", learningObjective = "",
   relatedConceptTitle = null, otherFeedbackExpanded = false,
   viewMode = "single", gradingMode = "individual", questionStates = null,
@@ -336,7 +339,7 @@ export function renderQuizQuestionView({
     <main class="main-area" id="lesson-content" tabindex="-1">
       <div class="review-container is-question-view${viewMode === "all" ? " is-all-view" : ""}">
         ${scopeControls}
-        ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, sessionMode, viewMode })}
+        ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, sessionMode, viewMode, randomOrder })}
         ${renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount })}
         <div class="quiz-question-list${viewMode === "all" ? " is-all-view" : ""}">
           ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope, canRetry: state.canRetry ?? canRetryQuestions })).join("")}

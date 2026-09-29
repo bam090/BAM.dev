@@ -677,8 +677,6 @@ export function renderCodeQuestCatalogView({
   const status = filters.status ?? "all";
   const number = String(filters.number ?? "");
   const resume = course.resumeItem;
-  const executableCount = getCourseExecutionCount(course, javaExecutionAvailable, javaSupportedQuestIds);
-  const javaExecutionPending = course.languageId === "java" && executableCount < course.totalCount;
   const resumeExecutionAvailable = isCatalogItemExecutionAvailable(
     resume,
     javaExecutionAvailable,
@@ -695,7 +693,7 @@ export function renderCodeQuestCatalogView({
   return `<main class="main-area service-main quest-catalog-main" id="lesson-content" tabindex="-1">
     <header class="catalog-header quest-catalog-header"><p class="eyebrow">읽은 개념을 짧은 코드로 확인하세요</p><h1>Code Quest</h1><p>과정과 학습 주제를 확인하고, 공개된 실행 기준으로 직접 작성해 보세요.</p></header>
     <nav class="quest-course-tabs" aria-label="Code Quest 과정">${courses.map((item) => `<button type="button" data-quest-course="${escapeHtml(item.id)}" aria-pressed="${String(item.id === course.id)}"${item.id === course.id ? ' aria-current="true"' : ""}><strong>${escapeHtml(item.name)}</strong><span>${getCourseAvailabilityCopy(item, javaExecutionAvailable, item.languageId, javaSupportedQuestIds)}</span></button>`).join("")}</nav>
-    ${javaExecutionPending ? `<p class="catalog-notice" role="status"><strong>Java Quest ${course.totalCount}개 등록 · ${executableCount}개 실행 가능</strong><br>나머지 ${course.totalCount - executableCount}개는 문제·힌트·공개 테스트를 읽고 코드를 저장할 수 있습니다. 앱 실행과 완료 판정은 아직 제공하지 않습니다.</p>` : renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
+    ${renderCatalogProgress(`${course.name} Code Quest 전체`, course.completedCount, course.totalCount, course.percent)}
     ${resume ? `<aside class="resume-card quest-resume-card" aria-label="Code Quest 이어서 풀기"><div><strong>${resumeExecutionAvailable ? resume.progress === "in_progress" ? "이어서 풀 수 있어요" : resume.progress === "completed" ? "처음부터 다시 풀어 보세요" : "다음 Quest를 시작하세요" : resume.hasDraft ? "저장한 코드를 이어서 작성하세요" : "코드 작성을 시작하세요"}</strong><p>${resume.displayOrder}. ${escapeHtml(resume.title)} · ${resumeExecutionAvailable ? QUEST_PROGRESS_COPY[resume.progress] : resume.hasDraft ? "초안 저장됨" : resume.executionMode === "draft-only" ? "원본 테스트 읽기" : "실행 준비 중"}${getQuestProgressEvidenceCopy(resume) ? ` · ${getQuestProgressEvidenceCopy(resume)}` : ""}</p></div><a class="button button--primary" href="${escapeHtml(resume.href)}">${resumeExecutionAvailable ? resume.progress === "in_progress" ? "이어서 풀기" : resume.progress === "completed" ? "다시 풀기" : "시작하기" : resume.hasDraft ? "이어서 작성하기" : "코드 작성하기"}</a></aside>` : ""}
     <section class="quest-catalog-tools" aria-labelledby="quest-explorer-title">
       <header><h2 id="quest-explorer-title">문제 탐색기</h2><p>검색과 필터를 함께 사용하거나 과정 안의 번호로 바로 이동할 수 있습니다.</p></header>

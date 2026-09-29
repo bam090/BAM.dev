@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseLessonHash, parseReviewHash } from "../src/core/navigation.js";
-import { buildKeywordReviewHash, buildReviewLessonHash, getKeywordReviewScope, getReviewRouteOptions } from "../src/core/review-navigation.js";
+import { buildKeywordReviewHash, buildReviewLessonHash, buildTopicReviewHash, getKeywordReviewScope, getReviewRouteOptions, getTopicReviewQuestions } from "../src/core/review-navigation.js";
 
 test("키워드 query를 붙여도 기존 언어·단원 깊은 경로를 보존한다", () => {
   const hash = buildKeywordReviewHash("javascript", "js-notes-functions", "js.function-return");
@@ -16,15 +16,44 @@ test("문서 복귀 토큰·heading은 URL 데이터로 인코딩하고 문서 �
   const hash = buildReviewLessonHash(lesson, "session-one", "`map`, `filter` & 함수?");
   assert.deepEqual(parseLessonHash(hash), lesson);
   assert.deepEqual(getReviewRouteOptions(hash), {
-    conceptId: null, returnToken: "session-one", heading: "`map`, `filter` & 함수?",
+    conceptId: null, topicId: null, order: null, returnToken: "session-one", heading: "`map`, `filter` & 함수?",
   });
   assert.equal(hash.includes(" & "), false);
 });
 
 test("직접 문서와 query 없는 경로에는 복귀 문맥이 없으며 외부 return URL을 해석하지 않는다", () => {
   for (const hash of ["#/learn/javascript/functions", "#/", undefined, "#/learn/javascript/functions?return=https://example.com"]) {
-    assert.deepEqual(getReviewRouteOptions(hash), { conceptId: null, returnToken: null, heading: null });
+    assert.deepEqual(getReviewRouteOptions(hash), { conceptId: null, topicId: null, order: null, returnToken: null, heading: null });
   }
+});
+
+test("주제 복습 주소는 정순과 랜덤을 구분하고 문제 소유 과정으로 범위를 고른다", () => {
+  const curriculum = {
+    categories: [{ id: "language", status: "active" }, { id: "spring", status: "active" }, { id: "algorithm", status: "planned" }],
+    courses: [
+      { id: "java-course", categoryId: "language", languageId: "java", status: "active" },
+      { id: "spring-course", categoryId: "spring", languageId: "java", status: "active" },
+      { id: "algorithm-course", categoryId: "algorithm", languageId: "java", status: "planned" },
+    ],
+    lessons: [
+      { id: "java-lesson", courseId: "java-course", languageId: "java" },
+      { id: "spring-lesson", courseId: "spring-course", languageId: "java" },
+      { id: "algorithm-lesson", courseId: "algorithm-course", languageId: "java" },
+    ],
+  };
+  const collection = { languageId: "java", questions: [
+    { id: "java-one", lessonId: "java-lesson" },
+    { id: "spring-one", lessonId: "spring-lesson" },
+    { id: "java-one", lessonId: "java-lesson" },
+    { id: "algorithm-one", lessonId: "algorithm-lesson" },
+  ] };
+  assert.equal(buildTopicReviewHash("java", "spring"), "#/review/java?topic=spring");
+  const randomHash = buildTopicReviewHash("java", "spring", "random");
+  assert.equal(randomHash, "#/review/java?topic=spring&order=random");
+  assert.deepEqual(getReviewRouteOptions(randomHash), { conceptId: null, topicId: "spring", order: "random", returnToken: null, heading: null });
+  assert.deepEqual(getTopicReviewQuestions(curriculum, collection, "java").map(({ id }) => id), ["java-one"]);
+  assert.deepEqual(getTopicReviewQuestions(curriculum, collection, "spring").map(({ id }) => id), ["spring-one"]);
+  assert.deepEqual(getTopicReviewQuestions(curriculum, collection, "algorithm"), []);
 });
 
 test("모든 소유자의 상세 문서가 확인된 키워드만 합치고 불완전한 매핑은 원래 범위를 유지한다", () => {
