@@ -906,6 +906,35 @@ test("변경된 콘텐츠나 깨진 JSON은 기존 저장을 유지하고 사용
   }
 });
 
+test("Java 타입 보기의 백틱 표기가 바뀌어도 새 시작으로 현재 문제를 렌더링한다", async (t) => {
+  browser(t, "#/review/java/java-concept-types-variables?concept=java.types");
+  const currentFetch = globalThis.fetch;
+  const previous = JSON.parse(await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"));
+  for (const item of previous.questions.filter((entry) => entry.conceptId === "java.types")) {
+    for (const option of item.options) {
+      option.text = option.text.replaceAll("`", "");
+      option.feedback = option.feedback.replaceAll("`", "");
+    }
+  }
+  globalThis.fetch = async (path) => String(path).endsWith("content/quizzes/java.json")
+    ? { ok: true, json: async () => structuredClone(previous) }
+    : currentFetch(path);
+  const { app, storage } = harness();
+  await app.openRoute();
+  assert.match(app.root.innerHTML, /data-quiz-option/);
+  choose(app, "b");
+
+  globalThis.fetch = currentFetch;
+  const restored = harness(storage).app;
+  await restored.openRoute();
+  assert.equal(restored.reviewNeedsRestart, true);
+  assert.match(restored.root.innerHTML, /data-review-start-new/);
+  restored.handleClick(click("[data-review-start-new]"));
+  assert.equal(restored.reviewNeedsRestart, false);
+  assert.match(restored.root.innerHTML, /<code>count<\/code>/);
+  assert.match(restored.root.innerHTML, /data-quiz-option/);
+});
+
 test("공유 키워드에 새 문항이 추가되면 안내 후 사용자가 새로 시작할 때만 풀이를 교체한다", async (t) => {
   browser(t, "#/review/javascript?concept=js.variables");
   const currentFetch = globalThis.fetch;
@@ -1082,6 +1111,31 @@ test("개념 모달의 Tab 양끝은 모달 안에서 순환하고 닫으면 열
   }
   app.closeConceptOverlay();
   assert.equal(document.activeElement, button);
+});
+
+test("개념이 없을 때 학습문서 요약의 백틱 코드와 HTML을 안전하게 표시한다", async (t) => {
+  browser(t);
+  const { app } = harness();
+  await app.openReviewRoute("javascript", lesson.id);
+  const question = app.getCurrentQuizQuestion();
+  app.reviewConcepts = [];
+  app.curriculum = {
+    ...curriculum,
+    lessons: curriculum.lessons.map((item) => item.id === question.lessonId
+      ? { ...item, summary: "`return`과 <script>를 비교합니다." }
+      : item),
+  };
+  const dialog = {
+    setAttribute() {}, addEventListener() {},
+    querySelector() { return { focus() {} }; },
+    showModal() {}, remove() {},
+  };
+  document.createElement = () => dialog;
+  document.body = { classList: { add() {}, remove() {} } };
+  app.root.append = () => {};
+  app.openConceptOverlay({ id: "quiz-related-concept", isConnected: true, focus() {} });
+  assert.match(dialog.innerHTML, /<code>return<\/code>과 &lt;script&gt;를 비교합니다\./);
+  assert.doesNotMatch(dialog.innerHTML, /<script>|`return`/);
 });
 
 test("기존 소유자의 풀이를 새 문서에 연결해도 문항 서명·선택·채점·펼침과 복귀를 보존한다", async (t) => {

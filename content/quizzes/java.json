@@ -116,27 +116,27 @@
       "options": [
         {
           "id": "a",
-          "text": "기본 타입: count, ready, title / 참조 타입: scores",
+          "text": "기본 타입: `count`, `ready`, `title` / 참조 타입: `scores`",
           "isCorrect": false,
-          "feedback": "String은 클래스 타입입니다. 문자열 리터럴로 초기화해도 title의 선언 타입이 기본 타입이 되지는 않습니다."
+          "feedback": "`String`은 클래스 타입입니다. 문자열 리터럴로 초기화해도 `title`의 선언 타입이 기본 타입이 되지는 않습니다."
         },
         {
           "id": "b",
-          "text": "기본 타입: count, ready / 참조 타입: title, scores",
+          "text": "기본 타입: `count`, `ready` / 참조 타입: `title`, `scores`",
           "isCorrect": true,
-          "feedback": "int와 boolean은 기본 타입입니다. String은 클래스 타입이고 int[]는 배열 타입이므로 title과 scores는 참조값을 다룹니다."
+          "feedback": "`int`와 `boolean`은 기본 타입입니다. `String`은 클래스 타입이고 `int[]`는 배열 타입이므로 `title`과 `scores`는 참조값을 다룹니다."
         },
         {
           "id": "c",
-          "text": "기본 타입: count, scores / 참조 타입: ready, title",
+          "text": "기본 타입: `count`, `scores` / 참조 타입: `ready`, `title`",
           "isCorrect": false,
-          "feedback": "int[]는 원소가 int여도 배열 자체는 참조 타입입니다. boolean은 기본 타입이므로 ready도 기본 타입 변수입니다."
+          "feedback": "`int[]`는 원소가 `int`여도 배열 자체는 참조 타입입니다. `boolean`은 기본 타입이므로 `ready`도 기본 타입 변수입니다."
         },
         {
           "id": "d",
-          "text": "기본 타입: count / 참조 타입: ready, title, scores",
+          "text": "기본 타입: `count` / 참조 타입: `ready`, `title`, `scores`",
           "isCorrect": false,
-          "feedback": "boolean은 참조 타입이 아니라 기본 타입입니다. true라는 값을 담는 ready를 참조 타입에 포함할 수 없습니다."
+          "feedback": "`boolean`은 참조 타입이 아니라 기본 타입입니다. `true`라는 값을 담는 `ready`를 참조 타입에 포함할 수 없습니다."
         }
       ],
       "code": "int count = 3;\nboolean ready = true;\nString title = \"Java\";\nint[] scores = {70, 80};"
@@ -151,27 +151,27 @@
       "options": [
         {
           "id": "a",
-          "text": "지역 int 변수는 자동으로 0이 되므로 그대로 둡니다.",
+          "text": "지역 `int` 변수는 자동으로 0이 되므로 그대로 둡니다.",
           "isCorrect": false,
-          "feedback": "필드·배열 원소의 기본값 규칙을 지역 변수에 적용할 수 없습니다. ready가 false인 경로에서는 total의 값이 정해지지 않습니다."
+          "feedback": "필드·배열 원소의 기본값 규칙을 지역 변수에 적용할 수 없습니다. `ready`가 `false`인 경로에서는 `total`의 값이 정해지지 않습니다."
         },
         {
           "id": "b",
-          "text": "int total을 Integer total로만 바꿉니다.",
+          "text": "`int total`을 `Integer total`로만 바꿉니다.",
           "isCorrect": false,
-          "feedback": "참조 타입 지역 변수도 읽기 전에 값이 정해져야 합니다. 타입만 Integer로 바꾸어도 false 경로의 대입은 생기지 않습니다."
+          "feedback": "참조 타입 지역 변수도 읽기 전에 값이 정해져야 합니다. 타입만 `Integer`로 바꾸어도 `false` 경로의 대입은 생기지 않습니다."
         },
         {
           "id": "c",
-          "text": "int total 앞에 final만 붙입니다.",
+          "text": "`int total` 앞에 `final`만 붙입니다.",
           "isCorrect": false,
-          "feedback": "final은 재대입을 제한하는 규칙이며 기본값을 넣어 주지 않습니다. false 경로에서 읽을 값을 정해야 합니다."
+          "feedback": "`final`은 재대입을 제한하는 규칙이며 기본값을 넣어 주지 않습니다. `false` 경로에서 읽을 값을 정해야 합니다."
         },
         {
           "id": "d",
-          "text": "if에 else를 추가하고 그 안에서 total = 0을 실행합니다.",
+          "text": "`if`에 `else`를 추가하고 그 안에서 `total = 0`을 실행합니다.",
           "isCorrect": true,
-          "feedback": "true 경로는 10, false 경로는 0을 대입하므로 return 전에 모든 경로에서 total이 정해집니다. 요구한 결과도 유지합니다."
+          "feedback": "`true` 경로는 10, `false` 경로는 0을 대입하므로 `return` 전에 모든 경로에서 `total`이 정해집니다. 요구한 결과도 유지합니다."
         }
       ],
       "code": "static int chooseTotal(boolean ready) {\n    int total;\n    if (ready) {\n        total = 10;\n    }\n    return total;\n}"
