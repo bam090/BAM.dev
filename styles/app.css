@@ -6031,21 +6031,22 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
 .concept-dialog-heading h2 { margin: 4px 0 20px; overflow-wrap: anywhere; }
 .concept-dialog-heading .icon-button { flex-shrink: 0; }
 .concept-dialog .lesson-body { margin-bottom: 28px; overflow-wrap: anywhere; }
-.review-container.is-question-view, .concept-dialog {
-  --color-code: light-dark(#f5f4f0, #202126);
-  --color-inline-code: light-dark(#a33d2d, #ffaa99);
-  --color-inline-code-bg: light-dark(#f1f1f3, #242528);
-  --color-inline-code-border: light-dark(#d8cecb, #51423f);
-  --color-syntax-comment: light-dark(#62656d, #a0a5b1);
-  --color-syntax-keyword: light-dark(#7a2e8e, #d6a4f2);
-  --color-syntax-string: light-dark(#21633c, #a8cf91);
-  --color-syntax-number: light-dark(#175c88, #8fc8f2);
-  --color-syntax-function: light-dark(#725316, #e3c07b);
-  --color-syntax-operator: light-dark(#454b59, #c1c5d0);
+:is(.learning-shell, .concept-dialog) :not(pre) > code {
+  padding: 0.12em 0.34em;
+  border: 1px solid var(--color-inline-code-border);
+  border-radius: 5px;
+  background: var(--color-inline-code-bg);
+  color: var(--color-inline-code);
+  font-family: var(--font-mono);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
-.review-container.is-question-view .quiz-code code,
-.review-container.is-question-view .code-card code,
-.concept-dialog .code-card code { color: light-dark(#24252a, #e6e7eb); }
+:is(.code-card, .quiz-code, .syntax-code:not(.quest-source-highlight):not(.coding-test-source-highlight), .coding-test-result-value pre) {
+  background: light-dark(#f5f4f0, #202126);
+}
+:is(.code-card, .quiz-code, .syntax-code:not(.quest-source-highlight):not(.coding-test-source-highlight), .coding-test-result-value pre) code {
+  color: var(--color-code-text);
+}
 .review-container.is-question-view .quiz-option-text p { margin: 0; }
 .review-container.is-question-view .quiz-option-text .code-card { margin: 4px 0; }
 .review-container.is-question-view .quiz-option-text .code-card pre { max-height: 220px; padding: 8px 10px; }
