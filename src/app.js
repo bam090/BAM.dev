@@ -1605,7 +1605,7 @@ export class BamLearningApp {
     const dialog = document.createElement("dialog");
     dialog.className = "concept-dialog";
     dialog.setAttribute("aria-labelledby", "concept-dialog-title");
-    dialog.innerHTML = `<div class="concept-dialog-heading"><div><p class="eyebrow">${concept ? "관련 개념" : "관련 학습문서 요약"}</p><h2 id="concept-dialog-title">${renderInlineCodeText(concept?.title ?? lesson.title)}</h2></div><button class="icon-button" type="button" data-concept-close aria-label="개념 설명 닫기">×</button></div><div class="lesson-body">${concept ? renderMarkdown(concept.excerpt) : `<p>${escapeHtml(lesson.summary)}</p>`}</div><a class="button button--primary" href="${buildLessonHash(lesson.courseId, lesson.slug)}" data-concept-document>학습문서에서 자세히 보기</a>`;
+    dialog.innerHTML = `<div class="concept-dialog-heading"><div><p class="eyebrow">${concept ? "관련 개념" : "관련 학습문서 요약"}</p><h2 id="concept-dialog-title">${renderInlineCodeText(concept?.title ?? lesson.title)}</h2></div><button class="icon-button" type="button" data-concept-close aria-label="개념 설명 닫기">×</button></div><div class="lesson-body">${concept ? renderMarkdown(concept.excerpt) : `<p>${renderInlineCodeText(lesson.summary)}</p>`}</div><a class="button button--primary" href="${buildLessonHash(lesson.courseId, lesson.slug)}" data-concept-document>학습문서에서 자세히 보기</a>`;
     this.root.append(dialog);
     this.conceptDialog = dialog;
     this.conceptTrigger = button;

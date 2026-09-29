@@ -2,9 +2,9 @@ import {
   escapeHtml,
   renderHighlightedCode,
   renderInlineCodeText,
+  renderMarkdown,
 } from "./markdown.js";
 
-const OPTION_MARKERS = ["A", "B", "C", "D"];
 const DIFFICULTY_LABELS = {
   basic: "기본",
   application: "응용",
@@ -201,13 +201,16 @@ function renderOption(option, index, selectedOptionId, gradedAnswer, otherFeedba
     else resultLabel = "오답 선택지";
   }
 
+  const optionText = String(option.text ?? "");
+  const hasCodeFence = /(?:^|\n)```[\w-]*[ \t]*(?:\r?\n|$)/.test(optionText);
+
   return `
     <div class="${optionClasses}">
       <input id="${escapeHtml(inputId)}" type="radio" name="quiz-answer-${escapeHtml(questionId)}" value="${escapeHtml(option.id)}" data-quiz-option${isSelected ? " checked" : ""}${gradedAnswer ? " disabled" : ""}${showFeedback ? ` aria-describedby="${escapeHtml(feedbackId)}"` : ""}>
       <label for="${escapeHtml(inputId)}">
-        <span class="quiz-option-marker" aria-hidden="true">${OPTION_MARKERS[index] ?? index + 1}</span>
+        <span class="quiz-option-marker">${index + 1}.</span>
         <span class="quiz-option-content">
-          <span class="quiz-option-text">${renderInlineCodeText(option.text)}</span>
+          <div class="quiz-option-text">${hasCodeFence ? renderMarkdown(optionText, { codeCopyButton: false }) : renderInlineCodeText(optionText)}</div>
           ${
             showFeedback
               ? `<span class="quiz-option-feedback" id="${escapeHtml(feedbackId)}"><strong>${resultLabel}</strong>${renderInlineCodeText(feedback.message)}</span>`
@@ -221,18 +224,12 @@ function renderOption(option, index, selectedOptionId, gradedAnswer, otherFeedba
 
 function renderGradedSummary(question, gradedAnswer) {
   if (!gradedAnswer) return "";
-  const correctOption = question.options.find(
-    (option) => option.id === gradedAnswer.correctOptionId,
-  );
-  const explanation = gradedAnswer.feedback.find(
-    (feedback) => feedback.optionId === gradedAnswer.correctOptionId,
-  );
+  const correctIndex = (question.options ?? []).findIndex((option) => option.id === gradedAnswer.correctOptionId);
+  const correctMarker = correctIndex < 0 ? "?" : String(correctIndex + 1);
 
   return `
     <section class="quiz-answer-summary ${gradedAnswer.isCorrect ? "is-correct" : "is-incorrect"}" id="quiz-answer-summary-${escapeHtml(question.id)}" data-quiz-grade-summary tabindex="-1" role="region" aria-labelledby="quiz-answer-summary-title-${escapeHtml(question.id)}">
-      <h3 id="quiz-answer-summary-title-${escapeHtml(question.id)}">${gradedAnswer.isCorrect ? "정답입니다." : "오답입니다."}</h3>
-      <p><strong>정답</strong> ${renderInlineCodeText(correctOption?.text ?? "정답 정보를 확인할 수 없습니다.")}</p>
-      <p><strong>정답 설명</strong> ${renderInlineCodeText(explanation?.message ?? "정답 해설을 확인할 수 없습니다.")}</p>
+      <h3 id="quiz-answer-summary-title-${escapeHtml(question.id)}">${gradedAnswer.isCorrect ? "정답입니다." : "오답입니다."} 정답 보기 ${correctMarker}</h3>
     </section>
   `;
 }
@@ -337,11 +334,11 @@ export function renderQuizQuestionView({
   const unansweredCount = safeTotal - states.filter((state) => state.selectedOptionId).length;
   return `
     <main class="main-area" id="lesson-content" tabindex="-1">
-      <div class="review-container">
+      <div class="review-container is-question-view${viewMode === "all" ? " is-all-view" : ""}">
         ${scopeControls}
         ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, sessionMode, viewMode })}
         ${renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount })}
-        <div class="quiz-question-list">
+        <div class="quiz-question-list${viewMode === "all" ? " is-all-view" : ""}">
           ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope, canRetry: state.canRetry ?? canRetryQuestions })).join("")}
         </div>
         ${viewMode === "all" ? `<div class="quiz-list-result">${gradingMode === "batch" ? `<button class="button button--primary" id="quiz-check-all-end" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status-end" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항</p>` : ""}<button class="button button--primary" type="button" data-quiz-finish${answeredCount === safeTotal ? "" : " disabled"}>${hasNextScope ? "다음 문제" : "결과 보기"}</button><p>${safeTotal > 0 && answeredCount === safeTotal ? getCompletedScopeMessage(hasNextScope, nextScope) : "모든 문제를 채점한 뒤 이어갈 수 있습니다."}</p></div>` : ""}

@@ -407,7 +407,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "review-history",
   "scopeRevision": "REVIEW-HISTORY-v1",
-  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "37504b3aae6fc78e7a6f14d112e44ee146f682d587310bf3dd4273f3562bc8c0" }],
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "ee140a745a8b7cb75023521d6b0dbb1884cef3869b750b01d239860e9722aa28" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },

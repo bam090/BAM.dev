@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   renderQuizLoadingView,
@@ -179,6 +180,30 @@ test("문제·선택지·해설의 백틱 코드는 안전한 인라인 코드�
   assert.doesNotMatch(html, /`(?:total|console\.log)/);
 });
 
+test("코드블록 보기와 실제 Java 타입 보기는 안전하게 표시하고 라디오 값은 유지한다", async () => {
+  const fenced = {
+    ...question,
+    options: question.options.map((option, index) => index === 1
+      ? { ...option, text: '다음 코드입니다.\n```html\n<img src=x onerror="alert(1)">\n```' }
+      : option),
+  };
+  for (const viewMode of ["single", "all"]) {
+    const html = renderQuestion({ question: fenced, viewMode });
+    assert.match(html, /<figure class="code-card">/);
+    assert.match(html, /class="language-html"/);
+    assert.match(html, /value="b" data-quiz-option/);
+    assert.doesNotMatch(html, /<img src=x|data-copy-code/);
+  }
+
+  const collection = JSON.parse(await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"));
+  const javaTypes = collection.questions.find((item) => item.id === "quiz-java-concept-types-variables-primitive-reference");
+  assert.ok(javaTypes);
+  const html = renderQuestion({ languageId: "java", languageName: "Java", question: javaTypes });
+  assert.match(html, /<code>count<\/code>/);
+  assert.match(html, /<code>ready<\/code>/);
+  assert.doesNotMatch(html, /`(?:count|ready)`/);
+});
+
 test("채점 후 선택지를 잠그고 정답·선택한 오답의 근거를 먼저 표시한다", () => {
   const html = renderQuestion({
     selectedOptionId: "b",
@@ -186,8 +211,10 @@ test("채점 후 선택지를 잠그고 정답·선택한 오답의 근거를 �
     answeredCount: 1,
   });
   assert.equal((html.match(/data-quiz-option[^>]* disabled/g) ?? []).length, 4);
-  assert.match(html, /오답입니다/);
-  assert.match(html, /<strong>정답 설명<\/strong> 맞습니다/);
+  assert.match(html, /오답입니다\. 정답 보기 1/);
+  assert.match(html, /<strong>정답<\/strong>맞습니다/);
+  assert.equal((html.match(/맞습니다\./g) ?? []).length, 1, "정답 근거는 선택지에서 한 번만 읽힌다.");
+  assert.equal((html.match(/비교 결과를 다시 확인하세요\./g) ?? []).length, 1, "선택한 오답 이유를 유지한다.");
   assert.equal((html.match(/class="quiz-option-feedback"/g) ?? []).length, 2);
   assert.match(html, /data-quiz-feedback-toggle aria-expanded="false"/);
   assert.doesNotMatch(html, /비교식은 boolean을 반환합니다/);
@@ -216,6 +243,8 @@ test("전부 보기와 전체 채점에서도 오답 카드만 같은 카드 재
     gradingMode: "batch",
     questionStates,
   });
+  assert.match(html, /class="review-container is-question-view is-all-view"/);
+  assert.match(html, /class="quiz-question-list is-all-view"/);
   const cards = html.split(/<section[^>]*data-quiz-question-id="/).slice(1);
   assert.equal((html.match(/data-quiz-question-retry/g) ?? []).length, 1);
   assert.match(html, /답한 1개 채점/);
@@ -277,7 +306,7 @@ test("채점 결과는 이름이 있는 단일 focus region으로 제공한다",
   assert.match(summary, /role="region"/);
   const titleId = summary.match(/aria-labelledby="([^"]+)"/)?.[1];
   assert.ok(titleId?.includes(question.id), "결과의 접근 가능한 이름은 해당 문항에 고유해야 한다.");
-  assert.ok(html.includes(`<h3 id="${titleId}">오답입니다.</h3>`));
+  assert.ok(html.includes(`<h3 id="${titleId}">오답입니다. 정답 보기 1</h3>`));
   assert.doesNotMatch(html, /data-quiz-grade-summary[^>]*role="status"/);
   assert.doesNotMatch(html, /data-quiz-grade-summary[^>]*aria-live/);
   assert.equal((html.match(/aria-live=/g) ?? []).length, 0);
@@ -318,10 +347,13 @@ test("전부 보기의 세 카드는 라디오·이름·해설·개념 초점 �
     }
     assert.ok(card.includes(`id="quiz-related-concept-${questionId}"`));
     if (index === 0) {
-      assert.match(card, /정답 설명/);
+      assert.match(card, /정답 보기 1/);
+      assert.match(card, /<strong>정답<\/strong>맞습니다/);
+      assert.equal((card.match(/맞습니다\./g) ?? []).length, 1);
+      assert.equal((card.match(/비교 결과를 다시 확인하세요\./g) ?? []).length, 1);
       assert.match(card, /비교식은 boolean을 반환합니다/);
     } else {
-      assert.doesNotMatch(card, /class="quiz-option-feedback"|data-quiz-grade-summary|is-correct|정답 설명/);
+      assert.doesNotMatch(card, /class="quiz-option-feedback"|data-quiz-grade-summary|is-correct|정답 보기/);
     }
   }
   const single = renderQuestion({ ...questionStates[1], total: 3, viewMode: "single" });
@@ -333,6 +365,9 @@ test("전부 보기의 세 카드는 라디오·이름·해설·개념 초점 �
 
 test("하나씩 전체 채점 화면은 답을 모으기 위한 다음 이동을 제공하고 선택 방식도 표시한다", () => {
   const html = renderQuestion({ total: 3, gradingMode: "batch" });
+  assert.match(html, /class="review-container is-question-view"/);
+  assert.match(html, /class="quiz-question-list"/);
+  assert.doesNotMatch(html, /class="(?:review-container|quiz-question-list) is-all-view"/);
   assert.match(html, /data-quiz-next aria-disabled="false"/);
   assert.match(html, /data-quiz-view-mode="single"[^>]*aria-pressed="true"/);
   assert.match(html, /data-quiz-view-mode="all"[^>]*aria-pressed="false"/);

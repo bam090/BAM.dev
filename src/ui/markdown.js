@@ -520,7 +520,7 @@ export function splitLessonOverview(markdown) {
 
 export function renderMarkdown(
   markdown,
-  { skipFirstHeading = false, preserveParagraphLineBreaks = false } = {},
+  { skipFirstHeading = false, preserveParagraphLineBreaks = false, codeCopyButton = true } = {},
 ) {
   const lines = String(markdown).replaceAll("\r\n", "\n").split("\n");
   const output = [];
@@ -548,7 +548,7 @@ export function renderMarkdown(
       const highlightedCode = renderHighlightedCode(rawCode, language);
       const sourceAttribute = codeSourceAttribute(rawCode);
       output.push(
-        `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span><button class="copy-button" type="button" data-copy-code>코드 복사</button></figcaption><pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
+        `<figure class="code-card"><figcaption><span>${escapeHtml(language)}</span>${codeCopyButton ? '<button class="copy-button" type="button" data-copy-code>코드 복사</button>' : ""}</figcaption><pre class="syntax-code" tabindex="0" aria-label="${escapeHtml(language)} 코드 예제"><code class="language-${escapeHtml(language)}"${sourceAttribute}>${highlightedCode}</code></pre></figure>`,
       );
       continue;
     }
