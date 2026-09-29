@@ -4458,6 +4458,10 @@ export class BamLearningApp {
       mergedTitles.add(link.title);
       return [{ ...link, href: buildReviewHash(lesson.languageId, lesson.id) }];
     });
+    // 개념 발췌가 없는 과정(알고리즘)도 이 문서가 소유한 문항이 있으면 문서 전체 문제로 연결한다.
+    if (!reviewButtons.length && relatedQuestions.some((question) => question.lessonId === lesson.id)) {
+      reviewButtons.push({ title: "읽은 내용", href: buildReviewHash(lesson.languageId, lesson.id) });
+    }
     const reviewLinkHtml = lesson.answerHeading
       ? reviewButtons.length
         ? reviewButtons.map((link) => `<p class="lesson-review-link"><a class="button button--primary" href="${escapeHtml(link.href)}">${escapeHtml(link.title)} 객관식으로 복습하기</a></p>`).join("")

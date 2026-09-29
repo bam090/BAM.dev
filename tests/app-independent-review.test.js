@@ -1473,3 +1473,20 @@ test("다음 키워드 후보는 공유 카드 정규화와 Java·Spring 주제 
     assert.deepEqual(errors, [], hash);
   }
 });
+
+test("개념 발췌가 없는 알고리즘 문서도 소유한 문항으로 가는 복습 버튼을 보여 준다", async (t) => {
+  browser(t);
+  for (const [slug, lessonId, count] of [["queue", "algo-03-queue", 3], ["queue-java", "algo-03-queue-java", 2]]) {
+    window.location.hash = `#/learn/algorithm/${slug}`;
+    const { app, errors } = harness();
+    await app.openRoute();
+    assert.deepEqual(errors, []);
+    assert.doesNotMatch(app.root.innerHTML, /관련 객관식 문제는 아직 준비 중/);
+    const links = [...app.root.innerHTML.matchAll(/<p class="lesson-review-link"><a[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
+    assert.deepEqual(links.map((match) => [match[1], match[2]]), [[`#/review/java/${lessonId}`, "읽은 내용 객관식으로 복습하기"]]);
+    window.location.hash = links[0][1];
+    await app.openRoute();
+    assert.equal(app.quizSession.questions.length, count);
+    assert.ok(app.quizSession.questions.every((question) => question.lessonId === lessonId));
+  }
+});
