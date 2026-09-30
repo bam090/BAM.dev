@@ -54,9 +54,9 @@ import {
   loadWebProjectCollection,
 } from "./core/web-project.js";
 import { gradeQuestion, loadQuizCollection, summarizeQuiz } from "./core/quiz.js";
-import { buildKeywordReviewHash, buildReviewLessonHash, getKeywordReviewScope, getReviewDocumentLesson, getReviewRouteOptions, validateReviewConcepts } from "./core/review-navigation.js";
+import { buildKeywordReviewHash, buildReviewLessonHash, buildScopedReviewHash, buildTopicReviewHash, getKeywordReviewScope, getReviewDocumentLesson, getReviewRouteOptions, getTopicReviewQuestions, validateReviewConcepts } from "./core/review-navigation.js";
 import { getReviewContentSignature, LocalStorageReviewSessionRepository, restoreReviewSession, REVIEW_SESSION_STORAGE_KEY } from "./repositories/review-session-repository.js";
-import { getCourseTopic, getLearningCatalogItems, renderLearningHome, renderLearningCatalog } from "./ui/learning-catalog-view.js";
+import { CATALOG_TOPICS, getCourseTopic, getLearningCatalogItems, renderLearningHome, renderLearningCatalog } from "./ui/learning-catalog-view.js";
 import { renderSidebarContext, renderSidebarSearchResults } from "./ui/service-sidebar-view.js";
 import { DraftSaveCoordinator } from "./core/draft-save-coordinator.js";
 import { ExecutionCoordinator } from "./core/execution-coordinator.js";
@@ -376,6 +376,8 @@ export class BamLearningApp {
     this.savedReviewSession = this.reviewSessionRepository.read();
     this.reviewSaveStatus = "saved";
     this.quizConceptId = null;
+    this.quizTopicId = null;
+    this.quizOrder = null;
     this.lessonReviewReturn = null;
     this.codeQuestCollections = new Map();
     this.codeQuestCollection = null;
@@ -982,6 +984,8 @@ export class BamLearningApp {
     this.quizCollection = null;
     this.quizLessonId = null;
     this.quizConceptId = null;
+    this.quizTopicId = null;
+    this.quizOrder = null;
     this.lessonReviewReturn = null;
     this.quizSession = null;
     this.quizRecentAttempt = null;
@@ -1024,9 +1028,11 @@ export class BamLearningApp {
         try {
           const collection = await loadQuizCollection(saved.scope.languageId, this.curriculum);
           if (sequence !== this.renderSequence) return;
-          const questions = collection.questions.filter((question) =>
-            (!saved.scope.lessonId || question.lessonId === saved.scope.lessonId) &&
-            (!saved.scope.conceptId || question.conceptId === saved.scope.conceptId));
+          const questions = saved.scope.topicId
+            ? getTopicReviewQuestions(this.curriculum, collection, saved.scope.topicId)
+            : collection.questions.filter((question) =>
+              (!saved.scope.lessonId || question.lessonId === saved.scope.lessonId) &&
+              (!saved.scope.conceptId || question.conceptId === saved.scope.conceptId));
           const restored = restoreReviewSession(saved, questions, saved.scope);
           if (restored.status === "restored" && restored.session.questions.some((question) => {
             if (question.id !== context.questionId) return false;
@@ -1101,7 +1107,7 @@ export class BamLearningApp {
   }
 
   async openReviewRoute(languageId, lessonId = null) {
-    const { conceptId } = getReviewRouteOptions(window.location.hash);
+    const { conceptId, topicId, order } = getReviewRouteOptions(window.location.hash);
     const language = getLanguage(this.curriculum, languageId);
     if (!language) {
       await this.openLessonRoute();
@@ -1109,6 +1115,11 @@ export class BamLearningApp {
     }
 
     const sequence = this.enterView("review");
+    if (topicId !== null && (!topicId || lessonId || conceptId) ||
+        order !== null && (order !== "random" || !topicId)) {
+      this.renderFatalError(new Error("복습 범위 주소가 올바르지 않습니다. 문제 목록에서 다시 선택해 주세요."));
+      return;
+    }
     if (
       lessonId &&
       !this.curriculum.lessons.some((lesson) => lesson.id === lessonId && lesson.languageId === languageId)
@@ -1118,8 +1129,12 @@ export class BamLearningApp {
     }
     this.quizLessonId = lessonId;
     this.quizConceptId = conceptId;
+    this.quizTopicId = topicId;
+    this.quizOrder = order;
 
-    const canonicalHash = buildKeywordReviewHash(languageId, lessonId, conceptId);
+    const canonicalHash = topicId
+      ? buildTopicReviewHash(languageId, topicId, order)
+      : buildKeywordReviewHash(languageId, lessonId, conceptId);
     if (window.location.hash !== canonicalHash) {
       window.history.replaceState(null, "", canonicalHash);
     }
@@ -1136,6 +1151,9 @@ export class BamLearningApp {
       this.quizCollection = collection;
       this.quizCollections ??= new Map();
       this.quizCollections.set(languageId, collection);
+      if (topicId && !getTopicReviewQuestions(this.curriculum, collection, topicId).length) {
+        throw new Error("선택한 주제의 문제를 찾을 수 없습니다. 객관식 문제 목록에서 다시 선택해 주세요.");
+      }
       if (conceptId && !collection.questions.some((question) => question.conceptId === conceptId && (!lessonId || question.lessonId === lessonId))) {
         throw new Error("선택한 키워드의 문제를 찾을 수 없습니다. 객관식 문제 목록에서 다시 선택해 주세요.");
       }
@@ -1146,16 +1164,18 @@ export class BamLearningApp {
         ? { status: "invalid" }
         : restoreReviewSession(this.savedReviewSession, this.getScopedQuizQuestions(), this.getReviewScope());
       if (restored.status === "restored") this.quizSession = restored.session;
-      else this.startQuizSession(this.getScopedQuizQuestions(), "all");
+      else this.startQuizSession(this.getScopedQuizQuestions(), "all", order === "random");
       this.reviewRestoreNotice = ["content-changed", "invalid"].includes(restored.status)
         ? "문제 내용이 바뀌었거나 저장된 풀이를 읽을 수 없어 이어서 풀 수 없습니다. 기존 완료 기록은 유지됩니다." : "";
       this.reviewNeedsRestart = ["content-changed", "invalid"].includes(restored.status);
       const reviewLesson = this.curriculum.lessons.find((lesson) => lesson.id === lessonId);
       const reviewCourse = this.curriculum.courses?.find((course) => course.id === reviewLesson?.courseId);
-      this.rememberServiceLocation("review", reviewCourse ? getCourseTopic(reviewCourse) : languageId);
+      this.rememberServiceLocation("review", topicId ?? (reviewCourse ? getCourseTopic(reviewCourse) : languageId));
       this.renderQuiz();
-      const reviewTitle = reviewCourse && reviewCourse.categoryId !== "language"
-        ? `${reviewCourse.name} · 객관식 복습` : collection.title;
+      const reviewTitle = topicId
+        ? `${CATALOG_TOPICS.find((item) => item.id === topicId)?.title ?? topicId} · 객관식 복습`
+        : reviewCourse && reviewCourse.categoryId !== "language"
+          ? `${reviewCourse.name} · 객관식 복습` : collection.title;
       document.title = `${reviewTitle} · BAM.dev`;
       window.scrollTo({ top: 0, behavior: "instant" });
       if (this.hasRenderedView) {
@@ -1321,7 +1341,7 @@ export class BamLearningApp {
     const activeHref = current === "learn" && this.currentLesson
       ? buildLessonHash(this.currentLesson.courseId, this.currentLesson.slug)
       : current === "review" && this.quizCollection
-        ? buildKeywordReviewHash(this.quizCollection.languageId, this.quizLessonId, this.quizConceptId)
+        ? buildScopedReviewHash(this.getReviewScope())
         : "";
     return {
       current, activeHref, routes: navigation.routes, query: navigation.query,
@@ -1506,7 +1526,13 @@ export class BamLearningApp {
   }
 
   getReviewScope() {
-    return { languageId: this.quizCollection?.languageId, lessonId: this.quizLessonId ?? null, conceptId: this.quizConceptId ?? null };
+    return {
+      languageId: this.quizCollection?.languageId,
+      lessonId: this.quizLessonId ?? null,
+      conceptId: this.quizConceptId ?? null,
+      ...(this.quizTopicId ? { topicId: this.quizTopicId } : {}),
+      ...(this.quizOrder ? { order: this.quizOrder } : {}),
+    };
   }
 
   saveReviewSession({ captureViewport = false } = {}) {
@@ -1524,8 +1550,10 @@ export class BamLearningApp {
     }
     const selectedLesson = this.curriculum.lessons.find((lesson) => lesson.id === this.quizLessonId);
     const selectedCourse = selectedLesson ? getCourse(this.curriculum, selectedLesson.courseId) : null;
-    const title = selectedCourse?.categoryId === "spring"
-      ? `${selectedCourse.name} · ${selectedLesson.title}` : this.quizCollection.title;
+    const title = this.quizTopicId
+      ? `${CATALOG_TOPICS.find((item) => item.id === this.quizTopicId)?.title ?? this.quizTopicId} · 전체 복습`
+      : selectedCourse?.categoryId === "spring"
+        ? `${selectedCourse.name} · ${selectedLesson.title}` : this.quizCollection.title;
     const saved = {
       id: session.id, scope: this.getReviewScope(), title,
       contentSignature: getReviewContentSignature(this.getScopedQuizQuestions()),
@@ -2153,7 +2181,7 @@ export class BamLearningApp {
     }
     if (event.target.closest("[data-review-return]") && this.lessonReviewReturn) {
       const scope = this.lessonReviewReturn.saved.scope;
-      window.location.hash = buildKeywordReviewHash(scope.languageId, scope.lessonId, scope.conceptId);
+      window.location.hash = buildScopedReviewHash(scope);
       return;
     }
     if (this.handleWebProjectClick(event)) return;
@@ -2246,7 +2274,9 @@ export class BamLearningApp {
         !lessonId ||
         this.curriculum.lessons.some((lesson) => lesson.id === lessonId && lesson.languageId === this.quizCollection.languageId)
       ) {
-        window.location.hash = buildReviewHash(this.quizCollection.languageId, lessonId);
+        window.location.hash = !lessonId && this.quizTopicId
+          ? buildTopicReviewHash(this.quizCollection.languageId, this.quizTopicId, this.quizOrder)
+          : buildReviewHash(this.quizCollection.languageId, lessonId);
       }
       return;
     }
@@ -3038,19 +3068,26 @@ export class BamLearningApp {
       return;
     }
 
-    this.startQuizSession(questions, mode === "all" ? "all" : "incorrect");
+    this.startQuizSession(questions, mode === "all" ? "all" : "incorrect", this.quizOrder === "random");
     this.renderQuiz();
     this.focusQuizQuestion();
     this.announce("새 복습 세션을 시작했습니다.");
   }
 
-  startQuizSession(questions, mode) {
+  startQuizSession(questions, mode, random = false) {
+    const sessionQuestions = [...questions];
+    if (random) {
+      for (let index = sessionQuestions.length - 1; index > 0; index -= 1) {
+        const swap = Math.floor(Math.random() * (index + 1));
+        [sessionQuestions[index], sessionQuestions[swap]] = [sessionQuestions[swap], sessionQuestions[index]];
+      }
+    }
     this.quizSession = {
       id: createClientEntropy(),
       mode,
       viewMode: "single",
       gradingMode: "individual",
-      questions: [...questions],
+      questions: sessionQuestions,
       currentIndex: 0,
       selectedOptionIds: new Map(),
       gradedAnswers: new Map(),
@@ -3069,6 +3106,7 @@ export class BamLearningApp {
   }
 
   getScopedQuizQuestions() {
+    if (this.quizTopicId) return getTopicReviewQuestions(this.curriculum, this.quizCollection, this.quizTopicId);
     return (this.quizCollection?.questions ?? []).filter((question) =>
       (!this.quizLessonId || question.lessonId === this.quizLessonId) &&
       (!this.quizConceptId || question.conceptId === this.quizConceptId),
@@ -3077,6 +3115,7 @@ export class BamLearningApp {
 
   getQuizContinuation() {
     const unavailable = { nextScope: null, isLastScope: false };
+    if (this.quizTopicId) return unavailable;
     if (!this.quizCollection || !this.curriculum?.courses?.length || !this.curriculum.categories?.length) return unavailable;
     const questions = this.getScopedQuizQuestions();
     const topics = new Set(questions.map((question) => {
@@ -4571,16 +4610,20 @@ export class BamLearningApp {
     const question = this.getCurrentQuizQuestion();
     const questionLesson = lessons.find((lesson) => lesson.id === question?.lessonId) ?? null;
     const selectedConcept = this.reviewConcepts?.find((item) => item.id === this.quizConceptId && (!selectedLesson || item.lessonId === selectedLesson.id));
-    const reviewTitle = selectedConcept?.title ?? (selectedLesson ? `${selectedLesson.title} · 객관식 복습` : this.quizCollection.title);
+    const reviewTitle = this.quizTopicId
+      ? `${CATALOG_TOPICS.find((item) => item.id === this.quizTopicId)?.title ?? this.quizTopicId} · 객관식 복습`
+      : selectedConcept?.title ?? (selectedLesson ? `${selectedLesson.title} · 객관식 복습` : this.quizCollection.title);
     const lessonHref = selectedLesson ? buildLessonHash(selectedLesson.courseId, selectedLesson.slug) : firstLessonHref;
     const continuation = this.getQuizContinuation();
+    const scopedQuestions = this.getScopedQuizQuestions();
     const scopeControls = renderQuizScopeControls({
-      lessons: lessons.filter((lesson) => this.quizCollection.questions.some((question) => question.lessonId === lesson.id)).map((lesson) => ({
+      lessons: lessons.filter((lesson) => scopedQuestions.some((question) => question.lessonId === lesson.id)).map((lesson) => ({
         ...lesson,
         courseName: getCourse(this.curriculum, lesson.courseId)?.name ?? lesson.courseId,
-        questionCount: this.quizCollection.questions.filter((item) => item.lessonId === lesson.id).length,
+        questionCount: scopedQuestions.filter((item) => item.lessonId === lesson.id).length,
       })),
       selectedLessonId: this.quizLessonId,
+      allLabel: this.quizTopicId ? "이 주제의 전체 문서" : "이 언어의 전체 문서",
       recentAttempt: this.quizRecentAttempt,
       incorrectQuestionCount: this.quizIncorrectQuestionCount,
       saveStatus: this.reviewSaveStatus,
@@ -4614,7 +4657,9 @@ export class BamLearningApp {
           ? renderQuizEmptyView({ title: reviewTitle, scopeControls, lessonHref })
         : renderQuizQuestionView({
             languageId: this.quizCollection.languageId,
-            languageName: selectedCourse && selectedCourse.categoryId !== "language" ? selectedCourse.name : language.name,
+            languageName: this.quizTopicId
+              ? CATALOG_TOPICS.find((item) => item.id === this.quizTopicId)?.title ?? language.name
+              : selectedCourse && selectedCourse.categoryId !== "language" ? selectedCourse.name : language.name,
             title: reviewTitle,
             question,
             currentIndex: session.currentIndex,
@@ -4626,6 +4671,7 @@ export class BamLearningApp {
             recentAttempt: this.quizRecentAttempt,
             incorrectQuestionCount: this.quizIncorrectQuestionCount,
             sessionMode: session.mode,
+            randomOrder: this.quizOrder === "random",
             scopeControls,
             lessonTitle: questionLesson?.title,
             lessonHref: questionLesson ? buildLessonHash(questionLesson.courseId, questionLesson.slug) : null,

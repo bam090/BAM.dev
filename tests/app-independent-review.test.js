@@ -1301,6 +1301,83 @@ test("Spring 문서 범위는 과정명을 표시하고 Java 전체 범위와 �
   }
 });
 
+test("주제 전체 복습은 Java와 Spring을 분리하고 기존 전체 언어 경로를 유지한다", async (t) => {
+  browser(t);
+  for (const [hash, count, topic] of [
+    ["#/review/java?topic=java", 64, "java"],
+    ["#/review/java?topic=spring", 92, "spring"],
+    ["#/review/java", 156, null],
+  ]) {
+    window.location.hash = hash;
+    const { app, errors } = harness();
+    await app.openRoute();
+    assert.deepEqual(errors, [], hash);
+    assert.equal(app.quizSession.questions.length, count, hash);
+    assert.equal(app.getReviewScope().topicId ?? null, topic);
+    assert.deepEqual(app.quizSession.questions.map((question) => question.id), app.getScopedQuizQuestions().map((question) => question.id));
+    if (topic) assert.ok(app.quizSession.questions.every((question) => {
+      const owner = curriculum.lessons.find((lesson) => lesson.id === question.lessonId);
+      const course = curriculum.courses.find((candidate) => candidate.id === owner?.courseId);
+      return (course?.categoryId === "language" ? course.languageId : course?.categoryId) === topic;
+    }), hash);
+  }
+});
+
+test("객관식 목록은 문제 있는 선택 주제에만 정순·랜덤 시작 링크를 제공한다", async (t) => {
+  browser(t, "#/review");
+  const { app, errors } = harness();
+  await app.openRoute();
+  for (const [topic, language, count] of [["java", "java", 64], ["spring", "java", 92], ["css", "css", 47]]) {
+    app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topic }, disabled: false }));
+    const markup = app.root.innerHTML;
+    assert.match(markup, new RegExp(`href="#/review/${language}\\?topic=${topic}"`));
+    assert.match(markup, new RegExp(`href="#/review/${language}\\?topic=${topic}&amp;order=random"`));
+    assert.match(markup, new RegExp(`${count}문제 랜덤으로 풀기`));
+  }
+  app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "algorithm" }, disabled: false }));
+  assert.doesNotMatch(app.root.innerHTML, /href="#\/review\/java\?topic=algorithm/);
+  assert.deepEqual(errors, []);
+});
+
+test("주제 랜덤 복습은 한 번 섞은 문제 순서와 답·채점 상태를 새로고침 뒤 복원한다", async (t) => {
+  browser(t, "#/review/java?topic=java&order=random");
+  const { app, storage, errors } = harness();
+  const originalRandom = Math.random;
+  Math.random = () => 0;
+  try { await app.openRoute(); } finally { Math.random = originalRandom; }
+  assert.deepEqual(errors, []);
+  const questionIds = app.quizSession.questions.map((question) => question.id);
+  const canonicalIds = app.getScopedQuizQuestions().map((question) => question.id);
+  assert.equal(questionIds.length, 64);
+  assert.deepEqual([...questionIds].sort(), [...canonicalIds].sort());
+  assert.notDeepEqual(questionIds, canonicalIds, "새 랜덤 세션은 원본 문제 배열만 복제해 섞는다.");
+  const first = app.quizSession.questions[0];
+  const optionIds = first.options.map((option) => option.id);
+  choose(app, optionIds[0]);
+  app.gradeCurrentQuizQuestion();
+  app.saveReviewSession();
+  const persisted = JSON.parse(storage.getItem(REVIEW_SESSION_STORAGE_KEY)).activeSession;
+  assert.deepEqual(persisted.scope, { languageId: "java", lessonId: null, conceptId: null, topicId: "java", order: "random" });
+  assert.deepEqual(persisted.questionIds, questionIds);
+  const restored = harness(storage);
+  await restored.app.openRoute();
+  assert.deepEqual(restored.errors, []);
+  assert.deepEqual(restored.app.quizSession.questions.map((question) => question.id), questionIds);
+  assert.deepEqual(restored.app.quizSession.questions[0].options.map((option) => option.id), optionIds);
+  assert.equal(restored.app.quizSession.selectedOptionIds.get(first.id), optionIds[0]);
+  assert.equal(restored.app.quizSession.gradedAnswers.has(first.id), true);
+  assert.match(restored.app.root.innerHTML, /랜덤 순서/);
+  window.location.hash = "#/review";
+  await restored.app.openRoute();
+  assert.match(restored.app.root.innerHTML, /href="#\/review\/java\?topic=java&amp;order=random"/);
+  window.location.hash = "#/review/java?topic=java";
+  const ordered = harness(storage);
+  await ordered.app.openRoute();
+  assert.deepEqual(ordered.errors, []);
+  assert.deepEqual(ordered.app.quizSession.questions.map((question) => question.id), canonicalIds);
+  assert.equal(ordered.app.quizSession.selectedOptionIds.size, 0, "같은 주제여도 정순은 랜덤 세션의 답을 이어받지 않는다.");
+});
+
 test("새 HTML·CSS 문서는 실제 복습 범위만 연결하고 문제 없는 문서를 전체 문제로 보내지 않는다", async (t) => {
   browser(t);
   for (const [languageId, mappedSlug, unmappedSlug, expectedQuestions] of [
