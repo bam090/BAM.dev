@@ -87,7 +87,7 @@ test("로딩 화면은 skip link 대상과 status를 유지하고 문자열을 e
 test("미선택 문제는 fieldset과 라디오 4개를 제공하고 정답 확인을 비활성화한다", () => {
   const html = renderQuestion();
   assert.match(html, /<fieldset class="quiz-options">/);
-  assert.match(html, /<legend>답을 하나 선택하세요.<\/legend>/);
+  assert.match(html, /<legend class="sr-only">답을 하나 선택하세요.<\/legend>/);
   assert.equal((html.match(/type="radio"/g) ?? []).length, 4);
   assert.match(html, /data-quiz-check disabled/);
   assert.match(html, /data-quiz-next aria-disabled="true"/);

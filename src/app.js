@@ -2143,22 +2143,6 @@ export class BamLearningApp {
       this.root.querySelector('[data-quest-course][aria-pressed="true"]')?.focus({ preventScroll: true });
       return;
     }
-    const questTopic = event.target.closest("[data-quest-topic]");
-    if (questTopic && this.currentView === "quest-catalog") {
-      this.codeQuestCatalogFilters.topicId = questTopic.dataset.questTopic;
-      this.codeQuestCatalogNotice = "";
-      this.renderCodeQuestCatalog();
-      this.root.querySelector('[data-quest-topic][aria-pressed="true"]')?.focus({ preventScroll: true });
-      return;
-    }
-    const questStatus = event.target.closest("[data-quest-status]");
-    if (questStatus && this.currentView === "quest-catalog") {
-      this.codeQuestCatalogFilters.status = questStatus.dataset.questStatus;
-      this.codeQuestCatalogNotice = "";
-      this.renderCodeQuestCatalog();
-      this.root.querySelector('[data-quest-status][aria-pressed="true"]')?.focus({ preventScroll: true });
-      return;
-    }
     if (event.target.closest("[data-quest-catalog-reset]") && this.currentView === "quest-catalog") {
       this.codeQuestCatalogFilters = {
         ...this.codeQuestCatalogFilters,
@@ -2265,6 +2249,14 @@ export class BamLearningApp {
     if (sidebarTopic) {
       const kind = this.currentView.startsWith("review") ? "review" : "learn";
       this.openSidebarCatalog(kind, sidebarTopic.value || null);
+      return;
+    }
+    if (this.currentView === "quest-catalog" && event.target.matches("[data-quest-topic], [data-quest-status]")) {
+      const isTopic = event.target.matches("[data-quest-topic]");
+      this.codeQuestCatalogFilters[isTopic ? "topicId" : "status"] = event.target.value;
+      this.codeQuestCatalogNotice = "";
+      this.renderCodeQuestCatalog();
+      this.root.querySelector(isTopic ? "[data-quest-topic]" : "[data-quest-status]")?.focus({ preventScroll: true });
       return;
     }
     const quizLesson = event.target.closest("[data-quiz-lesson]");

@@ -71,11 +71,24 @@ test("Java 실행 준비 중 목록은 네 Quest의 읽기·작성 진입을 유
   assert.match(html, /data-quest-course="java"[^>]*[\s\S]*?<span>4개 등록 · 실행 준비 중<\/span>/);
   assert.match(html, /Java Code Quest 전체<\/strong><span>0\/4 완료<\/span>/);
   assert.match(html, /role="progressbar" aria-label="Java Code Quest 전체 진도"[^>]*aria-valuenow="0"/);
-  assert.equal((html.match(/Java 실행 준비 중 · 코드 작성·저장 가능/g) ?? []).length, 4);
+  assert.match(html, /data-quest-result-count role="status"[^>]*>Java · 4\/4개 Quest <span class="quest-catalog-preparation">· Java 실행 준비 중 · 코드 작성·저장 가능<\/span>/);
+  assert.equal((html.match(/Java 실행 준비 중 · 코드 작성·저장 가능/g) ?? []).length, 1);
   for (const item of course.items) {
     assert.match(html, new RegExp(`href="${item.href}"`));
   }
   assert.doesNotMatch(html, /aria-disabled="true"|data-quest-course="java"[^>]*disabled/);
+
+  const readyHtml = renderCodeQuestCatalogView({
+    catalog, course, items: course.items, javaExecutionAvailable: true,
+    javaSupportedQuestIds: course.items.map((item) => item.id),
+  });
+  assert.doesNotMatch(readyHtml, /quest-catalog-preparation|이 Quest는 Java 실행 미지원/);
+
+  const partiallySupportedHtml = renderCodeQuestCatalogView({
+    catalog, course, items: course.items, javaExecutionAvailable: true,
+    javaSupportedQuestIds: [course.items[0].id],
+  });
+  assert.equal((partiallySupportedHtml.match(/이 Quest는 Java 실행 미지원 · 코드 작성·저장 가능/g) ?? []).length, 3);
 });
 
 test("목록은 과정·주제·상태·범위 진도와 필터 결과를 접근 가능한 이름으로 표시한다", () => {
@@ -106,11 +119,24 @@ test("목록은 과정·주제·상태·범위 진도와 필터 결과를 접근
     courseNavigation,
     /data-quest-course="javascript" aria-pressed="true"/,
   );
+  assert.match(courseNavigation, /<h2>주제 선택<\/h2>/);
+  assert.match(courseNavigation, /class="catalog-topic-selected">선택됨<\/small>/);
   assert.match(
     html,
     /role="progressbar" aria-label="JavaScript Code Quest 전체 진도"[^>]*aria-valuenow="0"/,
   );
+  assert.match(html, /class="quest-catalog-overview"[\s\S]*class="quest-catalog-workspace"/);
+  assert.match(html, /class="quest-catalog-tools" aria-labelledby="quest-explorer-title" tabindex="0"/);
+  assert.ok(
+    html.indexOf('class="quest-catalog-heading-row"') < html.indexOf('class="quest-catalog-filter-row"') &&
+    html.indexOf('class="quest-catalog-filter-row"') < html.indexOf('class="quest-catalog-search"'),
+    "세 필터는 탐색기 제목 옆에, 통합 검색창은 그 아래에 있어야 합니다.",
+  );
+  assert.match(html, /class="quest-catalog-list" role="region" aria-label="Quest 목록" tabindex="0"/);
   assert.match(html, /data-quest-catalog-form role="search" aria-label="Code Quest 검색"/);
+  assert.match(html, /class="quest-catalog-search" data-quest-catalog-form/);
+  assert.match(html, /class="quest-catalog-search-icon" aria-hidden="true"/);
+  assert.match(html, /type="submit">검색<\/button>/);
   assert.match(html, /data-quest-search value="양방향"/);
   assert.match(
     html,
@@ -120,9 +146,9 @@ test("목록은 과정·주제·상태·범위 진도와 필터 결과를 접근
   assert.match(html, /data-quest-number[^>]*value="99"/);
   assert.match(
     html,
-    new RegExp(`data-quest-topic="${catalogItem.topicId}" aria-pressed="true"`),
+    new RegExp(`<select id="quest-topic-filter" data-quest-topic>[\\s\\S]*?<option value="${catalogItem.topicId}" selected>`),
   );
-  assert.match(html, /data-quest-status="in_progress" aria-pressed="true"/);
+  assert.match(html, /<select id="quest-status-filter" data-quest-status>[\s\S]*?<option value="in_progress" selected>/);
   assert.match(html, /data-quest-result-count role="status"[^>]*>JavaScript · 1\/12개 Quest/);
   assert.match(html, /data-quest-catalog-notice role="status"[^>]*>&lt;없는 번호&gt;/);
   assert.match(html, new RegExp(`href="${catalogItem.href}"`));

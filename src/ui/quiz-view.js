@@ -64,17 +64,26 @@ export function renderQuizScopeControls({
     <nav class="review-breadcrumb" aria-label="문제 탐색"><a href="#/review">← 객관식 문제 목록</a><span data-review-save-status role="status">${getQuizSaveStatusMessage(saveStatus)}</span></nav>
     <p class="catalog-notice" data-review-save-notice role="status"${notice ? "" : " hidden"}><span data-review-save-message>${escapeHtml(notice)}</span> <button class="text-button" type="button" data-retry>저장된 풀이 불러오기</button></p>
     <details class="review-scope">
-      <summary>문제 범위·지난 결과</summary>
-      <label for="quiz-lesson-scope">복습할 학습 문서</label>
-      <select id="quiz-lesson-scope" data-quiz-lesson>
-        <option value=""${selectedLessonId ? "" : " selected"}>${escapeHtml(allLabel)}</option>
-        ${lessons.map((lesson) => `<option value="${escapeHtml(lesson.id)}"${lesson.id === selectedLessonId ? " selected" : ""}>${escapeHtml(lesson.courseName)} · ${escapeHtml(lesson.title)} (${lesson.questionCount}문항)</option>`).join("")}
-      </select>
-      <div class="quiz-result-actions">
-        <button class="button button--secondary" type="button" data-quiz-retry="saved-incorrect"${incorrectQuestionCount > 0 ? "" : " disabled"}>저장된 오답 다시 풀기 (${incorrectQuestionCount})</button>
-        <button class="button button--secondary" type="button" data-quiz-history${recentAttempt ? "" : " disabled"}>최근 완료 결과 보기</button>
+      <summary>문제 범위·학습 기록</summary>
+      <div class="review-scope-range">
+        <label for="quiz-lesson-scope">복습할 학습 문서</label>
+        <select id="quiz-lesson-scope" data-quiz-lesson>
+          <option value=""${selectedLessonId ? "" : " selected"}>${escapeHtml(allLabel)}</option>
+          ${lessons.map((lesson) => `<option value="${escapeHtml(lesson.id)}"${lesson.id === selectedLessonId ? " selected" : ""}>${escapeHtml(lesson.courseName)} · ${escapeHtml(lesson.title)} (${lesson.questionCount}문항)</option>`).join("")}
+        </select>
       </div>
-      <p>선택과 채점 상태는 이 브라우저에 저장됩니다. 새 범위를 시작하면 마지막 진행 중 풀이가 바뀌며, 완료 기록은 유지됩니다.</p>
+      <div class="review-scope-record">
+        <h2>학습 기록</h2>
+        ${renderRecentProgress(recentAttempt, incorrectQuestionCount)}
+        <div class="quiz-result-actions">
+          <button class="button button--secondary" type="button" data-quiz-retry="saved-incorrect"${incorrectQuestionCount > 0 ? "" : " disabled"}>저장된 오답 다시 풀기 (${incorrectQuestionCount})</button>
+          <button class="button button--secondary" type="button" data-quiz-history${recentAttempt ? "" : " disabled"}>최근 완료 결과 보기</button>
+        </div>
+      </div>
+      <div class="review-scope-storage">
+        <strong>${getQuizSaveStatusMessage(saveStatus)}</strong>
+        <p>${saveStatus === "saved" ? "선택과 채점 상태는 이 브라우저에 저장됩니다. " : ""}새 범위를 시작하면 마지막 진행 중 풀이가 바뀌며, 완료 기록은 유지됩니다.</p>
+      </div>
     </details>
   `;
 }
@@ -130,9 +139,11 @@ function renderQuestionHeader({
   answeredCount,
   recentAttempt,
   incorrectQuestionCount,
+  showRecentProgress,
   sessionMode,
   viewMode,
   randomOrder,
+  modeControls,
 }) {
   const safeTotal = Math.max(0, safeInteger(total));
   const safeAnswered = Math.min(safeTotal, Math.max(0, safeInteger(answeredCount)));
@@ -147,15 +158,16 @@ function renderQuestionHeader({
         <span>${sessionMode === "incorrect" ? "오답 다시 풀기" : "선택한 범위 복습"}${randomOrder ? " · 랜덤 순서" : ""}</span>
       </div>
       <h1>${escapeHtml(title)}</h1>
-      ${renderRecentProgress(recentAttempt, incorrectQuestionCount)}
+      ${showRecentProgress ? renderRecentProgress(recentAttempt, incorrectQuestionCount) : ""}
       <div class="review-progress-copy">
         <span>${viewMode === "all" ? `전체 문제 <strong>${safeTotal}문항</strong>` : `문제 <strong>${questionNumber}/${safeTotal}</strong>`}</span>
         <span>채점 완료 ${safeAnswered}/${safeTotal}</span>
       </div>
-      <div class="review-progress-track" role="progressbar" aria-label="객관식 복습 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
-        <span style="width: ${percent}%"></span>
-      </div>
+      ${modeControls}
     </header>
+    <div class="review-progress-track" role="progressbar" aria-label="객관식 복습 진행" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${percent}">
+      <span style="width: ${percent}%"></span>
+    </div>
   `;
 }
 
@@ -275,7 +287,7 @@ function renderQuizQuestionCard({
       ${renderQuestionCode(question?.code, languageId, languageName)}
       <form class="quiz-form" data-quiz-form>
         <fieldset class="quiz-options">
-          <legend>답을 하나 선택하세요.</legend>
+          <legend class="sr-only">답을 하나 선택하세요.</legend>
           ${(question?.options ?? []).map((option, index) => renderOption(option, index, selectedOptionId, gradedAnswer, otherFeedbackExpanded, questionId)).join("")}
         </fieldset>
         ${renderGradedSummary(question, gradedAnswer)}
@@ -339,8 +351,7 @@ export function renderQuizQuestionView({
     <main class="main-area" id="lesson-content" tabindex="-1">
       <div class="review-container is-question-view${viewMode === "all" ? " is-all-view" : ""}">
         ${scopeControls}
-        ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, sessionMode, viewMode, randomOrder })}
-        ${renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount })}
+        ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, showRecentProgress: !scopeControls, sessionMode, viewMode, randomOrder, modeControls: renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount }) })}
         <div class="quiz-question-list${viewMode === "all" ? " is-all-view" : ""}">
           ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope, canRetry: state.canRetry ?? canRetryQuestions })).join("")}
         </div>
