@@ -194,6 +194,7 @@ test("목록은 검색·난이도·언어·유형·풀이 상태 필터와 현�
   assert.match(html, /data-coding-test-link href="#\/coding-tests\/javascript\/cart-total&quot; onclick=&quot;bad\(\)"/);
   assert.match(html, /배열/);
   assert.match(html, /누적/);
+  assert.doesNotMatch(html, /예상 풀이 시간|약 20분/);
 });
 
 test("필터 결과가 없으면 이름 있는 빈 상태와 초기화 안내를 표시한다", () => {
@@ -245,6 +246,7 @@ test("상세 화면은 좌측 문제와 우측 편집기·결과의 접근성 �
 
   assert.match(html, /id="coding-test-title" tabindex="-1"/);
   assert.match(html, /문제 설명/);
+  assert.doesNotMatch(html, /예상 풀이 시간|약 20분/);
   assert.match(html, /제한사항/);
   assert.match(html, /입력과 출력/);
   assert.match(html, /입출력 예/);

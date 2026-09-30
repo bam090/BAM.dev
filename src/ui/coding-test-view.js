@@ -194,7 +194,6 @@ function renderProblemCard(problem, index, options) {
                 .join("")}</ul>`
             : ""
         }
-        <p class="coding-test-card-time">예상 풀이 시간 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</p>
       </article>
     </li>
   `;
@@ -673,7 +672,7 @@ export function renderCodingTestView({
               <span class="coding-test-language-badge">${escapeHtml(languageName)}</span>
               <h1 id="coding-test-title" tabindex="-1">${escapeHtml(problem?.title ?? "코딩테스트 문제")}</h1>
               <span class="coding-test-level-badge">${escapeHtml(getDifficultyLabel(problem?.difficulty))}</span>
-              <span class="sr-only">${escapeHtml(collectionTitle)} · ${escapeHtml(typeLabel)} · 예상 풀이 시간 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</span>
+              <span class="sr-only">${escapeHtml(collectionTitle)} · ${escapeHtml(typeLabel)}</span>
             </div>
             <div class="coding-test-title-side">
               <span class="coding-test-solved-badge${isSolved ? " is-solved" : ""}">${isSolved ? "풀이 완료" : "미풀이"}</span>
@@ -685,7 +684,7 @@ export function renderCodingTestView({
 
         <div class="coding-test-workspace" data-coding-test-workspace>
           <article class="coding-test-problem-panel" id="coding-test-problem-panel" aria-labelledby="coding-test-description-title">
-            <header class="coding-test-panelbar" data-coding-test-problem-bar><h2>문제 설명</h2><span>${escapeHtml(typeLabel)} · 약 ${Math.max(0, safeInteger(problem?.estimatedMinutes))}분</span></header>
+            <header class="coding-test-panelbar" data-coding-test-problem-bar><h2>문제 설명</h2><span>${escapeHtml(typeLabel)}</span></header>
             <div class="coding-test-problem-scroll" data-coding-test-problem-scroll>
             <section class="coding-test-section">
               <p class="coding-test-section-label">문제</p>
