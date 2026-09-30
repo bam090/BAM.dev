@@ -1142,7 +1142,7 @@ test("기존 소유자의 풀이를 새 문서에 연결해도 문항 서명·�
   const { focus } = browser(t);
   for (const [languageId, ownerId, conceptId, questionId, documentId, slug, wrongLessonId, wrongQuestionId] of [
     ["html", "html-01-document-structure", "html.semantics", "quiz-html-semantic-main", "html-notes-semantic-structure", "semantic-structure", "html-notes-media-alternatives", "quiz-html-link-destination"],
-    ["css", "css-foundations-selectors", "css.selectors", "quiz-css-selector-compound-descendant", "css-notes-selectors", "selectors", "css-notes-typography", "quiz-css-unit-inheritance-context"],
+    ["css", "css-foundations-selectors", "css.selectors", "quiz-css-selector-compound-descendant", "css-notes-css-basics", "css-basics", "css-notes-typography", "quiz-css-unit-inheritance-context"],
     ["javascript", "js-notes-values", "js.variables", "quiz-javascript-notes-const-property", "js-concept-variables", "variables", "js-concept-callbacks", "quiz-javascript-notes-sync-callback"],
   ]) {
     const hash = `#/review/${languageId}/${ownerId}?concept=${conceptId}`;

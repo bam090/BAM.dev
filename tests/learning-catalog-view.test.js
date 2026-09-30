@@ -37,16 +37,16 @@ test("홈은 학습문서·객관식·Code Quest의 독립 진입을 제공한�
 test("문서 목록은 활성 문서만 나열하고 보관 교안의 메타데이터와 깊은 URL은 남긴다", () => {
   const all = getLearningCatalogItems(options);
   assert.equal(curriculum.lessons.length, 213);
-  assert.equal(all.length, 186);
-  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 27);
+  assert.equal(all.length, 177);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 36);
   for (const lesson of curriculum.lessons) {
     assert.equal(all.some((item) => item.href === `#/learn/${lesson.courseId}/${lesson.slug}`), !lesson.archivedFromCatalog, lesson.id);
   }
   const htmlLessons = curriculum.lessons.filter((lesson) => lesson.courseId === "html");
   assert.equal(htmlLessons.filter((lesson) => lesson.archivedFromCatalog).length, 5);
   assert.equal(getLearningCatalogItems({ ...options, topicId: "html" }).length, 15);
-  assert.equal(curriculum.lessons.filter((lesson) => lesson.courseId === "css" && lesson.archivedFromCatalog).length, 6);
-  assert.equal(getLearningCatalogItems({ ...options, topicId: "css" }).length, 20);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.courseId === "css" && lesson.archivedFromCatalog).length, 15);
+  assert.equal(getLearningCatalogItems({ ...options, topicId: "css" }).length, 11);
   const java = getLearningCatalogItems({ ...options, courseId: "java" });
   assert.equal(java.length, 32);
   assert.ok(java.every((item) => !item.sample));

@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[캐스케이드](#/learn/css/wiki-cascade), [박스 모델](#/learn/css/wiki-box-model), [넘침](#/learn/css/wiki-overflow), [Flexbox](#/learn/css/wiki-flexbox), [Grid](#/learn/css/wiki-grid), [relative와 absolute](#/learn/css/wiki-positioning)의 기본 판단을 함께 복습합니다.
+[캐스케이드](#/learn/css/wiki-cascade), [박스 모델](#/learn/css/wiki-box-model), [넘침](#/learn/css/wiki-display), [Flexbox](#/learn/css/wiki-flexbox), [Grid](#/learn/css/wiki-grid), [위치 지정](#/learn/css/wiki-positioning)의 기본 판단을 함께 복습합니다.
 
 ## 증상에서 원인으로 범위를 좁힌다
 

@@ -4,10 +4,14 @@ import test from "node:test";
 import { getLessonsForCourse, getLessonsForLanguage, validateCurriculum } from "../src/core/content.js";
 import { validateQuizCollection } from "../src/core/quiz.js";
 import { splitMarkdownSection } from "../src/ui/markdown.js";
+import { CSS_MERGED_INTO, CSS_REWRITTEN_LESSON_IDS } from "./fixtures/css-merged-lessons.js";
 
 const curriculum = JSON.parse(
   await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
 );
+
+const MERGED_INTO = CSS_MERGED_INTO;
+const REWRITTEN_LESSON_IDS = CSS_REWRITTEN_LESSON_IDS;
 
 const AVAILABLE_CONTRACTS = [
   {
@@ -30,8 +34,8 @@ test("HTML·CSS의 보관·파생 교안은 같은 과정의 연속 순서와 �
       (item) => item.id === contract.languageId,
     );
     const lessons = getLessonsForLanguage(curriculum, contract.languageId);
-    const originalLessons = lessons.filter((lesson) => lesson.source.importMode !== "derived");
-    const derivedLessons = lessons.filter((lesson) => lesson.source.importMode === "derived");
+    const originalLessons = lessons.filter((lesson) => lesson.order <= contract.lessonCount);
+    const derivedLessons = lessons.filter((lesson) => lesson.order > contract.lessonCount);
 
     assert.ok(language, `${contract.languageId}: 언어 메타데이터가 필요합니다.`);
     assert.equal(language.status, "available");
@@ -60,9 +64,10 @@ test("HTML·CSS의 보관·파생 교안은 같은 과정의 연속 순서와 �
       assert.match(markdown, /## 학습 목표/);
       assert.match(markdown, contract.sourcePattern);
       assert.doesNotMatch(markdown, /비밀\s*테스트|숨김\s*테스트/);
-      if (lesson.source.importMode === "derived") {
-        assert.equal(lesson.source.kind, "user-authored");
-        assert.equal(Boolean(lesson.archivedFromCatalog), false);
+      if (lesson.order > contract.lessonCount) {
+        assert.equal(lesson.source.kind, REWRITTEN_LESSON_IDS.has(lesson.id) ? "bam-authored" : "user-authored", lesson.id);
+        assert.equal(lesson.source.importMode, REWRITTEN_LESSON_IDS.has(lesson.id) ? undefined : "derived", lesson.id);
+        assert.equal(Boolean(lesson.archivedFromCatalog), Object.hasOwn(MERGED_INTO, lesson.id), lesson.id);
         assert.equal(lesson.answerHeading, "핵심 질문 답");
         assert.ok(splitMarkdownSection(markdown, lesson.answerHeading).section, lesson.id);
       } else {

@@ -155,51 +155,51 @@
     },
     {
       "id": "css.selectors",
-      "title": "같은 요소 조건과 후손 관계",
+      "title": "선택자와 결합자",
       "lessonId": "css-foundations-selectors",
-      "documentLessonId": "css-notes-selectors",
-      "heading": "같은 요소와 후손을 구분한다",
-      "excerpt": "`.card.featured`는 두 클래스를 동시에 가진 같은 요소를 선택한다.\n`.card .featured`의 공백은 후손 관계이므로 card 안쪽의 별도 featured 요소를 선택한다.\n이 예에서는 앞 선택자가 article, 뒤 선택자가 h2와 일치한다."
+      "documentLessonId": "css-notes-css-basics",
+      "heading": "결합자 사용법",
+      "excerpt": "`.meeting-card.featured`는 두 클래스를 동시에 가진 같은 요소를 선택합니다.\n`.meeting-card .featured`의 공백은 후손 관계이므로 카드 안쪽의 별도 featured 요소를 선택합니다.\n이 예에서는 앞 선택자가 article과 일치하고 뒤 선택자가 h2와 일치합니다."
     },
     {
       "id": "css.values-units",
       "title": "em과 rem의 계산 기준",
       "lessonId": "css-foundations-selectors",
       "documentLessonId": "css-notes-units",
-      "heading": "em과 rem을 같은 코드에서 비교한다",
-      "excerpt": "padding의 em은 그 요소 자신의 계산된 글자 크기를 기준으로 한다.\nrem은 루트 요소의 계산된 글자 크기를 기준으로 한다.\n따라서 같은 숫자라도 단위의 기준이 다르면 계산 결과가 달라진다."
+      "heading": "em과 rem 사용법",
+      "excerpt": "padding의 em은 그 요소 자신의 계산된 글자 크기를 기준으로 합니다.\nmargin-block의 rem은 루트 요소의 계산된 글자 크기를 기준으로 합니다.\n그래서 같은 `1`이라도 `padding`은 20px이 되고 `margin-block`은 16px이 됩니다."
     },
     {
       "id": "css.cascade",
-      "title": "앞선 우선순위와 명시도",
+      "title": "캐스케이드",
       "lessonId": "css-01-cascade-box-model",
       "documentLessonId": "css-notes-cascade",
-      "heading": "마지막 줄보다 앞선 기준이 있다",
-      "excerpt": "선택자와 조건이 실제 요소에 맞는지 먼저 확인한다.\n후보끼리는 출처·중요도·레이어처럼 명시도보다 앞선 기준을 비교한다.\n그 조건이 같을 때 명시도를 비교하고, 명시도까지 같으면 나중에 작성된 선언이 이긴다."
+      "heading": "캐스케이드의 비교 순서",
+      "excerpt": "선택자와 조건이 실제 요소에 맞는지 먼저 확인합니다.\n후보끼리는 출처·중요도·레이어처럼 명시도보다 앞선 기준을 비교합니다.\n그 조건이 같을 때 명시도를 비교하고 명시도까지 같으면 나중에 작성된 선언이 이깁니다."
     },
     {
       "id": "css.box-model",
-      "title": "border-box와 내용 너비",
+      "title": "박스 모델과 box-sizing",
       "lessonId": "css-01-cascade-box-model",
       "documentLessonId": "css-notes-box-model",
-      "heading": "border-box는 테두리까지 포함한다",
-      "excerpt": "border-box의 width에는 content와 좌우 padding·border가 포함된다.\ncontent 너비를 구할 때는 그 width에서 좌우 padding과 border를 빼며 margin은 빼지 않는다."
+      "heading": "box-sizing의 종류",
+      "excerpt": "border-box의 width에는 content와 좌우 padding·border가 포함됩니다.\ncontent 너비를 구할 때는 width에서 좌우 padding과 border를 빼고 margin은 빼지 않습니다."
     },
     {
       "id": "css.display",
       "title": "같은 줄에서 박스 크기 다루기",
       "lessonId": "css-flow-display-overflow",
       "documentLessonId": "css-notes-display",
-      "heading": "같은 줄에 놓일지 새 줄에 놓일지",
-      "excerpt": "inline-block은 같은 줄에 놓이면서도 너비·높이를 가진 하나의 박스로 다룰 수 있다.\n일반적인 비대체 inline은 글줄의 흐름이 우선이고 block은 보통 새 줄에 놓인다."
+      "heading": "display의 종류",
+      "excerpt": "inline-block은 같은 줄에 놓이면서도 너비·높이를 가진 하나의 박스로 다룰 수 있습니다.\n일반적인 비대체 inline은 글줄의 흐름이 우선이고 block은 보통 새 줄에 놓입니다.\n그래서 문장 안의 배지에는 `display: inline-block`을 씁니다."
     },
     {
       "id": "css.overflow",
-      "title": "최대 높이와 내용 보존",
+      "title": "넘침과 내용 보존",
       "lessonId": "css-flow-display-overflow",
-      "documentLessonId": "css-notes-overflow",
-      "heading": "제한된 높이에서도 전체 내용을 읽게 한다",
-      "excerpt": "max-height는 내용이 짧을 때 필요한 높이를 쓰면서 최대 높이를 제한한다.\noverflow auto를 함께 쓰면 제한을 넘는 내용을 스크롤해 확인할 수 있다.\n고정 height와 hidden으로 자르면 직접 읽을 수 있는 스크롤 수단이 사라진다."
+      "documentLessonId": "css-notes-display",
+      "heading": "overflow의 종류",
+      "excerpt": "max-height는 내용이 짧을 때 필요한 높이를 쓰면서 최대 높이를 제한합니다.\noverflow auto를 함께 쓰면 제한을 넘는 내용을 스크롤해 확인할 수 있습니다.\n고정 height와 hidden으로 자르면 직접 읽을 수 있는 스크롤 수단이 사라집니다."
     },
     {
       "id": "css.flexbox",
@@ -229,9 +229,9 @@
       "id": "css.motion-accessibility",
       "title": "움직임 감소와 포커스 유지",
       "lessonId": "css-responsive-states-motion",
-      "documentLessonId": "css-notes-motion",
-      "heading": "움직임을 줄여도 상태는 남긴다",
-      "excerpt": "키보드로 이동할 때는 `:focus-visible` 등의 분명한 표시로 현재 위치를 알아볼 수 있어야 한다.\n`prefers-reduced-motion: reduce`는 불필요한 움직임을 줄여 달라는 신호이며 포커스나 상태 정보까지 숨기라는 뜻이 아니다.\n전환·장식 이동·반복은 줄이고 테두리·배경·문구 등 필요한 단서는 남긴다."
+      "documentLessonId": "css-notes-states",
+      "heading": "동작 줄이기 사용법",
+      "excerpt": "키보드로 이동할 때는 `:focus-visible` 같은 분명한 표시로 현재 위치를 알아볼 수 있어야 합니다.\n`prefers-reduced-motion: reduce`는 불필요한 움직임을 줄여 달라는 신호이며 포커스나 상태 정보까지 숨기라는 뜻이 아닙니다.\n그래서 전환·장식 이동·반복은 줄이고 테두리·배경·문구 같은 필요한 단서는 남깁니다."
     },
     {
       "id": "css.debugging",
@@ -827,87 +827,93 @@
     },
     {
       "id": "css.syntax",
-      "title": "CSS의 역할과 적용",
+      "title": "CSS 규칙과 선언",
       "lessonId": "css-notes-css-basics",
-      "heading": "적용되지 않으면 연결부터 확인한다",
-      "excerpt": "한 선언만 적용되지 않는다면 속성 이름과 그 속성에 허용되는 값을 확인한다.\n브라우저는 보통 유효하지 않은 선언을 무시하므로, 오류 창을 기다리기보다 Styles에서 규칙이 인식되는지 살핀다."
+      "heading": "CSS 규칙의 구조",
+      "excerpt": "한 선언만 적용되지 않는다면 속성 이름과 그 속성에 허용되는 값을 확인합니다.\n브라우저는 보통 유효하지 않은 선언을 무시하므로 오류 창을 기다리기보다 개발자 도구의 Styles에서 규칙이 인식되는지 살핍니다."
     },
     {
       "id": "css.stylesheet-linking",
-      "title": "CSS의 역할과 적용",
+      "title": "스타일시트 연결",
       "lessonId": "css-notes-css-basics",
-      "heading": "HTML에 스타일시트를 연결한다",
-      "excerpt": "`rel=\"stylesheet\"`는 스타일시트 연결임을 알리고 `href`는 파일의 위치를 가리킨다.\n이 예의 `styles.css`는 HTML 문서 위치를 기준으로 찾는다.\n여러 HTML 문서가 같은 파일을 사용하고 구조와 표현을 나눠 관리할 수 있다."
+      "heading": "스타일시트 연결 방법",
+      "excerpt": "`rel=\"stylesheet\"`는 스타일시트 연결임을 알리고 `href`는 파일의 위치를 가리킵니다.\n이 예의 `styles.css`는 HTML 문서 위치를 기준으로 찾습니다.\n여러 HTML 문서가 같은 파일을 사용하고 구조와 표현을 나눠 관리할 수 있습니다."
     },
     {
       "id": "css.selectors",
-      "title": "선택자로 원하는 요소 찾기",
+      "title": "선택자와 결합자",
       "lessonId": "css-notes-selectors",
-      "heading": "결합자로 관계를 좁힌다",
-      "excerpt": "card 안에 div가 있고 그 안에 h2가 있다면 `.card h2`는 그 h2와 일치하지만 `.card > h2`는 일치하지 않는다.\nHTML 구조에 의존하는 선택자를 계속 길게 만들기보다, 역할을 나타내는 클래스 하나로 찾을 수 있는지 먼저 살핀다."
+      "documentLessonId": "css-notes-css-basics",
+      "heading": "결합자 사용법",
+      "excerpt": "카드 안에 div가 있고 그 안에 h2가 있다면 `.meeting-card h2`는 그 h2와 일치하지만 `.meeting-card > h2`는 일치하지 않습니다.\n지난 모임 제목의 바로 위 부모는 카드가 아니라 div이기 때문입니다."
     },
     {
       "id": "css.cascade",
-      "title": "캐스케이드와 명시도",
+      "title": "캐스케이드",
       "lessonId": "css-notes-cascade",
-      "heading": "핵심 질문 답",
-      "excerpt": "같은 요소의 같은 속성에 적용되는 후보인지 먼저 확인합니다.\n출처·중요도·레이어 같은 앞선 기준이 같으면 명시도의 세 칸을 왼쪽부터 비교하고, 그것도 같으면 나중 선언을 고릅니다.\n따라서 마지막 줄이나 큰 명시도가 언제나 이기는 것은 아니며 important도 명시도 점수를 더하는 문법이 아닙니다."
+      "heading": "명시도와 작성 순서",
+      "excerpt": "왼쪽 칸이 크면 오른쪽 칸은 보지 않습니다.\n클래스를 여러 개 이어 붙여도 ID 칸으로 올림되지 않습니다.\n그래서 `.a.b.c.d`처럼 클래스가 많은 선택자도 `#today` 하나를 이기지 못합니다."
     },
     {
       "id": "css.inheritance",
       "title": "상속과 초기값",
       "lessonId": "css-notes-inheritance",
-      "heading": "핵심 질문 답",
-      "excerpt": "자식에 직접 값이 정해지지 않았을 때 상속되는 속성은 부모의 계산값을 이어받습니다.\ninherit은 부모 값을 명시적으로 사용하고 initial은 속성 명세의 초기값을 사용합니다.\nunset은 원래 상속되는 속성에서 inherit, 그렇지 않은 속성에서 initial처럼 동작하므로 먼저 그 속성의 상속 여부를 확인합니다."
+      "documentLessonId": "css-notes-cascade",
+      "heading": "inherit·initial·unset 사용법",
+      "excerpt": "첫째 칸의 `inherit`는 원래 상속되지 않는 border도 부모 값을 가져오게 했습니다.\n둘째 칸의 `initial`은 color의 초기값을 써서 부모의 navy 대신 기본 글자색이 되었습니다.\n셋째 칸의 `unset`은 속성마다 다르게 동작했습니다.\ncolor는 상속되는 속성이라 부모 값을 받았고 border는 상속되지 않는 속성이라 초기값인 테두리 없음이 되었습니다."
     },
     {
       "id": "css.values-units",
-      "title": "길이 단위의 계산 기준",
+      "title": "em과 rem의 계산 기준",
       "lessonId": "css-notes-units",
-      "heading": "핵심 질문 답",
-      "excerpt": "px는 CSS 기준 픽셀이고 %는 사용하는 속성의 기준값을 따릅니다.\nrem은 루트의 계산된 글자 크기, em은 보통 그 요소의 계산된 글자 크기를 따르지만 font-size의 em은 부모 글자 크기를 사용합니다.\n단위를 계산하기 전에 속성과 기준 요소를 함께 찾고 실제 콘텐츠에서도 결과를 확인합니다."
+      "heading": "em과 rem 사용법",
+      "excerpt": "제목의 `font-size: 1.5em`은 30px입니다.\n`font-size`에 쓴 em은 자신의 글자 크기를 아직 모르므로 부모인 카드의 20px을 기준으로 삼기 때문입니다.\n반면 제목에 `padding: 1em`을 더하면 제목 자신의 계산된 글자 크기 30px을 기준으로 해서 30px이 됩니다."
     },
     {
       "id": "css.typography",
-      "title": "읽기 쉬운 글꼴과 줄 간격",
+      "title": "글꼴과 줄 간격",
       "lessonId": "css-notes-typography",
-      "heading": "핵심 질문 답",
-      "excerpt": "font-family에 대체 후보와 일반 글꼴 계열을 두어 앞 글꼴이나 글자 모양이 없어도 읽히게 합니다.\n단위 없는 line-height는 각 요소의 글자 크기를 따라 계산하게 하고, 글자·줄 간격을 늘렸을 때 내용과 조작 요소가 잘리지 않는지도 확인합니다.\n특정 글꼴과 기본 크기에서 보이는 모습만으로 완료하지 않습니다."
+      "documentLessonId": "css-notes-units",
+      "heading": "글꼴과 줄 간격 사용법",
+      "excerpt": "단위 없는 숫자는 숫자 그대로 자식에게 상속되어 자식이 자신의 글자 크기에 곱하기 때문입니다.\n반면 `30px`은 카드에서 계산된 길이가 그대로 상속되어 글자가 큰 제목에서도 30px로 남습니다.\n같은 원리로 부모가 `font-size: 16px; line-height: 1.5`이면 24px 제목의 줄 높이는 24px이 아니라 36px입니다."
     },
     {
       "id": "css.color-contrast",
-      "title": "색과 대비로 정보 전달하기",
+      "title": "색과 대비",
       "lessonId": "css-notes-color-contrast",
-      "heading": "핵심 질문 답",
-      "excerpt": "글자와 실제 배경의 대비를 크기별 기준에 맞춰 확인하고, 오류나 선택 상태에는 문구·밑줄·모양 같은 다른 단서를 함께 둡니다.\nopacity는 글자를 포함한 요소 전체 결과에 적용되므로 배경만 반투명하게 하려면 배경색의 알파를 사용합니다.\n투명도와 배경 조합이 달라지면 실제 대비도 다시 확인합니다."
+      "documentLessonId": "css-notes-units",
+      "heading": "색과 대비 사용법",
+      "excerpt": "테두리를 더 진한 빨강으로 바꾸거나 깜빡이게 해도 무엇을 고칠지는 알 수 없습니다.\n마우스를 올릴 때만 보이는 변화는 키보드나 터치 사용자에게 닿지 않습니다.\n그래서 오류·선택·현재 위치 같은 상태에는 문구·밑줄·테두리 모양 같은 단서를 색과 함께 둡니다."
     },
     {
       "id": "css.box-model",
       "title": "박스 모델과 box-sizing",
       "lessonId": "css-notes-box-model",
-      "heading": "content-box는 내용의 너비다",
-      "excerpt": "다른 규칙이 box-sizing을 바꾸지 않았다는 조건에서 초기값은 content-box다.\nwidth의 300px은 content 너비이므로 좌우 padding과 border를 더하면 border box는 350px이다."
+      "heading": "box-sizing의 종류",
+      "excerpt": "다른 규칙이 box-sizing을 바꾸지 않았다면 초기값은 content-box입니다.\ncontent-box에서 width의 300px은 content 너비이므로 좌우 padding과 border를 더하면 테두리 바깥 너비는 350px입니다."
     },
     {
       "id": "css.normal-flow",
-      "title": "일반 흐름과 display",
+      "title": "일반 흐름",
       "lessonId": "css-notes-display",
-      "heading": "일반 흐름에서 시작한다",
-      "excerpt": "별도 배치를 정하지 않으면 제목과 문단은 보통 새 줄에 놓이고 링크는 글줄 안에서 이어진다.\n이처럼 문서 순서를 바탕으로 박스가 놓이는 기본 배치가 일반 흐름이다.\nHTML 순서만으로도 내용을 이해할 수 있게 만든 뒤 필요한 곳에 다른 배치를 적용한다."
+      "heading": "일반 흐름이란",
+      "excerpt": "별도 배치를 정하지 않으면 제목과 문단은 보통 새 줄에 놓이고 링크는 글줄 안에서 이어집니다.\n이처럼 문서 순서를 바탕으로 박스가 놓이는 기본 배치가 일반 흐름입니다.\nHTML 순서만으로도 내용을 이해할 수 있게 만든 뒤 필요한 곳에 다른 배치를 적용합니다."
     },
     {
       "id": "css.spacing",
-      "title": "간격의 주인과 margin 합침",
+      "title": "간격을 맡을 곳",
       "lessonId": "css-notes-spacing",
-      "heading": "핵심 질문 답",
-      "excerpt": "내용과 테두리 사이 간격은 padding, 박스 바깥은 margin, 반복되는 자식 사이 간격은 Flexbox나 Grid 부모의 gap으로 관리합니다.\n일반 흐름에서 맞닿은 세로 margin은 조건에 따라 합쳐질 수 있으므로 무조건 더하지 않습니다.\n부모 배치 방식과 실제 박스 모델을 확인하고 그 간격을 책임질 요소에 선언합니다."
+      "documentLessonId": "css-notes-box-model",
+      "heading": "간격 사용법",
+      "excerpt": "카드 사이는 24px이지만 목록 테두리와 첫 카드 사이는 0px입니다.\ngap은 항목과 항목 사이에만 생기고 목록 바깥의 여백까지 만들지는 않기 때문입니다.\n그래서 버튼 줄처럼 가장자리 안쪽에도 공간이 필요하면 부모에 `padding`을 함께 적습니다.\n버튼 사이 12px은 `gap`이 맡고 테두리 안쪽 20px은 `padding`이 맡습니다."
     },
     {
       "id": "css.overflow",
-      "title": "overflow(넘침): 크기 제한과 내용 표시",
+      "title": "넘침과 내용 보존",
       "lessonId": "css-notes-overflow",
-      "heading": "핵심 질문 답",
-      "excerpt": "고정 크기·긴 문자열·박스 계산·자식의 최소 크기 중 무엇이 넘침을 만드는지 먼저 확인합니다.\n긴 문자열은 필요한 줄바꿈을 허용하고, 높이 제한이 필요한 로그는 max-height와 overflow auto로 전체 내용을 읽을 수 있게 합니다.\nhidden이나 clip으로 자르는 것은 원인 해결과 다르므로 가려지는 정보와 조작 수단까지 확인합니다."
+      "documentLessonId": "css-notes-display",
+      "heading": "넘침의 원인",
+      "excerpt": "넘침의 원인은 긴 문자열만이 아닙니다.\n부모보다 큰 고정 크기·빠뜨린 padding과 border 계산·큰 이미지·Flex나 Grid 자식의 기본 최소 크기도 넘침을 만듭니다.\n그래서 줄바꿈 한 줄을 넣기 전에 무엇이 박스보다 큰지부터 찾습니다."
     },
     {
       "id": "css.flexbox",
@@ -925,24 +931,26 @@
     },
     {
       "id": "css.positioning",
-      "title": "relative와 absolute의 위치 기준",
+      "title": "position 값 고르기",
       "lessonId": "css-notes-positioning",
       "heading": "핵심 질문 답",
-      "excerpt": "원래 자리를 남긴 채 보이는 위치만 옮기려면 relative를, 흐름에서 빼 특정 기준점에 놓으려면 absolute를 검토합니다.\nabsolute의 가까운 위치 기준 박스를 찾아야 하며 예제에서는 relative인 카드가 그 기준입니다.\n배지가 흐름에서 빠지므로 제목과 겹치지 않을 공간도 마련해야 합니다.\n문구 길이에 따라 서로 밀어내야 한다면 Flexbox나 Grid로 흐름에 두는 편이 알맞습니다."
+      "excerpt": "원래 자리를 남긴 채 조금만 옮기려면 `relative`를 쓰고 흐름에서 빼 특정 기준에 놓으려면 `absolute`를 씁니다.\n`absolute`는 `position`이 `static`이 아니거나 `transform`이 있는 가장 가까운 조상을 기준으로 삼습니다."
     },
     {
       "id": "css.positioning",
-      "title": "fixed와 sticky의 차이",
+      "title": "position 값 고르기",
       "lessonId": "css-notes-fixed-sticky",
-      "heading": "핵심 질문 답",
-      "excerpt": "보통 화면에 계속 고정할 요소는 흐름에서 빠지는 fixed를, 자신의 영역 안에서만 붙일 요소는 자리를 유지하는 sticky를 검토합니다.\nfixed도 transform이 있는 조상 등을 기준으로 삼을 수 있으므로 실제 위치 기준을 확인합니다.\nsticky는 inset·스크롤 거리·가까운 스크롤 컨테이너·자신의 containing block(위치 기준 박스)이 허용하는 이동 범위를 확인합니다.\n어느 방식을 쓰든 확대된 내용과 키보드 포커스를 가리지 않아야 합니다."
+      "documentLessonId": "css-notes-positioning",
+      "heading": "fixed와 sticky 사용법",
+      "excerpt": "`fixed`인 도움말 버튼은 흐름에서 빠져 화면을 기준으로 놓입니다.\n그래서 페이지를 스크롤해도 화면 오른쪽 아래의 같은 자리에 보입니다.\n다만 조상에 `transform`이 있으면 그 조상이 기준이 되어 화면에 고정되지 않습니다.\n\n`sticky`인 목록 제목은 원래 자리를 남긴 채 흐름에 있습니다.\n스크롤하다가 `top: 0` 경계에 닿으면 그때부터 붙어 보입니다."
     },
     {
       "id": "css.stacking-context",
       "title": "쌓임 맥락과 z-index",
       "lessonId": "css-notes-stacking-context",
-      "heading": "숫자보다 부모 묶음을 먼저 본다",
-      "excerpt": "쌓임 맥락은 여러 종이를 끼운 파일철과 비슷하다.\n뒤 파일철 안에서 종이를 맨 앞으로 옮겨도 앞 파일철을 넘어오지는 못한다.\n겹친 두 요소가 같은 쌓임 맥락에 참여하는지, 다른 부모 묶음에 속하는지부터 찾는다."
+      "documentLessonId": "css-notes-positioning",
+      "heading": "쌓임 맥락과 z-index",
+      "excerpt": "쌓임 맥락은 요소들을 한 묶음으로 쌓는 단위입니다.\n여러 장의 종이를 끼운 파일철과 비슷합니다.\n뒤 파일철 안에서 종이 한 장을 맨 앞으로 옮겨도 앞 파일철보다 앞으로 나오지는 못합니다."
     },
     {
       "id": "css.responsive-design",
@@ -960,24 +968,25 @@
     },
     {
       "id": "css.pseudo-classes",
-      "title": "가상 클래스·가상 요소와 상태 표시",
+      "title": "가상 클래스",
       "lessonId": "css-notes-states",
-      "heading": "지금 요소가 어떤 상태인지 고른다",
-      "excerpt": "가상 클래스는 DOM에 별도 class를 붙이지 않고 요소의 상태나 구조 조건을 선택한다.\n화면 너비·입력 장치 능력을 묻는 미디어 쿼리와 개별 요소 상태를 구별한다."
+      "heading": "가상 클래스의 종류",
+      "excerpt": "가상 클래스는 HTML에 class를 따로 붙이지 않아도 요소의 상태나 구조 조건을 선택합니다.\n그래서 화면 너비나 입력 장치 능력을 묻는 미디어 쿼리와 달리 요소 하나하나의 상태를 고릅니다."
     },
     {
       "id": "css.pseudo-elements",
-      "title": "가상 클래스·가상 요소와 상태 표시",
+      "title": "가상 요소",
       "lessonId": "css-notes-states",
-      "heading": "가상 요소는 요소의 부분을 다룬다",
-      "excerpt": "가상 요소는 첫 줄처럼 기존 요소의 특정 부분이나 CSS가 만드는 추상적인 부분을 선택한다.\n가상 클래스는 보통 콜론 하나, 가상 요소는 두 개로 적는다.\n`::before`·`::after`의 content는 HTML 의미 구조를 대신하지 않는다.\n필수 입력 안내처럼 중요한 정보는 HTML에도 명시하고 생성된 별표만 유일한 안내로 쓰지 않는다."
+      "heading": "가상 요소 사용법",
+      "excerpt": "가상 요소는 첫 줄처럼 기존 요소의 특정 부분이나 CSS가 만드는 추상적인 부분을 선택합니다.\n가상 클래스는 보통 콜론 하나로 적고 가상 요소는 콜론 두 개로 적습니다.\n`::before`·`::after`의 content는 HTML 의미 구조를 대신하지 않습니다.\n필수 입력 안내처럼 중요한 정보는 HTML에도 적고 생성된 별표를 유일한 안내로 쓰지 않습니다."
     },
     {
       "id": "css.motion-accessibility",
-      "title": "CSS 모션: 변형·전환·애니메이션과 동작 줄이기",
+      "title": "움직임 감소와 포커스 유지",
       "lessonId": "css-notes-motion",
-      "heading": "움직임을 줄여도 상태는 남긴다",
-      "excerpt": "키보드로 이동할 때는 `:focus-visible` 등의 분명한 표시로 현재 위치를 알아볼 수 있어야 한다.\n`prefers-reduced-motion: reduce`는 불필요한 움직임을 줄여 달라는 신호이며 포커스나 상태 정보까지 숨기라는 뜻이 아니다.\n전환·장식 이동·반복은 줄이고 테두리·배경·문구 등 필요한 단서는 남긴다."
+      "documentLessonId": "css-notes-states",
+      "heading": "동작 줄이기 사용법",
+      "excerpt": "키보드로 이동할 때는 `:focus-visible` 같은 분명한 표시로 현재 위치를 알아볼 수 있어야 합니다.\n`prefers-reduced-motion: reduce`는 불필요한 움직임을 줄여 달라는 신호이며 포커스나 상태 정보까지 숨기라는 뜻이 아닙니다.\n그래서 전환·장식 이동·반복은 줄이고 테두리·배경·문구 같은 필요한 단서는 남깁니다."
     },
     {
       "id": "css.debugging",

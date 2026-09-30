@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { getReviewDocumentLesson, validateReviewConcepts } from "../src/core/review-navigation.js";
+import { CSS_MERGED_INTO } from "./fixtures/css-merged-lessons.js";
 
 const load = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
 const curriculum = await load("../content/curriculum.json");
@@ -70,16 +71,16 @@ test("CSS 기존 12문항은 문제 소유를 유지하고 판단 범위에 맞�
   const { questions } = await load("../content/quizzes/css.json");
   const cssConcepts = data.concepts.filter((concept) => concept.id.startsWith("css."));
   const expectedTargets = {
-    "quiz-css-selector-compound-descendant": "selectors",
+    "quiz-css-selector-compound-descendant": "css-basics",
     "quiz-css-unit-inheritance-context": "units",
     "quiz-css-cascade-winner": "cascade",
     "quiz-css-border-box": "box-model",
     "quiz-css-display-formatting": "display",
-    "quiz-css-overflow-spacing-choice": "overflow",
+    "quiz-css-overflow-spacing-choice": "display",
     "quiz-css-flex-axis": "flexbox",
     "quiz-css-grid-position-choice": "layout-review",
     "quiz-css-media-query-condition": "responsive",
-    "quiz-css-focus-motion-accessibility": "motion",
+    "quiz-css-focus-motion-accessibility": "states",
     "quiz-css-debugging-cascade-step": "layout-review",
     "quiz-css-layout-tool-choice": "layout-review",
   };
@@ -95,13 +96,15 @@ test("CSS 기존 12문항은 문제 소유를 유지하고 판단 범위에 맞�
     assert.equal(getReviewDocumentLesson(curriculum, concept)?.id, concept.documentLessonId);
     assert.notEqual(question.lessonId, concept.documentLessonId);
   }
+  // 합친 CSS 위치 지정 교안으로 옮긴 문서의 문항은 소유를 유지하고 합친 문서의 실제 절을 보여 준다.
+  const mergedInto = CSS_MERGED_INTO;
   const added = questions.filter((question) => !Object.hasOwn(expectedTargets, question.id));
   assert.equal(added.length, 35);
   for (const question of added) {
     const matches = cssConcepts.filter((concept) => concept.id === question.conceptId && concept.lessonId === question.lessonId);
     assert.equal(matches.length, 1, question.id);
     const lesson = getReviewDocumentLesson(curriculum, matches[0]);
-    assert.equal(lesson?.id, question.lessonId, question.id);
+    assert.equal(lesson?.id, mergedInto[question.lessonId] ?? question.lessonId, question.id);
     assert.equal(lesson?.courseId, "css", question.id);
     assert.equal(Boolean(lesson?.archivedFromCatalog), false, question.id);
   }

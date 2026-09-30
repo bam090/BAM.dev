@@ -10,7 +10,7 @@ Grid는 부모가 직접 자식의 행과 열을 배치하며 fr은 사용할 �
 
 ## 먼저 확인할 개념
 
-[일반 흐름과 display](#/learn/css/wiki-display), [overflow(넘침): 크기 제한과 내용 표시](#/learn/css/wiki-overflow)를 먼저 확인해 보세요.
+[일반 흐름과 넘침](#/learn/css/wiki-display)을 먼저 확인해 보세요.
 
 ## 부모에 열을 정의한다
 

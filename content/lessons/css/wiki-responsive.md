@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[Grid로 행과 열 만들기](#/learn/css/wiki-grid), [캐스케이드와 명시도](#/learn/css/wiki-cascade)를 먼저 확인해 보세요.
+[Grid로 행과 열 만들기](#/learn/css/wiki-grid), [캐스케이드와 상속](#/learn/css/wiki-cascade)를 먼저 확인해 보세요.
 
 ## 미디어 쿼리보다 먼저 내용이 흐르게 한다
 

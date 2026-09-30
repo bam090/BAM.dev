@@ -667,7 +667,7 @@ article.lesson-body > h2:not(:first-child) {
 }
 
 article.lesson-body > hr + h2:not(:first-child) {
-  margin-top: 36px;
+  margin-top: 48px;
   padding-top: 0;
   border-top: 0;
 }
@@ -732,6 +732,14 @@ article.lesson-body > h3 {
   margin: 34px 0;
   border: 0;
   background: var(--color-border);
+}
+
+/* 여러 주제를 합친 교안에서 주제가 바뀌는 곳을 절 구분선보다 굵게 나눈다. */
+article.lesson-body > hr {
+  height: 3px;
+  margin: 88px 0 0;
+  border-radius: 2px;
+  background: var(--color-border-strong);
 }
 
 .lesson-illustration {

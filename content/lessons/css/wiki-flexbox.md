@@ -10,7 +10,7 @@ Flexbox는 한 축의 항목을 배치하며 justify-content는 주축, align-it
 
 ## 먼저 확인할 개념
 
-[일반 흐름과 display](#/learn/css/wiki-display), [간격의 주인과 margin 합침](#/learn/css/wiki-spacing)을 먼저 확인하면 부모가 배치를 맡는 이유를 이해하기 쉽습니다.
+[일반 흐름과 넘침](#/learn/css/wiki-display), [박스 모델과 간격](#/learn/css/wiki-box-model)을 먼저 확인하면 부모가 배치를 맡는 이유를 이해하기 쉽습니다.
 
 ## 부모와 직접 자식을 찾는다
 
@@ -73,7 +73,7 @@ Flexbox의 `justify-content`는 주축의 남은 공간을 나누고, `align-ite
 
 ## 이어서 연습하기
 
-[상품 카드 레이아웃](#/quest/css/product-card-layout) — [relative와 absolute](#/learn/css/wiki-positioning)도 읽은 뒤, 카드의 흐름과 배지의 기준을 함께 작성하는 실습입니다.
+[상품 카드 레이아웃](#/quest/css/product-card-layout) — [CSS 위치 지정](#/learn/css/wiki-positioning)도 읽은 뒤, 카드의 흐름과 배지의 기준을 함께 작성하는 실습입니다.
 
 ## 공식 자료
 

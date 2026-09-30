@@ -4438,9 +4438,10 @@ export class BamLearningApp {
       ? [...new Set(lesson.objectives)].filter((objective) => !overview.objectives.includes(objective.trim()))
       : [];
 
+    // 교안 첫머리에 학습 목표가 있으면 그 절만 보여 준다. 메타데이터 summary는 목록 카드와 요약 창에 쓴다.
     const summaryHtml = overview.summary
       ? renderMarkdown(overview.summary, { preserveParagraphLineBreaks: true })
-      : lesson.summary ? `<p>${escapeHtml(lesson.summary)}</p>` : "";
+      : lesson.summary && !overview.objectives ? `<p>${escapeHtml(lesson.summary)}</p>` : "";
     const summaryIsObjective = [overview.objectives, ...metadataObjectives]
       .some((objective) => objective.trim() === (overview.summary || lesson.summary || "").trim());
     const prerequisiteHtml = renderMarkdown(prerequisite.section, { preserveParagraphLineBreaks: true });
