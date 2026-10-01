@@ -156,7 +156,8 @@ test("단원에 문제가 없으면 빈 상태이고 미응답·빈 세션을 �
   app.gradeCurrentQuizQuestion();
   app.showNextQuizQuestion();
   app.finishQuizSession();
-  assert.equal(app.quizSession.currentIndex, 0);
+  assert.equal(app.quizSession.currentIndex, 1);
+  assert.equal(app.quizSession.screen, "question");
   assert.equal(app.quizSession.gradedAnswers.size, 0);
   assert.equal(app.quizSession.recordAttempted, false);
   assert.ok(announcements.some((message) => message.includes("답을 하나 선택")));
