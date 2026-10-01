@@ -2400,26 +2400,26 @@
       "courseId": "css",
       "order": 7,
       "slug": "wiki-css-basics",
-      "title": "CSS의 역할과 적용",
-      "summary": "CSS는 HTML의 표현을 정하며 연결된 규칙의 선택자로 대상을 찾고 속성에 값을 적용합니다.",
-      "essentialQuestion": "CSS는 HTML과 어떤 역할을 나누며 규칙을 어떻게 연결하고 읽나요?",
+      "title": "CSS 기초: 적용 방법과 선택자",
+      "summary": "CSS를 HTML에 연결하고 선택자·속성·값으로 규칙을 읽으며 결합자로 원하는 요소를 찾습니다.",
+      "essentialQuestion": "CSS를 HTML에 어떻게 연결하고 규칙의 선택자로 원하는 요소를 어떻게 찾나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "HTML과 CSS의 역할을 구분하고 스타일시트를 연결해 선택자·속성·값으로 규칙을 읽을 수 있습니다."
+        "HTML과 CSS의 역할을 구분하고 외부 스타일시트를 link로 연결할 수 있습니다.",
+        "CSS 규칙을 선택자·속성·값으로 나눠 읽고 적용되지 않는 선언의 원인을 찾을 수 있습니다.",
+        "클래스·ID·속성 선택자로 규칙을 적용할 요소를 고를 수 있습니다.",
+        "공백과 결합자를 보고 같은 요소의 조건인지 요소 사이의 관계인지 구분할 수 있습니다."
       ],
       "estimatedMinutes": 4,
       "conceptIds": [
         "css.syntax",
-        "css.stylesheet-linking"
+        "css.stylesheet-linking",
+        "css.selectors"
       ],
       "contentFile": "content/lessons/css/wiki-css-basics.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/01 CSS란 무엇인가.md",
-        "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-30"
       }
     },
     {
@@ -2447,7 +2447,8 @@
         "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-cascade",
@@ -2455,25 +2456,25 @@
       "courseId": "css",
       "order": 9,
       "slug": "wiki-cascade",
-      "title": "캐스케이드와 명시도",
-      "summary": "캐스케이드는 겹친 선언 중 하나를 고르며 명시도와 작성 순서는 앞선 우선순위 조건이 같을 때 비교합니다.",
-      "essentialQuestion": "같은 요소의 같은 속성에 여러 선언이 겹치면 무엇부터 비교하나요?",
+      "title": "캐스케이드와 상속",
+      "summary": "겹친 선언은 캐스케이드가 앞선 기준·명시도·작성 순서로 하나를 고르고 선언이 없으면 상속이나 초기값을 씁니다.",
+      "essentialQuestion": "한 요소의 속성에 선언이 겹치거나 하나도 없을 때 최종 값은 어떻게 정해지나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "같은 요소의 같은 속성에 선언이 겹칠 때 적용 조건·우선순위·명시도·작성 순서로 결과를 설명할 수 있습니다."
+        "한 요소의 같은 속성에 선언이 겹칠 때 캐스케이드가 명시도보다 먼저 비교하는 기준을 설명할 수 있습니다.",
+        "명시도의 세 칸과 작성 순서로 앞선 조건이 같은 선언 가운데 이기는 선언을 고를 수 있습니다.",
+        "자식에 선언이 없을 때 부모 값을 이어받는 상속과 inherit·initial·unset의 차이를 설명할 수 있습니다.",
+        "스타일이 예상과 다를 때 겹친 선언의 문제인지 상속의 문제인지 나눠 원인을 찾을 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "css.cascade"
+        "css.cascade",
+        "css.inheritance"
       ],
       "contentFile": "content/lessons/css/wiki-cascade.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/01 CSS란 무엇인가.md",
-        "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-30"
       }
     },
     {
@@ -2501,7 +2502,8 @@
         "sha256": "a0602272210ea778a7b02a197b6b6acb273f064f55b90ad75042503c54e02df1",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-units",
@@ -2509,25 +2511,26 @@
       "courseId": "css",
       "order": 11,
       "slug": "wiki-units",
-      "title": "길이 단위의 계산 기준",
-      "summary": "길이 단위는 기준이 서로 다르며 특히 %는 속성별 기준, em은 사용하는 속성의 글자 크기 기준을 확인해야 합니다.",
-      "essentialQuestion": "px·%·rem·em은 무엇을 기준으로 계산되며 em은 속성에 따라 어떻게 달라지나요?",
+      "title": "읽기 쉬운 글자: 단위·글꼴·색",
+      "summary": "글자 크기의 단위 기준과 대체 글꼴·단위 없는 줄 간격·색 대비와 배경 알파로 어떤 환경에서도 읽히는 글자를 정합니다.",
+      "essentialQuestion": "글자 크기의 단위는 무엇을 기준으로 계산되며 글꼴·줄 간격·색은 어떻게 정해야 환경이 바뀌어도 읽히나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "px·%·rem·em의 계산 기준을 찾고 같은 단위도 속성에 따라 기준이 달라지는 경우를 설명할 수 있습니다."
+        "px·%·rem·em이 무엇을 기준으로 계산되는지 찾고 같은 em도 속성에 따라 기준이 달라지는 경우를 설명할 수 있습니다.",
+        "글꼴을 쓸 수 없거나 글자가 커져도 읽히도록 대체 글꼴 목록과 단위 없는 line-height를 정할 수 있습니다.",
+        "글자와 배경의 대비를 확인하고 상태를 색 하나에만 맡기지 않는 단서를 고를 수 있습니다.",
+        "배경만 반투명하게 할 때 opacity 대신 배경색의 알파를 고를 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "css.values-units"
+        "css.values-units",
+        "css.typography",
+        "css.color-contrast"
       ],
       "contentFile": "content/lessons/css/wiki-units.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/02 값과 표현.md",
-        "sha256": "a8f1a1cf892c1745624664199bdd25485a084eecbcf4ea74f17a53171edec375",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-30"
       }
     },
     {
@@ -2555,7 +2558,8 @@
         "sha256": "a8f1a1cf892c1745624664199bdd25485a084eecbcf4ea74f17a53171edec375",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-color-contrast",
@@ -2582,7 +2586,8 @@
         "sha256": "a8f1a1cf892c1745624664199bdd25485a084eecbcf4ea74f17a53171edec375",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-box-model",
@@ -2590,25 +2595,25 @@
       "courseId": "css",
       "order": 14,
       "slug": "wiki-box-model",
-      "title": "박스 모델과 box-sizing",
-      "summary": "content-box의 width는 내용 너비이고 border-box의 width는 padding과 border까지 포함하며 margin은 두 경우 모두 바깥에 있습니다.",
-      "essentialQuestion": "box-sizing에 따라 width가 포함하는 영역과 실제 박스 너비는 어떻게 달라지나요?",
+      "title": "박스 모델과 간격",
+      "summary": "박스의 네 영역과 box-sizing으로 실제 너비를 계산하고 padding·margin·gap 가운데 간격을 맡을 곳과 세로 margin이 합쳐지는 조건을 구분합니다.",
+      "essentialQuestion": "box-sizing에 따라 width가 포함하는 영역은 어떻게 달라지며 안쪽·바깥·항목 사이 간격은 누가 맡아야 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "content·padding·border·margin을 구분하고 box-sizing에 따라 선언한 너비와 실제 박스 너비를 계산할 수 있습니다."
+        "content·padding·border·margin 네 영역을 구분하고 테두리를 기준으로 간격이 안쪽인지 바깥인지 찾을 수 있습니다.",
+        "box-sizing에 따라 선언한 width와 실제 박스 너비·content 너비를 계산할 수 있습니다.",
+        "안쪽·바깥·반복 항목 사이의 간격을 padding·margin·부모의 gap 가운데 알맞은 곳에 선언할 수 있습니다.",
+        "일반 흐름에서 세로 margin이 합쳐지는 조건과 Flexbox·Grid에서 합쳐지지 않는 차이를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "css.box-model"
+        "css.box-model",
+        "css.spacing"
       ],
       "contentFile": "content/lessons/css/wiki-box-model.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/03 박스와 일반 흐름.md",
-        "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-30"
       }
     },
     {
@@ -2617,26 +2622,26 @@
       "courseId": "css",
       "order": 15,
       "slug": "wiki-display",
-      "title": "일반 흐름과 display",
-      "summary": "display는 박스가 주변 흐름에 참여하는 방식과 안쪽 배치를 정하며 HTML 요소의 의미를 바꾸지는 않습니다.",
-      "essentialQuestion": "같은 줄·새 줄·숨김 요구에 맞는 display를 어떻게 고르고 무엇을 함께 확인하나요?",
+      "title": "일반 흐름과 넘침: display와 overflow",
+      "summary": "박스가 일반 흐름에 놓이는 방식을 display로 고르고 내용이 박스를 넘칠 때 원인을 찾아 줄바꿈이나 overflow로 모두 읽게 합니다.",
+      "essentialQuestion": "박스를 흐름에 어떻게 놓을지 고르고 내용이 박스를 넘칠 때 모두 읽게 하려면 무엇을 확인하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "같은 줄·새 줄·숨김 요구에 맞는 display 값을 고르고 HTML 의미와 박스 배치를 구분할 수 있습니다."
+        "일반 흐름에서 block과 inline 박스가 놓이는 방식을 보고 같은 줄·새 줄·숨김 요구에 맞는 display 값을 고를 수 있습니다.",
+        "display가 바깥 흐름과 자식 배치를 정할 뿐 HTML 의미는 바꾸지 않는다는 점을 구분할 수 있습니다.",
+        "흐름에 놓인 박스보다 내용이 커질 때 넘침의 원인을 찾고 줄바꿈으로 해결할 수 있습니다.",
+        "높이를 제한해야 할 때 overflow 값을 골라 내용을 자르지 않고 모두 읽게 할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
         "css.normal-flow",
-        "css.display"
+        "css.display",
+        "css.overflow"
       ],
       "contentFile": "content/lessons/css/wiki-display.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/03 박스와 일반 흐름.md",
-        "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-30"
       }
     },
     {
@@ -2664,7 +2669,8 @@
         "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-overflow",
@@ -2691,7 +2697,8 @@
         "sha256": "fab9b2908fd2408e68b78a329e5f92e688d8f76490492acecfe5950f5c7a4d3d",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-flexbox",
@@ -2753,25 +2760,25 @@
       "courseId": "css",
       "order": 20,
       "slug": "wiki-positioning",
-      "title": "relative와 absolute의 위치 기준",
-      "summary": "relative는 원래 자리를 남기고 absolute는 흐름에서 빠져 가까운 위치 기준 박스를 따릅니다.",
-      "essentialQuestion": "요소의 원래 자리를 남길지와 무엇을 위치 기준으로 삼을지를 어떻게 정하나요?",
+      "title": "CSS 위치 지정: position과 z-index",
+      "summary": "position은 요소를 일반 흐름에 남길지와 어디를 기준으로 놓을지를 정하고 z-index는 같은 쌓임 맥락 안에서만 앞뒤 순서를 정합니다.",
+      "essentialQuestion": "요소의 원래 자리를 남길지와 무엇을 기준으로 놓을지 그리고 겹쳤을 때 무엇이 앞에 보일지는 어떻게 정하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "요소의 원래 자리를 남길지 판단하고 absolute 요소가 따를 위치 기준을 찾을 수 있습니다."
+        "요소를 일반 흐름에 남길지에 따라 relative와 absolute를 고르고 absolute가 따르는 위치 기준을 찾을 수 있습니다.",
+        "스크롤할 때 화면에 고정할지 한 영역 안에서만 붙일지에 따라 fixed와 sticky를 고를 수 있습니다.",
+        "위치를 정한 요소끼리 겹칠 때 z-index 숫자보다 쌓임 맥락을 먼저 찾아 앞뒤를 설명할 수 있습니다.",
+        "요소끼리 서로 밀어내야 하는 배치에서는 position 대신 Flexbox나 Grid를 고를 수 있습니다."
       ],
-      "estimatedMinutes": 6,
+      "estimatedMinutes": 10,
       "conceptIds": [
-        "css.positioning"
+        "css.positioning",
+        "css.stacking-context"
       ],
       "contentFile": "content/lessons/css/wiki-positioning.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/05 position 속성과 요소가 겹치는 순서.md",
-        "sha256": "796ed33afa8efc1160a195bbdc70d77915485cef81be6d07f2d89425d70e6247",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-29"
       }
     },
     {
@@ -2799,7 +2806,8 @@
         "sha256": "796ed33afa8efc1160a195bbdc70d77915485cef81be6d07f2d89425d70e6247",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-stacking-context",
@@ -2826,7 +2834,8 @@
         "sha256": "796ed33afa8efc1160a195bbdc70d77915485cef81be6d07f2d89425d70e6247",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-responsive",
@@ -2862,26 +2871,26 @@
       "courseId": "css",
       "order": 24,
       "slug": "wiki-states",
-      "title": "가상 클래스·가상 요소와 상태 표시",
-      "summary": "가상 클래스는 요소의 상태나 조건을, 가상 요소는 특정 부분을 선택하며 중요한 정보는 HTML과 보이는 상태 표시로 유지합니다.",
-      "essentialQuestion": "요소의 상태와 표현되는 부분을 구분해 입력 방법이 달라도 알아볼 수 있게 하려면 어떻게 하나요?",
+      "title": "상태 표시와 모션: 가상 클래스·가상 요소·transition",
+      "summary": "가상 클래스와 가상 요소로 요소의 상태와 일부를 표시하고 상태 변화에 움직임을 더하되 동작 줄이기에서도 포커스와 상태 표시를 남깁니다.",
+      "essentialQuestion": "입력 방법이나 동작 줄이기 설정이 달라도 요소의 상태를 알아볼 수 있게 하려면 무엇을 고르고 무엇을 남겨야 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "요소의 상태와 표현되는 부분을 구분하고 hover 없이도 상태를 알아볼 수 있는 표시를 고를 수 있습니다."
+        "가상 클래스로 요소의 현재 상태를 골라 hover 없이도 포커스와 상태를 알아볼 수 있는 표시를 만들 수 있습니다.",
+        "가상 요소로 요소의 일부를 꾸미되 중요한 안내는 HTML에 남길 수 있습니다.",
+        "상태가 바뀌는 순간에 transform·transition·animation 가운데 목적에 맞는 도구로 움직임을 더할 수 있습니다.",
+        "동작 줄이기 설정에서 장식 움직임을 없애도 포커스와 상태 표시는 그대로 남길 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
         "css.pseudo-classes",
-        "css.pseudo-elements"
+        "css.pseudo-elements",
+        "css.motion-accessibility"
       ],
       "contentFile": "content/lessons/css/wiki-states.md",
       "source": {
-        "kind": "user-authored",
-        "verifiedAt": "2026-09-02",
-        "originalPath": "wiki/학습자료/밤데브 학습문서/02 CSS/06 반응형 상태와 모션.md",
-        "sha256": "a14b6e4a93cf9ecc50c0069a652649173f918826f803985e95046d9a9e757d3b",
-        "importedAt": "2026-09-13",
-        "importMode": "derived"
+        "kind": "bam-authored",
+        "verifiedAt": "2026-09-30"
       }
     },
     {
@@ -2909,7 +2918,8 @@
         "sha256": "a14b6e4a93cf9ecc50c0069a652649173f918826f803985e95046d9a9e757d3b",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "css-notes-layout-review",

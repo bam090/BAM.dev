@@ -253,9 +253,7 @@ function loadData(url) {
 
 - [MDN: Promise 사용하기](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Using_promises)
 - [MDN: async 함수](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
-- [MDN: setTimeout()](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)
 - [MDN: Fetch API 사용하기](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
-- [WHATWG Fetch Standard](https://fetch.spec.whatwg.org/)
 
 공식 자료 확인일: 2026-08-18
 

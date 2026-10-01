@@ -156,8 +156,6 @@ list.append(item);
 - [MDN — Document.querySelector](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector)
 - [MDN — HTMLElement.dataset](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/dataset)
 - [WHATWG DOM Standard — Events](https://dom.spec.whatwg.org/#events)
-- [WHATWG HTML Standard — Forms](https://html.spec.whatwg.org/multipage/forms.html)
-- [W3C UI Events](https://www.w3.org/TR/uievents/)
 
 ## 핵심 질문 답
 

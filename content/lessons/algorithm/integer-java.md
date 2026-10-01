@@ -367,7 +367,6 @@ c[i][j] = (c[i - 1][j - 1] + c[i - 1][j]) % MOD;
 
 - [Java 25 API: Math](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Math.html)
 - [Java 25 API: BigInteger](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/math/BigInteger.html)
-- [Java 25 API: Integer](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/lang/Integer.html)
 - [Java 25 언어 명세: 정수 연산과 오버플로](https://docs.oracle.com/javase/specs/jls/se25/html/jls-4.html#jls-4.2.2)
 
 ## 핵심 질문 답

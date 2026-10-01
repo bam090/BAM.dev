@@ -322,7 +322,6 @@ Java 25 API 문서는 정렬 대상에 따라 다른 알고리즘을 쓴다고 �
 
 - [Java 25 API: Arrays](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Arrays.html)
 - [Java 25 API: List](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/List.html)
-- [Java 25 API: Collections](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Collections.html)
 - [Java 25 API: Comparator](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Comparator.html)
 
 ## 핵심 질문 답

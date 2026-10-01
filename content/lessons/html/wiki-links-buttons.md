@@ -68,8 +68,6 @@ URL은 다음처럼 구분한다.
 ## 공식 자료
 
 - [WHATWG HTML Living Standard](https://html.spec.whatwg.org/multipage/)
-- [WAI Images Tutorial](https://www.w3.org/WAI/tutorials/images/)
-- [WAI Audio and Video Media](https://www.w3.org/WAI/media/av/)
 - [MDN: 부모 디렉터리를 기준으로 상대 URL 해석하기](https://developer.mozilla.org/en-US/docs/Web/API/URL_API/Resolving_relative_references#parent-directory_relative)
 
 ## 핵심 질문 답

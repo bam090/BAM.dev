@@ -50,7 +50,6 @@ JPA 3.2 표준은 컬렉션 fetch join에 setFirstResult·setMaxResults를 적�
 
 - [조회 메서드와 페이징 반환 계약](https://docs.spring.io/spring-data/jpa/reference/repositories/query-methods-details.html)
 - [Hibernate 7.4의 컬렉션 fetch와 페이징 변경](https://docs.hibernate.org/orm/7.4/whats-new/)
-- [Jakarta Persistence 3.2 명세](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html)
 - [PageRequest API](https://docs.spring.io/spring-data/commons/docs/current/api/org/springframework/data/domain/PageRequest.html)
 
 2026-09-14 공식 문서를 확인해 승인된 범위에서 밤데브용으로 새로 작성했습니다. Spring Boot 4.1.1·Spring Data JPA 4.1.1·Jakarta Persistence 3.2·Java 25 정식 기준의 정적 읽기 자료입니다. Hibernate 구현체를 언급하는 부분은 Boot 관리 버전 7.4.5.Final을 기준으로 구분하며, 코드·SQL·DB·Spring 앱을 실행한 결과는 아닙니다.

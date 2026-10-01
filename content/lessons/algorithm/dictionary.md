@@ -338,7 +338,6 @@ Set도 같은 짝이 있어서 `HashSet`·`LinkedHashSet`·`TreeSet` 중에서 �
 - [Java 25 API: Map](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Map.html)
 - [Java 25 API: HashMap](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashMap.html)
 - [Java 25 API: HashSet](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/HashSet.html)
-- [Java 25 API: LinkedHashMap](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/LinkedHashMap.html)
 
 ## 핵심 질문 답
 

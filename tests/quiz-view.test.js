@@ -84,19 +84,25 @@ test("로딩 화면은 skip link 대상과 status를 유지하고 문자열을 e
   assert.match(html, /&lt;script&gt;/);
 });
 
-test("미선택 문제는 fieldset과 라디오 4개를 제공하고 정답 확인을 비활성화한다", () => {
+test("미선택 문제는 정답 확인을 비활성화하되 다음 문제로 이동할 수 있다", () => {
   const html = renderQuestion();
   assert.match(html, /<fieldset class="quiz-options">/);
   assert.match(html, /<legend class="sr-only">답을 하나 선택하세요.<\/legend>/);
   assert.equal((html.match(/type="radio"/g) ?? []).length, 4);
   assert.match(html, /data-quiz-check disabled/);
-  assert.match(html, /data-quiz-next aria-disabled="true"/);
-  assert.match(html, /정답을 확인한 뒤 다음 문제로 이동할 수 있습니다/);
+  assert.match(html, /data-quiz-next aria-disabled="false"/);
+  assert.doesNotMatch(html, /정답을 확인한 뒤 다음 문제로 이동할 수 있습니다|채점 전에도 다음 문제로 이동할 수 있습니다|class="quiz-next-help/);
   assert.match(html, /<pre class="syntax-code" tabindex="0" aria-label="JavaScript 문제 코드">/);
   assert.match(html, /class="language-javascript"/);
   assert.match(html, /code-token--keyword[^>]*>const</);
   assert.match(html, /code-token--number[^>]*>1</);
   assert.match(html, /class="code-line"/);
+});
+
+test("마지막 미채점 문제는 결과 보기를 열지 않는다", () => {
+  const html = renderQuestion({ total: 1, answeredCount: 0 });
+  assert.match(html, /data-quiz-next aria-disabled="true"/);
+  assert.match(html, /모든 문제를 채점한 뒤 결과를 볼 수 있습니다/);
 });
 
 test("HTML이 섞인 복습 코드는 내부 script까지 자동으로 강조한다", () => {
@@ -438,6 +444,10 @@ test("단원 선택기는 과정명·문항 수·저장 기록 동작을 구분�
     recentAttempt: { score: 1, total: 2 },
     incorrectQuestionCount: 1,
   });
+  assert.match(html, /<button[^>]*data-review-scope-open[^>]*aria-haspopup="dialog"[^>]*aria-controls="review-scope-dialog"/);
+  assert.match(html, /<dialog[^>]*id="review-scope-dialog"[^>]*aria-labelledby="review-scope-title"/);
+  assert.match(html, /data-review-scope-close>닫기<\/button>/);
+  assert.doesNotMatch(html, /<details class="review-scope"/);
   assert.match(html, /<label for="quiz-lesson-scope">/);
   assert.match(html, /<option value="lesson&quot;bad" selected>&lt;원문&gt; · &lt;함수&gt; \(2문항\)/);
   assert.match(html, /data-quiz-retry="saved-incorrect">저장된 오답 다시 풀기 \(1\)/);

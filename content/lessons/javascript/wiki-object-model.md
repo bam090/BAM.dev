@@ -124,7 +124,6 @@ readLabel();
 ## 공식 자료
 
 - [MDN — class 본문과 메서드](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes)
-- [ECMAScript 2026 — Execution Contexts and Environment Records](https://tc39.es/ecma262/2026/multipage/executable-code-and-execution-contexts.html)
 - [ECMAScript 2026 — ECMAScript Function Objects and Ordinary Objects](https://tc39.es/ecma262/2026/multipage/ordinary-and-exotic-objects-behaviours.html)
 - [ECMAScript 2026 — Objects and Classes Overview](https://tc39.es/ecma262/2026/multipage/overview.html#sec-objects)
 

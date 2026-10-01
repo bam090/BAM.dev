@@ -5,6 +5,7 @@ import { BamLearningApp } from "../src/app.js";
 import { resolveLessonRoute } from "../src/core/navigation.js";
 import { LocalStorageProgressRepository, MemoryStorage, PROGRESS_STORAGE_KEY } from "../src/repositories/progress-repository.js";
 import { renderMarkdown, splitMarkdownSection } from "../src/ui/markdown.js";
+import { CSS_MERGED_INTO, CSS_REWRITTEN_LESSON_IDS } from "./fixtures/css-merged-lessons.js";
 
 function createLessonApp(completed, categoryId = "language", {
   source,
@@ -244,12 +245,21 @@ test("명시한 직접답만 접어서 보여 주고 원문 출처나 기존 답
 
 test("HTML·CSS 개념 문서는 직접답과 활성 순서를 사용하고 보관 문서와 이전다음이 섞이지 않는다", async () => {
   const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
-  for (const [courseId, activeCount, archivedCount] of [["html", 15, 5], ["css", 20, 6]]) {
+  // 기존 개요 교안은 맨 앞에 보관되고 합친 교안(CSS 위치 지정)으로 옮긴 문서는 제자리에 보관된다.
+  const mergedLessonIds = new Set(Object.keys(CSS_MERGED_INTO));
+  const rewrittenLessonIds = CSS_REWRITTEN_LESSON_IDS;
+  for (const [courseId, activeCount, archivedCount] of [["html", 15, 5], ["css", 11, 15]]) {
     const lessons = curriculum.lessons.filter((lesson) => lesson.courseId === courseId);
     const active = lessons.filter((lesson) => !lesson.archivedFromCatalog);
     const archived = lessons.filter((lesson) => lesson.archivedFromCatalog);
+    const leadingArchivedCount = archived.filter((lesson) => !mergedLessonIds.has(lesson.id)).length;
     assert.equal(active.length, activeCount, courseId);
-    assert.deepEqual(active.map((lesson) => lesson.order), Array.from({ length: activeCount }, (_, index) => index + archivedCount + 1), courseId);
+    assert.deepEqual(
+      active.map((lesson) => lesson.order),
+      Array.from({ length: activeCount + archivedCount - leadingArchivedCount }, (_, index) => index + leadingArchivedCount + 1)
+        .filter((order) => !archived.some((lesson) => lesson.order === order)),
+      courseId,
+    );
     assert.equal(archived.length, archivedCount, courseId);
     for (const group of [active, archived]) {
       for (const [index, lesson] of group.entries()) {
@@ -264,7 +274,7 @@ test("HTML·CSS 개념 문서는 직접답과 활성 순서를 사용하고 보�
         assert.deepEqual([...pagination.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), expected, lesson.id);
         if (lesson.archivedFromCatalog) continue;
         assert.equal(lesson.answerHeading, "핵심 질문 답");
-        assert.equal(lesson.source.importMode, "derived");
+        assert.equal(lesson.source.importMode, rewrittenLessonIds.has(lesson.id) ? undefined : "derived", lesson.id);
         assert.equal((markdown.match(/^## 핵심 질문 답$/gm) ?? []).length, 1, lesson.id);
         const directAnswer = markdown.match(/(?:^|\n)## 핵심 질문 답\n([\s\S]*?)(?=\n## |$)/)?.[1].trim();
         assert.ok(directAnswer, lesson.id);
@@ -311,7 +321,12 @@ test("등록 학습문서마다 같은 객관식 복습 CTA는 한 번만 표시
   }
   assert.equal(rendered, curriculum.lessons.length);
   assert.equal(duplicates.length, 0, `같은 문서의 같은 표시 문구 복습 CTA 중복 ${duplicates.length}건: ${duplicates.slice(0, 8).join("; ")}`);
-  for (const [id, questionCount] of [["css-notes-css-basics", 2], ["css-notes-states", 2], ["css-notes-layout-review", 4]]) {
+  // 합친 CSS 교안은 bam 결정(2026-09-30)에 따라 개념마다 버튼 하나를 둔다.
+  for (const [id, conceptIds] of [["css-notes-css-basics", ["css.selectors", "css.stylesheet-linking", "css.syntax"]], ["css-notes-states", ["css.motion-accessibility", "css.pseudo-classes", "css.pseudo-elements"]]]) {
+    const links = consolidated.get(id) ?? [];
+    assert.deepEqual(links.map(({ href }) => new URLSearchParams(href.split("?")[1]).get("concept")).toSorted(), conceptIds, `${id}: 개념별 복습 CTA`);
+  }
+  for (const [id, questionCount] of [["css-notes-layout-review", 4]]) {
     const route = `#/review/css/${id}`;
     const links = consolidated.get(id) ?? [];
     assert.deepEqual(links.filter(({ href }) => href.split("?")[0] === route).map(({ href }) => href), [route], `${id}: 문서 전체 복습 CTA 하나`);
@@ -325,7 +340,7 @@ test("Spring의 명시 직접답과 선수 링크를 읽고 CSS·Spring 활성 �
   const { concepts } = JSON.parse(await readFile(new URL("../content/review-concepts.json", import.meta.url), "utf8"));
   const collections = new Map(await Promise.all(["css", "java"].map(async (id) => [id, JSON.parse(await readFile(new URL(`../content/quizzes/${id}.json`, import.meta.url), "utf8"))])));
   const lessons = curriculum.lessons.filter((lesson) => ["css", "spring"].includes(lesson.courseId) && !lesson.archivedFromCatalog);
-  assert.equal(lessons.length, 66);
+  assert.equal(lessons.length, 57);
   for (const lesson of lessons) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const app = createLessonApp(false);

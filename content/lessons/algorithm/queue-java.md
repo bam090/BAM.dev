@@ -345,7 +345,6 @@ while (!printer.isEmpty()) {
 - [Java 25 API: Queue](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/Queue.html)
 - [Java 25 API: ArrayDeque](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/ArrayDeque.html)
 - [Java 25 API: LinkedList](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/LinkedList.html)
-- [Java 25 API: ArrayBlockingQueue](https://docs.oracle.com/en/java/javase/25/docs/api/java.base/java/util/concurrent/ArrayBlockingQueue.html)
 
 ## 핵심 질문 답
 

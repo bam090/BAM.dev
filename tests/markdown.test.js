@@ -437,9 +437,11 @@ test("Obsidian 접히는 콜아웃은 접힌 토글로, 일반 인용은 인용�
   assert.match(result, /<blockquote>일반 인용<\/blockquote>/);
 });
 
-test("교안 코드 카드는 줄 사이 줄바꿈 문자를 빈 줄로 보이지 않게 한다", async () => {
+test("교안 코드 카드와 객관식 코드는 줄 사이 줄바꿈 문자를 빈 줄로 보이지 않게 한다", async () => {
   const css = await readFile(new URL("../styles/app.css", import.meta.url), "utf8");
 
   assert.match(css, /\.code-card code\s*\{[^}]*white-space:\s*normal/s);
   assert.match(css, /\.code-card \.code-line\s*\{[^}]*white-space:\s*pre/s);
+  assert.match(css, /\.quiz-code code\s*\{[^}]*white-space:\s*normal/s);
+  assert.match(css, /\.quiz-code \.code-line\s*\{[^}]*white-space:\s*pre/s);
 });
