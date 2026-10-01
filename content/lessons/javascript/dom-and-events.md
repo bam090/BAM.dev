@@ -277,13 +277,8 @@ modal.classList.add("open"); // TypeError
 ## 공식 자료
 
 - [WHATWG DOM Standard](https://dom.spec.whatwg.org/)
-- [MDN: 이벤트 소개](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Events)
 - [MDN: 이벤트 버블링](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Scripting/Event_bubbling)
-- [WHATWG HTML Standard: data-* 속성](https://html.spec.whatwg.org/multipage/dom.html#embedding-custom-non-visible-data-with-the-data-*-attributes)
-- [MDN: FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData)
-- [MDN: textContent](https://developer.mozilla.org/en-US/docs/Web/API/Node/textContent)
 - [WHATWG HTML Standard: 폼 요소](https://html.spec.whatwg.org/multipage/forms.html)
-- [WAI-ARIA: aria-label](https://www.w3.org/TR/wai-aria-1.2/#aria-label)
 
 공식 자료 확인일: 2026-08-18
 

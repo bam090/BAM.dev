@@ -694,14 +694,21 @@ test("전부 보기의 비연속 선택은 해당 카드만 바꾸고 전체 채
   assert.deepEqual(errors, []);
 });
 
-test("하나씩 전체 채점은 미채점 문항을 이동하지만 마지막 미응답 상태에서 결과를 기록하지 않는다", async (t) => {
+test("하나씩 보기는 채점 전에도 이동하고 마지막 미응답 상태에서 결과를 기록하지 않는다", async (t) => {
   browser(t);
   const { app } = harness();
   await app.openReviewRoute("javascript", lesson.id);
   assert.equal(app.quizSession.viewMode, "single");
   assert.equal(app.quizSession.gradingMode, "individual");
+  const firstQuestionId = app.getCurrentQuizQuestion().id;
+  choose(app, "b");
+  assert.match(app.root.innerHTML, /data-quiz-next aria-disabled="false"/);
   app.showNextQuizQuestion();
-  assert.equal(app.quizSession.currentIndex, 0, "기본 개별 채점은 기존 다음 문제 조건을 유지한다.");
+  assert.equal(app.quizSession.currentIndex, 1);
+  assert.equal(app.quizSession.gradedAnswers.size, 0);
+  app.showPreviousQuizQuestion();
+  assert.equal(app.quizSession.currentIndex, 0);
+  assert.equal(app.quizSession.selectedOptionIds.get(firstQuestionId), "b");
   app.setQuizGradingMode("batch");
   choose(app, "b");
   app.showNextQuizQuestion();
@@ -1142,7 +1149,7 @@ test("기존 소유자의 풀이를 새 문서에 연결해도 문항 서명·�
   const { focus } = browser(t);
   for (const [languageId, ownerId, conceptId, questionId, documentId, slug, wrongLessonId, wrongQuestionId] of [
     ["html", "html-01-document-structure", "html.semantics", "quiz-html-semantic-main", "html-notes-semantic-structure", "semantic-structure", "html-notes-media-alternatives", "quiz-html-link-destination"],
-    ["css", "css-foundations-selectors", "css.selectors", "quiz-css-selector-compound-descendant", "css-notes-selectors", "selectors", "css-notes-typography", "quiz-css-unit-inheritance-context"],
+    ["css", "css-foundations-selectors", "css.selectors", "quiz-css-selector-compound-descendant", "css-notes-css-basics", "css-basics", "css-notes-typography", "quiz-css-unit-inheritance-context"],
     ["javascript", "js-notes-values", "js.variables", "quiz-javascript-notes-const-property", "js-concept-variables", "variables", "js-concept-callbacks", "quiz-javascript-notes-sync-callback"],
   ]) {
     const hash = `#/review/${languageId}/${ownerId}?concept=${conceptId}`;
@@ -1253,7 +1260,7 @@ test("Spring 문서 범위는 과정명을 표시하고 Java 전체 범위와 �
   browser(t);
   for (const [hash, title, count] of [
     ["#/review/java/spring-ioc-di?concept=spring.ioc-di", "Spring · Spring Boot", 2],
-    ["#/review/java", "Java", 156],
+    ["#/review/java", "Java", 254],
   ]) {
     window.location.hash = hash;
     const { app, storage, errors } = harness();
@@ -1306,7 +1313,8 @@ test("주제 전체 복습은 Java와 Spring을 분리하고 기존 전체 언�
   for (const [hash, count, topic] of [
     ["#/review/java?topic=java", 64, "java"],
     ["#/review/java?topic=spring", 92, "spring"],
-    ["#/review/java", 156, null],
+    ["#/review/java?topic=algorithm", 98, "algorithm"],
+    ["#/review/java", 254, null],
   ]) {
     window.location.hash = hash;
     const { app, errors } = harness();
@@ -1327,15 +1335,15 @@ test("객관식 목록은 문제 있는 선택 주제에만 정순·랜덤 시�
   browser(t, "#/review");
   const { app, errors } = harness();
   await app.openRoute();
-  for (const [topic, language, count] of [["java", "java", 64], ["spring", "java", 92], ["css", "css", 47]]) {
+  for (const [topic, language, count] of [["java", "java", 64], ["spring", "java", 92], ["css", "css", 47], ["algorithm", "java", 98]]) {
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topic }, disabled: false }));
     const markup = app.root.innerHTML;
     assert.match(markup, new RegExp(`href="#/review/${language}\\?topic=${topic}"`));
     assert.match(markup, new RegExp(`href="#/review/${language}\\?topic=${topic}&amp;order=random"`));
     assert.match(markup, new RegExp(`${count}문제 랜덤으로 풀기`));
   }
-  app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "algorithm" }, disabled: false }));
-  assert.doesNotMatch(app.root.innerHTML, /href="#\/review\/java\?topic=algorithm/);
+  app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "cs" }, disabled: false }));
+  assert.doesNotMatch(app.root.innerHTML, /href="#\/review\/[^" ]+\?topic=cs/);
   assert.deepEqual(errors, []);
 });
 
@@ -1602,5 +1610,22 @@ test("다음 키워드 후보는 공유 카드 정규화와 Java·Spring 주제 
     if (continuation.nextScope) assert.ok(continuation.nextScope.count > 0, hash);
     assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
     assert.deepEqual(errors, [], hash);
+  }
+});
+
+test("개념 발췌가 없는 알고리즘 문서도 소유한 문항으로 가는 복습 버튼을 보여 준다", async (t) => {
+  browser(t);
+  for (const [slug, lessonId, count] of [["queue", "algo-03-queue", 3], ["queue-java", "algo-03-queue-java", 2]]) {
+    window.location.hash = `#/learn/algorithm/${slug}`;
+    const { app, errors } = harness();
+    await app.openRoute();
+    assert.deepEqual(errors, []);
+    assert.doesNotMatch(app.root.innerHTML, /관련 객관식 문제는 아직 준비 중/);
+    const links = [...app.root.innerHTML.matchAll(/<p class="lesson-review-link"><a[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
+    assert.deepEqual(links.map((match) => [match[1], match[2]]), [[`#/review/java/${lessonId}`, "읽은 내용 객관식으로 복습하기"]]);
+    window.location.hash = links[0][1];
+    await app.openRoute();
+    assert.equal(app.quizSession.questions.length, count);
+    assert.ok(app.quizSession.questions.every((question) => question.lessonId === lessonId));
   }
 });

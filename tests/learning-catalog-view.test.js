@@ -17,13 +17,13 @@ test("홈은 학습문서·객관식·Code Quest의 독립 진입을 제공한�
   assert.equal(title.replace(/<[^>]+>/g, "").trim(), "배운 개념이 내 것이 되는 곳.");
   assert.doesNotMatch(title, /<br\b|,/);
   for (const phrase of [
-    "개념을 이해하는 개발 공부", "궁금한 개념은 문서로 읽고 이해한 내용은 문제로 확인하세요.",
+    "개념을 이해하고 직접 사용하면서 학습하는 개발 공부", "궁금한 개념은 문서로 읽고 이해한 내용은 문제로 확인하세요.",
     "지금 필요한 공부부터 바로 시작하세요!", "01 / LEARN", "개념별 학습문서", "주제별 학습문서를 통해",
     "개념을 읽고 예제를 살펴보세요.", "핵심 질문에 내 말로 답해 봅니다.", "02 / PRACTICE",
     "객관식 문제 풀어보기", "얼마나 이해했을까?", "문제를 풀고 선택한 답의 이유를 확인하세요.",
     "헷갈리는 개념은 바로 다시 읽을 수 있어요.", "03 / CODE QUEST", "짧은 코드로 확인하기",
     "배운 개념을 직접 작성하며", "공개된 실행 결과와 피드백으로 이해를 확인하세요.", "4/18개 실행 가능 Quest 완료",
-    "읽고 이해하기", "스스로 답하기", "개념 다시 보기", "나의 속도로, 필요한 만큼",
+    "읽고 이해하기", "스스로 답하기", "개념 다시 보기", "관련 개념문제 직접 풀어보기", "나의 속도로, 필요한 만큼",
   ]) assert.ok(html.includes(phrase), phrase);
   assert.match(html, /href="#\/learn"[^>]*>[\s\S]*?학습문서 읽기/);
   assert.match(html, /href="#\/review"[^>]*>[\s\S]*?객관식 문제 풀기/);
@@ -37,16 +37,16 @@ test("홈은 학습문서·객관식·Code Quest의 독립 진입을 제공한�
 test("문서 목록은 활성 문서만 나열하고 보관 교안의 메타데이터와 깊은 URL은 남긴다", () => {
   const all = getLearningCatalogItems(options);
   assert.equal(curriculum.lessons.length, 213);
-  assert.equal(all.length, 186);
-  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 27);
+  assert.equal(all.length, 177);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 36);
   for (const lesson of curriculum.lessons) {
     assert.equal(all.some((item) => item.href === `#/learn/${lesson.courseId}/${lesson.slug}`), !lesson.archivedFromCatalog, lesson.id);
   }
   const htmlLessons = curriculum.lessons.filter((lesson) => lesson.courseId === "html");
   assert.equal(htmlLessons.filter((lesson) => lesson.archivedFromCatalog).length, 5);
   assert.equal(getLearningCatalogItems({ ...options, topicId: "html" }).length, 15);
-  assert.equal(curriculum.lessons.filter((lesson) => lesson.courseId === "css" && lesson.archivedFromCatalog).length, 6);
-  assert.equal(getLearningCatalogItems({ ...options, topicId: "css" }).length, 20);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.courseId === "css" && lesson.archivedFromCatalog).length, 15);
+  assert.equal(getLearningCatalogItems({ ...options, topicId: "css" }).length, 11);
   const java = getLearningCatalogItems({ ...options, courseId: "java" });
   assert.equal(java.length, 32);
   assert.ok(java.every((item) => !item.sample));
@@ -87,10 +87,12 @@ test("JavaScript 주제는 활성 개념 문서와 runtime을 보여 주고 보�
   assert.ok(getLearningCatalogItems({ ...options, topicId: "java" }).every((item) => !item.href.includes("/algorithm/")));
   const javascriptQuestions = getLearningCatalogItems({ ...options, kind: "review", topicId: "javascript" });
   assert.equal(javascriptQuestions.reduce((sum, item) => sum + item.count, 0), collections.get("javascript").questions.length);
-  assert.equal(getLearningCatalogItems({ ...options, kind: "review", topicId: "algorithm" }).length, 0);
+  const algorithmQuestions = getLearningCatalogItems({ ...options, kind: "review", topicId: "algorithm" });
+  assert.equal(algorithmQuestions.length, 40);
+  assert.equal(algorithmQuestions.reduce((sum, item) => sum + item.count, 0), 98);
 });
 
-test("준비 중 주제와 문제 자료 없는 주제는 제공 중인 카드로 오인되지 않는다", () => {
+test("준비 중 주제는 제공 중인 카드로 오인되지 않고 알고리즘은 실제 문제 수를 보여 준다", () => {
   for (const kind of ["learn", "review"]) {
     const html = renderLearningCatalog({ ...options, kind });
     for (const id of ["cs", "typescript", "react"]) {
@@ -105,13 +107,14 @@ test("준비 중 주제와 문제 자료 없는 주제는 제공 중인 카드�
   }
   const review = renderLearningCatalog({ ...options, kind: "review" });
   const algorithmButton = review.match(/<button\b[^>]*data-catalog-topic="algorithm"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
-  assert.match(algorithmButton, /자료 없음/);
+  assert.match(algorithmButton, /98문제/);
+  assert.doesNotMatch(algorithmButton, /\bdisabled\b|자료 없음/);
   assert.doesNotMatch(review, /class="catalog-card"/);
 });
 
 test("공유 키워드와 소유별 문제 묶음은 모든 언어의 문항을 정확히 한 번 집계한다", () => {
   const items = getLearningCatalogItems({ ...options, kind: "review" });
-  assert.equal(items.reduce((sum, item) => sum + item.count, 0), 284);
+  assert.equal(items.reduce((sum, item) => sum + item.count, 0), 382);
   for (const [languageId, collection] of collections) {
     const questionIds = items.filter((item) => item.href.split("?")[0].split("/")[2] === languageId).flatMap((item) => {
       const [route, query] = item.href.split("?");

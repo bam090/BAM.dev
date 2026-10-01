@@ -255,7 +255,6 @@ const wrong = [1, 2].map((number) => {
 - [MDN: 인덱스 기반 컬렉션](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Indexed_collections)
 - [MDN: 객체 다루기](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Working_with_objects)
 - [MDN: 표준 내장 객체](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects)
-- [MDN: JSON.stringify()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify)
 
 공식 자료 확인일: 2026-08-18
 

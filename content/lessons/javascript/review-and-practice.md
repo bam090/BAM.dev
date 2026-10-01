@@ -330,8 +330,6 @@ function renderTodos(todos) { /* DOM 출력 */ }
 ## 공식 자료
 
 - [MDN: JavaScript 안내서](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide)
-- [MDN: String.prototype.includes()](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/includes)
-- [MDN: HTTP GET 메서드](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Methods/GET)
 - [WHATWG DOM Standard](https://dom.spec.whatwg.org/)
 - [WHATWG Fetch Standard](https://fetch.spec.whatwg.org/)
 

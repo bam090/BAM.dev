@@ -667,7 +667,7 @@
       "slug": "readable-overflow",
       "revision": 1,
       "order": 6,
-      "lessonId": "css-notes-overflow",
+      "lessonId": "css-notes-display",
       "conceptIds": [
         "css.overflow"
       ],

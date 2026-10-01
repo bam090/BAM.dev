@@ -65,8 +65,6 @@ DB에서 찾은 회원은 어떻게 비밀번호 인증에 사용되나요? 먼�
 - [DaoAuthenticationProvider의 인증 흐름](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/dao-authentication-provider.html)
 - [Spring Data JPA 조회 메서드](https://docs.spring.io/spring-data/jpa/reference/jpa/query-methods.html)
 - [UserDetailsService의 조회 책임](https://docs.spring.io/spring-security/reference/servlet/authentication/passwords/user-details-service.html)
-- [UserDetailsService API](https://docs.spring.io/spring-security/reference/api/java/org/springframework/security/core/userdetails/UserDetailsService.html)
-- [Spring Security 비밀번호 저장과 검증](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html)
 
 2026-09-14 공식 문서를 확인해 승인된 범위에서 밤데브용으로 새로 작성했습니다. Spring Security 7.1.1·Spring Boot 4.1.1·Spring Data JPA 4.1.1·Jakarta Persistence 3.2·Java 25 정식 기준의 정적 읽기 자료입니다. Hibernate 구현체를 언급하는 부분은 Boot 관리 버전 7.4.5.Final을 기준으로 구분하며, 코드·SQL·DB·Spring 앱을 실행한 결과는 아닙니다.
 

@@ -2143,22 +2143,6 @@ export class BamLearningApp {
       this.root.querySelector('[data-quest-course][aria-pressed="true"]')?.focus({ preventScroll: true });
       return;
     }
-    const questTopic = event.target.closest("[data-quest-topic]");
-    if (questTopic && this.currentView === "quest-catalog") {
-      this.codeQuestCatalogFilters.topicId = questTopic.dataset.questTopic;
-      this.codeQuestCatalogNotice = "";
-      this.renderCodeQuestCatalog();
-      this.root.querySelector('[data-quest-topic][aria-pressed="true"]')?.focus({ preventScroll: true });
-      return;
-    }
-    const questStatus = event.target.closest("[data-quest-status]");
-    if (questStatus && this.currentView === "quest-catalog") {
-      this.codeQuestCatalogFilters.status = questStatus.dataset.questStatus;
-      this.codeQuestCatalogNotice = "";
-      this.renderCodeQuestCatalog();
-      this.root.querySelector('[data-quest-status][aria-pressed="true"]')?.focus({ preventScroll: true });
-      return;
-    }
     if (event.target.closest("[data-quest-catalog-reset]") && this.currentView === "quest-catalog") {
       this.codeQuestCatalogFilters = {
         ...this.codeQuestCatalogFilters,
@@ -2265,6 +2249,14 @@ export class BamLearningApp {
     if (sidebarTopic) {
       const kind = this.currentView.startsWith("review") ? "review" : "learn";
       this.openSidebarCatalog(kind, sidebarTopic.value || null);
+      return;
+    }
+    if (this.currentView === "quest-catalog" && event.target.matches("[data-quest-topic], [data-quest-status]")) {
+      const isTopic = event.target.matches("[data-quest-topic]");
+      this.codeQuestCatalogFilters[isTopic ? "topicId" : "status"] = event.target.value;
+      this.codeQuestCatalogNotice = "";
+      this.renderCodeQuestCatalog();
+      this.root.querySelector(isTopic ? "[data-quest-topic]" : "[data-quest-status]")?.focus({ preventScroll: true });
       return;
     }
     const quizLesson = event.target.closest("[data-quiz-lesson]");
@@ -2723,8 +2715,33 @@ export class BamLearningApp {
     return false;
   }
 
+  openReviewScopeDialog(opener) {
+    const dialog = this.root.querySelector("#review-scope-dialog");
+    if (!dialog?.showModal) return;
+    const isBackdrop = (event) => {
+      const bounds = dialog.getBoundingClientRect();
+      return event.target === dialog && (
+        event.clientX < bounds.left || event.clientX > bounds.right ||
+        event.clientY < bounds.top || event.clientY > bounds.bottom
+      );
+    };
+    let pointerStartedOutside = false;
+    dialog.onpointerdown = (event) => { pointerStartedOutside = isBackdrop(event); };
+    dialog.onclick = (event) => {
+      if (pointerStartedOutside && isBackdrop(event)) dialog.close();
+      pointerStartedOutside = false;
+    };
+    dialog.onclose = () => { if (opener.isConnected) opener.focus({ preventScroll: true }); };
+    dialog.showModal();
+    dialog.querySelector("[data-review-scope-close]")?.focus({ preventScroll: true });
+  }
+
   handleQuizClick(event) {
     if (this.currentView !== "review") return false;
+    const scopeOpen = event.target.closest("[data-review-scope-open]");
+    if (scopeOpen) { this.openReviewScopeDialog(scopeOpen); return true; }
+    const scopeClose = event.target.closest("[data-review-scope-close]");
+    if (scopeClose) { scopeClose.closest("dialog")?.close(); return true; }
     const questionRetryButton = event.target.closest("[data-quiz-question-retry]");
     if (questionRetryButton) {
       this.retryCurrentQuizQuestion(questionRetryButton);
@@ -2979,10 +2996,7 @@ export class BamLearningApp {
 
   showNextQuizQuestion() {
     const question = this.getCurrentQuizQuestion();
-    if (!question || (this.quizSession.gradingMode !== "batch" && !this.quizSession.gradedAnswers.has(question.id))) {
-      this.announce("정답을 확인한 뒤 다음 문제로 이동할 수 있습니다.");
-      return;
-    }
+    if (!question) return;
 
     if (this.quizSession.currentIndex < this.quizSession.questions.length - 1) {
       this.quizSession.returnContext = null;
@@ -4477,9 +4491,10 @@ export class BamLearningApp {
       ? [...new Set(lesson.objectives)].filter((objective) => !overview.objectives.includes(objective.trim()))
       : [];
 
+    // 교안 첫머리에 학습 목표가 있으면 그 절만 보여 준다. 메타데이터 summary는 목록 카드와 요약 창에 쓴다.
     const summaryHtml = overview.summary
       ? renderMarkdown(overview.summary, { preserveParagraphLineBreaks: true })
-      : lesson.summary ? `<p>${escapeHtml(lesson.summary)}</p>` : "";
+      : lesson.summary && !overview.objectives ? `<p>${escapeHtml(lesson.summary)}</p>` : "";
     const summaryIsObjective = [overview.objectives, ...metadataObjectives]
       .some((objective) => objective.trim() === (overview.summary || lesson.summary || "").trim());
     const prerequisiteHtml = renderMarkdown(prerequisite.section, { preserveParagraphLineBreaks: true });
@@ -4513,6 +4528,10 @@ export class BamLearningApp {
       mergedTitles.add(link.title);
       return [{ ...link, href: buildReviewHash(lesson.languageId, lesson.id) }];
     });
+    // 개념 발췌가 없는 과정(알고리즘)도 이 문서가 소유한 문항이 있으면 문서 전체 문제로 연결한다.
+    if (!reviewButtons.length && relatedQuestions.some((question) => question.lessonId === lesson.id)) {
+      reviewButtons.push({ title: "읽은 내용", href: buildReviewHash(lesson.languageId, lesson.id) });
+    }
     const reviewLinkHtml = lesson.answerHeading
       ? reviewButtons.length
         ? reviewButtons.map((link) => `<p class="lesson-review-link"><a class="button button--primary" href="${escapeHtml(link.href)}">${escapeHtml(link.title)} 객관식으로 복습하기</a></p>`).join("")

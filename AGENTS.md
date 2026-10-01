@@ -7,6 +7,7 @@
 3. 학습 교안의 저작·승인 범위는 [`docs/lesson-authoring.md`](docs/lesson-authoring.md#저작과-관리-책임-경계), 학습 경험 변경은 [`docs/learning-content-design.md`](docs/learning-content-design.md)를 따른다. `learning_document_manager`는 접수·출처·ID·링크·상태와 검증 인계를 맡으며 교육 내용 보완은 권한을 받은 작성자에게 반환한다.
 4. UI 색상·theme·focus·상태 표현은 [`docs/designs/visual-design.md`](docs/designs/visual-design.md), Code Quest·코딩테스트·설치형 앱·외부 웹과제는 각각 [`docs/designs/code-quest.md`](docs/designs/code-quest.md), [`docs/designs/coding-test.md`](docs/designs/coding-test.md), [`docs/designs/local-application.md`](docs/designs/local-application.md), [`docs/designs/web-assignments.md`](docs/designs/web-assignments.md)의 관련 절을 읽는다.
 5. 제품 코드·실행 경계를 바꾸면 [`docs/architecture.md`](docs/architecture.md), 콘텐츠 형식·연결을 바꾸면 [`docs/content-schema.md`](docs/content-schema.md)와 해당 작성 가이드를 확인한다.
+6. BAM.dev의 한국어 글을 생성·수정할 때는 [`docs/lesson-authoring.md`](docs/lesson-authoring.md#한국어-작성-공통-기준)의 fluent-korean 적용 범위와 명시 문체 우선순위를 따른다.
 
 bam의 최신 명시적 지시가 먼저다. 현재 상태를 판단할 때는 실행 가능한 저장소 사실이 서술 문서보다 우선하고, 정책을 판단할 때는 효력이 유지되는 `[확정 결정]`만 의무 규칙으로 취급한다. `[대체됨]`은 최신 결정이 연결된 이력이며 현재 gate가 아니다. `[제안]`은 해당 결정 전까지 설계 초안이며 완료 gate로 강제하지 않는다. 목표 설계를 현재 구현 완료로 표현하지 않고, 충돌은 `[현재 사실]`, `[확정 결정]`, `[대체됨]`, `[제안]`, `[추론]`, `[확인 필요]`로 구분한다.
 
