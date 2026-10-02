@@ -10,7 +10,7 @@ new로 만든 객체의 행동 테스트와 컨테이너의 등록·주입 테�
 
 ## 먼저 확인할 개념
 
-[객체 연결과 DI](#/learn/spring/ioc-di) · [Java 테스트 도구](#/learn/java/wiki-test-tools)
+[객체 연결과 DI](#/learn/spring/ioc-di) · [Java 테스트 도구](#/learn/java/wiki-test-contracts)
 
 ## 검사 대상이 지나가는 경로를 본다
 

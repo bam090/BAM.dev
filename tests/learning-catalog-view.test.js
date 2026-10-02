@@ -142,7 +142,7 @@ test("Security·JPA를 포함한 Spring 문서 46개·92문항은 Java 주제와
   for (const kind of ["learn", "review"]) {
     const java = getLearningCatalogItems({ ...options, kind, topicId: "java" });
     const spring = getLearningCatalogItems({ ...options, kind, topicId: "spring" });
-    assert.equal(kind === "learn" ? java.length : java.reduce((sum, item) => sum + item.count, 0), kind === "learn" ? 32 : 64);
+    assert.equal(kind === "learn" ? java.length : java.reduce((sum, item) => sum + item.count, 0), kind === "learn" ? 21 : 64);
     assert.equal(kind === "learn" ? spring.length : spring.reduce((sum, item) => sum + item.count, 0), kind === "learn" ? 46 : 92);
     assert.ok(spring.every((item) => item.topicId === "spring" && item.href.startsWith(kind === "learn" ? "#/learn/spring/" : "#/review/java/spring-")));
     assert.ok(java.every((item) => !spring.some((candidate) => candidate.href === item.href)));

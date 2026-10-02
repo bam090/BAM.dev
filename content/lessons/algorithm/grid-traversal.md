@@ -10,7 +10,7 @@ Java에서는 `ArrayList`를 겹쳐 인접 리스트를 만들고 `ArrayDeque`�
 
 ## 먼저 확인할 개념
 
-[그래프와 BFS·DFS](#/learn/algorithm/bfs-dfs-graph-grid) · [큐: 먼저 온 순서대로 꺼내는 자료구조](#/learn/algorithm/queue) · [순서 있는 List의 크기와 삭제](#/learn/java/wiki-lists) · [Deque로 큐와 스택 사용하기](#/learn/java/wiki-deque)
+[그래프와 BFS·DFS](#/learn/algorithm/bfs-dfs-graph-grid) · [큐: 먼저 온 순서대로 꺼내는 자료구조](#/learn/algorithm/queue) · [순서 있는 List의 크기와 삭제](#/learn/java/wiki-lists) · [Deque로 큐와 스택 사용하기](#/learn/java/wiki-lists)
 
 ## Java로 인접 리스트 구현
 

@@ -108,7 +108,7 @@ test("HTML·CSS 객관식은 모든 문항을 같은 언어의 교안·개념과
   }
 });
 
-test("Java 정적 학습은 32개 개념 문서와 64문항을 제공하고 기존 샘플의 ID·URL을 보존한다", async () => {
+test("Java 정적 학습은 활성 21개 문서와 64문항을 제공하고 기존 샘플의 ID·URL을 보존한다", async () => {
   const language = curriculum.languages.find((item) => item.id === "java");
   const lessons = getLessonsForCourse(curriculum, "java");
   const quiz = JSON.parse(
@@ -121,7 +121,7 @@ test("Java 정적 학습은 32개 개념 문서와 64문항을 제공하고 기�
   assert.equal(lessons[0].id, "java-01-types-methods");
   assert.equal(lessons[0].slug, "types-and-methods");
   assert.equal(lessons[0].archivedFromCatalog, true);
-  assert.equal(lessons.filter((lesson) => !lesson.archivedFromCatalog).length, 32);
+  assert.equal(lessons.filter((lesson) => !lesson.archivedFromCatalog).length, 21);
   assert.equal(quiz.questions.filter((question) => lessons.some((lesson) => lesson.id === question.lessonId)).length, 64);
   assert.equal(quiz.questions[0].id, "quiz-java-method-return");
   assert.equal(quiz.questions[0].lessonId, "java-01-types-methods");

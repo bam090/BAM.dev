@@ -11,7 +11,7 @@ Java에서 스택은 `Deque<E> stack = new ArrayDeque<>()`로 만들고 `push`·
 
 ## 먼저 확인할 개념
 
-[스택: 나중에 넣은 것부터 꺼내기](#/learn/algorithm/stack-and-queue) · [Deque로 큐와 스택 사용하기](#/learn/java/wiki-deque) · [예외 처리와 전달](#/learn/java/wiki-exceptions)
+[스택: 나중에 넣은 것부터 꺼내기](#/learn/algorithm/stack-and-queue) · [Deque로 큐와 스택 사용하기](#/learn/java/wiki-lists) · [예외 처리와 전달](#/learn/java/wiki-exceptions)
 
 ## ArrayDeque란
 
