@@ -355,15 +355,16 @@ test("탐색 사이드바 검색과 Escape는 풀이 DOM·선택·해설·저장
 });
 
 test("탐색 사이드바는 실제 주제의 가까운 문서와 성공한 최근 방문 두 개만 보여 준다", async (t) => {
-  browser(t, "#/learn/html/wiki-document-skeleton");
+  browser(t, "#/learn/html/wiki-markup");
   const { app, errors } = harness();
   await app.openRoute();
   const nearby = app.root.innerHTML.match(/<nav aria-label="HTML 문서 바로가기">[\s\S]*?<\/nav>/)?.[0] ?? "";
   assert.deepEqual([...nearby.matchAll(/href="([^"]+)"/g)].map((match) => match[1]), [
-    "#/learn/html/wiki-markup", "#/learn/html/wiki-document-skeleton", "#/learn/html/wiki-semantic-structure",
-    "#/learn/html/wiki-links-buttons", "#/learn/html/wiki-image-alternatives",
+    "#/learn/html/wiki-markup", "#/learn/html/wiki-semantic-structure",
+    "#/learn/html/wiki-links-buttons", "#/learn/html/wiki-image-alternatives", "#/learn/html/wiki-lists",
   ]);
-  assert.match(nearby, /href="#\/learn\/html\/wiki-document-skeleton" aria-current="page"/);
+  assert.match(nearby, /href="#\/learn\/html\/wiki-markup" aria-current="page"/);
+  assert.doesNotMatch(nearby, /wiki-document-skeleton/, "보관 문서는 가까운 활성 문서 목록에 섞이지 않는다.");
   for (const slug of ["wiki-markup", "wiki-semantic-structure", "wiki-document-skeleton"]) {
     window.location.hash = `#/learn/html/${slug}`;
     await app.openRoute();
@@ -385,7 +386,7 @@ test("탐색 사이드바는 실제 주제의 가까운 문서와 성공한 최�
   app.handleClick(click("[data-sidebar-catalog]", { dataset: { sidebarCatalog: "learn" } }));
   await app.openRoute();
   assert.equal(window.location.hash, "#/learn");
-  assert.match(app.root.innerHTML, /HTML · 15개 문서/);
+  assert.match(app.root.innerHTML, /HTML · 9개 문서/);
   app.handleChange({ target: { closest: (selector) => selector === "[data-sidebar-topic]" ? { value: "css" } : null } });
   const main = app.root.innerHTML.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0] ?? "";
   assert.deepEqual(app.catalogFilters.learn, { topicId: "css", query: "" });
@@ -431,9 +432,10 @@ test("알고리즘만 키워드 선택 뒤 문서 카드를 열고 검색은 선
 
 test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를 선택하고 이전 검색을 비운다", async (t) => {
   browser(t);
-  for (const [topicId, documentHash, hasPreviousReview] of [
+  for (const [topicId, documentHash, hasPreviousReview, archived = false] of [
     ["html", null, false],
-    ["html", "#/learn/html/wiki-document-skeleton", true],
+    ["html", "#/learn/html/wiki-markup", true],
+    ["html", "#/learn/html/wiki-document-skeleton", true, true],
     ["css", "#/learn/css/wiki-css-basics", true],
     ["html", null, true],
   ]) {
@@ -449,10 +451,13 @@ test("탐색 사이드바 객관식 전환은 읽던 문서·목록의 주제를
     await followService(app, "learn");
     app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: topicId }, disabled: false }));
     if (documentHash) {
-      assert.ok(app.root.innerHTML.includes(`class="catalog-card" href="${documentHash}"`));
+      assert.equal(app.root.innerHTML.includes(`class="catalog-card" href="${documentHash}"`), !archived, "활성 문서만 목록에 노출하고 보관 URL은 직접 열 수 있다.");
       assert.doesNotMatch(app.root.innerHTML, /data-catalog-keyword=/);
       window.location.hash = documentHash;
       await app.openRoute();
+      assert.equal(app.currentView, "lesson");
+      assert.equal(app.currentLesson.slug, documentHash.split("/").at(-1));
+      assert.equal(Boolean(app.currentLesson.archivedFromCatalog), archived);
     }
     if (!hasPreviousReview) assert.equal(app.quizCollections.size, 0, "첫 객관식 진입은 문제 목록을 미리 불러오지 않아도 된다.");
     await followService(app, "review");
