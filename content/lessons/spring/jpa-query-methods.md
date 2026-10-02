@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[Repository로 생성·조회·삭제 요청하기](#/learn/spring/jpa-repository-crud) · [엔티티와 식별자 매핑](#/learn/spring/jpa-entity-id)
+[Repository로 생성·조회·삭제 요청하기](#/learn/spring/jpa-repository-crud) · [테이블 키와 엔티티 식별자](#/learn/spring/jpa-table-keys)
 
 ## 저장 열과 Java 속성 이름 구분하기
 

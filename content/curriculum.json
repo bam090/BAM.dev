@@ -3267,16 +3267,20 @@
       "courseId": "javascript",
       "order": 18,
       "slug": "wiki-object-sharing",
-      "title": "같은 객체의 공유와 재대입",
-      "summary": "객체 대입은 같은 객체를 공유할 수 있지만 한 변수나 매개변수의 재대입이 다른 이름까지 바꾸지는 않습니다.",
-      "essentialQuestion": "한쪽 변경이 언제 다른 쪽에서도 보이나요?",
+      "title": "객체 공유와 얕은 복사",
+      "summary": "같은 객체의 속성 변경은 공유되지만 재대입은 그 이름만 바꾸며, 얕은 복사 뒤에는 바뀔 중첩 경로까지 새로 만들어야 원본을 보존합니다.",
+      "essentialQuestion": "객체를 공유하거나 복사한 뒤, 한쪽 변경이 어디까지 전달되고 원본을 보존하려면 무엇을 새로 만들어야 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "같은 객체를 공유하는 이름을 찾고 속성 변경과 변수 재대입이 전달되는 범위를 구분할 수 있습니다."
+        "같은 객체의 공유와 변수·매개변수 재대입을 구분해 변경이 보이는 범위를 설명할 수 있습니다.",
+        "객체·배열의 얕은 복사 뒤에 새로 생긴 대상과 계속 공유되는 중첩 객체를 찾을 수 있습니다.",
+        "원본을 보존해야 하는 조건에서 바뀌는 경로의 객체만 새로 만들 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "js.object-identity"
+        "js.object-identity",
+        "js.shallow-copy",
+        "js.object-sharing"
       ],
       "contentFile": "content/lessons/javascript/wiki-object-sharing.md",
       "source": {
@@ -3314,7 +3318,8 @@
         "sha256": "12705d4f8a535d8c47afcc08eca010e6ffc0c624c2c9d0fb631a61d940e5aa09",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-concept-scope-hoisting",
@@ -3457,16 +3462,19 @@
       "courseId": "javascript",
       "order": 25,
       "slug": "wiki-event-delegation",
-      "title": "이벤트 대상과 위임",
-      "summary": "target에서 시작해 담당 요소를 찾고, currentTarget과 포함 관계를 확인하면 부모 리스너로 자식의 동작을 처리할 수 있습니다.",
-      "essentialQuestion": "버튼 안의 글자를 눌러도 부모 리스너가 올바른 버튼을 어떻게 찾나요?",
+      "title": "이벤트 대상·위임과 기본 동작",
+      "summary": "target에서 담당 요소를 찾아 부모 리스너로 처리하고, 기본 동작 취소와 이벤트 전파 중단을 따로 선택합니다.",
+      "essentialQuestion": "목록 안의 클릭을 부모에서 처리할 때, 누른 대상과 취소할 브라우저 동작을 어떻게 구분하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "안쪽 요소에서 발생한 이벤트를 부모에서 받고 담당 버튼과 데이터 ID를 안전하게 찾을 수 있습니다."
+        "target과 currentTarget을 구분하고 closest·포함 관계·데이터 ID 검사로 담당 요소를 찾을 수 있습니다.",
+        "나중에 추가한 항목의 버블링하는 이벤트를 부모 리스너 하나로 처리할 수 있습니다.",
+        "기본 동작을 취소할 때와 다른 리스너의 실행을 막을 때를 구분하고 실제 취소 여부를 확인할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "web.event-delegation"
+        "web.event-delegation",
+        "web.event-defaults"
       ],
       "contentFile": "content/lessons/javascript/wiki-event-delegation.md",
       "source": {
@@ -3503,7 +3511,8 @@
         "sha256": "165e138a12883e07244d8138d2d08330bb2ffe85e9e23d44c4dc653eeb3e490c",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-concept-errors-input",
@@ -3611,7 +3620,8 @@
         "sha256": "100ab9179962654d71a0d95b4b44ded8a90492be30dec85083850c6b841806a4",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "js-concept-async-await",
@@ -3619,16 +3629,19 @@
       "courseId": "javascript",
       "order": 31,
       "slug": "wiki-async-await",
-      "title": "async·await로 비동기 결과 기다리기",
-      "summary": "async·await는 Promise의 결과가 도착할 때까지 기다렸다가 다음 줄을 실행하게 해 주는 문법입니다.",
-      "essentialQuestion": "async 함수의 결과와 실패는 호출한 쪽에서 어떻게 받아야 하나요?",
+      "title": "Promise와 async·await의 결과 연결",
+      "summary": "Promise의 결과와 콜백 반환을 따라 다음 단계를 연결하며, async·await는 같은 결과를 기다리고 실패를 처리하는 흐름을 순서대로 표현합니다.",
+      "essentialQuestion": "나중에 도착하는 값과 실패를 Promise의 then이나 async·await로 다음 단계와 호출자에게 어떻게 연결하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "async 함수에서 await로 비동기 결과를 기다리고 실패를 try·catch로 처리할 수 있습니다."
+        "Promise의 상태와 executor·반응 콜백의 실행 시점을 구분할 수 있습니다.",
+        "then 콜백의 반환값·Promise·오류가 다음 단계로 이어지는 과정을 설명할 수 있습니다.",
+        "async 함수가 반환하는 Promise를 await하거나 catch로 받아 결과와 실패를 처리할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "js.async-failures"
+        "js.async-failures",
+        "js.promise"
       ],
       "contentFile": "content/lessons/javascript/wiki-async-await.md",
       "source": {
@@ -4876,21 +4889,25 @@
       "languageId": "java",
       "order": 6,
       "slug": "boot-start",
-      "title": "Spring Boot 시작점 읽기",
-      "summary": "main이 Boot 시작을 요청하고, 설정·자동구성·컴포넌트 탐색으로 애플리케이션 컨텍스트를 준비합니다.",
-      "essentialQuestion": "main에서 SpringApplication.run은 무엇을 시작할까요?",
+      "title": "Spring Boot 시작점과 컴포넌트 탐색",
+      "summary": "Boot는 시작 클래스를 바탕으로 컨텍스트를 준비하며 기본 컴포넌트 탐색은 그 클래스의 패키지와 하위 패키지에서 시작합니다.",
+      "essentialQuestion": "시작 클래스는 어떤 객체를 발견하며 웹 서버는 언제 시작되나요?",
       "objectives": [
-        "SpringApplication.run과 @SpringBootApplication의 역할을 나누고 웹 서버 시작의 조건을 설명할 수 있습니다."
+        "SpringApplication.run이 주 구성 클래스와 실행 인수로 컨텍스트를 시작하는 역할을 설명할 수 있습니다.",
+        "SpringBootApplication의 주 구성·자동구성·컴포넌트 탐색 역할을 구분할 수 있습니다.",
+        "웹 라이브러리와 환경을 보고 웹 서버 시작의 조건을 설명할 수 있습니다.",
+        "시작 패키지를 기준으로 컴포넌트 탐색 범위를 판정하고 Java import와 Bean 등록을 구분할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.boot-start"
+        "spring.boot-start",
+        "spring.component-scan"
       ],
       "contentFile": "content/lessons/spring/boot-start.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -4899,21 +4916,25 @@
       "languageId": "java",
       "order": 7,
       "slug": "starters",
-      "title": "Starter와 의존성 버전",
-      "summary": "Starter는 용도에 맞는 라이브러리 묶음이며, Boot의 의존성 관리는 함께 사용할 버전을 맞춥니다.",
-      "essentialQuestion": "starter 하나를 추가하면 무엇이 함께 준비될까요?",
+      "title": "Starter와 자동구성",
+      "summary": "Starter는 필요한 라이브러리를 묶고 의존성 관리는 버전을 맞추며 자동구성은 준비된 조건에 따라 기본 설정을 선택합니다.",
+      "essentialQuestion": "라이브러리 선택은 어떤 조건부 기본 구성으로 이어지나요?",
       "objectives": [
-        "필요한 기능의 starter를 선택하고 Boot 의존성 관리가 버전 선택을 돕는 이유를 설명할 수 있습니다."
+        "필요한 HTTP 처리와 입력 검증에 맞는 starter를 선택할 수 있습니다.",
+        "Starter의 라이브러리 묶음과 Boot 의존성 관리의 버전 선택을 구분할 수 있습니다.",
+        "라이브러리·기존 Bean·설정 조건에 따른 자동구성을 설명할 수 있습니다.",
+        "직접 등록한 Bean이 해당 기본 구성의 적용 조건을 바꾸는 이유를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.starters"
+        "spring.starters",
+        "spring.auto-configuration"
       ],
       "contentFile": "content/lessons/spring/starters.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -4937,7 +4958,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-component-scan",
@@ -4960,7 +4982,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-external-config",
@@ -4968,21 +4991,25 @@
       "languageId": "java",
       "order": 10,
       "slug": "external-config",
-      "title": "외부 설정과 @ConfigurationProperties",
-      "summary": "외부 설정은 같은 코드를 다른 값으로 사용할 수 있게 하며 여러 출처의 우선순위가 적용됩니다.",
-      "essentialQuestion": "코드가 같아도 실행할 때 설정값을 바꿀 수 있을까요?",
+      "title": "외부 설정과 Profile",
+      "summary": "외부 설정의 출처 우선순위와 활성 Profile의 조건을 함께 확인해야 실제 값과 Bean 구성을 설명할 수 있습니다.",
+      "essentialQuestion": "현재 환경에 어떤 설정값과 Bean이 적용되나요?",
       "objectives": [
-        "같은 설정 키의 출처 우선순위를 적용하고 접두사별 값을 타입에 묶는 방법을 설명할 수 있습니다."
+        "같은 설정 키의 출처 우선순위를 적용해 최종 값을 판정할 수 있습니다.",
+        "ConfigurationProperties의 접두사 바인딩과 타입 등록 조건을 설명할 수 있습니다.",
+        "활성 profile에 따라 적용되는 설정 파일을 판정할 수 있습니다.",
+        "Profile의 Bean 포함 조건과 설정값 보호의 책임을 구분할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.external-config"
+        "spring.external-config",
+        "spring.profiles"
       ],
       "contentFile": "content/lessons/spring/external-config.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5006,7 +5033,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-mvc-flow",
@@ -5037,21 +5065,25 @@
       "languageId": "java",
       "order": 13,
       "slug": "request-mapping",
-      "title": "경로와 HTTP 메서드 매핑",
-      "summary": "요청 매핑은 URL 경로뿐 아니라 GET·POST 같은 HTTP 메서드도 함께 비교합니다.",
-      "essentialQuestion": "같은 URL이면 GET과 POST도 같은 메서드를 부를까요?",
+      "title": "요청 매핑과 경로·쿼리 입력",
+      "summary": "경로와 HTTP 메서드로 처리 대상을 고른 뒤 입력 위치에 맞는 어노테이션으로 값을 읽고 Java 타입으로 변환합니다.",
+      "essentialQuestion": "요청은 어느 메서드로 연결되고 경로와 쿼리 값은 어떻게 전달되나요?",
       "objectives": [
-        "클래스와 메서드의 경로를 결합하고 HTTP 메서드 조건까지 적용해 요청 대상을 판정할 수 있습니다."
+        "클래스와 메서드 경로를 결합하고 HTTP 메서드까지 비교해 요청 대상을 판정할 수 있습니다.",
+        "경로 변수와 쿼리·폼 값을 해당 메서드 인수에 연결할 수 있습니다.",
+        "필수 파라미터 누락과 defaultValue 적용 조건을 구분할 수 있습니다.",
+        "매핑 실패와 타입 변환 실패 및 변환 후 범위 판단을 구분할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.request-mapping"
+        "spring.request-mapping",
+        "spring.request-parameters"
       ],
       "contentFile": "content/lessons/spring/request-mapping.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5075,7 +5107,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-request-body",
@@ -5083,21 +5116,25 @@
       "languageId": "java",
       "order": 15,
       "slug": "request-body",
-      "title": "@RequestBody로 JSON 요청 본문 받기",
-      "summary": "@RequestBody는 메시지 변환기를 통해 HTTP 본문을 지정한 Java 타입으로 읽습니다.",
-      "essentialQuestion": "JSON 본문은 어떻게 컨트롤러 인수가 될까요?",
+      "title": "JSON 요청 본문과 검증",
+      "summary": "RequestBody로 본문을 Java 값으로 읽은 뒤 검증 구현과 Valid를 통해 값의 제약을 검사합니다.",
+      "essentialQuestion": "JSON 본문을 읽은 뒤 값이 허용되는지는 어떻게 판단하나요?",
       "objectives": [
-        "JSON 본문을 @RequestBody로 받는 흐름과 Content-Type 조건의 역할을 설명할 수 있습니다."
+        "RequestBody가 메시지 변환기로 JSON 본문을 Java 타입으로 읽는 흐름을 설명할 수 있습니다.",
+        "Content-Type과 consumes의 요청 형식 조건을 Accept와 produces의 응답 형식 조건과 구분할 수 있습니다.",
+        "DTO 제약과 Valid 및 검증 구현을 연결해 객체 검증의 적용 조건을 설명할 수 있습니다.",
+        "본문 변환 실패와 값 제약 위반 및 업무 조건 실패를 구분할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.request-body"
+        "spring.request-body",
+        "spring.validation"
       ],
       "contentFile": "content/lessons/spring/request-body.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5106,21 +5143,25 @@
       "languageId": "java",
       "order": 16,
       "slug": "responses",
-      "title": "응답 본문과 상태 코드",
-      "summary": "@RestController는 반환값을 응답 본문으로 연결하고 ResponseEntity는 상태와 헤더도 지정합니다.",
-      "essentialQuestion": "반환 문자열은 화면 이름일까요, 응답 본문일까요?",
+      "title": "응답과 예외 처리",
+      "summary": "정상 반환과 알려진 업무 예외를 각각 HTTP 상태와 본문으로 표현하고 여러 컨트롤러의 공통 정책은 Advice로 묶습니다.",
+      "essentialQuestion": "성공과 알려진 업무 실패를 HTTP 상태와 본문으로 어떻게 표현하나요?",
       "objectives": [
-        "반환값을 본문으로 처리하는 방식과 ResponseEntity의 상태·헤더·본문 역할을 구분할 수 있습니다."
+        "Controller의 문자열 뷰 이름과 ResponseBody·RestController의 본문 반환을 구분할 수 있습니다.",
+        "ResponseEntity의 HTTP 상태·헤더·본문 역할을 구분할 수 있습니다.",
+        "알려진 업무 예외를 의미에 맞는 상태와 응답 본문으로 표현할 수 있습니다.",
+        "개별 ExceptionHandler와 공통 Advice의 적용 범위 및 내부 정보 노출 경계를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.responses"
+        "spring.responses",
+        "spring.exception-handling"
       ],
       "contentFile": "content/lessons/spring/responses.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5144,7 +5185,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-exception-handling",
@@ -5167,7 +5209,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-unit-tests",
@@ -5175,21 +5218,25 @@
       "languageId": "java",
       "order": 19,
       "slug": "unit-tests",
-      "title": "객체 테스트와 Spring 연결 테스트",
-      "summary": "new로 만든 객체의 행동 테스트와 컨테이너의 등록·주입 테스트는 서로 다른 근거를 제공합니다.",
-      "essentialQuestion": "서비스를 new해서 테스트하면 Bean 연결까지 확인한 걸까요?",
+      "title": "객체·컨텍스트·MVC 테스트",
+      "summary": "검사하려는 행동과 구성에 맞춰 객체 직접 호출과 컨텍스트 연결 및 MVC 요청 경로를 구분합니다.",
+      "essentialQuestion": "객체·컨텍스트·MVC 테스트는 각각 어떤 경로를 확인하나요?",
       "objectives": [
-        "직접 생성한 객체 테스트가 확인하는 행동과 Spring 컨텍스트를 거쳐야 확인할 구성을 구별할 수 있습니다."
+        "직접 생성한 객체의 행동 검사와 Spring 컨텍스트의 구성 연결 검사를 구분할 수 있습니다.",
+        "컨트롤러 직접 호출과 MockMvc의 MVC 요청 경로를 비교할 수 있습니다.",
+        "WebMvcTest와 SpringBootTest 기본 MOCK의 검사 범위를 설명할 수 있습니다.",
+        "통과한 테스트가 실제 서버와 브라우저 통신까지 확인했는지 근거의 한계를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "spring.unit-tests"
+        "spring.unit-tests",
+        "spring.mvc-tests"
       ],
       "contentFile": "content/lessons/spring/unit-tests.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5213,7 +5260,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-security-authentication-authorization",
@@ -5244,21 +5292,25 @@
       "languageId": "java",
       "order": 22,
       "slug": "security-filter-chain",
-      "title": "SecurityFilterChain과 보안 필터 흐름",
-      "summary": "보안 필터는 MVC 앞에서 요청을 검사하며, 처음 일치한 SecurityFilterChain의 필터들을 적용합니다.",
-      "essentialQuestion": "컨트롤러가 실행되지 않았는데 보안 응답이 나오는 이유는 무엇일까요?",
+      "title": "보안 필터 체인과 요청 인가",
+      "summary": "처음 일치한 보안 체인을 선택하고 그 체인 안에서는 선언 순서에서 처음 맞는 요청 인가 규칙을 적용합니다.",
+      "essentialQuestion": "요청에 어떤 보안 체인과 인가 규칙이 적용되나요?",
       "objectives": [
-        "요청에 적용되는 보안 체인과 컨트롤러 전에 멈추는 지점을 설명할 수 있습니다."
+        "요청에 처음 일치하는 SecurityFilterChain과 컨트롤러 전에 멈추는 지점을 설명할 수 있습니다.",
+        "securityMatcher의 체인 범위와 requestMatchers의 인가 조건을 구분할 수 있습니다.",
+        "HTTP 메서드·경로·선언 순서로 처음 적용할 인가 규칙을 선택할 수 있습니다.",
+        "체인 미일치와 앞 규칙에 가려진 관리 경로 및 permitAll 이후 남는 보안 조건을 찾을 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "spring.security-filter-chain"
+        "spring.security-filter-chain",
+        "spring.security-request-rules"
       ],
       "contentFile": "content/lessons/spring/security-filter-chain.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5282,7 +5334,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-security-form-login",
@@ -5290,21 +5343,25 @@
       "languageId": "java",
       "order": 24,
       "slug": "security-form-login",
-      "title": "로그인 폼이 인증으로 이어지는 과정",
-      "summary": "로그인 화면은 입력을 받고, 인증 필터와 인증 제공자는 전달된 자격 증명을 확인합니다.",
-      "essentialQuestion": "로그인 폼을 보여 주는 일과 자격 증명을 확인하는 일은 어떻게 다를까요?",
+      "title": "폼 로그인과 비밀번호 검증",
+      "summary": "폼의 자격 증명을 읽은 뒤 사용자 정보를 조회하고 PasswordEncoder로 입력 비밀번호와 저장값을 대조합니다.",
+      "essentialQuestion": "조회한 사용자 정보와 저장된 비밀번호로 어떻게 인증하나요?",
       "objectives": [
-        "기본 폼의 요청 형식과 사용자 조회·비밀번호 대조 역할을 구분할 수 있습니다."
+        "기본 로그인 화면과 POST 폼의 요청 형식을 구분할 수 있습니다.",
+        "UserDetailsService의 조회와 DaoAuthenticationProvider의 비밀번호 대조 역할을 설명할 수 있습니다.",
+        "salt 때문에 달라지는 저장 문자열을 equals 대신 PasswordEncoder.matches로 대조할 수 있습니다.",
+        "단방향 비밀번호 저장과 알고리즘 식별자 보존 및 코드·로그 노출 경계를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "spring.security-form-login"
+        "spring.security-form-login",
+        "spring.security-password-storage"
       ],
       "contentFile": "content/lessons/spring/security-form-login.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5328,7 +5385,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-security-session-logout",
@@ -5520,21 +5578,25 @@
       "languageId": "java",
       "order": 34,
       "slug": "jpa-table-keys",
-      "title": "기본키와 외래키: 행 식별과 테이블 연결",
-      "summary": "기본키는 한 행을 구별하고 외래키는 다른 표의 행을 연결합니다.",
-      "essentialQuestion": "같은 이름의 회원과 그 회원의 주문은 어떤 값으로 구별하고 연결하나요?",
+      "title": "테이블 키와 엔티티 식별자",
+      "summary": "테이블의 기본키로 행을 식별하고 외래키로 연결하며 엔티티 매핑과 Id로 Java 객체의 저장 계약을 표시합니다.",
+      "essentialQuestion": "테이블 행을 구별하는 키를 Java 엔티티에 어떻게 표시하나요?",
       "objectives": [
-        "표의 행·열·기본키·외래키를 읽고 이름이 같은 회원을 구별할 수 있습니다."
+        "테이블의 행·열·기본키를 읽고 이름이 같은 회원을 구별할 수 있습니다.",
+        "외래키로 연결할 회원을 찾고 실제 DB 제약과 표시값을 구분할 수 있습니다.",
+        "Entity·Id·Table·Column을 코드에서 찾아 Java 상태와 DB 매핑을 설명할 수 있습니다.",
+        "엔티티의 무인자 생성자·비 final 요구와 객체 생성만으로 저장이 완료되지 않는 경계를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "spring.jpa-table-keys"
+        "spring.jpa-table-keys",
+        "spring.jpa-entity-id"
       ],
       "contentFile": "content/lessons/spring/jpa-table-keys.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5558,7 +5620,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-jpa-repository-crud",
@@ -5589,21 +5652,25 @@
       "languageId": "java",
       "order": 37,
       "slug": "jpa-context-states",
-      "title": "영속성 컨텍스트와 엔티티 상태",
-      "summary": "영속성 컨텍스트는 엔티티를 관리하며 DB에 행이 있다는 사실과 객체가 관리된다는 사실은 다릅니다.",
-      "essentialQuestion": "같은 ID를 다시 읽는 것과 객체의 관리가 끝나는 것은 어떻게 다른가요?",
+      "title": "영속성 상태와 save",
+      "summary": "객체의 관리 상태와 save의 신규 판정을 나누어 읽고 분리된 상태를 merge할 때는 반환된 관리 객체를 이어서 사용합니다.",
+      "essentialQuestion": "객체의 관리 상태와 save 결과에 따라 이후 변경은 어느 객체에 적용하나요?",
       "objectives": [
-        "new·managed·detached·removed 상태와 한 컨텍스트의 식별자별 관리 원칙을 구분할 수 있습니다."
+        "new·managed·detached·removed의 엔티티 상태를 구분할 수 있습니다.",
+        "한 컨텍스트의 식별자별 관리 원칙과 detach·clear·remove의 차이를 설명할 수 있습니다.",
+        "save의 Version·ID 기본 신규 판정과 Persistable 등의 별도 판정 조건을 구분할 수 있습니다.",
+        "persist와 merge를 비교하고 분리된 입력 대신 merge가 반환한 관리 객체를 이어서 사용할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "spring.jpa-context-states"
+        "spring.jpa-context-states",
+        "spring.jpa-save-merge"
       ],
       "contentFile": "content/lessons/spring/jpa-context-states.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5627,7 +5694,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-jpa-transactions",
@@ -5635,21 +5703,25 @@
       "languageId": "java",
       "order": 39,
       "slug": "jpa-transactions",
-      "title": "트랜잭션 안에서 변경 감지하기",
-      "summary": "쓰기 트랜잭션의 관리 엔티티 변경은 감지되며 여러 저장소 요청은 업무 단위로 묶어야 합니다.",
-      "essentialQuestion": "조회한 회원의 이름만 바꾸면 언제 저장 변경으로 이어지나요?",
+      "title": "트랜잭션과 flush",
+      "summary": "쓰기 트랜잭션의 관리 객체 변경을 감지해 flush로 DB와 동기화하며 commit이나 rollback으로 작업을 확정하거나 취소합니다.",
+      "essentialQuestion": "관리 객체의 변경은 언제 DB와 동기화되고 확정되나요?",
       "objectives": [
-        "활성 쓰기 트랜잭션·관리 상태에서 변경 감지를 설명하고 서비스 작업 단위의 경계를 고를 수 있습니다."
+        "함께 성공할 저장소 작업에 서비스의 트랜잭션 경계를 정할 수 있습니다.",
+        "활성 쓰기 트랜잭션에서 관리 엔티티의 변경 감지를 설명할 수 있습니다.",
+        "flush 동기화와 commit 확정 및 rollback을 구분할 수 있습니다.",
+        "실제 프록시 호출·readOnly·실패 규칙과 DB 제약 오류 시점을 확인할 이유를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "spring.jpa-transactions"
+        "spring.jpa-transactions",
+        "spring.jpa-flush-commit"
       ],
       "contentFile": "content/lessons/spring/jpa-transactions.md",
       "answerHeading": "핵심 질문 답",
       "source": {
         "kind": "bam-authored",
-        "verifiedAt": "2026-09-14"
+        "verifiedAt": "2026-10-02"
       }
     },
     {
@@ -5673,7 +5745,8 @@
       "source": {
         "kind": "bam-authored",
         "verifiedAt": "2026-09-14"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-jpa-relations",

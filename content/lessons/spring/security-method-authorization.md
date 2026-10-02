@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[DI(의존성 주입): 필요한 객체를 외부에서 받기](#/learn/spring/ioc-di) · [요청 인가: 경로·HTTP 메서드별 접근 규칙](#/learn/spring/security-request-rules)
+[DI(의존성 주입): 필요한 객체를 외부에서 받기](#/learn/spring/ioc-di) · [요청 인가: 경로·HTTP 메서드별 접근 규칙](#/learn/spring/security-filter-chain)
 
 ## URL 밖에서도 업무 행동을 보호한다
 

@@ -128,7 +128,7 @@ test("Java 정적 학습은 활성 21개 문서와 64문항을 제공하고 기�
   assert.deepEqual(validateQuizCollection(quiz, curriculum), []);
 });
 
-test("Spring은 Security·JPA를 포함한 46개 정적 교안·92문항을 기존 Java 컬렉션에 연결한다", async () => {
+test("Spring은 기존 46개 ID와 92문항을 보존하고 정적 교안 34개를 목록에 제공한다", async () => {
   const course = curriculum.courses.find((item) => item.id === "spring");
   assert.equal(course?.categoryId, "spring");
   assert.equal(course?.languageId, "java");
@@ -142,11 +142,12 @@ test("Spring은 Security·JPA를 포함한 46개 정적 교안·92문항을 기�
   assert.equal(lessons.length, 46);
   assert.deepEqual(lessons.map((lesson) => lesson.order), Array.from({ length: 46 }, (_, index) => index + 1));
   assert.equal(quiz.questions.length, 254);
+  assert.equal(lessons.filter((lesson) => !lesson.archivedFromCatalog).length, 34);
+  assert.equal(lessons.filter((lesson) => lesson.archivedFromCatalog).length, 12);
   for (const lesson of lessons) {
     assert.equal(lesson.id, `spring-${lesson.slug}`);
     assert.equal(lesson.contentFile, `content/lessons/spring/${lesson.slug}.md`);
     assert.equal(lesson.languageId, "java");
-    assert.equal(Boolean(lesson.archivedFromCatalog), false);
     assert.equal(lesson.source.kind, "bam-authored");
     for (const field of ["originalPath", "sha256", "importedAt", "importMode"]) assert.equal(Object.hasOwn(lesson.source, field), false, `${lesson.id}: ${field}`);
     assert.ok(lesson.conceptIds.every((id) => id.startsWith("spring.")), lesson.id);

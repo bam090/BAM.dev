@@ -37,8 +37,8 @@ test("홈은 학습문서·객관식·Code Quest의 독립 진입을 제공한�
 test("문서 목록은 활성 문서만 나열하고 보관 교안의 메타데이터와 깊은 URL은 남긴다", () => {
   const all = getLearningCatalogItems(options);
   assert.equal(curriculum.lessons.length, 213);
-  assert.equal(all.length, 160);
-  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 53);
+  assert.equal(all.length, 145);
+  assert.equal(curriculum.lessons.filter((lesson) => lesson.archivedFromCatalog).length, 68);
   for (const lesson of curriculum.lessons) {
     assert.equal(all.some((item) => item.href === `#/learn/${lesson.courseId}/${lesson.slug}`), !lesson.archivedFromCatalog, lesson.id);
   }
@@ -75,7 +75,7 @@ test("JavaScript 주제는 활성 개념 문서와 runtime을 보여 주고 보�
   const javascript = getLearningCatalogItems({ ...options, topicId: "javascript" });
   assert.deepEqual(javascript.map((item) => item.href).sort(), javascriptLessons.map((lesson) => `#/learn/${lesson.courseId}/${lesson.slug}`).sort());
   assert.ok(javascript.some((item) => item.href.startsWith("#/learn/javascript/")));
-  assert.equal(javascript.length, 33);
+  assert.equal(javascript.length, 30);
   assert.ok(javascript.every((item) => !item.href.startsWith("#/learn/javascript-notes/")));
   assert.ok(javascript.some((item) => item.href === "#/learn/javascript/javascript-and-runtime"));
   assert.ok(javascript.every((item) => !item.href.includes("/algorithm/")));
@@ -138,12 +138,12 @@ test("공유 키워드와 소유별 문제 묶음은 모든 언어의 문항을 
   }
 });
 
-test("Security·JPA를 포함한 Spring 문서 46개·92문항은 Java 주제와 나뉘고 같은 Java 언어 URL을 쓴다", () => {
+test("Security·JPA를 포함한 Spring 활성 문서 34개·92문항은 Java 주제와 나뉘고 같은 Java 언어 URL을 쓴다", () => {
   for (const kind of ["learn", "review"]) {
     const java = getLearningCatalogItems({ ...options, kind, topicId: "java" });
     const spring = getLearningCatalogItems({ ...options, kind, topicId: "spring" });
     assert.equal(kind === "learn" ? java.length : java.reduce((sum, item) => sum + item.count, 0), kind === "learn" ? 21 : 64);
-    assert.equal(kind === "learn" ? spring.length : spring.reduce((sum, item) => sum + item.count, 0), kind === "learn" ? 46 : 92);
+    assert.equal(kind === "learn" ? spring.length : spring.reduce((sum, item) => sum + item.count, 0), kind === "learn" ? 34 : 92);
     assert.ok(spring.every((item) => item.topicId === "spring" && item.href.startsWith(kind === "learn" ? "#/learn/spring/" : "#/review/java/spring-")));
     assert.ok(java.every((item) => !spring.some((candidate) => candidate.href === item.href)));
     for (const [query, slug] of [
@@ -152,7 +152,8 @@ test("Security·JPA를 포함한 Spring 문서 46개·92문항은 Java 주제와
       ["spring.jpa-query-methods", "jpa-query-methods"],
     ]) {
       const matched = getLearningCatalogItems({ ...options, kind, topicId: "spring", query });
-      const expectedHref = kind === "learn" ? `#/learn/spring/${slug}` : `#/review/java/spring-${slug}?concept=spring.${slug}`;
+      const documentSlug = slug === "component-scan" ? "boot-start" : slug;
+      const expectedHref = kind === "learn" ? `#/learn/spring/${documentSlug}` : `#/review/java/spring-${slug}?concept=spring.${slug}`;
       assert.ok(matched.some((item) => item.href === expectedHref), `${kind}: ${query}`);
       assert.deepEqual(getLearningCatalogItems({ ...options, kind, topicId: "java", query }), []);
       assert.deepEqual(getLearningCatalogItems({ ...options, kind, query }), matched);
@@ -160,7 +161,7 @@ test("Security·JPA를 포함한 Spring 문서 46개·92문항은 Java 주제와
     const html = renderLearningCatalog({ ...options, kind, filters: { topicId: "spring" } });
     const button = html.match(/<button\b[^>]*data-catalog-topic="spring"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
     assert.match(button, /Spring · Spring Boot/);
-    assert.match(button, kind === "learn" ? /46개 문서/ : /92문제/);
+    assert.match(button, kind === "learn" ? /34개 문서/ : /92문제/);
     if (kind === "learn") {
       assert.match(html, /class="catalog-card"/);
       assert.doesNotMatch(html, /data-catalog-keyword=/);

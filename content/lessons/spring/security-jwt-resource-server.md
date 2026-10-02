@@ -10,7 +10,7 @@ JWT 내용을 읽는 것과 신뢰하는 것은 다르며, 검증 후에도 요�
 
 ## 먼저 확인할 개념
 
-[OAuth 2.0과 OIDC의 역할](#/learn/spring/security-oauth2-oidc) · [요청 인가: 경로·HTTP 메서드별 접근 규칙](#/learn/spring/security-request-rules)
+[OAuth 2.0과 OIDC의 역할](#/learn/spring/security-oauth2-oidc) · [요청 인가: 경로·HTTP 메서드별 접근 규칙](#/learn/spring/security-filter-chain)
 
 ## 읽을 수 있는 내용이 곧 증거는 아니다
 

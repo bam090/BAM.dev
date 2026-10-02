@@ -343,7 +343,7 @@ test("Spring의 명시 직접답과 선수 링크를 읽고 CSS·Spring 활성 �
   const { concepts } = JSON.parse(await readFile(new URL("../content/review-concepts.json", import.meta.url), "utf8"));
   const collections = new Map(await Promise.all(["css", "java"].map(async (id) => [id, JSON.parse(await readFile(new URL(`../content/quizzes/${id}.json`, import.meta.url), "utf8"))])));
   const lessons = curriculum.lessons.filter((lesson) => ["css", "spring"].includes(lesson.courseId) && !lesson.archivedFromCatalog);
-  assert.equal(lessons.length, 57);
+  assert.equal(lessons.length, 45);
   for (const lesson of lessons) {
     const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
     const app = createLessonApp(false);

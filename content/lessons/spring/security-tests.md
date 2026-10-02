@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[MockMvc로 확인하는 MVC 테스트 범위](#/learn/spring/mvc-tests) · [@PreAuthorize로 서비스 메서드 인가하기](#/learn/spring/security-method-authorization) · [쿠키 인증과 CSRF 방어](#/learn/spring/security-csrf) · [JWT를 받는 API의 검증](#/learn/spring/security-jwt-resource-server)
+[MockMvc로 확인하는 MVC 테스트 범위](#/learn/spring/unit-tests) · [@PreAuthorize로 서비스 메서드 인가하기](#/learn/spring/security-method-authorization) · [쿠키 인증과 CSRF 방어](#/learn/spring/security-csrf) · [JWT를 받는 API의 검증](#/learn/spring/security-jwt-resource-server)
 
 ## 무엇을 통과시키고 무엇을 실패시킬까
 
