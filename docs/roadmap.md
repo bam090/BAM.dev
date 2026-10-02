@@ -402,12 +402,14 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 
 `[현재 사실]` 기존 복습 UI는 유지 중이다. 새 모름·헷갈림·문제별 영구 기록은 보관 정책과 브라우저 writer·backup 호환 계약이 남은 `[제안]`이다.
 
+`[현재 사실]` 2026-10-02 전체 객관식 작업 절이 같은 설계 파일에 추가되어 PR #45의 첫 CI에서 범위 파일 해시 불일치가 발생했습니다. 현재 블록은 참조 파일의 해시만 동기화합니다. 이전 해시는 `78ba18fcbea7a318a18548a3e7cd167a3ab3c8444ee5261a69ded3b7c45562f1`이며 문제별 기록 제안의 범위·선행조건·`REVIEW-HISTORY-v1`과 미착수 상태는 유지합니다. 전체 객관식 검증을 이 제안의 승인·구현·검증 증거로 옮기지 않습니다.
+
 ```workflow-state
 {
   "version": 1,
   "id": "review-history",
   "scopeRevision": "REVIEW-HISTORY-v1",
-  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "78ba18fcbea7a318a18548a3e7cd167a3ab3c8444ee5261a69ded3b7c45562f1" }],
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "96075352ebca28304a5b56d54250eeb1866a617136ef1bbb241a203ec7a0d4b6" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
