@@ -10,7 +10,7 @@ DB 회원 조회 결과를 UserDetails로 연결하고 비밀번호 검증은 Sp
 
 ## 먼저 확인할 개념
 
-[조회 메서드 이름과 JPQL](#/learn/spring/jpa-query-methods) · [트랜잭션 안에서 변경 감지하기](#/learn/spring/jpa-transactions) · [폼 로그인과 인증 정보 조회](#/learn/spring/security-form-login) · [비밀번호 저장과 검증](#/learn/spring/security-password-storage)
+[조회 메서드 이름과 JPQL](#/learn/spring/jpa-query-methods) · [트랜잭션 안에서 변경 감지하기](#/learn/spring/jpa-transactions) · [폼 로그인과 비밀번호 검증](#/learn/spring/security-form-login)
 
 ## 저장된 회원에서 인증용 정보로
 

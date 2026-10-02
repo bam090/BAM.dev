@@ -10,7 +10,7 @@ Repository의 타입 계약과 조회 결과의 빈 상태를 읽으면 기본 �
 
 ## 먼저 확인할 개념
 
-[엔티티와 식별자 매핑](#/learn/spring/jpa-entity-id)
+[엔티티와 식별자 매핑](#/learn/spring/jpa-table-keys)
 
 ## 엔티티와 키 타입을 함께 약속하기
 

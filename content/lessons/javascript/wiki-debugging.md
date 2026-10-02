@@ -80,7 +80,7 @@ console.log(label); // "연필: 21개"
 
 ## 이어서 연습하기
 
-[Promise 상태와 반환 연결](#/learn/javascript/wiki-promise-chain)에서 다음 판단을 이어 보세요.
+[Promise와 async·await의 결과 연결](#/learn/javascript/wiki-async-await)에서 다음 판단을 이어 보세요.
 이 문서의 핵심 질문에 답한 뒤 아래 객관식 문제에서 선택의 이유를 확인해 보세요.
 
 ## 공식 자료

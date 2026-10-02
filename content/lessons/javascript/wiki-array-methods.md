@@ -118,7 +118,7 @@ console.log(sameIngredients[0] === pantry[0]); // true
 ```
 
 두 배열은 다르지만 그 안의 첫 객체는 같은 객체다.
-참조 공유와 복사 범위는 [얕은 복사](#/learn/javascript/wiki-shallow-copy)에서 이어서 설명한다.
+참조 공유와 복사 범위는 [객체 공유와 얕은 복사](#/learn/javascript/wiki-object-sharing)에서 이어서 설명한다.
 
 ## 선택에 필요한 정보를 먼저 보존하기
 

@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[Promise 상태와 반환 연결](#/learn/javascript/wiki-promise-chain)를 먼저 확인하면 이어지는 흐름을 읽기 쉽습니다.
+[Promise와 async·await의 결과 연결](#/learn/javascript/wiki-async-await)를 먼저 확인하면 이어지는 흐름을 읽기 쉽습니다.
 
 ## 어떤 일은 나중에 끝난다
 

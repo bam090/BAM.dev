@@ -11,6 +11,12 @@ import { JAVA_MERGED_INTO, JAVA_MERGED_TARGET_IDS } from "./fixtures/java-merged
 const load = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
 const curriculum = await load("../content/curriculum.json");
 const { concepts } = await load("../content/review-concepts.json");
+const JS_MERGED_INTO = {
+  "js-concept-shallow-copy": "js-concept-object-sharing",
+  "js-concept-event-defaults": "js-concept-event-delegation",
+  "js-concept-promise-chain": "js-concept-async-await",
+};
+const JS_MERGED_TARGET_IDS = new Set(Object.values(JS_MERGED_INTO));
 const REWRITTEN_LESSON_IDS = new Set(["js-concept-async-await"]);
 const contracts = [
   {
@@ -39,8 +45,8 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
       assert.equal(lesson.order, contract.firstOrder + index);
       assert.equal(lesson.slug, `wiki-${key}`);
       assert.equal(lesson.contentFile, `content/lessons/${contract.language}/wiki-${key}.md`);
-      assert.equal(Boolean(lesson.archivedFromCatalog), Object.hasOwn(JAVA_MERGED_INTO, lesson.id), lesson.id);
-      if (!JAVA_MERGED_TARGET_IDS.has(lesson.id)) assert.equal(lesson.objectives.length, 1);
+      assert.equal(Boolean(lesson.archivedFromCatalog), Object.hasOwn(contract.language === "javascript" ? JS_MERGED_INTO : JAVA_MERGED_INTO, lesson.id), lesson.id);
+      if (!JAVA_MERGED_TARGET_IDS.has(lesson.id) && !JS_MERGED_TARGET_IDS.has(lesson.id)) assert.equal(lesson.objectives.length, 1);
       assert.ok(lesson.objectives.length > 0);
       assert.ok(lesson.objectives[0].trim());
       assert.ok(lesson.summary.trim());
@@ -59,7 +65,7 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
       }
       const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
       const overview = splitLessonOverview(markdown);
-      if (JAVA_MERGED_TARGET_IDS.has(lesson.id)) {
+      if (JAVA_MERGED_TARGET_IDS.has(lesson.id) || JS_MERGED_TARGET_IDS.has(lesson.id)) {
         const objectives = overview.objectives.split("\n").filter((line) => line.startsWith("- ")).map((line) => line.slice(2).replaceAll("`", ""));
         assert.deepEqual(objectives, lesson.objectives, `${lesson.id}: 목표 불일치`);
       } else {
@@ -76,7 +82,7 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
         assert.equal(target?.courseId, parsed.courseId, hash);
         assert.equal(target?.slug, parsed.slug, hash);
       }
-      const documentId = JAVA_MERGED_INTO[lesson.id] ?? lesson.id;
+      const documentId = (contract.language === "javascript" ? JS_MERGED_INTO : JAVA_MERGED_INTO)[lesson.id] ?? lesson.id;
       const mappings = concepts.filter((concept) => getReviewDocumentLesson(curriculum, concept)?.id === documentId);
       assert.ok(collection.questions.some((question) => mappings.some((concept) => concept.lessonId === question.lessonId && concept.id === question.conceptId)), `${lesson.id}: 풀 수 있는 관련 문항 없음`);
     }
