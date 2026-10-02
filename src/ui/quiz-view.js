@@ -39,7 +39,7 @@ function renderRecentProgress(recentAttempt, incorrectQuestionCount) {
   const percent = total === 0 ? 0 : Math.round((score / total) * 100);
   return `
     <div class="review-history" aria-label="최근 복습 기록">
-      <span>최근 결과 <strong>${score}/${total} (${percent}%)</strong></span>
+      <span>최근 ${recentAttempt.languageName ? `${escapeHtml(recentAttempt.languageName)} ` : ""}결과 <strong>${score}/${total} (${percent}%)</strong></span>
       ${incorrectCopy}
     </div>
   `;
@@ -352,7 +352,7 @@ export function renderQuizQuestionView({
         ${scopeControls}
         ${renderQuestionHeader({ languageName, title, currentIndex: safeIndex, total: safeTotal, answeredCount, recentAttempt, incorrectQuestionCount, showRecentProgress: !scopeControls, sessionMode, viewMode, randomOrder, modeControls: renderQuizModeControls({ viewMode, gradingMode, pendingCount, unansweredCount }) })}
         <div class="quiz-question-list${viewMode === "all" ? " is-all-view" : ""}">
-          ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId, languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope, canRetry: state.canRetry ?? canRetryQuestions })).join("")}
+          ${visibleStates.map((state) => renderQuizQuestionCard({ ...state, languageId: state.languageId ?? languageId, languageName: state.languageName ?? languageName, total: safeTotal, answeredCount, viewMode, gradingMode, hasNextScope, nextScope, canRetry: state.canRetry ?? canRetryQuestions })).join("")}
         </div>
         ${viewMode === "all" ? `<div class="quiz-list-result">${gradingMode === "batch" ? `<button class="button button--primary" id="quiz-check-all-end" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status-end" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항</p>` : ""}<button class="button button--primary" type="button" data-quiz-finish${answeredCount === safeTotal ? "" : " disabled"}>${hasNextScope ? "다음 문제" : "결과 보기"}</button><p>${safeTotal > 0 && answeredCount === safeTotal ? getCompletedScopeMessage(hasNextScope, nextScope) : "모든 문제를 채점한 뒤 이어갈 수 있습니다."}</p></div>` : ""}
       </div>

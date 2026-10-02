@@ -1634,3 +1634,158 @@ test("개념 발췌가 없는 알고리즘 문서도 소유한 문항으로 가�
     assert.ok(app.quizSession.questions.every((question) => question.lessonId === lessonId));
   }
 });
+
+test("전체 객관식은 네 원본 컬렉션의 고유 문항을 모으고 목록에 정순·랜덤 진입을 제공한다", async (t) => {
+  browser(t, "#/review");
+  const collections = await Promise.all(["html", "css", "javascript", "java"].map(async (id) =>
+    JSON.parse(await readFile(new URL(`../content/quizzes/${id}.json`, import.meta.url), "utf8"))));
+  const expected = collections.flatMap((collection) => collection.questions);
+  assert.equal(new Set(expected.map((question) => question.id)).size, expected.length);
+  const { app, errors } = harness();
+  await app.openRoute();
+  for (const selectAll of [false, true]) {
+    if (selectAll) app.handleClick(click("[data-catalog-topic]", { dataset: { catalogTopic: "all" }, disabled: false }));
+    assert.match(app.root.innerHTML, /href="#\/review\/all\?topic=all"/);
+    assert.match(app.root.innerHTML, /href="#\/review\/all\?topic=all&amp;order=random"/);
+    assert.ok(app.root.innerHTML.includes(`${expected.length}문제`), "수량은 현재 콘텐츠에서 계산한다.");
+  }
+  window.location.hash = "#/review/all?topic=all";
+  await app.openRoute();
+  assert.deepEqual(errors, []);
+  assert.deepEqual(app.quizSession.questions.map((question) => question.id).sort(), expected.map((question) => question.id).sort());
+  for (const question of app.quizSession.questions) {
+    assert.deepEqual(question, expected.find((item) => item.id === question.id), "집계는 원본 문항·선택지·정답을 바꾸지 않는다.");
+  }
+});
+
+test("전체 랜덤 복습은 혼합 언어의 코드·교안 링크와 저장된 순서·답·채점을 복원한다", async (t) => {
+  browser(t, "#/review/all?topic=all&order=random");
+  const { app, storage, errors } = harness();
+  const originalRandom = Math.random;
+  Math.random = () => 0;
+  try { await app.openRoute(); } finally { Math.random = originalRandom; }
+  assert.deepEqual(errors, []);
+  const ids = app.quizSession.questions.map((question) => question.id);
+  const canonicalIds = app.getScopedQuizQuestions().map((question) => question.id);
+  assert.deepEqual([...ids].sort(), [...canonicalIds].sort());
+  assert.notDeepEqual(ids, canonicalIds);
+  for (const languageId of ["html", "css", "javascript", "java"]) {
+    const index = app.quizSession.questions.findIndex((question) => question.code &&
+      curriculum.lessons.find((item) => item.id === question.lessonId)?.languageId === languageId);
+    assert.ok(index >= 0, languageId);
+    app.quizSession.currentIndex = index;
+    app.renderQuiz();
+    const question = app.quizSession.questions[index];
+    const owner = curriculum.lessons.find((item) => item.id === question.lessonId);
+    const language = curriculum.languages.find((item) => item.id === languageId);
+    assert.ok(app.root.innerHTML.includes(`aria-label="${language.name} 문제 코드"`), `${languageId}: 전체 범위 이름을 코드 언어로 쓰지 않는다.`);
+    assert.ok(app.root.innerHTML.includes(`id="quiz-related-concept-${question.id}"`), question.id);
+    const dialog = {
+      setAttribute() {}, addEventListener() {}, querySelector() { return { focus() {} }; },
+      showModal() {}, close() {}, remove() {},
+    };
+    document.createElement = () => dialog;
+    document.body = { classList: { add() {}, remove() {} } };
+    app.root.append = () => {};
+    app.openConceptOverlay({ id: `quiz-related-concept-${question.id}`, closest() { return null; } });
+    const concept = concepts.find((item) => item.id === question.conceptId && item.lessonId === owner.id);
+    const target = curriculum.lessons.find((item) => item.id === concept?.documentLessonId) ?? owner;
+    assert.ok(dialog.innerHTML.includes(`href="#/learn/${target.courseId}/${target.slug}"`), question.id);
+    choose(app, question.options[0].id);
+    app.gradeCurrentQuizQuestion();
+  }
+  app.setQuizViewMode("all");
+  app.setQuizGradingMode("batch");
+  app.saveReviewSession();
+  const saved = JSON.parse(storage.getItem(REVIEW_SESSION_STORAGE_KEY)).activeSession;
+  assert.deepEqual(saved.scope, { languageId: "all", lessonId: null, conceptId: null, topicId: "all", order: "random" });
+  const restored = harness(storage);
+  await restored.app.openRoute();
+  assert.deepEqual(restored.errors, []);
+  assert.deepEqual(restored.app.quizSession.questions.map((question) => question.id), ids);
+  assert.deepEqual(restored.app.quizSession.selectedOptionIds, app.quizSession.selectedOptionIds);
+  assert.deepEqual(restored.app.quizSession.gradedAnswers, app.quizSession.gradedAnswers);
+  assert.equal(restored.app.quizSession.viewMode, "all");
+  assert.equal(restored.app.quizSession.gradingMode, "batch");
+  assert.doesNotMatch(restored.app.root.innerHTML, /class="language-all"/);
+  window.location.hash = "#/review/all?topic=all";
+  const ordered = harness(storage);
+  await ordered.app.openRoute();
+  assert.deepEqual(ordered.errors, []);
+  assert.deepEqual(ordered.app.quizSession.questions.map((question) => question.id), canonicalIds);
+  assert.equal(ordered.app.quizSession.selectedOptionIds.size, 0, "정순은 랜덤 풀이와 다른 범위다.");
+});
+
+test("전체 복습 완료는 실제 언어별 기록을 한 번씩 저장하고 복구 뒤 중복 기록하지 않는다", async (t) => {
+  browser(t, "#/review/all?topic=all");
+  const { app, storage, errors } = harness();
+  app.progressRepository.setLessonCompleted("js-notes-values", true);
+  await app.openRoute();
+  assert.deepEqual(errors, []);
+  // 기존 공개 채점기를 사용해 전체 문항을 채점하고 완료 저장 경계를 확인한다.
+  app.quizSession.gradingMode = "batch";
+  for (const question of app.quizSession.questions) {
+    app.quizSession.selectedOptionIds.set(question.id, question.options.find((option) => option.isCorrect).id);
+  }
+  app.gradePendingQuizQuestions();
+  app.finishQuizSession();
+  assert.equal(app.quizSession.screen, "result");
+  assert.equal(app.quizSession.persistenceStatus, "memory", "테스트 MemoryStorage의 저장 상태를 유지한다.");
+  const attempts = app.progressRepository.getProgress().quizAttempts;
+  assert.deepEqual(attempts.map((attempt) => attempt.languageId).sort(), ["css", "html", "java", "javascript"]);
+  assert.deepEqual(attempts.flatMap((attempt) => attempt.answers.map((answer) => answer.questionId)).sort(),
+    app.quizSession.questions.map((question) => question.id).sort());
+  for (const attempt of attempts) {
+    assert.ok(attempt.answers.every((answer) => curriculum.lessons.find((item) => item.id === answer.lessonId)?.languageId === attempt.languageId));
+    assert.equal(attempt.score, attempt.total);
+  }
+  const saved = storage.getItem(PROGRESS_STORAGE_KEY);
+  const restored = harness(storage);
+  await restored.app.openRoute();
+  assert.deepEqual(restored.errors, []);
+  restored.app.finishQuizSession();
+  assert.equal(restored.app.quizSession.screen, "result");
+  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved);
+  assert.deepEqual(restored.app.progressRepository.getProgress().completedLessonIds, ["js-notes-values"]);
+  assert.equal(restored.app.quizSession.summary.total, app.quizSession.questions.length, "현재 전체 완료 결과는 언어별 최근 기록으로 축소하지 않는다.");
+  const latest = attempts.at(-1);
+  const languageName = curriculum.languages.find((item) => item.id === latest.languageId).name;
+  assert.ok(restored.app.root.innerHTML.includes(`최근 ${languageName} 결과`), "최근 요약은 실제 언어별 기록임을 표시한다.");
+  restored.app.showRecentQuizResult();
+  assert.ok(restored.app.root.innerHTML.includes(`${languageName} · 최근 완료 결과`));
+  assert.equal(restored.app.quizSession.summary.total, latest.total);
+  assert.deepEqual(restored.app.quizSession.questions.map((question) => question.id).sort(), latest.answers.map((answer) => answer.questionId).sort());
+  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved, "최근 결과 조회는 완료 기록을 추가하지 않는다.");
+});
+
+test("전체 복습 분할 저장이 중간에 실패하면 이미 저장한 기록을 보존하고 자동 중복 저장하지 않는다", async (t) => {
+  browser(t, "#/review/all?topic=all");
+  const { app, storage, errors } = harness();
+  await app.openRoute();
+  assert.deepEqual(errors, []);
+  app.quizSession.gradingMode = "batch";
+  for (const question of app.quizSession.questions) {
+    app.quizSession.selectedOptionIds.set(question.id, question.options.find((option) => option.isCorrect).id);
+  }
+  app.gradePendingQuizQuestions();
+  const record = app.progressRepository.recordQuizAttempt.bind(app.progressRepository);
+  let calls = 0;
+  app.progressRepository.recordQuizAttempt = (attempt) => {
+    calls += 1;
+    if (calls === 2) throw new Error("simulated storage failure");
+    return record(attempt);
+  };
+  app.finishQuizSession();
+  assert.equal(calls, 2);
+  assert.equal(app.quizSession.persistenceStatus, "failed");
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 1);
+  const saved = storage.getItem(PROGRESS_STORAGE_KEY);
+  app.finishQuizSession();
+  assert.equal(calls, 2, "실패 직후 완료를 다시 눌러도 먼저 저장한 언어를 중복 기록하지 않는다.");
+  const restored = harness(storage);
+  await restored.app.openRoute();
+  assert.deepEqual(restored.errors, []);
+  assert.equal(restored.app.quizSession.persistenceStatus, "failed");
+  restored.app.finishQuizSession();
+  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved);
+});
