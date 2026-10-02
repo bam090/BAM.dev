@@ -6371,8 +6371,8 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
     font-size: 12px;
   }
 
-  .review-container.is-question-view .quiz-batch-controls {
-    flex-basis: 100%;
+  .review-container.is-question-view .review-header > .quiz-batch-controls {
+    grid-column: 1 / -1;
   }
 
   .review-container.is-all-view .quiz-question-list {

@@ -322,8 +322,8 @@ function renderQuizModeControls({ viewMode, gradingMode, pendingCount, unanswere
         <span>채점 방식</span>
         ${[["individual", "개별 채점"], ["batch", "전체 채점"]].map(([value, label]) => `<button class="button button--secondary" id="quiz-grading-${value}" type="button" data-quiz-grading-mode="${value}" aria-pressed="${gradingMode === value}">${label}</button>`).join("")}
       </div>
-      ${gradingMode === "batch" ? `<div class="quiz-batch-controls"><button class="button button--primary" id="quiz-check-all" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항. 이미 채점한 문항과 미응답은 제외합니다.</p></div>` : ""}
     </section>
+    ${gradingMode === "batch" ? `<div class="quiz-batch-controls"><button class="button button--primary" id="quiz-check-all" type="button" data-quiz-check-all${pendingCount ? "" : " disabled"}>답한 ${pendingCount}개 채점</button><p id="quiz-batch-status" data-quiz-batch-status tabindex="-1">미채점 선택 ${pendingCount}문항 · 미응답 ${unansweredCount}문항. 이미 채점한 문항과 미응답은 제외합니다.</p></div>` : ""}
   `;
 }
 
