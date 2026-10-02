@@ -1,5 +1,7 @@
 # HTML 문서의 기본 골격
 
+현재 학습 순서에서는 [HTML 시작하기: 요소와 문서의 기본 골격](#/learn/html/wiki-markup)에서 관련 내용을 함께 읽을 수 있습니다.
+
 ## 학습 목표
 
 본문과 문서 정보를 구분하고 doctype·lang·title·charset·viewport의 역할을 설명할 수 있습니다.

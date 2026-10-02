@@ -4,13 +4,14 @@ import test from "node:test";
 import { getLessonsForCourse, getLessonsForLanguage, validateCurriculum } from "../src/core/content.js";
 import { validateQuizCollection } from "../src/core/quiz.js";
 import { splitMarkdownSection } from "../src/ui/markdown.js";
+import { HTML_MERGED_INTO } from "./fixtures/html-merged-lessons.js";
 import { CSS_MERGED_INTO, CSS_REWRITTEN_LESSON_IDS } from "./fixtures/css-merged-lessons.js";
 
 const curriculum = JSON.parse(
   await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"),
 );
 
-const MERGED_INTO = CSS_MERGED_INTO;
+const MERGED_INTO = { ...CSS_MERGED_INTO, ...HTML_MERGED_INTO };
 const REWRITTEN_LESSON_IDS = CSS_REWRITTEN_LESSON_IDS;
 
 const AVAILABLE_CONTRACTS = [

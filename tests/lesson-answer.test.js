@@ -5,6 +5,7 @@ import { BamLearningApp } from "../src/app.js";
 import { resolveLessonRoute } from "../src/core/navigation.js";
 import { LocalStorageProgressRepository, MemoryStorage, PROGRESS_STORAGE_KEY } from "../src/repositories/progress-repository.js";
 import { renderMarkdown, splitMarkdownSection } from "../src/ui/markdown.js";
+import { HTML_MERGED_INTO, HTML_ORIGINAL_ROUTES } from "./fixtures/html-merged-lessons.js";
 import { CSS_MERGED_INTO, CSS_REWRITTEN_LESSON_IDS } from "./fixtures/css-merged-lessons.js";
 
 function createLessonApp(completed, categoryId = "language", {
@@ -246,9 +247,9 @@ test("명시한 직접답만 접어서 보여 주고 원문 출처나 기존 답
 test("HTML·CSS 개념 문서는 직접답과 활성 순서를 사용하고 보관 문서와 이전다음이 섞이지 않는다", async () => {
   const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
   // 기존 개요 교안은 맨 앞에 보관되고 합친 교안(CSS 위치 지정)으로 옮긴 문서는 제자리에 보관된다.
-  const mergedLessonIds = new Set(Object.keys(CSS_MERGED_INTO));
+  const mergedLessonIds = new Set([...Object.keys(CSS_MERGED_INTO), ...Object.keys(HTML_MERGED_INTO)]);
   const rewrittenLessonIds = CSS_REWRITTEN_LESSON_IDS;
-  for (const [courseId, activeCount, archivedCount] of [["html", 15, 5], ["css", 11, 15]]) {
+  for (const [courseId, activeCount, archivedCount] of [["html", 9, 11], ["css", 11, 15]]) {
     const lessons = curriculum.lessons.filter((lesson) => lesson.courseId === courseId);
     const active = lessons.filter((lesson) => !lesson.archivedFromCatalog);
     const archived = lessons.filter((lesson) => lesson.archivedFromCatalog);
@@ -710,4 +711,27 @@ test("기존 작성 형식 교안의 확인 문제와 면접 답변 예시가 �
     assert.deepEqual(questionNumbers, expectedNumbers, `${lesson.id}: 질문 번호가 연속이어야 합니다.`);
     assert.deepEqual(answerNumbers, questionNumbers, `${lesson.id}: 질문과 답변 번호가 다릅니다.`);
   }
+});
+
+
+test("HTML 통합 뒤에도 기존 20개 URL과 보관 문서 완료 기록을 보존한다", async () => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  const storage = new MemoryStorage();
+  const repository = new LocalStorageProgressRepository(storage);
+  for (const id of Object.keys(HTML_MERGED_INTO)) repository.setLessonCompleted(id, true);
+  const saved = storage.getItem(PROGRESS_STORAGE_KEY);
+  assert.deepEqual(curriculum.lessons.filter((lesson) => lesson.courseId === "html").map((lesson) => lesson.id).sort(), Object.keys(HTML_ORIGINAL_ROUTES).sort());
+  for (const [id, slug] of Object.entries(HTML_ORIGINAL_ROUTES)) {
+    const lesson = resolveLessonRoute(curriculum, `#/learn/html/${slug}`);
+    assert.equal(lesson?.id, id, slug);
+    if (!Object.hasOwn(HTML_MERGED_INTO, id)) continue;
+    assert.equal(lesson.archivedFromCatalog, true, id);
+    const canonical = curriculum.lessons.find((item) => item.id === HTML_MERGED_INTO[id]);
+    assert.ok(canonical && !canonical.archivedFromCatalog, id);
+    const app = createLessonApp(true, "language", { progressRepository: repository });
+    Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8") });
+    app.renderLesson();
+    assert.match(app.root.innerHTML, /data-toggle-complete aria-pressed="true"/, id);
+  }
+  assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved, "보관 문서를 읽어도 완료 기록을 옮기거나 삭제하지 않는다.");
 });

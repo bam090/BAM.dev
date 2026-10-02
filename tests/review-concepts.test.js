@@ -46,10 +46,10 @@ test("HTML 문항 10개만 새 문서로 연결하고 DOM·텍스트 의미 문�
     "quiz-html-link-destination": "links-buttons",
     "quiz-html-alt-context": "image-alternatives",
     "quiz-html-list-order": "lists",
-    "quiz-html-table-header-scope": "tables",
+    "quiz-html-table-header-scope": "lists",
     "quiz-html-form-name-submission": "input-names",
     "quiz-html-label-association": "input-names",
-    "quiz-html-validation-boundary": "constraint-validation",
+    "quiz-html-validation-boundary": "form-submission",
     "quiz-html-checker-purpose": "inspection",
     "quiz-html-profile-structure-audit": "integration",
   };

@@ -1981,17 +1981,20 @@
       "courseId": "html",
       "order": 6,
       "slug": "wiki-markup",
-      "title": "HTML의 역할과 요소 읽기",
-      "summary": "HTML은 내용의 관계를 표현하며 태그는 요소의 경계, 속성은 추가 정보, 중첩은 요소 사이의 관계를 나타냅니다.",
-      "essentialQuestion": "HTML 한 줄을 읽을 때 태그·요소·속성은 어떻게 구분하고, 빈 요소는 어떻게 작성할까요?",
+      "title": "HTML 시작하기: 요소와 문서의 기본 골격",
+      "summary": "태그·요소·속성과 중첩을 이해하고 문서 정보와 본문을 기본 골격으로 나눕니다.",
+      "essentialQuestion": "HTML 요소를 읽고 중첩과 문서의 기본 골격을 어떻게 구성합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "HTML 한 줄에서 태그·요소·속성과 중첩을 구분하고 빈 요소를 올바르게 설명할 수 있습니다."
+        "HTML·CSS·JavaScript가 맡는 일을 구분하고 HTML 한 줄에서 태그·요소·속성을 찾을 수 있습니다.",
+        "요소를 중첩할 때 시작한 순서의 반대로 닫고 빈 요소를 바르게 쓸 수 있습니다.",
+        "문서의 기본 골격에서 `head`와 `body`를 나누고 doctype·lang·title·charset·viewport의 역할을 설명할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
         "html.language-role",
-        "html.elements-attributes"
+        "html.elements-attributes",
+        "html.document-structure"
       ],
       "contentFile": "content/lessons/html/wiki-markup.md",
       "source": {
@@ -2028,7 +2031,8 @@
         "sha256": "f82cc33b90ac57d16f8bd76b7d024c462ff973620a195ba9aa0e438e257055f9",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-semantic-structure",
@@ -2037,11 +2041,13 @@
       "order": 8,
       "slug": "wiki-semantic-structure",
       "title": "시맨틱 HTML: 내용의 역할과 제목 계층",
-      "summary": "소개·이동·중심·보조·마무리와 제목의 상하 관계를 먼저 찾은 뒤 그 관계에 맞는 요소를 고릅니다.",
-      "essentialQuestion": "페이지의 네모 상자를 그대로 태그로 옮기지 않고, 어떤 순서로 구조와 제목을 정할까요?",
+      "summary": "내용의 역할과 상하 관계를 먼저 찾은 뒤 의미 요소와 제목을 고릅니다.",
+      "essentialQuestion": "내용의 역할과 제목 계층에 맞는 HTML 요소를 어떻게 고릅니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "요구사항에서 내용의 역할과 제목 계층을 찾고 의미 요소와 범용 묶음을 구분할 수 있습니다."
+        "요구사항에서 소개·이동·중심·독립·보조 내용의 역할을 구분할 수 있습니다.",
+        "내용의 상하 관계에 맞는 제목 계층을 구성할 수 있습니다.",
+        "의미 요소와 div·span을 선택하는 기준을 설명할 수 있습니다."
       ],
       "estimatedMinutes": 12,
       "conceptIds": [
@@ -2065,11 +2071,13 @@
       "order": 9,
       "slug": "wiki-links-buttons",
       "title": "링크와 버튼, 이동할 주소",
-      "summary": "다른 곳으로 이동하면 a와 href, 현재 화면에서 행동하면 button을 고르며 링크 문구는 목적지를 설명합니다.",
-      "essentialQuestion": "링크와 버튼이 비슷하게 보여도 무엇을 기준으로 고르고, 링크의 목적지는 어떻게 확인할까요?",
+      "summary": "이동에는 링크를 쓰고 동작에는 버튼을 쓰며 주소와 문구로 목적지를 알립니다.",
+      "essentialQuestion": "사용 결과에 맞는 링크·버튼과 목적지 주소를 어떻게 정합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "이동과 동작을 구분해 링크 또는 버튼을 고르고 주소와 문구로 결과를 설명할 수 있습니다."
+        "이동과 동작을 구분해 링크와 버튼을 선택할 수 있습니다.",
+        "절대 URL·상대 URL·문서 내부 목적지의 차이를 설명할 수 있습니다.",
+        "목적지를 알 수 있는 링크 문구와 유효한 연결을 작성할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
@@ -2093,16 +2101,19 @@
       "courseId": "html",
       "order": 10,
       "slug": "wiki-image-alternatives",
-      "title": "이미지의 목적과 대체 텍스트",
-      "summary": "alt는 이미지를 대신할 정보나 기능이며 figcaption은 보이는 설명이므로 이미지의 목적에 맞춰 각각 작성합니다.",
-      "essentialQuestion": "같은 이미지도 alt가 달라지는 이유는 무엇이며 장식 이미지와 그림 설명은 어떻게 처리할까요?",
+      "title": "이미지·미디어의 목적과 대체 정보",
+      "summary": "이미지의 목적에 맞는 alt와 미디어의 자막·대본을 제공해 빠지는 정보를 보완합니다.",
+      "essentialQuestion": "이미지나 미디어를 보거나 듣기 어려울 때 필요한 정보를 어떻게 전달합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "이미지의 정보·기능·장식 역할에 따라 alt와 보이는 설명을 정할 수 있습니다."
+        "이미지의 정보·기능·장식 역할에 맞는 alt를 작성할 수 있습니다.",
+        "alt·figcaption·이미지 크기 속성의 역할을 구분할 수 있습니다.",
+        "오디오·비디오에 필요한 재생 조작·자막·대본·시각 정보 설명을 선택할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
-        "html.image-alternatives"
+        "html.image-alternatives",
+        "html.media-accessibility"
       ],
       "contentFile": "content/lessons/html/wiki-image-alternatives.md",
       "source": {
@@ -2120,16 +2131,19 @@
       "courseId": "html",
       "order": 11,
       "slug": "wiki-lists",
-      "title": "항목의 관계에 맞는 목록",
-      "summary": "순서 없는 항목은 ul, 순서가 의미를 바꾸는 항목은 ol, 이름과 설명의 짝은 dl로 나타냅니다.",
-      "essentialQuestion": "준비물·신청 단계·장소와 시간 정보에는 왜 서로 다른 목록을 사용할까요?",
+      "title": "목록과 표: 정보 관계에 맞는 요소",
+      "summary": "순서·이름과 설명·행과 열의 관계에 맞춰 목록이나 표를 고릅니다.",
+      "essentialQuestion": "항목 사이의 관계에 따라 목록과 표를 어떻게 선택하고 설명합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "항목의 순서와 이름·설명 관계에 따라 ul·ol·dl을 선택할 수 있습니다."
+        "항목의 순서와 이름·설명 관계에 따라 ul·ol·dl을 선택할 수 있습니다.",
+        "행과 열로 연결되는 데이터를 목록과 구분해 table로 표현할 수 있습니다.",
+        "caption·th·scope로 표 제목과 머리글 관계를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 5,
       "conceptIds": [
-        "html.lists"
+        "html.lists",
+        "html.tabular-data"
       ],
       "contentFile": "content/lessons/html/wiki-lists.md",
       "source": {
@@ -2166,7 +2180,8 @@
         "sha256": "ab88bd66727dfe62cadc8ca613fab58eb08a6f571bd4fcfcdbe16e9160d1ee77",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-media-alternatives",
@@ -2193,7 +2208,8 @@
         "sha256": "ab88bd66727dfe62cadc8ca613fab58eb08a6f571bd4fcfcdbe16e9160d1ee77",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-input-names",
@@ -2201,17 +2217,20 @@
       "courseId": "html",
       "order": 14,
       "slug": "wiki-input-names",
-      "title": "입력의 레이블과 제출 이름",
-      "summary": "label과 for/id는 입력 목적과 요소를 연결하고 name은 제출 이름, value는 입력 종류에 따른 기본값이나 제출값을 정합니다.",
-      "essentialQuestion": "입력에 name만 쓰거나 label만 보이게 하면 무엇이 빠질까요? 네 역할을 어떻게 연결할까요?",
+      "title": "폼 입력: 레이블·제출 이름·선택 컨트롤",
+      "summary": "레이블로 입력 목적을 알리고 name·value와 적절한 컨트롤로 제출할 값을 구성합니다.",
+      "essentialQuestion": "사용자에게 입력 목적을 알리고 제출할 값에 맞는 컨트롤을 어떻게 구성합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "label·for/id·name·value의 역할을 구분해 입력 목적과 제출 데이터를 연결할 수 있습니다."
+        "label·for/id·name·value의 역할을 구분해 입력 목적과 제출 데이터를 연결할 수 있습니다.",
+        "받을 값의 목적에 맞는 입력 타입·textarea·select를 선택할 수 있습니다.",
+        "하나 또는 여러 개를 고르는 조건에 맞게 radio·checkbox를 구성하고 그룹의 질문을 제공할 수 있습니다."
       ],
       "estimatedMinutes": 6,
       "conceptIds": [
         "html.labels",
-        "html.form-submission"
+        "html.form-submission",
+        "html.form-controls"
       ],
       "contentFile": "content/lessons/html/wiki-input-names.md",
       "source": {
@@ -2248,7 +2267,8 @@
         "sha256": "1bbee578ebc10fe115b859c4a79bf54c8b08c5e0aa891ea4243831205d79f058",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-constraint-validation",
@@ -2275,7 +2295,8 @@
         "sha256": "1bbee578ebc10fe115b859c4a79bf54c8b08c5e0aa891ea4243831205d79f058",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-form-submission",
@@ -2283,17 +2304,24 @@
       "courseId": "html",
       "order": 17,
       "slug": "wiki-form-submission",
-      "title": "폼 제출: 보내는 값과 GET·POST 방식",
-      "summary": "폼은 제출 가능한 이름·값을 정해진 방식으로 보내며 입력 상태와 method·enctype은 서로 다른 제출 조건을 정합니다.",
-      "essentialQuestion": "수정할 수 없는 입력도 항상 제출될까요? 선택한 값은 GET·POST·파일 폼에서 어떻게 보내질까요?",
+      "title": "폼 검증과 제출: 입력부터 전송까지",
+      "summary": "입력 조건·제출할 이름과 값·전송 방식·키보드 흐름을 차례로 확인합니다.",
+      "essentialQuestion": "폼의 입력을 검증하고 제출할 때 값과 사용자 조작 흐름을 어떻게 확인합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "폼 상태에 따라 제출에서 빠지는 값을 구분하고 GET·POST·파일 전송 설정을 설명할 수 있습니다."
+        "입력 조건에 맞는 검증 속성을 선택하고 서버 검증과의 경계를 설명할 수 있습니다.",
+        "입력 상태에 따라 제출되는 값을 구분하고 GET·POST·파일 전송 설정을 설명할 수 있습니다.",
+        "신청 폼에서 입력·검증·제출의 관계와 버튼의 기본 동작을 추적할 수 있습니다.",
+        "키보드 초점·조작 순서·오류 안내를 확인하는 절차를 설명할 수 있습니다."
       ],
       "estimatedMinutes": 7,
       "conceptIds": [
         "html.form-submission",
-        "html.form-control-states"
+        "html.form-control-states",
+        "html.constraint-validation",
+        "html.native-accessibility",
+        "html.form-controls",
+        "html.labels"
       ],
       "contentFile": "content/lessons/html/wiki-form-submission.md",
       "source": {
@@ -2334,7 +2362,8 @@
         "sha256": "1bbee578ebc10fe115b859c4a79bf54c8b08c5e0aa891ea4243831205d79f058",
         "importedAt": "2026-09-13",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "html-notes-inspection",
@@ -2343,11 +2372,13 @@
       "order": 19,
       "slug": "wiki-inspection",
       "title": "HTML 검증: 문법·의미·접근성 점검",
-      "summary": "Checker로 문법과 콘텐츠 모델을 확인하고 의미·대체 정보·키보드 사용은 문맥과 실제 조작으로 다시 확인합니다.",
-      "essentialQuestion": "화면이 보이고 Checker 오류가 없어도 왜 검사가 끝나지 않으며 어떤 순서로 수정할까요?",
+      "summary": "Checker로 문법을 확인하고 의미와 실제 조작은 문맥·키보드 사용으로 확인합니다.",
+      "essentialQuestion": "HTML의 문법·의미·접근성을 어떤 방법으로 나누어 점검합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "문법·의미·접근성 문제에 맞는 검사 방법을 고르고 수정한 결과를 다시 확인할 수 있습니다."
+        "문법·의미·접근성 문제를 구분하고 알맞은 확인 방법을 선택할 수 있습니다.",
+        "Checker의 첫 오류를 수정한 뒤 전체 문서를 다시 검사하는 절차를 설명할 수 있습니다.",
+        "기본 HTML 요소·대체 정보·키보드 조작을 문맥에 맞게 점검할 수 있습니다."
       ],
       "estimatedMinutes": 12,
       "conceptIds": [
@@ -2373,11 +2404,13 @@
       "order": 20,
       "slug": "wiki-integration",
       "title": "HTML 개념을 요구사항에 연결하기",
-      "summary": "내용 목록 → 제목과 큰 구조 → 정보 관계 → 입력 흐름 → 문법·의미·접근성 점검 순서로 요구사항을 연결합니다.",
-      "essentialQuestion": "처음 보는 페이지 요구사항을 받으면 코드 전에 무엇을 표시하고 완성 뒤 무엇을 나누어 확인할까요?",
+      "summary": "내용과 관계를 먼저 분석해 요소를 고르고 문법·의미·사용 흐름을 나누어 점검합니다.",
+      "essentialQuestion": "요구사항의 내용을 HTML 구조로 연결하고 구현 결과를 어떻게 점검합니까?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "새 요구사항에서 내용·관계·요소 선택 이유를 표시하고 구현 뒤 검사 계획을 세울 수 있습니다."
+        "요구사항에서 내용·제목·정보 관계를 찾아 HTML 요소를 선택할 수 있습니다.",
+        "이미지·목록·표·폼을 하나의 페이지 구조로 연결할 수 있습니다.",
+        "구현 뒤 문법 검사와 의미·접근성 점검을 나누어 계획할 수 있습니다."
       ],
       "estimatedMinutes": 12,
       "conceptIds": [
