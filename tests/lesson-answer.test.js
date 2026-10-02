@@ -4,9 +4,11 @@ import test from "node:test";
 import { BamLearningApp } from "../src/app.js";
 import { resolveLessonRoute } from "../src/core/navigation.js";
 import { LocalStorageProgressRepository, MemoryStorage, PROGRESS_STORAGE_KEY } from "../src/repositories/progress-repository.js";
-import { renderMarkdown, splitMarkdownSection } from "../src/ui/markdown.js";
+import { renderMarkdown, splitLessonOverview, splitMarkdownSection } from "../src/ui/markdown.js";
 import { HTML_MERGED_INTO, HTML_ORIGINAL_ROUTES } from "./fixtures/html-merged-lessons.js";
 import { CSS_MERGED_INTO, CSS_REWRITTEN_LESSON_IDS } from "./fixtures/css-merged-lessons.js";
+
+import { JAVA_MERGED_INTO, JAVA_MERGED_TARGET_IDS } from "./fixtures/java-merged-lessons.js";
 
 function createLessonApp(completed, categoryId = "language", {
   source,
@@ -734,4 +736,51 @@ test("HTML 통합 뒤에도 기존 20개 URL과 보관 문서 완료 기록을 �
     assert.match(app.root.innerHTML, /data-toggle-complete aria-pressed="true"/, id);
   }
   assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved, "보관 문서를 읽어도 완료 기록을 옮기거나 삭제하지 않는다.");
+});
+
+
+test("Java 통합 본문은 직접답을 접어서 표시하고 보관 교안의 완료 ID를 바꾸지 않는다", async () => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  const storage = new MemoryStorage();
+  const repository = new LocalStorageProgressRepository(storage);
+  const completedIds = Object.keys(JAVA_MERGED_INTO);
+  for (const id of completedIds) repository.setLessonCompleted(id, true);
+  const saved = storage.getItem(PROGRESS_STORAGE_KEY);
+  for (const id of [...JAVA_MERGED_TARGET_IDS, ...completedIds]) {
+    const lesson = curriculum.lessons.find((candidate) => candidate.id === id);
+    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+    const app = createLessonApp(false, "language", { progressRepository: repository });
+    Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: markdown });
+    app.renderLesson();
+    const html = app.root.innerHTML;
+    const answer = html.match(/<details\b[^>]*id="lesson-answer"[^>]*>[\s\S]*?<\/details>/)?.[0] ?? "";
+    const directAnswer = splitMarkdownSection(markdown, "핵심 질문 답").section;
+    assert.ok(directAnswer, id);
+    assert.ok(answer.includes(renderMarkdown(directAnswer, { preserveParagraphLineBreaks: true })), id);
+    assert.doesNotMatch(answer.split(">")[0], /\sopen(?:\s|$)/);
+    assert.ok(html.includes(`data-toggle-complete aria-pressed="${completedIds.includes(id)}"`), id);
+    assert.equal(storage.getItem(PROGRESS_STORAGE_KEY), saved, `${id}: 열람은 기존 진도를 바꾸지 않는다.`);
+  }
+  assert.deepEqual(new LocalStorageProgressRepository(storage).getProgress().completedLessonIds.toSorted(), completedIds.toSorted());
+});
+
+
+test("Java 통합 7편의 목표는 메타데이터 fallback 없이 한 번씩만 표시한다", async () => {
+  const curriculum = JSON.parse(await readFile(new URL("../content/curriculum.json", import.meta.url), "utf8"));
+  for (const id of JAVA_MERGED_TARGET_IDS) {
+    const lesson = curriculum.lessons.find((candidate) => candidate.id === id);
+    const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
+    assert.ok(lesson.source?.originalPath, `${id}: 원문 교안의 metadata fallback 경로를 검사한다.`);
+    const answer = splitMarkdownSection(markdown, lesson.answerHeading);
+    const overview = splitLessonOverview(answer.body);
+    assert.ok(overview.objectives, `${id}: 본문 목표가 있어야 한다.`);
+    const app = createLessonApp(false);
+    Object.assign(app, { curriculum, currentLesson: lesson, currentMarkdown: markdown });
+    app.renderLesson();
+    const outcomes = app.root.innerHTML.match(/<div class="lesson-summary lesson-learning-outcomes"[^>]*>([\s\S]*?)<\/div>/)?.[1];
+    // Markdown의 인라인 코드와 metadata의 일반 텍스트 차이도 실제 fallback에서 중복을 만들 수 있다.
+    // 정규화된 문장이 아니라 렌더링한 전체 목표 상자를 비교해 추가 목록을 놓치지 않는다.
+    assert.equal(outcomes, renderMarkdown(overview.objectives, { preserveParagraphLineBreaks: true }), id);
+    assert.equal((outcomes.match(/<li>/g) ?? []).length, lesson.objectives.length, `${id}: 목표마다 목록 항목 하나`);
+  }
 });

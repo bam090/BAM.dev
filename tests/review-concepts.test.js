@@ -4,6 +4,8 @@ import test from "node:test";
 import { getReviewDocumentLesson, validateReviewConcepts } from "../src/core/review-navigation.js";
 import { CSS_MERGED_INTO } from "./fixtures/css-merged-lessons.js";
 
+import { JAVA_MERGED_INTO, JAVA_MERGED_TARGET_IDS } from "./fixtures/java-merged-lessons.js";
+
 const load = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
 const curriculum = await load("../content/curriculum.json");
 const data = await load("../content/review-concepts.json");
@@ -170,5 +172,34 @@ test("개념 검증은 알 수 없는 버전·없는 교안·잘못된 개념 �
     { ...valid, excerpt: " " }, { ...valid, heading: 12 }, null,
   ]) {
     assert.deepEqual(validateReviewConcepts({ schemaVersion: 1, concepts: [invalid, valid, valid] }, curriculum), [valid]);
+  }
+});
+
+
+test("Java 통합의 18개 발췌와 36문항은 원래 소유 ID를 유지하고 활성 본문으로 연결한다", async () => {
+  const { questions } = await load("../content/quizzes/java.json");
+  const affectedIds = [...Object.keys(JAVA_MERGED_INTO), ...JAVA_MERGED_TARGET_IDS];
+  const affected = data.concepts.filter((concept) => affectedIds.includes(concept.lessonId));
+  assert.equal(affected.length, 18);
+  for (const ownerId of affectedIds) {
+    const conceptId = `java.${ownerId.replace("java-concept-", "")}`;
+    const matches = affected.filter((concept) => concept.id === conceptId && concept.lessonId === ownerId);
+    assert.equal(matches.length, 1, ownerId);
+    const document = getReviewDocumentLesson(curriculum, matches[0]);
+    assert.equal(document?.id, JAVA_MERGED_INTO[ownerId] ?? ownerId, conceptId);
+    assert.equal(Boolean(document?.archivedFromCatalog), false, conceptId);
+    const markdown = await readFile(new URL(`../${document.contentFile}`, import.meta.url), "utf8");
+    const headings = [...markdown.matchAll(/^(#{1,6}) (.+)$/gm)];
+    const heading = headings.find((match) => match[2] === matches[0].heading);
+    assert.ok(heading, `${conceptId}: 대상 본문에 heading이 필요합니다.`);
+    const next = headings.find((match) => match.index > heading.index && match[1].length <= heading[1].length);
+    assert.ok(markdown.slice(heading.index + heading[0].length, next?.index ?? markdown.length).includes(matches[0].excerpt), `${conceptId}: 발췌가 대상 절과 일치해야 합니다.`);
+    // 문항 ID는 통합 전 소유 단위를 담는다. 본문 이동으로 소유 ID를 옮기면 진도 연결이 끊긴다.
+    const ownedQuestions = questions.filter((question) => question.id.startsWith(`quiz-${ownerId}-`));
+    assert.equal(ownedQuestions.length, 2, ownerId);
+    for (const question of ownedQuestions) {
+      assert.equal(question.lessonId, ownerId, question.id);
+      assert.equal(question.conceptId, conceptId, question.id);
+    }
   }
 });
