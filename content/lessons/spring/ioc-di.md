@@ -10,7 +10,7 @@ DI는 객체가 필요한 협력자를 바깥에서 받고, Spring 컨테이너�
 
 ## 먼저 확인할 개념
 
-[조합과 생성자 주입](#/learn/java/wiki-composition-injection) · [Spring과 Boot](#/learn/spring/framework-boot)
+[조합과 생성자 주입](#/learn/java/wiki-inheritance-dispatch) · [Spring과 Boot](#/learn/spring/framework-boot)
 
 ## 필요한 역할을 생성자로 받는다
 

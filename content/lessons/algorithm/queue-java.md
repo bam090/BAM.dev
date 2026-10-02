@@ -10,7 +10,7 @@ Java에서는 `Queue` 인터페이스 변수에 `ArrayDeque` 객체를 담아 �
 
 ## 먼저 확인할 개념
 
-[큐: 먼저 온 순서대로 꺼내는 자료구조](#/learn/algorithm/queue) · [추상 클래스와 인터페이스의 역할](#/learn/java/wiki-abstract-interfaces)
+[큐: 먼저 온 순서대로 꺼내는 자료구조](#/learn/algorithm/queue) · [추상 클래스와 인터페이스의 역할](#/learn/java/wiki-inheritance-dispatch)
 
 ## Queue와 ArrayDeque
 

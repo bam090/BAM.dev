@@ -10,7 +10,7 @@ Spring Boot는 Spring Framework 기반 애플리케이션의 시작과 구성을
 
 ## 먼저 확인할 개념
 
-[Java 실행 구조](#/learn/java/wiki-runtime) · [조합과 생성자 주입](#/learn/java/wiki-composition-injection)
+[Java 실행 구조](#/learn/java/wiki-runtime) · [조합과 생성자 주입](#/learn/java/wiki-inheritance-dispatch)
 
 ## Java 위의 Spring, Spring 위의 Boot
 

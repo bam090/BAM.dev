@@ -45,20 +45,32 @@ test("과정 조회와 실행 언어별 평가 조회를 분리한다", () => {
   assert.deepEqual(archivedHash.conceptIds, ["algo.hashing", "js.map-collection", "js.set-collection"]);
 });
 
-test("Java 활성 32개는 그대로 두고 기존 교안 6개를 안정 ID와 연속 후순위 order로 보관한다", () => {
+test("Java 활성 21개와 보관 17개는 기존 ID·URL·order를 보존한다", () => {
   const javaLessons = getLessonsForCourse(curriculum, "java");
   const activeLessons = javaLessons.filter((lesson) => lesson.archivedFromCatalog !== true);
   const archivedLessons = javaLessons.filter((lesson) => lesson.archivedFromCatalog === true);
 
-  assert.equal(activeLessons.length, 32);
+  assert.equal(activeLessons.length, 21);
+  assert.equal(archivedLessons.length, 17);
   assert.deepEqual(
     activeLessons.map((lesson) => lesson.order),
-    Array.from({ length: 32 }, (_, index) => index + 2),
+    [2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15, 16, 17, 20, 21, 25, 27, 29, 30, 32],
   );
   assert.deepEqual(
     archivedLessons.map(({ id, order, slug }) => ({ id, order, slug })),
     [
       { id: "java-01-types-methods", order: 1, slug: "types-and-methods" },
+      { id: "java-concept-constructors", order: 11, slug: "wiki-constructors" },
+      { id: "java-concept-encapsulation", order: 12, slug: "wiki-encapsulation" },
+      { id: "java-concept-abstract-interfaces", order: 18, slug: "wiki-abstract-interfaces" },
+      { id: "java-concept-composition-injection", order: 19, slug: "wiki-composition-injection" },
+      { id: "java-concept-sets-maps", order: 22, slug: "wiki-sets-maps" },
+      { id: "java-concept-deque", order: 23, slug: "wiki-deque" },
+      { id: "java-concept-collection-choice", order: 24, slug: "wiki-collection-choice" },
+      { id: "java-concept-resources", order: 26, slug: "wiki-resources" },
+      { id: "java-concept-streams", order: 28, slug: "wiki-streams" },
+      { id: "java-concept-tasks-results", order: 31, slug: "wiki-tasks-results" },
+      { id: "java-concept-test-tools", order: 33, slug: "wiki-test-tools" },
       { id: "java-02-control-flow-arrays", order: 34, slug: "operators-control-flow-and-arrays" },
       { id: "java-03-classes-objects", order: 35, slug: "classes-objects-and-encapsulation" },
       { id: "java-04-collections-generics", order: 36, slug: "collections-generics-list-and-map" },

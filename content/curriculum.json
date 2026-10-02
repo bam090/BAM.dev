@@ -4074,16 +4074,20 @@
       "courseId": "java",
       "order": 10,
       "slug": "wiki-objects",
-      "title": "클래스·객체·참조와 this",
-      "summary": "클래스는 타입과 구현을 선언하고 인스턴스 필드와 메서드는 각 대상 객체의 상태를 다룹니다.",
-      "essentialQuestion": "여러 변수가 등장할 때 어느 객체의 상태가 바뀌는지 어떻게 찾나요?",
+      "title": "클래스와 객체: 참조·생성자·캡슐화",
+      "summary": "클래스로 만든 객체는 참조로 공유되며 생성자가 첫 상태를 준비하고 상태를 검사하는 공개 행동만 변경을 허용합니다.",
+      "essentialQuestion": "여러 변수가 같은 객체를 가리킬 때 어느 객체가 바뀌는지 찾고 그 객체가 올바른 상태를 지키게 하려면 어떻게 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "타입 선언과 실행 중 객체·참조 변수를 구분하고 대상 객체의 상태를 찾을 수 있습니다."
+        "클래스 선언과 new로 만든 객체와 참조 변수를 구분하고 어느 객체의 상태가 바뀌는지 찾을 수 있습니다.",
+        "생성자로 객체의 첫 상태를 준비하고 Java 25에서 위임 호출 앞에 둘 수 있는 코드를 구분할 수 있습니다.",
+        "필드를 감추고 허용한 행동으로만 상태를 바꾸게 해서 상태 규칙을 객체 안에 모을 수 있습니다."
       ],
-      "estimatedMinutes": 6,
+      "estimatedMinutes": 15,
       "conceptIds": [
-        "java.objects"
+        "java.objects",
+        "java.constructors",
+        "java.encapsulation"
       ],
       "contentFile": "content/lessons/java/wiki-objects.md",
       "source": {
@@ -4120,7 +4124,8 @@
         "sha256": "9c89c66e0c8a0f1382d7cab00bba6080cd2820ef3ce2666b664e3e4bb37c9acc",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-encapsulation",
@@ -4147,7 +4152,8 @@
         "sha256": "9c89c66e0c8a0f1382d7cab00bba6080cd2820ef3ce2666b664e3e4bb37c9acc",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-packages-access",
@@ -4263,16 +4269,21 @@
       "courseId": "java",
       "order": 17,
       "slug": "wiki-inheritance-dispatch",
-      "title": "상속과 실제 객체의 메서드",
-      "summary": "상속은 타입 관계를 만들며 재정의한 인스턴스 메서드는 실제 객체에 따라 선택됩니다.",
-      "essentialQuestion": "상위 타입 변수로 하위 객체의 메서드를 부르면 어떤 구현이 실행되나요?",
+      "title": "상속·인터페이스·조합: 타입 관계 고르기",
+      "summary": "재정의한 메서드는 실제 객체를 따르고 공통 상태와 구현은 추상 클래스로 공통 역할은 인터페이스로 두며 바뀌는 협력자는 조합과 생성자 주입으로 연결합니다.",
+      "essentialQuestion": "여러 클래스가 공통 부분을 나누거나 협력할 때 상속·인터페이스·조합 가운데 무엇을 고르나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "선언 타입의 사용 가능 멤버와 실제 객체의 오버라이딩 메서드를 구분할 수 있습니다."
+        "상위 타입 변수로 하위 객체를 부를 때 선언 타입이 정하는 것과 실제 객체가 정하는 것을 구분할 수 있습니다.",
+        "공통 상태와 구현은 추상 클래스로 두고 여러 클래스가 제공할 역할은 인터페이스로 선언할 수 있습니다.",
+        "협력 객체를 필드로 가지고 일을 맡기는 조합과 생성자 주입으로 구현을 바꿔 끼울 수 있습니다.",
+        "상속·인터페이스·조합 가운데 요구에 맞는 관계를 고를 수 있습니다."
       ],
-      "estimatedMinutes": 6,
+      "estimatedMinutes": 15,
       "conceptIds": [
-        "java.inheritance-dispatch"
+        "java.inheritance-dispatch",
+        "java.abstract-interfaces",
+        "java.composition-injection"
       ],
       "contentFile": "content/lessons/java/wiki-inheritance-dispatch.md",
       "source": {
@@ -4309,7 +4320,8 @@
         "sha256": "347bf0700b273faee3ee68a7af4633597035b478340e8c0b317b0610c2343ce3",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-composition-injection",
@@ -4336,7 +4348,8 @@
         "sha256": "347bf0700b273faee3ee68a7af4633597035b478340e8c0b317b0610c2343ce3",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-generics",
@@ -4371,16 +4384,22 @@
       "courseId": "java",
       "order": 21,
       "slug": "wiki-lists",
-      "title": "순서 있는 List의 크기와 삭제",
-      "summary": "List는 순서와 중복을 유지하며 ArrayList의 준비 용량은 현재 원소 수와 다릅니다.",
-      "essentialQuestion": "목록의 크기와 삭제할 대상을 어떤 값으로 판단하나요?",
+      "title": "컬렉션 선택: List·Set·Map·Deque",
+      "summary": "순서·중복·키·처리 방향이라는 보관 규칙과 자주 하는 연산의 비용으로 List·Set·Map·Deque와 구현체를 고릅니다.",
+      "essentialQuestion": "같은 데이터라도 보관하고 꺼내는 규칙이 다르면 어떤 컬렉션을 골라야 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "List의 순서·중복·현재 크기를 읽고 숫자 목록의 위치 삭제와 값 삭제를 구분할 수 있습니다."
+        "순서와 중복이 필요한 목록에 List를 쓰고 현재 크기와 위치 삭제·값 삭제를 구분할 수 있습니다.",
+        "같은 값을 한 번만 남길 때는 Set을 쓰고 키로 값을 찾고 갱신할 때는 Map을 쓰며 구현체의 순서 규칙을 확인할 수 있습니다.",
+        "처리 순서와 빈 상태에 맞게 Deque의 넣고 꺼내는 연산을 고를 수 있습니다.",
+        "필요한 보관 규칙과 자주 하는 연산의 비용으로 컬렉션을 골라 한 기능 안에서 역할을 나눌 수 있습니다."
       ],
-      "estimatedMinutes": 5,
+      "estimatedMinutes": 20,
       "conceptIds": [
-        "java.lists"
+        "java.lists",
+        "java.sets-maps",
+        "java.deque",
+        "java.collection-choice"
       ],
       "contentFile": "content/lessons/java/wiki-lists.md",
       "source": {
@@ -4417,7 +4436,8 @@
         "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-deque",
@@ -4444,7 +4464,8 @@
         "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-collection-choice",
@@ -4471,7 +4492,8 @@
         "sha256": "0623b42da32a253ab2750aa93dd6e190614deb0869d95d904e9051ec415b15c2",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-exceptions",
@@ -4479,16 +4501,19 @@
       "courseId": "java",
       "order": 25,
       "slug": "wiki-exceptions",
-      "title": "예외 처리와 전달",
-      "summary": "예외는 정상 흐름의 중단을 알리며 처리할 수 없다면 성공 값으로 숨기지 않고 원인을 전달합니다.",
-      "essentialQuestion": "예외를 어느 위치에서 처리하고 언제 호출자에게 전달해야 하나요?",
+      "title": "예외 처리와 자원 정리",
+      "summary": "처리할 책임이 있는 곳에서 예외를 잡고 그렇지 않으면 원인을 남겨 전달하며 try-with-resources로 자원을 역순으로 닫고 닫기 실패를 suppressed로 보존합니다.",
+      "essentialQuestion": "실패가 생겼을 때 예외를 어디서 처리하거나 전달하고 열어 둔 자원은 어떻게 닫나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "실패를 복구할 책임과 정보를 보고 처리·전달·원인 보존을 결정할 수 있습니다."
+        "검사 예외와 비검사 예외를 구분하고 try·catch·throw·throws의 역할을 나눌 수 있습니다.",
+        "실패를 복구할 책임과 정보가 있는 곳에서 처리하고 그렇지 않으면 원인을 남겨 호출자에게 전달할 수 있습니다.",
+        "try-with-resources로 자원을 닫는 순서와 본문 실패·닫기 실패가 함께 생겼을 때 남는 예외를 설명할 수 있습니다."
       ],
-      "estimatedMinutes": 5,
+      "estimatedMinutes": 10,
       "conceptIds": [
-        "java.exceptions"
+        "java.exceptions",
+        "java.resources"
       ],
       "contentFile": "content/lessons/java/wiki-exceptions.md",
       "source": {
@@ -4525,7 +4550,8 @@
         "sha256": "a849953fd7843789ca1beec966f9a14f8b5718de9a80c7e27d5b3223674a09e9",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-lambdas",
@@ -4533,16 +4559,19 @@
       "courseId": "java",
       "order": 27,
       "slug": "wiki-lambdas",
-      "title": "람다와 함수형 인터페이스",
-      "summary": "람다는 대상 함수형 인터페이스의 한 추상 메서드 계약을 채웁니다.",
-      "essentialQuestion": "값을 대신할 처리 방법을 어떤 타입으로 전달하나요?",
+      "title": "람다와 Stream: 동작을 전달해 값 처리하기",
+      "summary": "람다로 함수형 인터페이스의 계약을 채워 동작을 전달하고 Stream으로 원본과 바깥 상태를 바꾸지 않은 채 값을 고르고 바꾸어 모읍니다.",
+      "essentialQuestion": "처리 방법을 값처럼 전달해 목록을 고르고 바꾸어 모을 때 무엇을 지켜야 하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "전달할 동작의 입력·출력에 맞는 함수형 인터페이스와 람다를 읽을 수 있습니다."
+        "전달할 동작의 입력과 반환 모양에 맞는 함수형 인터페이스를 고르고 람다로 그 계약을 채울 수 있습니다.",
+        "Stream의 소스·중간 연산·최종 연산을 구분해 값을 고르고 바꾸어 결과로 모을 수 있습니다.",
+        "Stream이 원본과 바깥 상태를 바꾸지 않아야 하는 이유와 실행 순서·횟수에 기대면 안 되는 경계를 설명할 수 있습니다."
       ],
-      "estimatedMinutes": 5,
+      "estimatedMinutes": 12,
       "conceptIds": [
-        "java.lambdas"
+        "java.lambdas",
+        "java.streams"
       ],
       "contentFile": "content/lessons/java/wiki-lambdas.md",
       "source": {
@@ -4579,7 +4608,8 @@
         "sha256": "c4cbfc4995f1ce5b3127d8d7424b05365de76863c89df251dcbffb6b60f0ebd1",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-date-time",
@@ -4614,16 +4644,20 @@
       "courseId": "java",
       "order": 30,
       "slug": "wiki-shared-state",
-      "title": "동시성: 공유 상태의 원자성·가시성·순서",
-      "summary": "공유 값의 읽기·계산·쓰기와 값이 보이는 관계는 별개이며 volatile만으로 복합 갱신이 원자적이 되지는 않습니다.",
-      "essentialQuestion": "여러 작업이 같은 상태를 바꿀 때 무엇을 한 덩어리로 보호해야 하나요?",
+      "title": "동시성: 공유 상태와 작업 결과 모으기",
+      "summary": "공유 값의 읽기·계산·쓰기를 보호 범위에 맞게 지키고 작업이 결과를 반환하게 해 Future로 완료된 결과를 모으며 가상 스레드는 대기 작업에 씁니다.",
+      "essentialQuestion": "여러 작업이 같은 값을 다루거나 결과를 모을 때 무엇을 보호하고 언제 결과를 믿을 수 있나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "공유 갱신의 위험을 찾고 원자성·가시성·순서에 맞는 보장을 선택할 수 있습니다."
+        "공유 값을 읽고 계산하고 쓰는 갱신에서 경쟁 상태를 찾고 원자성·가시성·순서를 구분할 수 있습니다.",
+        "보호할 범위에 맞게 불변 값·synchronized·원자 변수·volatile·스레드 안전 컬렉션을 고를 수 있습니다.",
+        "happens-before 관계로 다른 스레드의 결과가 언제 보이는지 설명할 수 있습니다.",
+        "작업이 결과를 반환하게 하고 ExecutorService와 Future로 완료된 결과를 한 곳에서 모으며 가상 스레드가 맞는 작업을 고를 수 있습니다."
       ],
-      "estimatedMinutes": 5,
+      "estimatedMinutes": 12,
       "conceptIds": [
-        "java.shared-state"
+        "java.shared-state",
+        "java.tasks-results"
       ],
       "contentFile": "content/lessons/java/wiki-shared-state.md",
       "source": {
@@ -4660,7 +4694,8 @@
         "sha256": "bc84352b8c1f9140bfc1a6e86db3df0f8b18b8b43400e7df9a99d9d89bde684e",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "java-concept-test-contracts",
@@ -4668,16 +4703,19 @@
       "courseId": "java",
       "order": 32,
       "slug": "wiki-test-contracts",
-      "title": "공개 계약에서 테스트 조건 찾기",
-      "summary": "테스트는 선택한 입력에서 호출자가 관찰할 약속을 확인하며 내부 구현이나 모든 경우의 무결함을 증명하지 않습니다.",
-      "essentialQuestion": "메서드가 지킬 약속에서 적은 수의 의미 있는 확인 조건을 어떻게 고르나요?",
+      "title": "테스트: 계약에서 조건을 찾고 도구로 확인하기",
+      "summary": "공개 계약에서 정상·경계·예외 조건을 골라 확인하고 JUnit·AssertJ·Mockito를 실행 틀·결과 비교·협력 대역 역할에 맞게 씁니다.",
+      "essentialQuestion": "메서드의 약속에서 무엇을 확인하고 어떤 테스트 도구로 확인하나요?",
       "answerHeading": "핵심 질문 답",
       "objectives": [
-        "입력·결과·예외·외부 변화에서 정상·경계·실패 조건을 골라 확인할 수 있습니다."
+        "메서드의 공개 계약에서 정상·경계·예외 조건을 골라 적은 수의 의미 있는 테스트로 확인할 수 있습니다.",
+        "테스트 하나를 준비·실행·검증으로 읽고 내부 구현을 바꿔도 유지할 확인 대상을 고를 수 있습니다.",
+        "JUnit·AssertJ·Mockito가 맡는 실행 틀·결과 비교·협력 대역의 역할을 나누고 필요한 도구만 고를 수 있습니다."
       ],
-      "estimatedMinutes": 7,
+      "estimatedMinutes": 12,
       "conceptIds": [
-        "java.test-contracts"
+        "java.test-contracts",
+        "java.test-tools"
       ],
       "contentFile": "content/lessons/java/wiki-test-contracts.md",
       "source": {
@@ -4714,7 +4752,8 @@
         "sha256": "1957b34641de4cad3439169930c810e8f4defc691c4a4ff12a1ab9f36537de44",
         "importedAt": "2026-09-14",
         "importMode": "derived"
-      }
+      },
+      "archivedFromCatalog": true
     },
     {
       "id": "spring-framework-boot",

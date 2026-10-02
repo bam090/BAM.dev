@@ -6,6 +6,8 @@ import { parseLessonHash, resolveLessonRoute } from "../src/core/navigation.js";
 import { getReviewDocumentLesson } from "../src/core/review-navigation.js";
 import { splitLessonOverview, splitMarkdownSection } from "../src/ui/markdown.js";
 
+import { JAVA_MERGED_INTO, JAVA_MERGED_TARGET_IDS } from "./fixtures/java-merged-lessons.js";
+
 const load = async (path) => JSON.parse(await readFile(new URL(path, import.meta.url), "utf8"));
 const curriculum = await load("../content/curriculum.json");
 const { concepts } = await load("../content/review-concepts.json");
@@ -37,8 +39,9 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
       assert.equal(lesson.order, contract.firstOrder + index);
       assert.equal(lesson.slug, `wiki-${key}`);
       assert.equal(lesson.contentFile, `content/lessons/${contract.language}/wiki-${key}.md`);
-      assert.equal(Boolean(lesson.archivedFromCatalog), false);
-      assert.equal(lesson.objectives.length, 1);
+      assert.equal(Boolean(lesson.archivedFromCatalog), Object.hasOwn(JAVA_MERGED_INTO, lesson.id), lesson.id);
+      if (!JAVA_MERGED_TARGET_IDS.has(lesson.id)) assert.equal(lesson.objectives.length, 1);
+      assert.ok(lesson.objectives.length > 0);
       assert.ok(lesson.objectives[0].trim());
       assert.ok(lesson.summary.trim());
       assert.ok(lesson.essentialQuestion.trim());
@@ -56,8 +59,13 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
       }
       const markdown = await readFile(new URL(`../${lesson.contentFile}`, import.meta.url), "utf8");
       const overview = splitLessonOverview(markdown);
-      assert.equal(overview.objectives, lesson.objectives[0], `${lesson.id}: 목표 불일치`);
-      assert.equal(overview.summary, lesson.summary, `${lesson.id}: 요약 불일치`);
+      if (JAVA_MERGED_TARGET_IDS.has(lesson.id)) {
+        const objectives = overview.objectives.split("\n").filter((line) => line.startsWith("- ")).map((line) => line.slice(2).replaceAll("`", ""));
+        assert.deepEqual(objectives, lesson.objectives, `${lesson.id}: 목표 불일치`);
+      } else {
+        assert.equal(overview.objectives, lesson.objectives[0], `${lesson.id}: 목표 불일치`);
+        assert.equal(overview.summary, lesson.summary, `${lesson.id}: 요약 불일치`);
+      }
       const answer = splitMarkdownSection(markdown, lesson.answerHeading);
       assert.ok(answer.section.replace(/^## 핵심 질문 답\s*/, "").trim(), `${lesson.id}: 직접답 없음`);
       assert.doesNotMatch(answer.body, /^## 핵심 질문 답\s*$/m, `${lesson.id}: 중복 직접답`);
@@ -68,7 +76,8 @@ test("승인된 JS·Java 64개 단위는 목표·요약·직접답과 유효한 
         assert.equal(target?.courseId, parsed.courseId, hash);
         assert.equal(target?.slug, parsed.slug, hash);
       }
-      const mappings = concepts.filter((concept) => getReviewDocumentLesson(curriculum, concept)?.id === lesson.id);
+      const documentId = JAVA_MERGED_INTO[lesson.id] ?? lesson.id;
+      const mappings = concepts.filter((concept) => getReviewDocumentLesson(curriculum, concept)?.id === documentId);
       assert.ok(collection.questions.some((question) => mappings.some((concept) => concept.lessonId === question.lessonId && concept.id === question.conceptId)), `${lesson.id}: 풀 수 있는 관련 문항 없음`);
     }
   }
@@ -116,5 +125,21 @@ test("복원한 Java 02~06 교안과 공식 출처 기록은 origin/dev 원문 �
   for (const [file, expectedHash] of expectedHashes) {
     const content = await readFile(new URL(`../${file}`, import.meta.url));
     assert.equal(createHash("sha256").update(content).digest("hex"), expectedHash, file);
+  }
+});
+
+
+test("Java 통합은 38개 ID·URL과 순서를 보존하고 21편 활성·17편 보관으로 나눈다", () => {
+  const lessons = curriculum.lessons.filter((lesson) => lesson.courseId === "java");
+  assert.equal(lessons.length, 38);
+  assert.equal(lessons.filter((lesson) => !lesson.archivedFromCatalog).length, 21);
+  assert.equal(lessons.filter((lesson) => lesson.archivedFromCatalog).length, 17);
+  for (const [sourceId, targetId] of Object.entries(JAVA_MERGED_INTO)) {
+    const source = lessons.find((lesson) => lesson.id === sourceId);
+    const target = lessons.find((lesson) => lesson.id === targetId);
+    assert.equal(source?.archivedFromCatalog, true, sourceId);
+    assert.equal(Boolean(target?.archivedFromCatalog), false, targetId);
+    assert.equal(resolveLessonRoute(curriculum, `#/learn/java/${source.slug}`)?.id, sourceId);
+    for (const conceptId of source.conceptIds) assert.ok(target.conceptIds.includes(conceptId), conceptId);
   }
 });

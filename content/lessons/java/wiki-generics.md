@@ -10,7 +10,7 @@
 
 ## 먼저 확인할 개념
 
-[추상 클래스와 인터페이스의 역할](#/learn/java/wiki-abstract-interfaces) · [타입과 변수](#/learn/java/wiki-types-variables)를 먼저 확인하면 예제의 전제를 이해하기 쉽습니다.
+[상속·인터페이스·조합: 타입 관계 고르기](#/learn/java/wiki-inheritance-dispatch) · [타입과 변수](#/learn/java/wiki-types-variables)를 먼저 확인하면 예제의 전제를 이해하기 쉽습니다.
 
 다음 문장 예제는 Java 25의 main 같은 메서드 안에 두고, 사용하는 소스 파일의 클래스 선언 앞에는 아래 import를 둡니다. 독립 예제의 같은 변수 이름을 한 블록에 겹쳐 선언하지 않습니다.
 
