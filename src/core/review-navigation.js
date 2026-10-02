@@ -39,10 +39,21 @@ export function getTopicReviewQuestions(curriculum, collection, topicId) {
     const lesson = lessons.get(question.lessonId);
     const course = courses.get(lesson?.courseId);
     const topic = course?.categoryId === "language" ? course.languageId : course?.categoryId;
-    if (lesson?.languageId !== collection.languageId || topic !== topicId || seen.has(question.id)) return false;
+    if (lesson?.languageId !== collection.languageId || (topicId !== "all" && topic !== topicId) || !course || seen.has(question.id)) return false;
     seen.add(question.id);
     return true;
   });
+}
+
+export function getAllReviewQuestions(curriculum, collections) {
+  const seen = new Set();
+  return curriculum.languages.filter((language) => language.status !== "planned")
+    .flatMap((language) => getTopicReviewQuestions(curriculum, collections.get(language.id), "all"))
+    .filter((question) => {
+      if (seen.has(question.id)) return false;
+      seen.add(question.id);
+      return true;
+    });
 }
 
 export function buildReviewLessonHash(lesson, token, heading = null) {

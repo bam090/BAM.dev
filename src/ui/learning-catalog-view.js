@@ -1,6 +1,6 @@
 import { compareLessonReadingOrder, getDocumentKind, getLessonKeyword, getUnitLesson } from "../core/content.js";
 import { buildLessonHash } from "../core/navigation.js";
-import { buildKeywordReviewHash, buildScopedReviewHash, buildTopicReviewHash, getKeywordReviewScope, getReviewDocumentLesson, getTopicReviewQuestions } from "../core/review-navigation.js";
+import { buildKeywordReviewHash, buildScopedReviewHash, buildTopicReviewHash, getAllReviewQuestions, getKeywordReviewScope, getReviewDocumentLesson, getTopicReviewQuestions } from "../core/review-navigation.js";
 import { escapeHtml, renderInlineCodeText } from "./markdown.js";
 
 export const CATALOG_TOPICS = [
@@ -111,7 +111,7 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
   const hasSelection = topicId !== null || query.trim() !== "";
   const allItems = getLearningCatalogItems({ curriculum, collections, concepts, kind });
   const items = hasSelection ? getLearningCatalogItems({ curriculum, collections, concepts, kind, ...filters, topicId: topicId ?? "all" }) : [];
-  const selectedTopic = CATALOG_TOPICS.find((topic) => topic.id === topicId);
+  const selectedTopic = CATALOG_TOPICS.find((topic) => topic.id === (topicId ?? (isReview ? "all" : null)));
   const reviewTopics = new Map(isReview ? CATALOG_TOPICS.filter((topic) => !topic.planned && topic.id !== "all").map((topic) => {
     const languages = [...new Set(curriculum.courses.filter((course) => course.status !== "planned" && getCourseTopic(course) === topic.id)
       .map((course) => course.languageId))];
@@ -143,12 +143,15 @@ export function renderLearningCatalog({ curriculum, collections = new Map(), con
     const isSelected = unit === selectedKeyword;
     return `<button class="catalog-topic catalog-keyword" type="button" data-catalog-keyword="${escapeHtml(unit.lessonId)}" aria-pressed="${isSelected}"><strong>${renderInlineCodeText(unit.keyword)}</strong><span>${documentCount}개 문서</span>${isSelected ? '<span class="catalog-topic-selected">선택됨</span>' : ""}</button>`;
   }).join("");
-  const selectedReviewTopic = reviewTopics.get(topicId);
-  const reviewTopicReady = selectedReviewTopic?.languageId && selectedReviewTopic.questions.length > 0 && !failedTopics.includes(topicId);
-  const topicActions = isReview && selectedTopic && selectedTopic.id !== "all" && !selectedTopic.planned
+  const actionTopicId = selectedTopic?.id;
+  const selectedReviewTopic = actionTopicId === "all"
+    ? { languageId: "all", questions: getAllReviewQuestions(curriculum, collections) }
+    : reviewTopics.get(actionTopicId);
+  const reviewTopicReady = selectedReviewTopic?.languageId && selectedReviewTopic.questions.length > 0 && !(actionTopicId === "all" ? failedLanguages.length > 0 : failedTopics.includes(actionTopicId));
+  const topicActions = isReview && selectedTopic && !selectedTopic.planned
     ? `<div class="quiz-result-actions review-topic-actions" aria-label="${escapeHtml(selectedTopic.title)} 전체 문제 풀기">${[
-        [null, `${selectedTopic.title} 전체 ${selectedReviewTopic?.questions.length ?? 0}문제 풀기`],
-        ["random", `${selectedTopic.title} 전체 ${selectedReviewTopic?.questions.length ?? 0}문제 랜덤으로 풀기`],
+        [null, `${selectedTopic.id === "all" ? "전체" : `${selectedTopic.title} 전체`} ${selectedReviewTopic?.questions.length ?? 0}문제 풀기`],
+        ["random", `${selectedTopic.id === "all" ? "전체" : `${selectedTopic.title} 전체`} ${selectedReviewTopic?.questions.length ?? 0}문제 랜덤으로 풀기`],
       ].map(([order, label]) => reviewTopicReady
         ? `<a class="button ${order ? "button--secondary" : "button--primary"}" href="${escapeHtml(buildTopicReviewHash(selectedReviewTopic.languageId, selectedTopic.id, order))}">${escapeHtml(label)}</a>`
         : `<button class="button button--secondary" type="button" disabled>${escapeHtml(label)}</button>`).join("")}</div>` : "";
