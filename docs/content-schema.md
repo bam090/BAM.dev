@@ -411,7 +411,25 @@ Quest의 기존 `id`, `revision`, `difficulty`, route와 진도는 보존한다.
 
 ### 외부 Git 웹과제
 
-`[제안]` 외부 과제 데이터는 기존 인앱 Web Project와 다른 도메인이며 아직 구현되지 않았다. [밤위키 원본 활용 계약](designs/web-assignments.md#과제-메타데이터-계약)에 따라 선정한 과제의 안정 ID·revision·선수 연결, 원본 버전·시작 브랜치/commit·루트 README·허용 파일·AI 제공 범위·도구·공개 검증·전달/공개 범위를 최소 매핑한다. 중앙 저장소·일률 starter/solution ref를 필수 필드로 가정하지 않는다. 구체 schemaVersion·파일 경로는 원본별 연결 계약에서 확정하고 `content/web-projects/index.json`을 외부 manifest로 재해석하지 않는다.
+`[현재 사실]` `content/web-assignments/index.json`은 `schemaVersion: 1`과 `assignments` 배열을 가진 별도 컬렉션이다. 기존 `content/web-projects/index.json`을 외부 manifest로 재해석하지 않는다. 첫 과제는 `web-assignment-study-meetup-pin` revision 1이며 ZIP·파일 manifest도 저장소에 있다. 실제 실행 지원은 `availability.status: "execution-verification-pending"`으로 구분한다.
+
+`[확정 결정]` 이번 앱 연결은 기존 필드를 그대로 읽으며 다음 계약으로 검증한다.
+
+| 필드 묶음 | 계약 |
+| --- | --- |
+| 식별·목표 | 고유 `id`, 양의 정수 `revision`, `kind: "external-git"`, `delivery: "local-bundle"`, `title`, `summary`, `goal` |
+| 원본 | `sourceId`, `sourceVersion`, 고정 40자리 Git `sourceCommit`, 참고용 `sourceBranch`, 묶음 내부 `readmePath`, `targetFiles` |
+| 선수 연결 | `lessonIds`·`conceptIds`가 실제 curriculum의 교안·개념을 가리키며 누락된 외부 선수 지식은 `prerequisiteNotes`로 안내 |
+| 정적 전달 | `bundle.path`, `manifestPath`는 `content/web-assignments/assets/` 아래 같은 출처의 상대 경로. 절대 경로·상위 이동·URL scheme·query·fragment를 허용하지 않음. `sha256`, `prefix`, `fileCount`는 묶음 식별 정보 |
+| 준비·안내 | `toolchain`, `startNotes`, `sourceNotes`, `offlineNotes`는 기존 원본의 준비 조건이며 현재 환경의 실행 PASS를 뜻하지 않음 |
+| 공개 검증 | `publicVerification.command`, `baseUrl`, `notes`, `manualChecks`는 외부 폴더에서 학습자가 수행할 안내. 앱에서 실행하지 않음 |
+| 제품 상태·회고 | `availability.status`, `label`, `notes`와 `reflectionPrompt`. 자기보고가 제품 검증 상태를 바꾸지 않음 |
+
+파일 manifest는 `schemaVersion`, `assignmentId`, `revision`, `sourceId`, `sourceVersion`, `sourceCommit`, `bundlePath`, `bundleSha256`, `prefix`와 `files[{ path, bytes, sha256, mode }]`를 담는다. 번들 정합성 검사는 기존 19파일의 해시·크기·mode와 출처 일치를 확인하며 source Git을 재구성하지 않는다.
+
+loader·validator는 `src/core/web-assignment.js`의 `loadWebAssignmentCollection(curriculum, { fetchImpl })`·`validateWebAssignmentCollection(collection, curriculum)`로 분리한다. 유효하지 않은 데이터는 오류로 처리하고 기존 인앱 컬렉션에 섞지 않는다. 조회와 라우팅은 `findWebAssignmentById`, `buildWebAssignmentListHash`, `buildWebAssignmentHash`, `parseWebAssignmentHash`를 사용한다.
+
+자기보고 저장은 콘텐츠와 분리한다. ID/revision별 독립 키·저장 필드·실패 처리·기존 URL 보존은 [앱 연결 계약](designs/web-assignments.md#단일-원본-앱-연결-계약)이 정본이다. 사용자 소스·실행 결과·계정·원격 상태는 저장하지 않는다.
 
 ### 키워드별 개념·활용·심화 문서
 

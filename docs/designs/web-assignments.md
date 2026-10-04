@@ -5,7 +5,7 @@
 ## 결정 적용과 현재 차이
 
 - `[확정 결정]` 밤위키에서 만든 과제를 원본으로 사용한다. 원본 운영의 정본은 밤위키 `schema/자동운영/웹과제-운영.md`이며 BAM은 그 운영·템플릿·예약 설정을 복제하거나 변경하지 않는다. 확인 출처와 범위는 [자료 기록](../reference-audit.md#밤위키-웹과제-원본-확인-2026-09-15)에 남긴다.
-- `[현재 사실]` 밤위키에는 별도 로컬 웹코딩 과제 후보가 있다. BAM에 반입된 외부 과제 manifest·연결·실행 검증은 아직 없다. 원본 존재를 BAM 제공 완료로 세지 않는다.
+- `[현재 사실]` `content/web-assignments/index.json`과 첫 과제의 ZIP·파일 manifest가 저장소에 반입되어 있다. 고정 묶음 존재와 앱 연결·실제 실행 검증은 별도로 판정한다. 실제 Spring 빌드·서버·공개 검증·오프라인 재검증은 대기다.
 - `[현재 사실]` BAM은 Spring 핵심·Boot·Security·JPA 정적 문서와 객관식을 제공한다. 실제 Spring 프로젝트 실행은 외부 과제 폴더에서 학습자가 시작·종료하며 앱 본체나 Java 코딩테스트 runner에 포함하지 않는다.
 - `[현재 사실]` 기존 인앱 Web Project는 HTML·CSS 두 파일 작성·미리보기·공개 검사·자가평가를 제공한다. 원본 활용 방식의 대체 흐름이 검증될 때까지 ID·주소·초안·제출 기록을 보존한다.
 
@@ -13,7 +13,7 @@ BAM 안내·진도 UI는 [전역 시각 계약](visual-design.md)을 따르되 �
 
 ## 학습자 흐름
 
-`[제안]` 아래는 아직 구현되지 않은 BAM 연결 흐름이다.
+`[확정 결정]` 현재 승인된 앱 연결 흐름은 아래와 같다. 구현·독립 검증 상태는 [작업 카드](../work-items/2026-09-15-web-assignment-study-meetup-pin.md#앱-연결-재개와-판정-경계)를 따른다.
 
 ```text
 BAM.dev에서 과제 목표·선수 개념 확인
@@ -36,7 +36,7 @@ BAM.dev에서 과제 목표·선수 개념 확인
 
 ## 과제 메타데이터 계약
 
-`[제안]` 외부 과제용 BAM 데이터는 아직 구현되지 않았다. 과제를 선정한 뒤 원본 필드와 다음 최소 정보를 매핑하고 [콘텐츠 스키마](../content-schema.md#외부-git-웹과제)에 확정한다. 기존 인앱 Web Project JSON에 외부 폴더를 곧바로 넣지 않는다.
+`[현재 사실]` 첫 과제의 데이터는 별도 `content/web-assignments/index.json`에 있으며 [콘텐츠 스키마](../content-schema.md#외부-git-웹과제)의 계약으로 읽는다. 다음 정보는 기존 데이터에서 사용한다. 기존 인앱 Web Project JSON에 외부 폴더를 곧바로 넣지 않는다.
 
 - BAM 안정 ID·revision, 제목·목표와 실제 선수 교안/개념 연결
 - 원본 과제 식별자·버전·전달 위치, 선택한 시작 브랜치·고정 commit·루트 README
@@ -82,15 +82,15 @@ BAM.dev에서 과제 목표·선수 개념 확인
 ### Spring Boot
 
 - `[확정 결정]` 교안은 BAM.dev 앱 안의 정적 콘텐츠로 제공하고 실제 Spring Boot 프로젝트 실행은 외부 웹과제 폴더에서 시작한다. 앱 본체나 Java 코딩테스트 runner에 Spring Boot를 포함하지 않는다.
-- `[현재 사실]` Spring 정적 교안·객관식은 제공한다. 밤위키의 외부 Spring 과제 후보와 별개로 BAM 과제 ID·고정 버전 연결·공개 검증은 아직 없다.
-- `[확인 필요]` 설치형 MVP의 차단 묶음·Code Quest 여부는 `DEC-JAVA-01`, 선정 원본의 BAM ID·시작 버전·전달/공개·빌드/검증 연결은 `DEC-WEB-REPO-01`, 의존성과 오프라인 준비는 `DEC-WEB-OFFLINE-01`에서 정한다.
+- `[현재 사실]` Spring 정적 교안·객관식은 제공한다. 첫 외부 Spring 과제의 BAM ID·고정 버전·공개 검증 안내는 반입되어 있다. 안내의 존재를 실제 공개 검증 PASS로 해석하지 않는다.
+- `[확인 필요]` 추가 과제·Code Quest 여부와 의존성·오프라인 지원 범위는 후속 결정 대상이다. 첫 과제는 아래 고정 묶음과 앱 연결 계약을 사용하며 설치형 전달을 이 연결의 필수 조건으로 두지 않는다.
 - 과제에 로컬 HTTP 실행이 필요해도 학습자가 외부 폴더에서 시작·종료하며 BAM.dev 앱의 상시 서버나 Java 코딩테스트 runner로 취급하지 않는다.
 
 ## BAM.dev 웹과제 페이지
 
-`[제안]` 페이지는 선정 과제의 목표·선수 연결, 원본 버전·시작 상태·README, 허용 파일·AI 제공 범위, 실제 도구·공개 검증 명령과 필요한 사전 다운로드를 안내한다. 학습자가 먼저 구현·설명한 뒤 승인된 비교 자료를 확인하도록 한다. 원본 과제 화면을 새로 제작하거나 사용자 풀이를 자동 읽는 기능은 이번 방향에 포함하지 않는다.
+`[확정 결정]` 이번 앱 연결 페이지는 선정 과제의 목표·선수 연결, 원본 버전·시작 상태·README, 허용 파일·AI 제공 범위, 실제 도구·공개 검증 명령과 필요한 사전 다운로드를 안내한다. 학습자가 먼저 구현·설명한 뒤 승인된 비교 자료를 확인하도록 한다. 원본 과제 화면을 새로 제작하거나 사용자 풀이를 자동 읽는 기능은 이번 방향에 포함하지 않는다.
 
-BAM.dev는 GitHub API로 브랜치나 사용자 로컬 Git 상태를 자동 판정하지 않는다. 외부 명령을 자동 실행하지 않고 과제별로 검증된 안내를 제공하며, 완료·회고는 기존 제품 진도와 구분해 설계한다. 아직 이 외부 연결용 화면·저장 필드가 구현됐다고 표시하지 않는다.
+BAM.dev는 GitHub API로 브랜치나 사용자 로컬 Git 상태를 자동 판정하지 않는다. 외부 명령을 자동 실행하지 않고 과제별로 검증된 안내를 제공하며, 완료·회고는 기존 제품 진도와 구분해 설계한다. 화면·저장 구현의 완료 여부는 작업 카드의 실제 검증 근거로 판정한다.
 
 ## 검증과 인계
 
@@ -112,20 +112,30 @@ BAM.dev는 GitHub API로 브랜치나 사용자 로컬 Git 상태를 자동 판�
 
 ## bam의 결정이 필요한 항목
 
-- 선택할 밤위키 과제와 고정 시작 버전·commit
-- BAM 안정 ID·선수 교안/개념 연결과 전달·공개 범위
-- 해당 과제의 실행 도구·공개 검증·비교 자료·오프라인 계약
+- 추가로 선택할 밤위키 과제와 고정 시작 버전·commit
+- 추가 과제의 BAM 안정 ID·선수 연결과 전달·공개 범위
+- 첫 과제의 실제 실행 검증 재개 및 추가 비교 자료·오프라인 지원 범위
 - 검증된 대체 흐름 이후 기존 인앱 Web Project의 병행·이관·종료 여부
 
-원본 선택과 연결을 정하기 전에는 신규 과제 생성·BAM 반입·제공 완료를 선언하지 않는다. SQL/ERD·Excalidraw/PNG·사용자 풀이 반입과 밤위키 자동운영 설정 변경은 이번 범위 밖이다.
+첫 과제의 원본 선택과 반입은 확인했지만 실제 실행 지원 완료는 선언하지 않는다. 추가 과제는 원본 선택과 연결을 먼저 확정한다. SQL/ERD·Excalidraw/PNG·사용자 풀이 반입과 밤위키 자동운영 설정 변경은 이번 범위 밖이다.
 
 결정 ID와 구현 순서는 [`../roadmap.md`](../roadmap.md)가 담당한다.
 
-## 단일 원본 pilot의 최소 구현 제안
+## 첫 원본의 고정 시작과 전달
 
-`[제안]` 승인된 밤위키 과제 하나부터 연결한다. 기존 인앱 Web Project의 URL·초안·제출을 유지하며 외부 과제용 화면과 기록을 분리한다. 원본 선정·전달 권한·고정 commit·공개 검증 계약이 준비되지 않으면 안내 후보로 남기고 제공 완료로 표시하지 않는다.
+`[현재 사실]` 첫 과제는 `web-assignment-study-meetup-pin` revision 1이며 원본 commit은 `313b5be982bdc2296326cbed5319733fad5b05fe`다. `content/web-assignments/assets/study-meetup-pin-v1-313b5be.zip`과 같은 이름의 `.manifest.json`이 반입되어 있다. ZIP은 `study-meetup-pin-v1/` 아래 19파일을 제공하며 `.git`·사용자 풀이·완성 코드·상위 ERD 자료를 포함하지 않는다. SHA-256·파일 bytes·mode는 기존 manifest를 기준으로 확인한다. `/tmp`의 과거 선정 receipt는 이력이며 앱 연결을 위해 원본 Git이나 receipt를 다시 만들지 않는다.
 
-- 입력 manifest: `id`, `revision`, `sourceId`, `sourceVersion`, `startCommit`, `branchLabel`, `readme`, `allowedFiles`, `aiProvidedScope`, `toolVersions`, `publicChecks`, `offlinePrerequisites`. 실제 원본에서 확인한 값만 쓰고 로컬 개인 경로는 공개 데이터에 넣지 않는다.
-- UX·상태: 목표/선수 확인→고정 시작점·README→학습자 구현·공개 검증→회고. `not_started → in_progress → self_completed`이며 별도 저장은 과제 ID/revision·자기 보고 checklist·reflection·시각만 담는다. 자기 보고를 검증 PASS나 앱의 자동 채점으로 승격하지 않는다. 원본 revision이 달라지면 이전 보고를 보존하고 새 revision은 not_started다.
-- 실패·ack: 저장 성공 뒤에만 저장 완료를 표시한다. 실패 시 기존 기록·현재 입력을 보존하고 재시도를 안내한다. commit 부재, branch 이동, 도구 미설치, 사전 다운로드 누락, 공개 검사 실패를 각각 안내한다. 자동 clone·외부 명령·풀이 읽기·원본 수정·업로드는 하지 않는다.
-- 검증 함수의 책임과 완료: manifest의 고정 참조·허용 범위를 검사하고 revision별 자기 보고만 저장한다. 독립 검증자가 선택한 고정 시작점에서 README와 공개 검증을 실제 확인해야 pilot 제공 완료다. 상태 모델은 저장 전/후 종료·revision 교체·manifest 누락·저장 실패·자기 보고 PASS 오표시를 다룬다. 시뮬레이션과 원본 실제 실행은 아직 미실행이다.
+<a id="단일-원본-pilot의-최소-구현-제안"></a>
+
+## 단일 원본 앱 연결 계약
+
+`[확정 결정]` 사용자가 승인한 이번 범위는 기존 묶음의 loader·validator, 목록·상세·다운로드·선수 교안 이동과 별도 자기보고 진행·확인표·회고 저장이다. 기존 경험 카드의 목표·지원·A/E/C를 재사용하며 교육 내용은 다시 쓰지 않는다. 실제 Spring 실행 gate는 지원·과제 PASS 판정에 적용하고 정적 앱 연결 자체의 착수를 막지 않는다.
+
+- 경로: 목록 `#/web-assignments`, 상세 `#/web-assignments/<id>`. 기존 `#/web-projects`와 `#/web-projects/<slug>`·초안·제출·진도는 그대로 유지하고 두 목록 사이에서 이동할 수 있게 한다. 선수 교안은 실제 curriculum의 ID를 course/slug에 연결한다.
+- 표시: 제목·목표·선수 공백·고정 commit·README 시작 안내·수정할 네 파일·AI 제공 범위·도구 버전·공개 명령·수동 확인·오프라인 한계를 기존 데이터에서 읽는다. ZIP과 manifest를 같은 출처의 정적 링크로 내려받는다. Java 21은 외부 원본 설정이며 앱 Java runner 지원으로 표시하지 않는다.
+- 상태: `not_started`, `in_progress`, `self_completed`는 모두 자기보고다. 수동 확인표도 학습자가 표시한 기록이며 공개 검증 PASS·자동 채점·학습 숙달로 승격하지 않는다. 제품의 `execution-verification-pending`은 사용자 완료 표시와 무관하게 유지한다.
+- 저장: `WebAssignmentRepository` 경계의 `getProgress(id, revision)`, `saveProgress(id, revision, { status, reflection, checklist })`, `getPersistenceStatus()`를 사용한다. 독립 키 `bam.dev.web-assignments.v1.records.<id>.<revision>`에 `{ assignmentId, revision, status, reflection, checklist, updatedAt }`를 저장한다. `checklist`는 해당 revision의 `publicVerification.manualChecks` 순서에 대응하는 boolean 배열이다. 이전 revision은 보존하며 새 revision에 자동 복사하지 않는다.
+- 실패: 저장소가 막혔거나 기록이 손상되면 오류를 표시하고 성공으로 응답하지 않는다. 처음 읽기가 실패한 기록은 재조회가 성공하기 전 덮어쓰지 않는다. 쓰기 성공 뒤에만 저장 완료를 표시하며 실패 때 기존 기록과 현재 입력을 보존해 재시도할 수 있게 한다. 조용한 메모리 대체 저장은 하지 않는다. 같은 ID/revision의 동시 쓰기는 Web Storage의 마지막 쓰기가 남는 한계가 있다.
+- 접근성·오프라인: 기존 서비스 shell·semantic theme를 사용하고 링크·상태 선택·확인표·회고에 레이블과 키보드 초점을 제공한다. 저장 결과는 색상만으로 구분하지 않는다. 좁은 화면에서는 읽기 순서와 입력을 유지하되 검증 범위는 대표 데스크톱 흐름이다. 정적 빌드에 포함된 묶음과 Spring 의존성 캐시를 구분하며 최초부터 완전 오프라인이라고 안내하지 않는다.
+- 안전·복구: 자동 clone·외부 명령·풀이 읽기·원본 수정·업로드·원격 채점은 없다. 잘못된 컬렉션과 알 수 없는 ID는 명확한 오류로 처리하고 기존 인앱 경로는 계속 제공한다. 연결을 되돌릴 때도 사용자 기록·원본 자산을 삭제하지 않는다.
+- 검증: 컬렉션·선수 ID·안전한 경로·ZIP/manifest 정합성, 목록/상세/잘못된 URL, 다운로드, 키보드, revision 격리·재방문·읽기/쓰기 실패와 기존 인앱 회귀를 focused 범위로 확인한다. 콘텐츠 검토·앱 실행 검증·통합 판정은 독립 역할이 맡는다. 실제 Spring 빌드·HTTP·공개 verify·오프라인 실행은 이번 범위 밖이며 전체 pilot 제공 완료와 구분한다.

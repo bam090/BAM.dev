@@ -1,3 +1,6 @@
+import { loadWebAssignmentCollection, findWebAssignmentById, parseWebAssignmentHash } from './core/web-assignment.js';
+import { LocalStorageWebAssignmentRepository } from './repositories/web-assignment-repository.js';
+import { renderWebAssignmentListView, renderWebAssignmentView } from './ui/web-assignment-view.js';
 import {
   getCourse,
   getLanguage,
@@ -437,6 +440,8 @@ export class BamLearningApp {
       evaluationKind: "java-junit-method-v1",
       available: false,
     };
+    this.webAssignmentRepository = new LocalStorageWebAssignmentRepository();
+    this.webAssignmentCollection = null;
     this.webProjectCollection = null;
     this.webProjectState = null;
     this.webProjectRunner = new BrowserWebProjectRunner();
@@ -482,6 +487,11 @@ export class BamLearningApp {
       this.webProjectCollection = await loadWebProjectCollectionSafely(
         this.curriculum,
       );
+      try {
+        this.webAssignmentCollection = await loadWebAssignmentCollection(this.curriculum);
+      } catch {
+        this.webAssignmentLoadError = "외부 과제 자료를 읽을 수 없습니다. 새로고침하여 다시 시도하세요.";
+      }
       await this.openRoute({ useLastLesson: true });
       if (!this.mobileMedia.matches) void this.loadSidebarCatalog();
     } catch (error) {
@@ -710,6 +720,11 @@ export class BamLearningApp {
     this.root.addEventListener("click", (event) => this.handleClick(event));
     this.root.addEventListener("change", (event) => this.handleChange(event));
     this.root.addEventListener("submit", (event) => {
+      if (event.target.matches("[data-web-assignment-form]")) {
+        event.preventDefault();
+        this.saveWebAssignmentProgress(event.target);
+        return;
+      }
       if (event.target.matches("[data-profile-nickname-form]")) {
         event.preventDefault();
         const input = event.target.querySelector("[name=nickname]");
@@ -814,6 +829,14 @@ export class BamLearningApp {
     if (/^#\/my(?:\/|$)/u.test(String(window.location.hash))) {
       window.history.replaceState(null, "", buildMyPageHash());
       await this.openMyPageRoute();
+      return;
+    }
+
+    const webAssignmentRoute = parseWebAssignmentHash(window.location.hash);
+    if (webAssignmentRoute || /^#\/web-assignments(?:\/|$)/u.test(String(window.location.hash))) {
+      this.openWebAssignmentRoute(webAssignmentRoute?.id, {
+        routeError: webAssignmentRoute ? "" : "외부 과제 주소가 올바르지 않습니다. 목록에서 과제를 선택하세요.",
+      });
       return;
     }
 
@@ -1246,6 +1269,8 @@ export class BamLearningApp {
       "coding-test-list": "coding-test",
       "web-project": "web-project",
       "web-project-list": "web-project",
+      "web-assignment": "web-project",
+      "web-assignment-list": "web-project",
       "my-page": "my-page",
     };
     return serviceByView[this.currentView] ?? "home";
@@ -1958,6 +1983,71 @@ export class BamLearningApp {
       this.hasRenderedView = true;
     } catch (error) {
       if (sequence === this.renderSequence) this.renderFatalError(error);
+    }
+  }
+
+  openWebAssignmentRoute(id, { routeError = "" } = {}) {
+    this.enterView(id ? "web-assignment" : "web-assignment-list");
+    const assignment = findWebAssignmentById(this.webAssignmentCollection, id);
+    this.webAssignment = assignment;
+    let mainContent;
+    if (!assignment) {
+      mainContent = renderWebAssignmentListView({ collection: this.webAssignmentCollection,
+        error: this.webAssignmentLoadError || routeError || (id ? "요청한 외부 과제를 찾을 수 없습니다." : "") });
+    } else {
+      let progress = null;
+      let error = "";
+      this.webAssignmentReadFailed = false;
+      try {
+        progress = this.webAssignmentRepository.getProgress(assignment.id, assignment.revision);
+        if (progress && progress.checklist.length !== assignment.publicVerification.manualChecks.length) {
+          throw new Error("확인표가 현재 자료와 다릅니다.");
+        }
+      } catch {
+        this.webAssignmentReadFailed = true;
+        error = "기존 기록을 읽지 못해 저장을 막았습니다. 기록 다시 읽기로 재시도하세요.";
+      }
+      mainContent = renderWebAssignmentView({ assignment, curriculum: this.curriculum, progress,
+        error, readFailed: this.webAssignmentReadFailed });
+    }
+    this.root.innerHTML = this.renderServiceShell({ current: "web-project", mainContent });
+    this.syncMenuState();
+    this.root.querySelector("[data-web-assignment-retry]")?.addEventListener("click", (event) => {
+      const form = event.target.closest("form");
+      const status = form.querySelector("[data-web-assignment-save-status]");
+      try {
+        const saved = this.webAssignmentRepository.getProgress(assignment.id, assignment.revision);
+        if (saved && saved.checklist.length !== assignment.publicVerification.manualChecks.length) {
+          throw new Error("확인표가 현재 자료와 다릅니다.");
+        }
+        this.webAssignmentReadFailed = false;
+        form.querySelector('[type="submit"]').disabled = false;
+        // Keep any current input. Only restore a recovered report on a fresh visit.
+        status.textContent = "기존 기록을 읽었습니다. 현재 입력을 유지합니다. 저장하면 이 입력으로 갱신됩니다. 저장된 내용은 목록으로 나갔다 돌아오면 불러옵니다.";
+      } catch {
+        status.textContent = "기존 기록을 아직 읽을 수 없습니다. 현재 입력을 유지하며 저장은 막아 두었습니다. 다시 시도하세요.";
+      }
+    });
+    document.title = `${assignment?.title ?? "외부 웹과제"} · BAM.dev`;
+    window.scrollTo({ top: 0, behavior: "instant" });
+    if (this.hasRenderedView) focusMainContent(this.root.querySelector("#web-assignment-title"));
+    this.hasRenderedView = true;
+  }
+
+  saveWebAssignmentProgress(form) {
+    const assignment = this.webAssignment;
+    if (!assignment || this.webAssignmentReadFailed) return;
+    const status = form.querySelector("[data-web-assignment-save-status]");
+    const input = {
+      status: form.querySelector('[name="status"]').value,
+      reflection: form.querySelector('[name="reflection"]').value,
+      checklist: [...form.querySelectorAll('[name="checklist"]')].map((checkbox) => checkbox.checked),
+    };
+    try {
+      this.webAssignmentRepository.saveProgress(assignment.id, assignment.revision, input);
+      status.textContent = "자기 보고를 이 브라우저에 저장했습니다. 공개 검증 상태는 바뀌지 않습니다.";
+    } catch {
+      status.textContent = "저장하지 못했습니다. 현재 입력은 화면에 남아 있습니다. 저장소 설정을 확인한 뒤 다시 저장하세요.";
     }
   }
 

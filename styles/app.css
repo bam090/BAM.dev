@@ -6494,3 +6494,17 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
 .review-container .quiz-option.is-selected .quiz-option-marker { border: 0; background: transparent; color: var(--color-primary-strong); text-decoration: underline; }
 .review-container .quiz-option.is-correct .quiz-option-marker { border: 0; background: transparent; color: var(--color-accent); }
 .review-container .quiz-option.is-incorrect .quiz-option-marker { border: 0; background: transparent; color: var(--color-danger); }
+
+/* External assignments reuse the shell and semantic theme tokens. */
+.web-assignment-details { max-width: 960px; margin: 24px auto; line-height: 1.7; overflow-wrap: anywhere; }
+.web-assignment-details section { margin-block: 32px; }
+.web-assignment-details dt { font-weight: 700; }
+.web-assignment-details dd { margin: 0 0 12px; }
+.web-assignment-details li { margin-block: 8px; }
+.web-assignment-details form { display: grid; gap: 16px; }
+.web-assignment-details :is(select, textarea) { width: 100%; padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; }
+.web-assignment-details fieldset { min-width: 0; border: 1px solid var(--color-border); border-radius: 8px; }
+.web-assignment-check { display: flex; align-items: start; gap: 10px; margin-block: 12px; }
+.web-assignment-check input { flex-shrink: 0; margin-top: 7px; }
+.web-assignment-details button { justify-self: start; padding: 10px 16px; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-surface); color: var(--color-text); font: inherit; cursor: pointer; }
+.web-assignment-details button:disabled { opacity: .6; cursor: not-allowed; }

@@ -67,8 +67,9 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 - 코딩테스트 상세 결과 저장: `[확정 결정]` 기존 `bam.dev.progress.v1`의 optional 독립 배열에 문제 ID/revision/language·실행 source fingerprint·mode·finishedAt과 표시용 마지막 결과만 저장한다. 최신 20문제 각 1개·개별 UTF-8 64 KiB 상한, 개별 손상 제외·revision 불일치 복원 금지·이전 코드 안내·reset 삭제·run과 제출/완료 분리·저장 실패 시 기존 진도/화면 보존을 적용한다. source/JUnit 원문·IPC 권한은 복제하지 않는다. `[현재 사실]` renderer/storage 구현·focused 검사와 기존 실제 report replay 기반 Electron 재시작 상세 복원 검증을 완료했다. Java·javac 새 실행은 0이다. 필드 의미·안내와 검증 범위는 [CT 복원 계약](designs/coding-test.md#상세-결과-복원과-오류-안내)을 따른다.
 - 객관식 진행 저장: 별도 `bam.dev.review-session.v1` 키의 활성 세션 하나에 선택·채점·현재 문항·해설 펼침·스크롤·초점·복귀 문맥을 보존합니다. 문항 내용이 달라지거나 저장 상태가 유효하지 않으면 자동 재채점 대신 새 시작을 안내합니다. 기존 최근 완료 시도 20개와 오답 ID는 `bam.dev.progress.v1`을 그대로 사용하며, 결과 복구를 새 완료 시도로 중복 기록하지 않습니다. 실제 필드·감지 가능한 탭 충돌과 동시 쓰기 한계는 [R1 세션 계약](content-schema.md#진행-세션)이 정본입니다.
 - Web Project 저장: `WebProjectRepository` 계약과 `LocalStorageWebProjectRepository` 구현을 분리합니다. 초안은 프로젝트·리비전별 `bam.dev.web-projects.v1.records.v1.draft.*`, 제출 요약은 프로젝트·리비전·제출 ID별 `bam.dev.web-projects.v1.records.v1.submission.*` 독립 키에 저장해 서로 다른 레코드가 하나의 read-modify-write 경합으로 함께 사라지지 않게 합니다. `bam.dev.web-projects.v1`은 기존 aggregate v1 데이터를 처음 읽을 때 레코드로 옮기는 입력이자, 이후 탭 간 변경 알림용 manifest입니다. 최신 source는 최대 10개 초안에만, source·assertion·배점을 제외한 불변 제출 요약은 최대 20개 저장합니다.
+- 외부 웹과제 연결: `content/web-assignments/index.json`을 별도 loader·validator로 읽고 `#/web-assignments`·`#/web-assignments/<id>`에서 고정 자료와 실제 선수 교안을 안내한다. 자기보고 진행·확인표·회고는 `LocalStorageWebAssignmentRepository`를 통해 ID/revision별 `bam.dev.web-assignments.v1.records.<id>.<revision>`에 저장한다. 기존 Web Project 기록과 섞지 않고 외부 명령을 실행하지 않는다. 저장 성공 확인·실패 시 입력 보존·처음 읽기 실패 시 덮어쓰기 차단과 검증 범위는 [외부 앱 연결 계약](designs/web-assignments.md#단일-원본-앱-연결-계약)을 따른다. 현재 구현의 최종 독립 판정은 작업 카드에 기록한다.
 - Web Project 동시성: 서로 다른 초안과 프로젝트·리비전·제출 ID가 다른 제출은 독립 키라 보존되며 manifest는 레코드 탐색 보조 정보일 뿐 진실 원본이 아닙니다. 같은 프로젝트·revision 초안은 `expectedDraftToken`으로 발견 가능한 stale 쓰기를 거부합니다. legacy aggregate는 해당 독립 레코드가 아직 없을 때만 가져오며, 레코드가 생긴 뒤에는 그것을 진실 원본으로 유지합니다. 다만 Web Storage에는 compare-and-set 트랜잭션이 없으므로 같은 초안 레코드의 토큰 확인 직후 또는 같은 복합 제출 ID의 존재 확인 직후 두 탭이 동시에 쓰는 극히 좁은 구간은 last-write-wins입니다. 강한 단일 사용자 로컬 원자성이 필요해지면 IndexedDB 트랜잭션이나 Web Locks를 사용하는 저장소 구현을 별도 설계합니다.
-- 저장 장애: 브라우저 저장소 접근이 막히면 메모리 저장소로 전환하며 저장소 계약이 영속 여부를 화면에 제공합니다.
+- 저장 장애: 기존 진도·인앱 Web Project 저장소는 브라우저 저장소 접근이 막히면 메모리 저장소로 전환하며 영속 여부를 화면에 제공합니다. 외부 웹과제 자기보고 저장소는 메모리로 대체하지 않고 읽기·쓰기 오류를 알리며, 처음 읽기 실패 뒤에는 재조회 성공 전 덮어쓰기를 막습니다.
 - 과정 전환: 공통 서비스 사이드바와 제품별 본문 탐색에서 기존 유효한 과정·교안·실습 링크를 제공합니다. 준비 중인 과정을 새 활성 서비스로 만들지 않습니다.
 - 화면 탐색: [전체 화면 계약](designs/visual-design.md#전체-화면의-서비스-사이드바-통일)에 따라 홈·학습문서·객관식·Quest·코딩테스트·기존 Web Project·내 학습 기록과 로딩/오류 화면에 같은 236px 서비스 shell을 적용했습니다. 기존 분할 편집기·본문 문맥 링크·저장/평가 경계와 모바일 fallback을 보존합니다. Quest의 페이지 내부 탐색·학습 지도는 [Quest 설계](designs/code-quest.md#데스크톱-탐색-첫-구현-계약)를 따릅니다. 대표 데스크톱 12개 route와 변경 영향 검사는 독립 PASS이며 최종 독립 문서 검토·통합도 PASS입니다. 근거와 미실행 범위는 [작업 카드](work-items/2026-09-14-global-service-sidebar.md)를 따릅니다.
 
@@ -76,7 +77,7 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 `[대체됨]` 제목은 기존 링크를 위해 유지한다. 설치 shell을 필수로 둔 구조는 [DEC-SOURCE-DISTRIBUTION-01](roadmap.md#2026-09-22-소스-전달-방식-정정)로 대체됐으며 아래는 현재 소스 실행과 별도 prototype의 관계다.
 
-외부 과제는 [밤위키 원본 활용 계약](designs/web-assignments.md)에 따라 고정 시작 버전과 공개 검증을 확인한 뒤 연결한다. 현재 외부 과제 manifest·BAM 연결은 미구현이며 기존 인앱 Web Project의 데이터·진도와 구분한다.
+외부 과제는 [밤위키 원본 활용 계약](designs/web-assignments.md)에 따라 별도 컬렉션으로 연결한다. 첫 과제의 고정 ZIP·manifest·연결 데이터는 반입되어 있으며 앱 연결은 독립 검증 중이다. 이번 정적 연결과 실제 Spring 빌드·공개 검증·오프라인 지원 판정은 구분한다. 구현·검증 상태는 [작업 카드](work-items/2026-09-15-web-assignment-study-meetup-pin.md#앱-연결-재개와-판정-경계)를 따른다.
 
 `[대체됨]` GitHub 소스 clone/다운로드와 Node 정적 서버를 주 사용 경로로 둔 결정은 [브라우저 직접 실행 결정](roadmap.md#2026-09-26-브라우저-직접-java-실행)으로 대체됐다. 아래 구조와 native Java 25 검증은 기존 구현 이력이며 새 브라우저 runtime의 지원 근거가 아니다. 현재 UI·콘텐츠·Worker·진도 경계를 유지하며 React·TypeScript는 작은 표시 경계부터 이관한다. Java 25 runner의 Electron IPC prototype 증거에 더해, [DEC-SOURCE-JAVA-BROWSER-01](roadmap.md#2026-09-22-소스-java-브라우저-연결-설계)의 명시적 같은 포트 Java 연결을 검증한 macOS 커널·Chrome에서 실행했다. 시스템 JDK fallback은 허용하지 않는다. 구현과 실제 검증의 범위는 [2026-09-24 구현 카드](roadmap.md#2026-09-24-소스-java-브라우저-구현-승인과-착수)에 기록한다.
 
@@ -385,9 +386,9 @@ HTML·CSS 소스, 작성 예시와 CSS 고정 fixture는 평가기 호출 전에
 
 - 목표 프런트엔드는 React·TypeScript로 확정됐지만 현재 구현과 도구체인은 Vanilla JavaScript 기준이다. 정확한 React·TypeScript 버전, 빌드 도구·의존성·라이선스, 정적 번들·오프라인 출력, CSP와 one-shot Worker 통합, 기존 모듈 공존·이관 단위, 첫 화면과 rollback 증거는 `DEC-FRONTEND-MIGRATION-01`에서 결정한다. 이 결정 전에는 전체 UI 재작성이나 기존 Worker·도메인 로직 폐기를 시작하지 않는다.
 - Java 정적 교안·객관식 available 제공과 실제 실행은 구분한다. 첫 Java Quest의 배포물·컴파일·IPC·격리 계약과 prototype 착수는 `DEC-JAVA-QUEST-RUNTIME-01`·ADR 0005로 구체화했다. CT prototype의 실행 증거는 ADR 0006과 작업 카드에 보존한다. 새 소스 Java 브라우저 연결은 위 v1 계약의 구현 착수가 승인됐으며 실제 검증과 release 콘텐츠 묶음 확정은 남아 있다. 추가 OS·설치는 현재 필수 gate가 아니다.
-- Spring Boot 과정의 향후 추가와 외부 웹과제 실행 위치는 확정됐지만 과정·과제는 현재 구현되어 있지 않다. MVP 포함 시점·교안 범위·Code Quest 여부와 과제 저장소·빌드·의존성·오프라인·공개 검증 계약은 `DEC-JAVA-01`·`DEC-WEB-REPO-01`·`DEC-WEB-OFFLINE-01`에서 결정한다.
+- Spring 정적 교안·객관식과 첫 외부 과제의 고정 묶음은 존재한다. 첫 과제의 앱 연결은 승인되어 독립 검증 중이며 실제 Spring 실행은 학습자의 외부 폴더에서만 수행한다. 실제 빌드·공개 검증·오프라인 지원은 대기이고 추가 과제·Code Quest·의존성 지원 범위는 후속 결정 대상이다.
 - `[대체됨]` Electron·DMG·공증·OS 선택은 현재 release gate가 아니다. 기존 앱과 시험용 DMG 포장 검증은 보존한다. Java의 기존 브라우저 유지 방향은 확정했고 새 HTTP 경계는 위 설계를 따른다. 소스 브라우저 writer/backup 계약은 별도 미결정이며 과거 desktop 모델 PASS를 재사용해 지원 완료로 표시하지 않는다.
-- 현재 인앱 Web Project를 외부 Git 웹과제와 병행할지, 검증 뒤 대체할지 결정해야 한다.
+- 이번 앱 연결에서는 기존 인앱 Web Project와 외부 과제를 병행하며 URL·초안·제출·진도를 보존한다. 장기적인 대체·이관·종료는 별도 결정 대상이다.
 - Code Quest의 [데스크톱 탐색 첫 구현](designs/code-quest.md#데스크톱-탐색-첫-구현-계약)은 기존 Quest·curriculum·진도를 읽기 전용으로 파생하고 기존 상세 URL에 `#/quest` 진입점을 더하는 승인 범위다. 저장·스키마·평가기 변경 없이 구현하며, 과정·주제·표시 순서의 영구 저장은 `DEC-QUEST-CATALOG-01`의 후속 선택이다. 실제 구현·검증 상태는 작업 카드에서 구분한다.
 - 코딩테스트의 전체 공개 테스트 동작을 학습자 UI에서 어떤 용어와 펼침 상태로 보여 줄지는 [`designs/coding-test.md`](designs/coding-test.md)의 확인 항목이다.
 

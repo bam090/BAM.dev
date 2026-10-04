@@ -1,6 +1,6 @@
 # 첫 밤위키 외부 웹과제 연결 작업 카드
 
-**현재 판정: 원본 선정·연결 설계 준비 완료, 반입·UI·독립 콘텐츠·실제 실행 검증 대기.** 제품 제공·과제 PASS·설치형 MVP 완료를 주장하지 않는다.
+**현재 판정: 고정 묶음의 앱 연결 구현·독립 콘텐츠·실행·문서 검토·통합 PASS. 실제 Spring 실행·오프라인 검증 대기.** 전체 과제 지원·과제 PASS·설치형 MVP 완료를 주장하지 않는다.
 
 ## 범위와 인수
 
@@ -20,7 +20,16 @@
 | 테스트 작성·독립 실행 | 총괄이 겹치지 않는 focused 테스트/검증 범위 지정 | ZIP/해시/ID/route/저장·대표 데스크톱과 아래 실제 공개 실행 판정 구분 |
 | 프로젝트 통합 | 선행 receipt·변경 범위·미해결 점 | 실제 PASS만 통합. Git 작업은 별도 승인·역할이며 이 카드 작성은 게시하지 않음 |
 
-같은 경로는 선행 receipt 후 순차 인수한다. 검증은 변경 schema/자산·대표 route·키보드/저장 오류와 기존 인앱 회귀에 한정하고 무관한 전체 제품 검사를 반복하지 않는다. 재시작 전 Java·Gradle·Spring·HTTP 검증은 보류한다. 공개 verify의 AST/가짜 opener 검사는 가능하나 과제 실행 PASS가 아니다.
+같은 경로는 선행 receipt 후 순차 인수한다. 검증은 변경 schema/자산·대표 route·키보드/저장 오류와 기존 인앱 회귀를 중심으로 선정한다. 이번 전체 회귀 실행은 아래 사용자 요청 예외를 따른다. 재시작 전 Java·Gradle·Spring·HTTP 검증은 보류한다. 공개 verify의 AST/가짜 opener 검사는 가능하나 과제 실행 PASS가 아니다.
+
+## 앱 연결 재개와 판정 경계
+
+- `[확정 결정]` 사용자의 이번 명시적 승인은 이미 반입된 묶음의 앱 연결, 오래된 상태 문서 정정, loader·validator·목록·상세·다운로드·실제 선수 이동, ID/revision별 자기보고 진행·확인표·회고 저장과 실패 처리다. 기존 인앱 URL·초안·제출·진도는 보존한다.
+- `[현재 사실]` `content/web-assignments/index.json`과 `assets/study-meetup-pin-v1-313b5be.zip`·`.manifest.json`이 추적된 파일로 존재한다. 독립 콘텐츠 검토 역할이 기존 ZIP 19파일의 해시·bytes·mode 일치를 직접 확인했다. 원본 Git·과거 receipt 재조회는 수행하지 않았다. 과거 `/tmp` receipt의 현재 존재 여부를 반입 사실이나 앱 연결의 선행 조건으로 삼지 않는다.
+- 설계 판정: 기존 카드의 새 E·C와 목표·선수·지원 근거를 재사용한다. 실제 Spring/공개 verify/offline gate는 전체 과제 지원·PASS 판정에 남겨 두며 승인된 정적 연결의 착수 gate로 확대하지 않는다. 상세 route·저장·오류·검증 범위는 [앱 연결 계약](../designs/web-assignments.md#단일-원본-앱-연결-계약), 데이터는 [스키마](../content-schema.md#외부-git-웹과제)를 따른다.
+- 비범위: source Git·선정 receipt 재생성, 원문 교안/과제 재작성, Spring·Gradle·HTTP 실행, 네트워크 범위 확대, push·PR·merge·deploy. 실제 실행 재개는 아래 과거 실행 절차와 별도 승인을 따른다.
+- 이번 역할 소유: Astra 설계 담당은 외부 설계·schema 외부 절·본 카드와 architecture의 외부 연결 관련 문장·문서 지도의 웹과제 행·roadmap의 관련 workflow 해시/근거 연결, 구현 담당은 loader·저장소·UI·앱 연결, 독립 테스트 작성자는 focused 테스트를 맡는다. 독립 콘텐츠 검토→읽기 전용 실행 검증→문서 검토·통합 판정 순서로 인계한다. Git 게시는 수행하지 않는다.
+- 인계 상태: 앱 연결 구현과 독립 콘텐츠·실행·문서 검토·통합은 아래 인계 절의 범위에서 PASS다. 기존 전체 테스트 998 PASS·2 SKIP와 빌드 PASS는 기준선 근거로만 사용했다. 사용자가 요청한 전체 회귀 검사는 공통 focused 원칙의 이번 작업 예외로 수행했으며 최초 실패와 영향 재검사 결과를 아래에 구분했다.
 
 ## 선정 담당에게 인수한 학습 경험 카드
 
@@ -57,4 +66,15 @@
 
 ## 현재 검사와 남은 판정
 
-인수한 선정 검사는 고정 19blob SHA/bytes, 과거 manifest의 18파일 동일·bat 줄바꿈 동치, 원문 README/TODO/verify 정적 확인, 선수 ID/route와 원본 보존이다. 실행한 선정 담당과 증거는 위 receipt에 있다. 이 문서 작성 단계는 정본·인수·로컬 링크만 점검하며 ZIP 생성·제품 구현·Java/Gradle/Python HTTP·브라우저·Git을 수행하지 않았다. 후속 실제 판정이 들어오기 전 콘텐츠 독립 검증·제품 연결·실행·오프라인 완료는 대기다.
+인수한 선정 검사는 고정 19blob SHA/bytes, 과거 manifest의 18파일 동일·bat 줄바꿈 동치, 원문 README/TODO/verify 정적 확인, 선수 ID/route와 원본 보존이다. 실행한 선정 담당과 증거는 위 receipt에 있다. 위 내용은 최초 선정 단계의 증거다. 후속 반입 사실과 이번 앱 연결의 승인·판정 경계는 위 재개 절을 따른다. 이 설계 문서 갱신 역할은 원본이나 ZIP을 재생성하지 않고 제품 코드·Java/Gradle/Python HTTP·브라우저·Git 작업을 수행하지 않았다. 독립 앱 검증과 실제 과제 실행·오프라인 검증은 별도 판정한다.
+
+
+## 앱 연결 독립 검증 인계
+
+- 콘텐츠 검토: 기존 ZIP 19파일의 SHA-256·bytes·mode, 정답 누출 없음, 선수 여섯 교안 연결과 원문 목표·지원 보존을 독립 확인했다. `self_completed`와 제품의 실행 재검증 대기를 구분하는 앱 표시는 범위 내 PASS다.
+- 독립 focused 검사: 외부 연결 관련 34개 PASS를 인수했다. 구현자·테스트 작성자의 자체 결과와 구분한다.
+- 독립 Chromium 데스크톱 검사: Chromium 151.0.7922.173에서 인앱 목록→외부 목록, 상세·제목 초점·대기 표시, 선수 이동, ZIP 다운로드 해시 일치, 키보드 저장·새로고침·기존/다른 revision 보존, 쓰기 실패 입력 보존·재시도, 읽기 실패 쓰기 차단·재시도, 기존 인앱 편집기까지 8흐름 PASS를 확인했다. page error와 외부 요청은 없었다. 증거는 `/tmp/bam-external-ui/result.json`과 `list.png`, `detail.png`, `write-failure.png`다. 이 임시 경로는 이번 인계 근거이며 배포 파일이 아니다.
+- 기존 기록 보존 추가 검사: 실제 인앱 Web Project 초안을 수정·저장한 뒤 외부 자기보고를 저장해 외부 키 이외의 저장 값 전체가 유지되고, 돌아온 편집기에 같은 초안이 복원됨을 확인했다. Tab으로 확인표에 이동해 Space로 변경하는 키보드 동작도 PASS다. 증거는 `/tmp/bam-assignment-legacy-ui.log`다.
+- 전체 회귀: `npm test` 1,034개 중 1,031 PASS·1 FAIL·2 SKIP를 인수했다. 실패는 외부 연결 관련 문서 갱신으로 `workflow-state.test.js`의 architecture 전체 파일 해시가 오래된 것 한 건이며, SKIP 2개는 native guard 검사다. 기존 runtime·React·전체 pilot 범위와 단계는 유지하고 관련 파일 해시·설명만 고쳤다. 수정 후 독립 재검사 `node --test tests/workflow-state.test.js` 11 PASS·0 FAIL·0 SKIP와 `npm run check:workflow -- docs/roadmap.md` PASS를 확인했다. 로그는 `/tmp/bam-assignment-workflow-retest.log`·`/tmp/bam-assignment-workflow-final.log`다. 전체 실행과 영향 검사 결과를 합치면 1,032 PASS·2 SKIP이며 전체 테스트를 다시 실행한 결과는 아니다. 전체 회귀 로그는 `/tmp/bam-assignment-full.log`다.
+- `npm run validate:content`와 `npm run build`는 독립 PASS다. 로그는 `/tmp/bam-assignment-content.log`·`/tmp/bam-assignment-build.log`다. focused 정확한 명령은 `node --test tests/web-assignment-content.test.js tests/web-assignment-repository.test.js tests/web-assignment-view.test.js tests/app-web-assignment.test.js`이며 `/tmp/bam-assignment-focused.log`에 있다.
+- 최종 독립 문서 검토 PASS: 변경 6문서의 추가 링크 13개·앵커, workflow 해시, 검사 로그와 수치·지원 경계를 확인했다. 최종 통합 PASS: 전체 변경 16경로(문서 6·제품 6·테스트 4), 원본 콘텐츠·묶음 자산 보존과 독립 증거를 확인했다. 앱 연결 범위의 남은 차단점은 없으며 실제 외부 과제 실행 지원의 완료를 뜻하지 않는다. source Git·receipt 재생성, 실제 Spring·Gradle·공개 HTTP verify·오프라인 실행·다른 브라우저 지원·Git 게시·배포는 수행하지 않았다.

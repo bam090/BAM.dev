@@ -112,6 +112,7 @@ export function renderWebProjectListView({ title = "Web Project", items = [] } =
       <header class="web-project-list-header">
         <p class="eyebrow">HTML · CSS 실전 과제</p>
         <h1 id="web-project-list-title">${escapeHtml(title)}</h1>
+        <a href="#/web-assignments">외부 웹과제 · 고정 시작 자료와 자기 보고</a>
         <p>배운 개념을 하나의 작은 화면으로 연결하고, 공개 자동 검사와 자가평가로 결과를 점검하세요.</p>
       </header>
       <section class="web-project-list" aria-label="Web Project 목록">
