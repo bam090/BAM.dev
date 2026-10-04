@@ -69,7 +69,7 @@
   "id": "source-java-browser",
   "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922",
   "scopeFiles": [
-    { "path": "docs/architecture.md", "sha256": "daa360ca72d59636dc78b37b413f783f3d80ddcbc9f9a57a2ee2477e2957297d" }
+    { "path": "docs/architecture.md", "sha256": "8428283f49ca5e47f58606c74b4b13195500ec9f3dac7137269db76e56b2ef86" }
   ],
   "stage": "implementation",
   "requiredChecks": [
@@ -425,14 +425,14 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 
 ### 밤위키 외부 웹과제 pilot 작업 카드
 
-`[확정 결정]` 밤위키 원본 활용 방향은 유지한다. `[현재 사실]` 첫 원본의 고정 시작점·공개 검증·오프라인 전달 계약은 아직 결정·실측되지 않았다.
+`[확정 결정]` 밤위키 원본 활용 방향은 유지한다. `[현재 사실]` 첫 원본의 고정 ZIP·manifest·컬렉션은 반입되어 있으며 별도 승인된 [정적 앱 연결](work-items/2026-09-15-web-assignment-study-meetup-pin.md#앱-연결-재개와-판정-경계)을 구현·검증 중이다. 아래 카드는 실제 공개 실행·오프라인 지원까지 포함하는 전체 pilot 범위이므로 미검증 실행 선행조건과 기존 단계는 유지한다. 정적 앱 연결 승인을 전체 pilot PASS로 확대하지 않는다.
 
 ```workflow-state
 {
   "version": 1,
   "id": "web-assignment-pilot",
   "scopeRevision": "WEB-ASSIGNMENT-PILOT-v1",
-  "scopeFiles": [{ "path": "docs/designs/web-assignments.md", "sha256": "48d9a27820d19cf745b37ab9ac1c657cf616df4eb2832ddc83e958f5e16755b6" }],
+  "scopeFiles": [{ "path": "docs/designs/web-assignments.md", "sha256": "2ee6f31a48ec94e6978ee4697dd8953f63853490aa044814485cdd255199c4ce" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-WEB-REPO-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
@@ -446,6 +446,8 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 }
 ```
 
+`[현재 사실]` 이번 정적 연결 문서 정합성 수정으로 외부 설계와 architecture 파일 전체의 SHA-256을 갱신했다. source Java·React 카드가 다루는 제품 경계와 승인 범위는 바뀌지 않아 `scopeRevision`·단계·선행조건·기존 승인 근거를 유지한다. 전체 pilot도 실행을 포함하는 기존 범위를 유지하며 정적 연결의 후속 증거는 위 개별 작업 카드에 기록한다. 이 해시 갱신은 과거 runtime 검증 재실행이나 미검증 단계의 PASS를 뜻하지 않는다.
+
 ### React 목록 시범 작업 카드
 
 `[확정 결정]` React·TypeScript의 점진 이관 목표는 유지한다. `[현재 사실]` 도구체인·CSP·첫 이관 범위는 `DEC-FRONTEND-MIGRATION-01` 결정 대기이며 목록 시범은 미구현이다.
@@ -455,7 +457,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "react-list-pilot",
   "scopeRevision": "REACT-LIST-PILOT-v1",
-  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "daa360ca72d59636dc78b37b413f783f3d80ddcbc9f9a57a2ee2477e2957297d" }],
+  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "8428283f49ca5e47f58606c74b4b13195500ec9f3dac7137269db76e56b2ef86" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-FRONTEND-MIGRATION-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
