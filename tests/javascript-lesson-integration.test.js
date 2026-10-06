@@ -66,7 +66,8 @@ test("JS 통합은 승인한 세 묶음만 변경하고 기존 ID·URL·order·�
     assert.deepEqual([adjacent.previous?.id, adjacent.next?.id], [previous, next], id);
   }
   for (const [path, hash] of [
-    ["content/quizzes/javascript.json", "1c708ee87766834b6f21475022f36fa23bc5483eee1b1caa3510ced0cea302b2"],
+    // 2026-10-06 승인된 지문·보기·해설의 쉼표 정리 31개 필드만 반영했다.
+    ["content/quizzes/javascript.json", "dee1a319c238f522d7baa0fc3d69582de428eec0fe4578f66466d37b1d05f316"],
     ["content/quests/javascript.json", "f33f6d993921e0a3da4588fa39a2e79439d0078dc3dfb8950f3d6718f8da17af"],
     ["content/coding-tests/javascript.json", "7d150c725108c827efd2512b6179db8f7157cfa302b7307a5752c36ba09e22e4"],
     ["content/lessons/javascript/wiki-shallow-copy.md", "18f05fcbf33bcc1c0c43fc78141c8cdd426684c7425cf2fa8708f611c7e1d50d"],
