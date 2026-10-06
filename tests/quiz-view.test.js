@@ -210,6 +210,35 @@ test("코드블록 보기와 실제 Java 타입 보기는 안전하게 표시하
   assert.doesNotMatch(html, /`(?:count|ready)`/);
 });
 
+test("Java의 요청된 지문은 각 보기에서 의미 단위 개행과 단일 제목을 유지한다", async () => {
+  const collection = JSON.parse(await readFile(new URL("../content/quizzes/java.json", import.meta.url), "utf8"));
+  const expectedPrompts = [
+    ["quiz-java-method-return", "다음 메서드가 점수에 <code>점</code>을 붙인 문자열을 반환하도록 본문은 그대로 둘 때,\n선언된 입력·출력 타입 계약을 맞추는 수정은 무엇입니까?"],
+    ["quiz-java-concept-methods-input-contract", "Calculator의 아래 두 메서드를 그대로 유지합니다.\n같은 클래스에 추가해도 중복 선언이 되지 않는 메서드는 무엇입니까?"],
+    ["quiz-java-concept-runtime-compile-launch", "아래 코드를 OrderGuide.java로 저장했습니다.\nJava 25 JDK의 도구를 사용할 수 있고 현재 폴더에서 별도 컴파일 후 실행하려고 합니다.\n알맞은 명령 순서는 무엇입니까?"],
+  ];
+  const questions = expectedPrompts.map(([id]) => {
+    const item = collection.questions.find((candidate) => candidate.id === id);
+    assert.ok(item, `${id} 문항을 유지해야 한다.`);
+    return item;
+  });
+  for (const viewMode of ["single", "all"]) {
+    for (const [currentIndex, item] of questions.entries()) {
+      const html = renderQuestion({
+        languageId: "java", languageName: "Java", question: item,
+        currentIndex, total: questions.length, viewMode,
+        questionStates: questions.map((question, currentIndex) => ({ question, currentIndex })),
+      });
+      const titles = [...html.matchAll(/<h2[^>]*data-quiz-question-title[^>]*>([\s\S]*?)<\/h2>/g)]
+        .map((match) => match[1]);
+      assert.deepEqual(titles, viewMode === "all"
+        ? expectedPrompts.map(([, prompt]) => prompt)
+        : [expectedPrompts[currentIndex][1]]);
+      assert.doesNotMatch(html, /quiz-option-feedback|data-quiz-grade-summary/);
+    }
+  }
+});
+
 test("채점 후 선택지를 잠그고 정답·선택한 오답의 근거를 먼저 표시한다", () => {
   const html = renderQuestion({
     selectedOptionId: "b",
