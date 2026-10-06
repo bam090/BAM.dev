@@ -61,7 +61,7 @@
           "id": "c",
           "text": "padding 20px, margin-block 24px",
           "isCorrect": true,
-          "feedback": "맞습니다. `1em`은 이 요소의 20px 글자 크기이므로 padding은 20px이고, `1.5rem`은 루트 16px의 1.5배이므로 margin-block은 24px입니다."
+          "feedback": "맞습니다. `1em`은 이 요소의 20px 글자 크기이므로 padding은 20px이고 `1.5rem`은 루트 16px의 1.5배이므로 margin-block은 24px입니다."
         },
         {
           "id": "d",
@@ -177,7 +177,7 @@
       "lessonId": "css-flow-display-overflow",
       "conceptId": "css.overflow",
       "difficulty": "application",
-      "prompt": "길이를 알 수 없는 로그를 최대 12rem 높이까지만 보여 주되, 내용이 더 많으면 사용자가 모두 확인할 수 있게 하려면 어떤 선언 조합이 가장 알맞습니까?",
+      "prompt": "길이를 알 수 없는 로그를 최대 12rem 높이까지만 보여 주되 내용이 더 많으면 사용자가 모두 확인할 수 있게 하려면 어떤 선언 조합이 가장 알맞습니까?",
       "options": [
         {
           "id": "a",
@@ -244,19 +244,19 @@
       "lessonId": "css-position-flex-grid",
       "conceptId": "css.grid",
       "difficulty": "application",
-      "prompt": "여러 강의 카드를 행과 열로 배치하고, 각 카드의 `NEW` 배지는 해당 카드 오른쪽 위에 겹치려 합니다. 가장 알맞은 도구 조합은 무엇입니까?",
+      "prompt": "여러 강의 카드를 행과 열로 배치하고 각 카드의 `NEW` 배지는 해당 카드 오른쪽 위에 겹치려 합니다. 가장 알맞은 도구 조합은 무엇입니까?",
       "options": [
         {
           "id": "a",
           "text": "카드 목록은 Grid, 각 카드는 relative, 배지는 absolute",
           "isCorrect": true,
-          "feedback": "맞습니다. Grid가 목록의 두 축을 설계하고, relative 카드가 자신의 absolute 배지에 분명한 위치 기준을 제공합니다."
+          "feedback": "맞습니다. Grid가 목록의 두 축을 설계하고 relative 카드가 자신의 absolute 배지에 분명한 위치 기준을 제공합니다."
         },
         {
           "id": "b",
           "text": "모든 카드를 absolute로 배치하고 배지는 fixed로 배치",
           "isCorrect": false,
-          "feedback": "틀립니다. 모든 카드를 정상 흐름에서 빼면 콘텐츠 수와 화면 너비 변화에 대응하기 어렵고, fixed 배지는 카드가 아니라 보통 뷰포트를 기준으로 합니다."
+          "feedback": "틀립니다. 모든 카드를 정상 흐름에서 빼면 콘텐츠 수와 화면 너비 변화에 대응하기 어렵고 fixed 배지는 카드가 아니라 보통 뷰포트를 기준으로 합니다."
         },
         {
           "id": "c",
@@ -377,13 +377,13 @@
       "lessonId": "css-review-practice",
       "conceptId": "css.layout-choice",
       "difficulty": "application",
-      "prompt": "강의 카드 목록은 화면 공간에 따라 행과 열이 바뀌고, 각 카드 안의 두 버튼은 한 줄에서 간격을 두어 정렬해야 합니다. 가장 알맞은 설계는 무엇입니까?",
+      "prompt": "강의 카드 목록은 화면 공간에 따라 행과 열이 바뀌고 각 카드 안의 두 버튼은 한 줄에서 간격을 두어 정렬해야 합니다. 가장 알맞은 설계는 무엇입니까?",
       "options": [
         {
           "id": "a",
           "text": "바깥 목록은 Grid, 카드 안 버튼 묶음은 Flexbox를 사용합니다",
           "isCorrect": true,
-          "feedback": "맞습니다. 바깥 목록은 행과 열 두 축을 Grid로 설계하고, 내부 버튼 묶음은 한 축 정렬과 gap을 Flexbox로 관리할 수 있습니다."
+          "feedback": "맞습니다. 바깥 목록은 행과 열 두 축을 Grid로 설계하고 내부 버튼 묶음은 한 축 정렬과 gap을 Flexbox로 관리할 수 있습니다."
         },
         {
           "id": "b",
@@ -481,14 +481,14 @@
       "conceptId": "css.selectors",
       "learningObjective": "카드의 직접 자식 제목만 선택하고 div 안의 제목을 제외합니다.",
       "difficulty": "basic",
-      "prompt": "`.card` 바로 아래의 ‘전체 일정’ 제목만 선택하고, div 안의 ‘지난 일정’ 제목은 제외하려면 어떤 선택자를 써야 합니까?",
+      "prompt": "`.card` 바로 아래의 ‘전체 일정’ 제목만 선택하고 div 안의 ‘지난 일정’ 제목은 제외하려면 어떤 선택자를 써야 합니까?",
       "code": "<article class=\"card\">\n  <h2>전체 일정</h2>\n  <div>\n    <h2>지난 일정</h2>\n  </div>\n</article>",
       "options": [
         {
           "id": "a",
           "text": ".card > h2",
           "isCorrect": true,
-          "feedback": "맞습니다. >는 직접 자식 관계를 뜻합니다. 전체 일정 h2는 card의 직접 자식이고, 지난 일정 h2의 직접 부모는 div입니다."
+          "feedback": "맞습니다. >는 직접 자식 관계를 뜻합니다. 전체 일정 h2는 card의 직접 자식이고 지난 일정 h2의 직접 부모는 div입니다."
         },
         {
           "id": "b",
@@ -591,19 +591,19 @@
       "options": [
         {
           "id": "a",
-          "text": "글자색은 navy이고, span에도 2px crimson 테두리가 생깁니다.",
+          "text": "글자색은 navy이고 span에도 2px crimson 테두리가 생깁니다.",
           "isCorrect": false,
           "feedback": "틀립니다. color는 상속되지만 border는 자동으로 상속되지 않습니다. 부모에 테두리가 있다는 이유로 자식마다 같은 테두리가 생기지는 않습니다."
         },
         {
           "id": "b",
-          "text": "글자색은 crimson이고, span에는 테두리가 생기지 않습니다.",
+          "text": "글자색은 crimson이고 span에는 테두리가 생기지 않습니다.",
           "isCorrect": false,
           "feedback": "틀립니다. 부모의 border 색이 자식 글자색으로 바뀌어 상속되지는 않습니다. 자식은 부모의 color 값인 navy를 이어받습니다."
         },
         {
           "id": "c",
-          "text": "글자색은 navy이고, span 자체의 테두리는 생기지 않습니다.",
+          "text": "글자색은 navy이고 span 자체의 테두리는 생기지 않습니다.",
           "isCorrect": true,
           "feedback": "맞습니다. color는 부모의 계산값을 상속합니다. border는 상속되지 않으므로 이 코드가 span 자체에 테두리를 만들지는 않습니다."
         },
@@ -971,7 +971,7 @@
       "conceptId": "css.spacing",
       "learningObjective": "같은 두 양수 세로 margin이 일반 block 형제에서 합쳐지고 Grid 항목에서는 합쳐지지 않는 차이를 구합니다.",
       "difficulty": "application",
-      "prompt": "‘위’와 ‘아래’ 두 박스 경계 사이의 세로 간격은 부모가 block일 때와 grid일 때 각각 몇 px입니까? 두 경우 모두 아래 HTML/CSS만 적용하고, 두 번째 경우에는 .list의 display만 grid로 바꿉니다.",
+      "prompt": "‘위’와 ‘아래’ 두 박스 경계 사이의 세로 간격은 부모가 block일 때와 grid일 때 각각 몇 px입니까? 두 경우 모두 아래 HTML/CSS만 적용하고 두 번째 경우에는 .list의 display만 grid로 바꿉니다.",
       "code": "<div class=\"list\">\n  <div class=\"upper\">위</div>\n  <div class=\"lower\">아래</div>\n</div>\n\n.list {\n  writing-mode: horizontal-tb;\n  display: block;\n  grid-template-columns: 1fr;\n  gap: 0;\n}\n.upper, .lower {\n  display: block;\n  height: 40px;\n  padding: 0;\n  border: 0;\n  margin: 0;\n}\n.upper { margin-bottom: 24px; }\n.lower { margin-top: 16px; }",
       "options": [
         {
@@ -1163,7 +1163,7 @@
         },
         {
           "id": "c",
-          "text": "두 번째의 흐름상 위치는 그대로이며, 첫 박스와 일부 겹칠 수 있습니다.",
+          "text": "두 번째의 흐름상 위치는 그대로이며 첫 박스와 일부 겹칠 수 있습니다.",
           "isCorrect": true,
           "feedback": "맞습니다. relative는 원래 자리를 유지한 채 보이는 위치만 아래로 옮깁니다. 두 번째는 원래 첫 박스 높이 40px 뒤에 남아 이동한 첫 박스와 겹칩니다."
         },
@@ -1188,7 +1188,7 @@
           "id": "a",
           "text": ".card인 article",
           "isCorrect": true,
-          "feedback": "맞습니다. absolute의 기준은 바로 부모로 고정되지 않습니다. 여기서는 중간 .body가 static이고, 가까운 기준을 만드는 조상 .card가 relative이므로 article이 기준을 제공합니다."
+          "feedback": "맞습니다. absolute의 기준은 바로 부모로 고정되지 않습니다. 여기서는 중간 .body가 static이고 가까운 기준을 만드는 조상 .card가 relative이므로 article이 기준을 제공합니다."
         },
         {
           "id": "b",
@@ -1321,14 +1321,14 @@
       "conceptId": "css.responsive-design",
       "learningObjective": "작은 부모보다 큰 고정 너비 카드를 width100%/max-width로 바꾸어 확대 없이 맞춥니다.",
       "difficulty": "application",
-      "prompt": "`.card`가 작은 부모 안에서는 너비에 맞춰 줄고, 넓은 부모에서는 최대 600px까지만 커지게 하려면 width와 max-width를 어떻게 정해야 합니까? 현재 부모 content 너비는 320px이며 다른 크기 제한은 없습니다.",
+      "prompt": "`.card`가 작은 부모 안에서는 너비에 맞춰 줄고 넓은 부모에서는 최대 600px까지만 커지게 하려면 width와 max-width를 어떻게 정해야 합니까? 현재 부모 content 너비는 320px이며 다른 크기 제한은 없습니다.",
       "code": "<div class=\"parent\"><div class=\"card\">짧은 안내</div></div>\n\n.parent { width: 320px; padding: 0; border: 0; }\n.card {\n  box-sizing: border-box;\n  width: 600px;\n  min-width: 0;\n  padding: 16px;\n  margin: 0;\n}",
       "options": [
         {
           "id": "a",
           "text": "width: 100%; max-width: 600px;",
           "isCorrect": true,
-          "feedback": "맞습니다. 부모가 좁을 때는 그 너비를 사용하고, 넓어져도 600px을 넘지 않습니다. border-box이므로 padding도 정한 너비 안에 포함됩니다."
+          "feedback": "맞습니다. 부모가 좁을 때는 그 너비를 사용하고 넓어져도 600px을 넘지 않습니다. border-box이므로 padding도 정한 너비 안에 포함됩니다."
         },
         {
           "id": "b",
@@ -1601,7 +1601,7 @@
       "conceptId": "css.layout-choice",
       "learningObjective": "길이를 알 수 없는 제목과 배지가 서로 공간을 내주도록 absolute 배지를 흐름에 되돌리고 줄바꿈 배치를 고릅니다.",
       "difficulty": "application",
-      "prompt": "제목과 배지 문구가 길어져도 서로 겹치지 않고, 공간이 부족하면 다음 줄로 내려가게 하려 합니다.\n아래 카드의 배치 방식을 어떻게 바꾸는 것이 알맞습니까?\n모든 문구는 필요하면 줄바꿈할 수 있습니다.",
+      "prompt": "제목과 배지 문구가 길어져도 서로 겹치지 않고 공간이 부족하면 다음 줄로 내려가게 하려 합니다.\n아래 카드의 배치 방식을 어떻게 바꾸는 것이 알맞습니까?\n모든 문구는 필요하면 줄바꿈할 수 있습니다.",
       "code": "<article class=\"card\">\n  <h2>이번 주 모임 안내</h2>\n  <span class=\"badge\">신청 접수 중</span>\n</article>\n\n.card { position: relative; }\n.badge { position: absolute; top: 0; right: 0; }",
       "options": [
         {
