@@ -34,7 +34,8 @@ test("Spring의 기존 46개 ID·URL·순서와 Java 컬렉션의 모든 문항 
   const identity = lessons.map(({ id, slug, contentFile, order, courseId, languageId, answerHeading, source }) =>
     ({ id, slug, contentFile, order, courseId, languageId, answerHeading, sourceKind: source.kind }));
   assert.equal(hash(identity), "e6effc74ddb8cb45466500526af62e477f56532e595942e9e0c7e5c1d5c18d1c");
-  assert.equal(hash(collection.questions), "be6baf310544dad7bf7e5af9cb00eff422cf02e5837f45f69d07ea3a5a6a8909");
+  // 2026-10-06 승인된 지문·보기·해설의 쉼표 정리 37개 필드만 반영했다.
+  assert.equal(hash(collection.questions), "4e73039f63a628c6274e0f55b35ad3c5805e226bf1dc24b66f882bb97c0c85b1");
   assert.equal(hash(springConcepts.map(({ id, lessonId, title }) => ({ id, lessonId, title }))), "57cf383dccf3428cdec950217b0353af1613621426ab3ff60cf6f999ccdcefde");
   for (const lesson of lessons) {
     assert.equal(resolveLessonRoute(curriculum, `#/learn/spring/${lesson.slug}`)?.id, lesson.id);

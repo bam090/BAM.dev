@@ -15,7 +15,7 @@
           "id": "a",
           "text": "반환 타입만 `String`으로 바꿔 `static String makeLabel(int score)`로 선언합니다.",
           "isCorrect": true,
-          "feedback": "맞습니다. `score + \"점\"`은 문자열 연결 결과인 `String`을 만들고, 입력 점수는 계속 `int`로 받으므로 반환 타입만 `String`으로 바꾸면 선언과 본문이 같은 계약을 표현합니다."
+          "feedback": "맞습니다. `score + \"점\"`은 문자열 연결 결과인 `String`을 만들고 입력 점수는 계속 `int`로 받으므로 반환 타입만 `String`으로 바꾸면 선언과 본문이 같은 계약을 표현합니다."
         },
         {
           "id": "b",
@@ -78,7 +78,7 @@
       "conceptId": "java.runtime",
       "difficulty": "basic",
       "learningObjective": "클래스 파일을 옮겨 실행할 때 JVM의 버전·API 지원을 확인할 수 있습니다.",
-      "prompt": "Java 25 JDK에서 javac --release 25로 만든 클래스 파일을 다른 컴퓨터로 옮깁니다.\n그 컴퓨터의 JVM은 Java 25 클래스 파일 버전을 지원하지 않으며, 소스는 다시 컴파일하지 않습니다.\n실행 환경을 판단한 설명으로 맞는 것은 무엇입니까?",
+      "prompt": "Java 25 JDK에서 javac --release 25로 만든 클래스 파일을 다른 컴퓨터로 옮깁니다.\n그 컴퓨터의 JVM은 Java 25 클래스 파일 버전을 지원하지 않으며 소스는 다시 컴파일하지 않습니다.\n실행 환경을 판단한 설명으로 맞는 것은 무엇입니까?",
       "options": [
         {
           "id": "a",
@@ -182,7 +182,7 @@
       "conceptId": "java.numeric-operations",
       "difficulty": "application",
       "learningObjective": "나눗셈 전에 정해지는 피연산자 타입과 결과 대입을 구분할 수 있습니다.",
-      "prompt": "다음 코드를 메서드 안에서 순서대로 실행한다고 할 때, whole과 fraction에 저장되는 값은 무엇입니까?",
+      "prompt": "다음 코드를 메서드 안에서 순서대로 실행한다고 할 때 whole과 fraction에 저장되는 값은 무엇입니까?",
       "options": [
         {
           "id": "a",
@@ -916,7 +916,7 @@
       "conceptId": "java.final-immutability",
       "difficulty": "application",
       "learningObjective": "final 참조 변수의 재대입 금지와 배열 원소 변경을 구분할 수 있습니다.",
-      "prompt": "메서드 안에 final int[] scores = {70, 80};를 선언했습니다. 다음 보기의 한 줄을 각각 독립적으로 그 뒤에 추가할 때, 컴파일 가능한 코드는 무엇입니까?",
+      "prompt": "메서드 안에 final int[] scores = {70, 80};를 선언했습니다. 다음 보기의 한 줄을 각각 독립적으로 그 뒤에 추가할 때 컴파일 가능한 코드는 무엇입니까?",
       "options": [
         {
           "id": "a",
@@ -997,7 +997,7 @@
           "id": "b",
           "text": "true / false",
           "isCorrect": false,
-          "feedback": "두 객체는 서로 다르므로 ==는 false이고, 제시된 equals는 동일한 value를 비교하므로 true입니다. 두 비교 기준을 바꾸어 적용했습니다."
+          "feedback": "두 객체는 서로 다르므로 ==는 false이고 제시된 equals는 동일한 value를 비교하므로 true입니다. 두 비교 기준을 바꾸어 적용했습니다."
         },
         {
           "id": "c",
@@ -1133,7 +1133,7 @@
           "id": "a"
         },
         {
-          "text": "수업 제목은 인터페이스의 인스턴스 필드에 저장하고, 알림 역할은 각 클래스의 이름만 같게 합니다.",
+          "text": "수업 제목은 인터페이스의 인스턴스 필드에 저장하고 알림 역할은 각 클래스의 이름만 같게 합니다.",
           "isCorrect": false,
           "feedback": "인터페이스에는 객체별 인스턴스 필드가 없습니다. 메서드 이름이 같기만 한 클래스들도 자동으로 같은 역할 타입이 되지 않습니다.",
           "id": "b"
@@ -1303,7 +1303,7 @@
         {
           "text": "raw는 List<Object>의 단축 표기이므로 List<String>으로 안전하게 좁힐 수 있습니다.",
           "isCorrect": false,
-          "feedback": "raw type은 이전 코드와의 호환을 위한 약한 타입 정보입니다. List<Object>와 같은 타입 안전한 표현도, String 원소를 보장하는 표현도 아닙니다.",
+          "feedback": "raw type은 이전 코드와의 호환을 위한 약한 타입 정보입니다. List<Object>와 같은 타입 안전한 표현도 String 원소를 보장하는 표현도 아닙니다.",
           "id": "a"
         },
         {
@@ -1576,7 +1576,7 @@
       "conceptId": "java.collection-choice",
       "difficulty": "application",
       "learningObjective": "한 기능 안의 서로 다른 저장·조회·처리 역할에 맞춰 컬렉션을 조합할 수 있습니다.",
-      "prompt": "복습 기능에 세 역할이 있습니다.\n완료 ID는 중복 없이 확인하고, ID로 진행률 숫자를 찾으며, 복습 요청은 들어온 순서대로 처리합니다.\n순서가 필요 없는 완료/진행률 자료와 FIFO 대기열의 역할을 맞게 나눈 것은 무엇입니까?",
+      "prompt": "복습 기능에 세 역할이 있습니다.\n완료 ID는 중복 없이 확인하고 ID로 진행률 숫자를 찾으며 복습 요청은 들어온 순서대로 처리합니다.\n순서가 필요 없는 완료/진행률 자료와 FIFO 대기열의 역할을 맞게 나눈 것은 무엇입니까?",
       "options": [
         {
           "text": "진행률은 Deque 맨 앞의 값만 사용하고 대기 요청은 HashMap 순회 순서로 처리합니다.",
@@ -2059,7 +2059,7 @@
       "conceptId": "java.tasks-results",
       "difficulty": "application",
       "learningObjective": "대기 중심 작업의 처리량과 단일 CPU 계산의 속도를 구분할 수 있습니다.",
-      "prompt": "두 작업 유형을 비교합니다. A는 네트워크 응답을 기다리는 요청을 많이 처리하고, B는 한 작업이 CPU 계산을 오래 수행합니다. Java 가상 스레드의 목적에 맞는 설명은 무엇입니까?",
+      "prompt": "두 작업 유형을 비교합니다. A는 네트워크 응답을 기다리는 요청을 많이 처리하고 B는 한 작업이 CPU 계산을 오래 수행합니다. Java 가상 스레드의 목적에 맞는 설명은 무엇입니까?",
       "options": [
         {
           "text": "B 계산을 가상 스레드 하나에 옮기면 CPU 수와 관계없이 반드시 더 빨라집니다.",
@@ -2093,7 +2093,7 @@
       "conceptId": "java.test-contracts",
       "difficulty": "application",
       "learningObjective": "정상·거부 조건과 별도로 허용 범위 양끝의 동작을 고를 수 있습니다.",
-      "prompt": "할인 계산기는 0 이상의 가격과 0~100의 할인율을 허용하고, 그 밖의 입력에는 IllegalArgumentException을 던집니다.\n현재 20%의 정상 결과와 101%의 예외만 확인했습니다.\n허용 경계의 누락을 보완하는 확인은 무엇입니까?",
+      "prompt": "할인 계산기는 0 이상의 가격과 0~100의 할인율을 허용하고 그 밖의 입력에는 IllegalArgumentException을 던집니다.\n현재 20%의 정상 결과와 101%의 예외만 확인했습니다.\n허용 경계의 누락을 보완하는 확인은 무엇입니까?",
       "options": [
         {
           "text": "10,000원에 0%면 10,000원, 100%면 0원인지 확인합니다.",
@@ -2297,7 +2297,7 @@
       "conceptId": "spring.ioc-di",
       "difficulty": "basic",
       "learningObjective": "등록된 협력 Bean이 서비스 생성자에 전달되는 DI 흐름을 판정할 수 있습니다.",
-      "prompt": "NoticeService는 생성자가 하나인 등록된 Spring Bean이고, Notifier 타입의 Bean은 ConsoleNotifier 하나뿐입니다.\n선택적 의존성이나 추가 주입 설정은 없습니다.\n컨테이너가 NoticeService를 만들 때 어떤 연결이 이루어집니까?",
+      "prompt": "NoticeService는 생성자가 하나인 등록된 Spring Bean이고 Notifier 타입의 Bean은 ConsoleNotifier 하나뿐입니다.\n선택적 의존성이나 추가 주입 설정은 없습니다.\n컨테이너가 NoticeService를 만들 때 어떤 연결이 이루어집니까?",
       "code": "interface Notifier { void send(String message); }\nclass NoticeService {\n    private final Notifier notifier;\n    NoticeService(Notifier notifier) { this.notifier = notifier; }\n}",
       "options": [
         {
@@ -2332,7 +2332,7 @@
       "conceptId": "spring.ioc-di",
       "difficulty": "application",
       "learningObjective": "필수 단일 의존성의 등록 후보가 없을 때 Bean 생성이 실패하는 이유를 설명할 수 있습니다.",
-      "prompt": "NoticeService Bean의 유일한 생성자는 필수 단일 Notifier 인수를 받습니다.\n컨테이너에는 Notifier 타입의 Bean이 하나도 없고, Optional·nullable·지연 조회·별도 팩토리 설정도 없습니다.\n이 Bean을 생성하려 할 때 무엇이 문제입니까?",
+      "prompt": "NoticeService Bean의 유일한 생성자는 필수 단일 Notifier 인수를 받습니다.\n컨테이너에는 Notifier 타입의 Bean이 하나도 없고 Optional·nullable·지연 조회·별도 팩토리 설정도 없습니다.\n이 Bean을 생성하려 할 때 무엇이 문제입니까?",
       "options": [
         {
           "id": "a",
@@ -2537,7 +2537,7 @@
       "conceptId": "spring.singleton-state",
       "difficulty": "application",
       "learningObjective": "공유 singleton 필드에 요청별 값을 저장하는 순서가 다른 요청의 결과를 바꾸는 위험을 찾을 수 있습니다.",
-      "prompt": "하나의 singleton GreetingService를 요청 A와 B가 공유합니다.\n호출 순서는 A의 remember(\"밤\") → B의 remember(\"별\") → A의 greeting()으로 고정되어 있고, 그 사이 다른 호출은 없습니다.\n이 설계에서 드러나는 문제를 고르세요.",
+      "prompt": "하나의 singleton GreetingService를 요청 A와 B가 공유합니다.\n호출 순서는 A의 remember(\"밤\") → B의 remember(\"별\") → A의 greeting()으로 고정되어 있고 그 사이 다른 호출은 없습니다.\n이 설계에서 드러나는 문제를 고르세요.",
       "code": "class GreetingService {\n    private String currentName;\n    void remember(String name) { currentName = name; }\n    String greeting() { return \"안녕하세요, \" + currentName; }\n}",
       "options": [
         {
@@ -2709,7 +2709,7 @@
       "conceptId": "spring.auto-configuration",
       "difficulty": "application",
       "learningObjective": "기존 Bean 부재 조건을 가진 자동구성이 사용자 Bean 등록에 따라 달라지는 것을 판정할 수 있습니다.",
-      "prompt": "가상의 알림 자동구성은 알림 라이브러리가 있고, Notifier 타입 Bean이 없을 때만 기본 Notifier를 제공합니다.\n라이브러리는 있고 사용자가 Notifier Bean을 이미 등록했습니다.\n다른 조건은 모두 맞는다면 기본 Notifier 제공 조건은 어떻게 됩니까?",
+      "prompt": "가상의 알림 자동구성은 알림 라이브러리가 있고 Notifier 타입 Bean이 없을 때만 기본 Notifier를 제공합니다.\n라이브러리는 있고 사용자가 Notifier Bean을 이미 등록했습니다.\n다른 조건은 모두 맞는다면 기본 Notifier 제공 조건은 어떻게 됩니까?",
       "options": [
         {
           "id": "a",
@@ -2845,7 +2845,7 @@
       "conceptId": "spring.external-config",
       "difficulty": "application",
       "learningObjective": "기본 설정 우선순위에서 파일과 명령줄의 같은 키를 비교할 수 있습니다.",
-      "prompt": "Boot 앱의 application.properties에는 study.page-size=10이 있고 실행 인수로 --study.page-size=20을 전달합니다.\n명령줄 설정 처리는 기본대로 활성이고, 이 키를 제공하는 다른 출처나 재정의는 없습니다.\n적용되는 설정값을 고르세요.",
+      "prompt": "Boot 앱의 application.properties에는 study.page-size=10이 있고 실행 인수로 --study.page-size=20을 전달합니다.\n명령줄 설정 처리는 기본대로 활성이고 이 키를 제공하는 다른 출처나 재정의는 없습니다.\n적용되는 설정값을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -2981,7 +2981,7 @@
       "conceptId": "spring.mvc-flow",
       "difficulty": "basic",
       "learningObjective": "HTTP 요청이 MVC의 매핑·인수 준비를 거쳐 업무 호출과 응답 처리로 이어지는 순서를 고를 수 있습니다.",
-      "prompt": "정상적인 HTTP 요청이 등록된 Spring MVC 컨트롤러와 서비스로 처리됩니다. 매핑과 입력 변환에 실패하지 않는 경우, 요청에서 응답까지의 흐름으로 알맞은 것을 고르세요.",
+      "prompt": "정상적인 HTTP 요청이 등록된 Spring MVC 컨트롤러와 서비스로 처리됩니다. 매핑과 입력 변환에 실패하지 않는 경우 요청에서 응답까지의 흐름으로 알맞은 것을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -2997,7 +2997,7 @@
         },
         {
           "id": "c",
-          "text": "브라우저가 서비스 객체의 메서드를 직접 부르고, 마지막에 URL 매핑을 검사합니다.",
+          "text": "브라우저가 서비스 객체의 메서드를 직접 부르고 마지막에 URL 매핑을 검사합니다.",
           "isCorrect": false,
           "feedback": "HTTP 요청은 서버의 MVC 처리 경계를 거칩니다. 클라이언트가 서버 서비스 객체를 직접 호출하지 않습니다."
         },
@@ -3025,7 +3025,7 @@
         },
         {
           "id": "b",
-          "text": "컨트롤러가 HTTP 입력을 인수로 바꾸어 전달하고, 서비스가 공지를 찾는 업무를 맡습니다.",
+          "text": "컨트롤러가 HTTP 입력을 인수로 바꾸어 전달하고 서비스가 공지를 찾는 업무를 맡습니다.",
           "isCorrect": true,
           "feedback": "HTTP 경계와 업무 규칙을 분리하면 같은 서비스 행동을 다른 호출 경로에서도 사용할 수 있습니다."
         },
@@ -3084,7 +3084,7 @@
       "conceptId": "spring.request-mapping",
       "difficulty": "application",
       "learningObjective": "하나의 컨트롤러 메서드에 여러 HTTP 메서드를 허용하는 매핑 선언을 선택할 수 있습니다.",
-      "prompt": "등록된 컨트롤러의 단일 메서드가 /notices 경로의 GET과 POST 요청을 모두 처리해야 합니다.\nPUT과 DELETE 요청은 이 메서드로 연결되면 안 되고, 요청 파라미터 조건은 추가하지 않습니다.\n메서드 바로 위에 둘 어노테이션 선언을 고르세요.\nRequestMethod는 Spring의 HTTP 메서드 enum입니다.",
+      "prompt": "등록된 컨트롤러의 단일 메서드가 /notices 경로의 GET과 POST 요청을 모두 처리해야 합니다.\nPUT과 DELETE 요청은 이 메서드로 연결되면 안 되고 요청 파라미터 조건은 추가하지 않습니다.\n메서드 바로 위에 둘 어노테이션 선언을 고르세요.\nRequestMethod는 Spring의 HTTP 메서드 enum입니다.",
       "options": [
         {
           "id": "a",
@@ -3102,7 +3102,7 @@
           "id": "c",
           "text": "@RequestMapping(path = \"/notices\", params = {\"GET\", \"POST\"})를 붙입니다.",
           "isCorrect": false,
-          "feedback": "params는 요청 파라미터 조건입니다. GET과 POST라는 문자열을 여기에 쓰는 것은 HTTP 메서드 선택이 아니며, 파라미터 조건을 추가하지 않는 요구에도 맞지 않습니다."
+          "feedback": "params는 요청 파라미터 조건입니다. GET과 POST라는 문자열을 여기에 쓰는 것은 HTTP 메서드 선택이 아니며 파라미터 조건을 추가하지 않는 요구에도 맞지 않습니다."
         },
         {
           "id": "d",
@@ -3392,7 +3392,7 @@
       "conceptId": "spring.exception-handling",
       "difficulty": "application",
       "learningObjective": "발생한 예외 타입에 맞는 처리기를 고르고 그 처리기의 상태와 본문으로 연결할 수 있습니다.",
-      "prompt": "컨트롤러가 호출한 서비스에서 NoticeMissingException이 발생했습니다.\n아래 advice가 등록되어 있고, 컨트롤러의 개별 예외 처리기나 다른 advice는 없습니다.\n예외를 감싼 다른 예외도 없고 응답은 아직 전송되지 않았습니다.\nMVC가 예외 타입에 맞는 처리기를 적용했을 때의 응답을 고르세요.",
+      "prompt": "컨트롤러가 호출한 서비스에서 NoticeMissingException이 발생했습니다.\n아래 advice가 등록되어 있고 컨트롤러의 개별 예외 처리기나 다른 advice는 없습니다.\n예외를 감싼 다른 예외도 없고 응답은 아직 전송되지 않았습니다.\nMVC가 예외 타입에 맞는 처리기를 적용했을 때의 응답을 고르세요.",
       "code": "import org.springframework.http.ResponseEntity;\nimport org.springframework.web.bind.annotation.ExceptionHandler;\nimport org.springframework.web.bind.annotation.RestControllerAdvice;\n\nclass NoticeMissingException extends RuntimeException {}\nclass InvalidNoticeException extends RuntimeException {}\n\n@RestControllerAdvice\nclass NoticeErrors {\n    @ExceptionHandler(InvalidNoticeException.class)\n    ResponseEntity<String> invalid() {\n        return ResponseEntity.status(400).body(\"제목을 확인하세요.\");\n    }\n\n    @ExceptionHandler(NoticeMissingException.class)\n    ResponseEntity<String> missing() {\n        return ResponseEntity.status(404).body(\"공지를 찾을 수 없습니다.\");\n    }\n}",
       "options": [
         {
@@ -3427,7 +3427,7 @@
       "conceptId": "spring.exception-handling",
       "difficulty": "application",
       "learningObjective": "여러 컨트롤러에 같은 예외 응답 정책을 적용할 때 advice의 범위를 선택할 수 있습니다.",
-      "prompt": "공지 조회와 수정 컨트롤러가 동일한 NoticeMissingException을 HTTP 404와 같은 본문으로 처리해야 합니다.\n두 컨트롤러의 개별 예외 처리기는 없고, 공통 처리기를 Bean으로 등록하려 합니다.\n중복을 줄이는 배치로 맞는 것은 무엇입니까?",
+      "prompt": "공지 조회와 수정 컨트롤러가 동일한 NoticeMissingException을 HTTP 404와 같은 본문으로 처리해야 합니다.\n두 컨트롤러의 개별 예외 처리기는 없고 공통 처리기를 Bean으로 등록하려 합니다.\n중복을 줄이는 배치로 맞는 것은 무엇입니까?",
       "options": [
         {
           "id": "a",
@@ -3563,7 +3563,7 @@
       "conceptId": "spring.mvc-tests",
       "difficulty": "application",
       "learningObjective": "MockMvc와 기본 MOCK 환경의 테스트 결과를 실제 서버 통신 완료로 확대하지 않을 수 있습니다.",
-      "prompt": "@SpringBootTest의 기본 MOCK 환경에 필요한 MockMvc 설정을 더하고, 등록된 MVC 구성으로 요청 매핑·JSON 입력·응답 상태 검사를 통과했습니다.\n실제 서버와 브라우저는 실행하지 않았습니다.\n보고할 수 있는 검증 범위를 고르세요.",
+      "prompt": "@SpringBootTest의 기본 MOCK 환경에 필요한 MockMvc 설정을 더하고 등록된 MVC 구성으로 요청 매핑·JSON 입력·응답 상태 검사를 통과했습니다.\n실제 서버와 브라우저는 실행하지 않았습니다.\n보고할 수 있는 검증 범위를 고르세요.",
       "options": [
         {
           "id": "a",
@@ -3597,7 +3597,7 @@
       "conceptId": "spring.security-authentication-authorization",
       "difficulty": "application",
       "learningObjective": "확인된 사용자와 부여된 권한을 나누어 요청 허용 여부를 판단할 수 있습니다.",
-      "prompt": "공지 수정 기능은 notices.write 권한을 요구합니다.\n로그인에 성공한 사용자는 notices.read만 가지고 있으며, 추가 역할 계층이나 권한 확장은 없습니다.\n인증과 인가의 관계에 맞는 판단을 고르세요.",
+      "prompt": "공지 수정 기능은 notices.write 권한을 요구합니다.\n로그인에 성공한 사용자는 notices.read만 가지고 있으며 추가 역할 계층이나 권한 확장은 없습니다.\n인증과 인가의 관계에 맞는 판단을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -3631,7 +3631,7 @@
       "conceptId": "spring.security-authentication-authorization",
       "difficulty": "application",
       "learningObjective": "미인증과 인증된 사용자의 권한 부족에서 필요한 대응을 구분할 수 있습니다.",
-      "prompt": "보호된 공지 수정 기능에 A는 로그인하지 않고, B는 로그인했지만 필요한 수정 권한 없이 접근했습니다.\nA에게는 로그인 화면을 보여 주는 폼 로그인 구성을 사용합니다.\n두 요청의 거부 이유를 설명한 문장을 고르세요.",
+      "prompt": "보호된 공지 수정 기능에 A는 로그인하지 않고 B는 로그인했지만 필요한 수정 권한 없이 접근했습니다.\nA에게는 로그인 화면을 보여 주는 폼 로그인 구성을 사용합니다.\n두 요청의 거부 이유를 설명한 문장을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -3641,13 +3641,13 @@
         },
         {
           "id": "b",
-          "text": "A는 수정 권한만 추가하면 되고, B는 로그인이 전혀 없는 상태입니다.",
+          "text": "A는 수정 권한만 추가하면 되고 B는 로그인이 전혀 없는 상태입니다.",
           "isCorrect": false,
           "feedback": "A의 미인증과 B의 권한 부족을 반대로 해석했습니다."
         },
         {
           "id": "c",
-          "text": "A는 인증을 시작하도록 안내할 대상이고, B는 필요한 권한이 없어 거부할 대상입니다.",
+          "text": "A는 인증을 시작하도록 안내할 대상이고 B는 필요한 권한이 없어 거부할 대상입니다.",
           "isCorrect": true,
           "feedback": "미인증 요청의 인증 안내와 인증된 사용자의 접근 거부를 나눕니다. 폼 로그인 설정에서는 A에게 로그인 화면으로 이동시키는 흐름이 가능합니다."
         },
@@ -3803,7 +3803,7 @@
       "conceptId": "spring.security-form-login",
       "difficulty": "application",
       "learningObjective": "기본 폼 필터가 읽는 입력과 JSON 요청 본문을 구분할 수 있습니다.",
-      "prompt": "Spring Security 7.1.1 Servlet의 기본 formLogin을 사용합니다.\nPOST /login의 Content-Type은 application/json이고 본문은 {\"username\":\"learner\",\"password\":\"sample-input\"}입니다.\n폼·쿼리 파라미터는 없고, 유효 CSRF 토큰은 별도 헤더로 전달했습니다.\n사용자 정의 인증 필터나 파라미터 이름 변경은 없습니다.\n기본 로그인 필터의 입력 읽기를 설명한 문장을 고르세요.",
+      "prompt": "Spring Security 7.1.1 Servlet의 기본 formLogin을 사용합니다.\nPOST /login의 Content-Type은 application/json이고 본문은 {\"username\":\"learner\",\"password\":\"sample-input\"}입니다.\n폼·쿼리 파라미터는 없고 유효 CSRF 토큰은 별도 헤더로 전달했습니다.\n사용자 정의 인증 필터나 파라미터 이름 변경은 없습니다.\n기본 로그인 필터의 입력 읽기를 설명한 문장을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -3973,7 +3973,7 @@
       "conceptId": "spring.security-session-logout",
       "difficulty": "application",
       "learningObjective": "기본 CSRF 활성 상태에서 로그아웃 확인과 실제 처리를 구분할 수 있습니다.",
-      "prompt": "Spring Security 7.1.1 Servlet에서 기본 CSRF 보호, 세션 기반 로그인과 표준 logout 설정을 유지했습니다.\n로그인 상태에서 GET /logout을 열고, 이어서 서버가 제공한 유효 CSRF 토큰을 포함한 POST /logout을 보냅니다.\n두 요청의 역할을 고르세요.",
+      "prompt": "Spring Security 7.1.1 Servlet에서 기본 CSRF 보호, 세션 기반 로그인과 표준 logout 설정을 유지했습니다.\n로그인 상태에서 GET /logout을 열고 이어서 서버가 제공한 유효 CSRF 토큰을 포함한 POST /logout을 보냅니다.\n두 요청의 역할을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -4178,7 +4178,7 @@
       "conceptId": "spring.security-method-authorization",
       "difficulty": "application",
       "learningObjective": "기본 프록시 방식에서 자기 호출이 메서드 인가를 우회할 수 있음을 식별할 수 있습니다.",
-      "prompt": "기본 프록시 방식의 @EnableMethodSecurity를 사용하며 AspectJ weaving은 없습니다.\n서비스 Bean의 outer()에는 인가 어노테이션이 없고, 같은 객체의 public reviseTitle()에만 @PreAuthorize가 있습니다.\nouter()의 본문이 this.reviseTitle()을 호출할 때 검사 경계를 고르세요.",
+      "prompt": "기본 프록시 방식의 @EnableMethodSecurity를 사용하며 AspectJ weaving은 없습니다.\n서비스 Bean의 outer()에는 인가 어노테이션이 없고 같은 객체의 public reviseTitle()에만 @PreAuthorize가 있습니다.\nouter()의 본문이 this.reviseTitle()을 호출할 때 검사 경계를 고르세요.",
       "options": [
         {
           "id": "a",
@@ -4587,7 +4587,7 @@
       "conceptId": "spring.jpa-entity-id",
       "difficulty": "application",
       "learningObjective": "엔티티 선언·기본 생성자·식별자와 열 매핑을 코드에서 찾을 수 있습니다.",
-      "prompt": "Jakarta Persistence 3.2 표준으로 회원 엔티티를 선언하려 합니다. 모든 후보는 @Entity와 유효한 @Id 매핑을 갖췄다고 할 때, 엔티티의 클래스·생성자 요구를 만족하는 구성을 고르세요.",
+      "prompt": "Jakarta Persistence 3.2 표준으로 회원 엔티티를 선언하려 합니다. 모든 후보는 @Entity와 유효한 @Id 매핑을 갖췄다고 할 때 엔티티의 클래스·생성자 요구를 만족하는 구성을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -4863,7 +4863,7 @@
       "conceptId": "spring.jpa-transactions",
       "difficulty": "application",
       "learningObjective": "활성 쓰기 트랜잭션·관리 상태에서 변경 감지를 설명하고 서비스 작업 단위의 경계를 고를 수 있습니다.",
-      "prompt": "회원 이름 변경과 변경 이력 추가가 둘 다 성공하거나 둘 다 취소되어야 합니다.\n두 Repository는 같은 DB·트랜잭션 관리자를 사용하고, Spring 프록시 호출과 트랜잭션 처리가 준비되어 있습니다.\n두 작업을 한 단위로 묶는 경계를 고르세요.",
+      "prompt": "회원 이름 변경과 변경 이력 추가가 둘 다 성공하거나 둘 다 취소되어야 합니다.\n두 Repository는 같은 DB·트랜잭션 관리자를 사용하고 Spring 프록시 호출과 트랜잭션 처리가 준비되어 있습니다.\n두 작업을 한 단위로 묶는 경계를 고르세요.",
       "options": [
         {
           "id": "a",
@@ -4897,7 +4897,7 @@
       "conceptId": "spring.jpa-flush-commit",
       "difficulty": "basic",
       "learningObjective": "영속성 컨텍스트 동기화와 트랜잭션 확정을 구분하고 flush 시점의 오류 가능성을 설명할 수 있습니다.",
-      "prompt": "한 쓰기 트랜잭션에서 관리 엔티티를 바꾸고 flush가 성공한 뒤, 커밋 전에 rollback했습니다.\n변경 대상은 트랜잭션을 지원하는 일반 DB 테이블이며 DDL·외부 API·비트랜잭션 쓰기는 없습니다.\n그 데이터 변경의 확정 여부를 고르세요.",
+      "prompt": "한 쓰기 트랜잭션에서 관리 엔티티를 바꾸고 flush가 성공한 뒤 커밋 전에 rollback했습니다.\n변경 대상은 트랜잭션을 지원하는 일반 DB 테이블이며 DDL·외부 API·비트랜잭션 쓰기는 없습니다.\n그 데이터 변경의 확정 여부를 고르세요.",
       "options": [
         {
           "id": "a",
@@ -4931,7 +4931,7 @@
       "conceptId": "spring.jpa-flush-commit",
       "difficulty": "application",
       "learningObjective": "영속성 컨텍스트 동기화와 트랜잭션 확정을 구분하고 flush 시점의 오류 가능성을 설명할 수 있습니다.",
-      "prompt": "일반 쓰기 트랜잭션에서 새 회원 저장 요청을 한 뒤, flush 단계에서 DB의 회원명 고유 제약 위반 오류가 발생했습니다.\n다른 실패는 없고 아직 커밋하지 않았습니다.\n이 기록을 바탕으로 저장 성공을 보고할 때 맞는 설명을 고르세요.",
+      "prompt": "일반 쓰기 트랜잭션에서 새 회원 저장 요청을 한 뒤 flush 단계에서 DB의 회원명 고유 제약 위반 오류가 발생했습니다.\n다른 실패는 없고 아직 커밋하지 않았습니다.\n이 기록을 바탕으로 저장 성공을 보고할 때 맞는 설명을 고르세요.",
       "options": [
         {
           "id": "a",
@@ -5038,7 +5038,7 @@
       "options": [
         {
           "id": "a",
-          "text": "EAGER는 즉시 준비 요구이고 LAZY는 지연 힌트이며, 둘만으로 JOIN 한 번을 보장하지 않습니다.",
+          "text": "EAGER는 즉시 준비 요구이고 LAZY는 지연 힌트이며 둘만으로 JOIN 한 번을 보장하지 않습니다.",
           "isCorrect": true,
           "feedback": "로딩 시점 계약과 실제 SQL 형태를 나누어 설명했습니다. LAZY도 구현체가 앞서 읽을 수 있습니다."
         },
@@ -5068,7 +5068,7 @@
       "conceptId": "spring.jpa-fetch-loading",
       "difficulty": "application",
       "learningObjective": "LAZY와 EAGER의 계약을 구분하고 관리 범위가 끝난 미초기화 연관의 조회 요구를 찾을 수 있습니다.",
-      "prompt": "Hibernate에서 order.member는 LAZY 연관이며 아직 초기화되지 않았습니다.\n연결된 Session은 서비스 반환 뒤 닫히고, 별도의 외부 지연 로딩 설정은 없습니다.\n화면에는 회원 이름이 필요합니다.\n닫힌 Session 이후의 추가 조회에 기대지 않고 값을 준비할 위치를 고르세요.",
+      "prompt": "Hibernate에서 order.member는 LAZY 연관이며 아직 초기화되지 않았습니다.\n연결된 Session은 서비스 반환 뒤 닫히고 별도의 외부 지연 로딩 설정은 없습니다.\n화면에는 회원 이름이 필요합니다.\n닫힌 Session 이후의 추가 조회에 기대지 않고 값을 준비할 위치를 고르세요.",
       "options": [
         {
           "id": "a",
@@ -5170,7 +5170,7 @@
       "conceptId": "spring.jpa-fetch-plan",
       "difficulty": "basic",
       "learningObjective": "주어진 조회 패턴에서 N+1을 진단하고 화면에 필요한 연관 데이터를 위한 fetch 계획을 비교할 수 있습니다.",
-      "prompt": "설명용 기록에서 주문 목록을 1회 조회하고, 주문 3개의 회원 이름을 순서대로 읽으며 회원 조회가 각각 1회씩 더 발생했습니다.\n주문은 서로 다른 회원을 가리키고 캐시·배치 로딩·fetch join은 없습니다.\n이 4회 조회를 만든 원인을 고르세요.",
+      "prompt": "설명용 기록에서 주문 목록을 1회 조회하고 주문 3개의 회원 이름을 순서대로 읽으며 회원 조회가 각각 1회씩 더 발생했습니다.\n주문은 서로 다른 회원을 가리키고 캐시·배치 로딩·fetch join은 없습니다.\n이 4회 조회를 만든 원인을 고르세요.",
       "options": [
         {
           "id": "a",

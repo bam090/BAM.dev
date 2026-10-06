@@ -44,7 +44,7 @@
       "conceptId": "js.function-return",
       "learningObjective": "조기 반환으로 실행되지 않는 콜백과 부수 효과를 찾아냅니다.",
       "difficulty": "application",
-      "prompt": "음수 입력은 거부하고, 허용된 입력만 format으로 보내려 합니다. 코드를 실행한 뒤 message와 calls의 값은 각각 무엇입니까?",
+      "prompt": "음수 입력은 거부하고 허용된 입력만 format으로 보내려 합니다. 코드를 실행한 뒤 message와 calls의 값은 각각 무엇입니까?",
       "code": "let calls = 0;\n\nfunction describe(minutes, format) {\n  if (minutes < 0) {\n    return \"입력 확인\";\n  }\n  return format(minutes);\n}\n\nfunction format(minutes) {\n  calls = calls + 1;\n  return minutes + \"분\";\n}\n\nconst message = describe(-2, format);",
       "options": [
         {
@@ -63,7 +63,7 @@
           "id": "c",
           "text": "message는 \"입력 확인\", calls는 0",
           "isCorrect": true,
-          "feedback": "조기 반환이 format 호출 전에 describe를 끝냅니다. 따라서 입력 확인을 돌려주고, 호출되지 않은 format의 calls 변경도 없습니다. 교안의 ‘반환값은 호출한 곳으로 돌아간다’를 참고하세요."
+          "feedback": "조기 반환이 format 호출 전에 describe를 끝냅니다. 따라서 입력 확인을 돌려주고 호출되지 않은 format의 calls 변경도 없습니다. 교안의 ‘반환값은 호출한 곳으로 돌아간다’를 참고하세요."
         },
         {
           "id": "d",
@@ -149,7 +149,7 @@
       "conceptId": "js.function-side-effects",
       "learningObjective": "입력·반환값·외부 상태 변경을 기준으로 요구사항에 맞는 함수 경계를 선택합니다.",
       "difficulty": "application",
-      "prompt": "여러 화면에서 결제 금액을 계산해 각각 표시하려 합니다.\ncalc(100)은 숫자 90을 반환해야 하고, 바깥 변수 total을 바꾸거나 콘솔에 출력하지 않아야 합니다.\n아래 네 함수 중 이 계약을 만족하는 것은 무엇입니까?",
+      "prompt": "여러 화면에서 결제 금액을 계산해 각각 표시하려 합니다.\ncalc(100)은 숫자 90을 반환해야 하고 바깥 변수 total을 바꾸거나 콘솔에 출력하지 않아야 합니다.\n아래 네 함수 중 이 계약을 만족하는 것은 무엇입니까?",
       "code": "let total = 0;\n\nfunction calcA(price) {\n  total = total + price * 0.9;\n  return price * 0.9;\n}\n\nfunction calcB(price) {\n  console.log(price * 0.9);\n}\n\nfunction calcC(price) {\n  return price * 0.9;\n}\n\nfunction calcD(price) {\n  const result = price * 0.9;\n}",
       "options": [
         {
@@ -162,7 +162,7 @@
           "id": "b",
           "text": "calcB",
           "isCorrect": false,
-          "feedback": "콘솔 출력은 요구사항에서 제외됐고, 함수에는 반환문도 없습니다. 화면마다 계산 결과를 쓰려면 값을 호출자에게 돌려줘야 합니다."
+          "feedback": "콘솔 출력은 요구사항에서 제외됐고 함수에는 반환문도 없습니다. 화면마다 계산 결과를 쓰려면 값을 호출자에게 돌려줘야 합니다."
         },
         {
           "id": "c",
@@ -463,12 +463,12 @@
       "lessonId": "js-01-runtime",
       "conceptId": "js.ecmascript",
       "difficulty": "basic",
-      "prompt": "다음 코드에서 `total`이 브라우저와 브라우저가 아닌 JavaScript 실행 환경 모두에서 `1500`으로 계산될 수 있고, 각 환경에 `console.log()`가 제공된다면 출력도 가능한 이유를 가장 정확히 설명한 것은 무엇입니까?",
+      "prompt": "다음 코드에서 `total`이 브라우저와 브라우저가 아닌 JavaScript 실행 환경 모두에서 `1500`으로 계산될 수 있고 각 환경에 `console.log()`가 제공된다면 출력도 가능한 이유를 가장 정확히 설명한 것은 무엇입니까?",
       "code": "const price = 1200;\nconst total = price + 300;\nconsole.log(total);",
       "options": [
         {
           "id": "a",
-          "text": "계산은 각 엔진이 구현한 ECMAScript 규칙을 따르고, 출력은 각 실행 환경이 제공하는 `console.log()`가 맡기 때문입니다.",
+          "text": "계산은 각 엔진이 구현한 ECMAScript 규칙을 따르고 출력은 각 실행 환경이 제공하는 `console.log()`가 맡기 때문입니다.",
           "isCorrect": true,
           "feedback": "맞습니다. ECMAScript는 변수 선언과 숫자 덧셈 같은 언어 규칙을 정의합니다. `console.log()`는 언어 연산 자체가 아니라 각 실행 환경이 제공하는 출력 기능이므로 두 역할을 구분해야 합니다."
         },
@@ -482,13 +482,13 @@
           "id": "c",
           "text": "JavaScript와 ECMAScript는 관계없는 언어지만 파일의 위치가 같으면 우연히 같은 결과가 나오기 때문입니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. ECMAScript는 JavaScript 언어의 문법과 의미를 정의하는 표준이며, 파일 위치는 덧셈 결과를 결정하지 않습니다."
+          "feedback": "틀립니다. ECMAScript는 JavaScript 언어의 문법과 의미를 정의하는 표준이며 파일 위치는 덧셈 결과를 결정하지 않습니다."
         },
         {
           "id": "d",
           "text": "JavaScript가 동적 타입 언어이므로 실행 환경마다 숫자 덧셈 결과를 자유롭게 정할 수 있기 때문입니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. 동적 타입은 실행 중 값의 타입이 정해진다는 뜻이며, 표준에 정의된 숫자 덧셈 결과를 실행 환경이 임의로 바꾼다는 뜻이 아닙니다."
+          "feedback": "틀립니다. 동적 타입은 실행 중 값의 타입이 정해진다는 뜻이며 표준에 정의된 숫자 덧셈 결과를 실행 환경이 임의로 바꾼다는 뜻이 아닙니다."
         }
       ]
     },
@@ -504,7 +504,7 @@
           "id": "a",
           "text": "`defer`를 제거합니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. `defer`는 실행 시점에 영향을 주지만, 잘못된 경로의 파일을 찾게 해 주지는 않습니다."
+          "feedback": "틀립니다. `defer`는 실행 시점에 영향을 주지만 잘못된 경로의 파일을 찾게 해 주지는 않습니다."
         },
         {
           "id": "b",
@@ -556,7 +556,7 @@
           "id": "d",
           "text": "TypeError가 발생합니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. 서로 다른 타입을 `===`로 비교할 수 있으며, 이 경우 오류 대신 `false`를 반환합니다."
+          "feedback": "틀립니다. 서로 다른 타입을 `===`로 비교할 수 있으며 이 경우 오류 대신 `false`를 반환합니다."
         }
       ]
     },
@@ -584,7 +584,7 @@
           "id": "c",
           "text": "2",
           "isCorrect": true,
-          "feedback": "맞습니다. `[]`와 `{}`는 참으로 평가되고, 빈 문자열과 숫자 `0`은 거짓으로 평가되므로 두 번 증가합니다."
+          "feedback": "맞습니다. `[]`와 `{}`는 참으로 평가되고 빈 문자열과 숫자 `0`은 거짓으로 평가되므로 두 번 증가합니다."
         },
         {
           "id": "d",
@@ -612,7 +612,7 @@
           "id": "b",
           "text": "undefined",
           "isCorrect": false,
-          "feedback": "틀립니다. 반환문이 없는 일반적인 함수 본문과 달리, 이 화살표 함수는 단일 표현식의 결과를 암시적으로 반환합니다."
+          "feedback": "틀립니다. 반환문이 없는 일반적인 함수 본문과 달리 이 화살표 함수는 단일 표현식의 결과를 암시적으로 반환합니다."
         },
         {
           "id": "c",
@@ -674,13 +674,13 @@
           "id": "a",
           "text": "\"bam\", \"문자 그대로 key\"",
           "isCorrect": false,
-          "feedback": "틀립니다. `user.key`는 문자 그대로 `key` 속성의 값 `문자 그대로 key`를 읽고, `user[key]`는 변수 값 `nickname`을 사용해 `bam`을 읽으므로 두 값의 순서가 반대입니다."
+          "feedback": "틀립니다. `user.key`는 문자 그대로 `key` 속성의 값 `문자 그대로 key`를 읽고 `user[key]`는 변수 값 `nickname`을 사용해 `bam`을 읽으므로 두 값의 순서가 반대입니다."
         },
         {
           "id": "b",
           "text": "\"문자 그대로 key\", \"bam\"",
           "isCorrect": true,
-          "feedback": "맞습니다. `user.key`는 문자 그대로 `key` 속성의 값을 읽고, `user[key]`는 변수 값 `nickname`을 속성 이름으로 사용해 `bam`을 읽습니다."
+          "feedback": "맞습니다. `user.key`는 문자 그대로 `key` 속성의 값을 읽고 `user[key]`는 변수 값 `nickname`을 속성 이름으로 사용해 `bam`을 읽습니다."
         },
         {
           "id": "c",
@@ -714,7 +714,7 @@
           "id": "b",
           "text": "undefined, []",
           "isCorrect": false,
-          "feedback": "틀립니다. `result`가 `undefined`인 것은 맞지만, 콜백은 두 요소마다 실행되어 `labels`에 두 문자열을 추가합니다."
+          "feedback": "틀립니다. `result`가 `undefined`인 것은 맞지만 콜백은 두 요소마다 실행되어 `labels`에 두 문자열을 추가합니다."
         },
         {
           "id": "c",
@@ -748,7 +748,7 @@
           "id": "b",
           "text": "\"post-10\", true",
           "isCorrect": true,
-          "feedback": "맞습니다. `data-post-id`는 `dataset.postId`로 읽으면 문자열 `post-10`이고, `active` 클래스를 추가했으므로 `contains(\"active\")`는 `true`입니다."
+          "feedback": "맞습니다. `data-post-id`는 `dataset.postId`로 읽으면 문자열 `post-10`이고 `active` 클래스를 추가했으므로 `contains(\"active\")`는 `true`입니다."
         },
         {
           "id": "c",
@@ -760,7 +760,7 @@
           "id": "d",
           "text": "10, true",
           "isCorrect": false,
-          "feedback": "틀립니다. `dataset`으로 읽는 `data-*` 값은 문자열이며, 원래 값 전체인 `post-10`을 반환합니다. 숫자 `10`으로 자동 변환되지 않습니다."
+          "feedback": "틀립니다. `dataset`으로 읽는 `data-*` 값은 문자열이며 원래 값 전체인 `post-10`을 반환합니다. 숫자 `10`으로 자동 변환되지 않습니다."
         }
       ]
     },
@@ -782,19 +782,19 @@
           "id": "b",
           "text": "undefined를 출력합니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. `dataset.action`은 실제 클릭된 `span`이 아니라 `closest()`가 찾은 버튼에서 읽으며, 그 버튼에는 `data-action=\"delete\"`가 있습니다."
+          "feedback": "틀립니다. `dataset.action`은 실제 클릭된 `span`이 아니라 `closest()`가 찾은 버튼에서 읽으며 그 버튼에는 `data-action=\"delete\"`가 있습니다."
         },
         {
           "id": "c",
           "text": "\"delete\"를 출력합니다.",
           "isCorrect": true,
-          "feedback": "맞습니다. `event.target`인 `span`에서 시작한 `closest()`가 가장 가까운 삭제 버튼을 찾고, 그 버튼의 `dataset.action` 값 `delete`를 출력합니다."
+          "feedback": "맞습니다. `event.target`인 `span`에서 시작한 `closest()`가 가장 가까운 삭제 버튼을 찾고 그 버튼의 `dataset.action` 값 `delete`를 출력합니다."
         },
         {
           "id": "d",
           "text": "`closest()` 호출에서 TypeError가 발생합니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. 이 상황의 `event.target`은 클릭된 `span` 요소이며, 요소는 `closest()`를 사용할 수 있습니다."
+          "feedback": "틀립니다. 이 상황의 `event.target`은 클릭된 `span` 요소이며 요소는 `closest()`를 사용할 수 있습니다."
         }
       ]
     },
@@ -837,7 +837,7 @@
       "lessonId": "js-06-async-fetch",
       "conceptId": "js.async-await",
       "difficulty": "application",
-      "prompt": "다음 선택지는 모두 `async function loadOrders()` 내부에 작성한다고 가정합니다.\n두 응답은 성공 상태이며, 주문 요청 URL을 만들려면 먼저 사용자 응답 JSON의 `user.id`를 알아야 합니다.\n이 의존 관계를 올바르게 처리한 코드는 무엇입니까?",
+      "prompt": "다음 선택지는 모두 `async function loadOrders()` 내부에 작성한다고 가정합니다.\n두 응답은 성공 상태이며 주문 요청 URL을 만들려면 먼저 사용자 응답 JSON의 `user.id`를 알아야 합니다.\n이 의존 관계를 올바르게 처리한 코드는 무엇입니까?",
       "options": [
         {
           "id": "a",
@@ -870,7 +870,7 @@
       "lessonId": "js-07-review-practice",
       "conceptId": "js.data-flow",
       "difficulty": "basic",
-      "prompt": "`button`과 `output`은 이미 올바른 DOM 요소를 가리킵니다.\n버튼을 누른 직후 화면에는 `11`이 보이지만, 나중에 `renderProfile()`을 다시 호출하면 `10`으로 돌아갑니다.\n데이터와 화면을 계속 일치시키려면 클릭 처리 코드를 어떻게 바꿔야 합니까?",
+      "prompt": "`button`과 `output`은 이미 올바른 DOM 요소를 가리킵니다.\n버튼을 누른 직후 화면에는 `11`이 보이지만 나중에 `renderProfile()`을 다시 호출하면 `10`으로 돌아갑니다.\n데이터와 화면을 계속 일치시키려면 클릭 처리 코드를 어떻게 바꿔야 합니까?",
       "code": "const profile = { points: 10 };\n\nfunction renderProfile() {\n  output.textContent = String(profile.points);\n}\n\nbutton.addEventListener(\"click\", () => {\n  output.textContent = \"11\";\n});",
       "options": [
         {
@@ -895,7 +895,7 @@
           "id": "d",
           "text": "이후에는 `renderProfile()`을 호출하지 않습니다.",
           "isCorrect": false,
-          "feedback": "틀립니다. 다시 그리지 않으면 되돌아가는 현상만 숨길 뿐, 화면의 `11`과 데이터의 `10`이 서로 다른 문제는 해결되지 않습니다."
+          "feedback": "틀립니다. 다시 그리지 않으면 되돌아가는 현상만 숨길 뿐 화면의 `11`과 데이터의 `10`이 서로 다른 문제는 해결되지 않습니다."
         }
       ]
     },
@@ -904,7 +904,7 @@
       "lessonId": "js-07-review-practice",
       "conceptId": "js.debugging",
       "difficulty": "application",
-      "prompt": "배송비 계산 기능을 확인한 결과, 클릭 이벤트 로그가 남고 선택값은 `express`, `calculateShipping()`의 반환값은 예상대로 `5000`이었습니다.\n그런데 화면에는 이전 배송비 `3000`이 남아 있습니다.\n원인을 가장 효율적으로 좁히기 위해 다음으로 확인할 것은 무엇입니까?",
+      "prompt": "배송비 계산 기능을 확인한 결과 클릭 이벤트 로그가 남고 선택값은 `express`, `calculateShipping()`의 반환값은 예상대로 `5000`이었습니다.\n그런데 화면에는 이전 배송비 `3000`이 남아 있습니다.\n원인을 가장 효율적으로 좁히기 위해 다음으로 확인할 것은 무엇입니까?",
       "options": [
         {
           "id": "a",
@@ -1277,7 +1277,7 @@
           "id": "d",
           "text": "\"안쪽\", \"바깥\"",
           "isCorrect": true,
-          "feedback": "블록 안은 가까운 place의 안쪽을 읽고, 블록 밖은 별도의 place 값 바깥을 읽습니다. 안쪽 선언은 바깥 값을 바꾸지 않습니다."
+          "feedback": "블록 안은 가까운 place의 안쪽을 읽고 블록 밖은 별도의 place 값 바깥을 읽습니다. 안쪽 선언은 바깥 값을 바꾸지 않습니다."
         }
       ]
     },
@@ -1287,7 +1287,7 @@
       "conceptId": "js.scope-hoisting",
       "learningObjective": "같은 이름이 있는 블록의 초기화 전 접근과 바깥 이름 탐색을 구분합니다.",
       "difficulty": "application",
-      "prompt": "아래 블록의 console.log(count)를 실행할 때 어떤 일이 일어나며, 그 이유는 무엇입니까?",
+      "prompt": "아래 블록의 console.log(count)를 실행할 때 어떤 일이 일어나며 그 이유는 무엇입니까?",
       "code": "const count = 10;\n{\n  console.log(count);\n  const count = 2;\n}",
       "options": [
         {
@@ -1440,7 +1440,7 @@
           "id": "b",
           "text": "\"밤\", \"새벽\"",
           "isCorrect": true,
-          "feedback": "원래 value 속성은 밤으로 남고, 현재 입력 프로퍼티 input.value는 새벽으로 바뀝니다."
+          "feedback": "원래 value 속성은 밤으로 남고 현재 입력 프로퍼티 input.value는 새벽으로 바뀝니다."
         },
         {
           "id": "c",
@@ -1727,7 +1727,7 @@
         {
           "text": "\"마무리\"",
           "isCorrect": true,
-          "feedback": "try의 반환을 준비한 뒤 finally가 실행되고, 그 안의 return이 최종 반환값을 \"마무리\"로 덮습니다. 마무리에서는 보통 값을 반환하지 않아야 합니다.",
+          "feedback": "try의 반환을 준비한 뒤 finally가 실행되고 그 안의 return이 최종 반환값을 \"마무리\"로 덮습니다. 마무리에서는 보통 값을 반환하지 않아야 합니다.",
           "id": "d"
         }
       ],
@@ -1947,7 +1947,7 @@
       "conceptId": "js.async-state",
       "difficulty": "application",
       "learningObjective": "실패 시 데이터와 진행 상태를 함께 바꿔 화면 계약을 지킬 수 있습니다.",
-      "prompt": "이 목록은 새로 불러오기 시작하면 이전 항목을 지우고, 실패하면 빈 목록과 오류 안내만 보여 주기로 했습니다.\n이전 성공 자료가 state.lessons에 남아 있습니다.\n다음 catch 처리 중 요구에 맞는 것은 무엇입니까?\nrender는 state를 그대로 그립니다.",
+      "prompt": "이 목록은 새로 불러오기 시작하면 이전 항목을 지우고 실패하면 빈 목록과 오류 안내만 보여 주기로 했습니다.\n이전 성공 자료가 state.lessons에 남아 있습니다.\n다음 catch 처리 중 요구에 맞는 것은 무엇입니까?\nrender는 state를 그대로 그립니다.",
       "options": [
         {
           "text": "state.lessons = []; state.phase = \"success\"; render();",
@@ -2002,7 +2002,7 @@
           "id": "c"
         },
         {
-          "text": "race는 A의 실패를 따르고, B는 race 때문에 자동으로 취소되지 않습니다.",
+          "text": "race는 A의 실패를 따르고 B는 race 때문에 자동으로 취소되지 않습니다.",
           "isCorrect": true,
           "feedback": "race는 첫 성공이 아니라 첫 settled 결과를 따릅니다. 별도 취소 지원을 사용하지 않았으므로 B의 실행도 자동 중단하지 않습니다.",
           "id": "d"
@@ -2359,7 +2359,7 @@
       "conceptId": "js.data-flow",
       "difficulty": "application",
       "learningObjective": "빈 입력 처리도 새 사용자 행동으로 보아 이전 비동기 결과를 무효화할 수 있습니다.",
-      "prompt": "검색 결과를 반영하는 쪽은 자기 requestId와 latestRequestId가 같을 때만 화면을 바꿉니다.\n현재 코드에서는 \"HTML\" 검색이 진행 중일 때 빈 검색을 제출해도, 늦게 온 HTML 결과가 화면을 다시 채웁니다.\n빈 검색이 이전 요청을 무효화하고, 이후 새 검색을 이어서 제출해도 과거 요청과 같은 번호가 다시 생기지 않게 하려면 요청 번호 증가 위치를 어떻게 바꿔야 합니까?\ntext는 문자열이며 render는 현재 state만 표시합니다.",
+      "prompt": "검색 결과를 반영하는 쪽은 자기 requestId와 latestRequestId가 같을 때만 화면을 바꿉니다.\n현재 코드에서는 \"HTML\" 검색이 진행 중일 때 빈 검색을 제출해도 늦게 온 HTML 결과가 화면을 다시 채웁니다.\n빈 검색이 이전 요청을 무효화하고 이후 새 검색을 이어서 제출해도 과거 요청과 같은 번호가 다시 생기지 않게 하려면 요청 번호 증가 위치를 어떻게 바꿔야 합니까?\ntext는 문자열이며 render는 현재 state만 표시합니다.",
       "options": [
         {
           "text": "search를 호출한 뒤에만 latestRequestId를 증가시킵니다.",
