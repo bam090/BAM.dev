@@ -6118,7 +6118,8 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
   color: var(--color-code-text);
 }
 .review-container.is-question-view .quiz-option-text p { margin: 0; }
-.review-container.is-question-view :is(.quiz-card h2[data-quiz-question-title], .quiz-option-text, .quiz-option-feedback) { white-space: pre-line; }
+.review-container .quiz-card h2[data-quiz-question-title] { white-space: pre-line; }
+.review-container.is-question-view :is(.quiz-option-text, .quiz-option-feedback) { white-space: pre-line; }
 .review-container.is-question-view .quiz-option-text .code-card { margin: 4px 0; }
 .review-container.is-question-view .quiz-option-text .code-card pre { max-height: 220px; padding: 8px 10px; }
 .learning-shell :focus-visible, .concept-dialog :focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
