@@ -124,6 +124,10 @@ curriculum.json + Markdown ──► 학습 화면 ─────────�
 
 ## 브라우저 직접 Java 실행 — BROWSER-JAVA-v1
 
+`[현재 사실]` 2026-10-06 점검 기준 GitHub Pages는 기존 branch 배포 방식으로 `dev` 브랜치의 저장소 루트(`/`)를 게시한다. `npm run build`는 별도로 `dist/`를 생성하지만 현재 `.github/workflows/ci.yml`은 이를 검증할 뿐 Pages에 게시하지 않는다. 따라서 빌드 결과에만 있는 자산은 공개 사이트에서 제공되지 않는다.
+
+이 배포 경로에서 `runtime/java-browser/compiler/ct-artifacts.json`과 `SolutionInvoker.java`는 저장소에 추적되는 파일로 포함한다. JSON은 `content/coding-tests/java.json`에 기존 `createCodingTestArtifacts` 생성기를 적용한 결과를 `JSON.stringify`하고 마지막 개행을 붙인 바이트와 같아야 하며 Java 파일은 `desktop/runtime/SolutionInvoker.java`와 같아야 한다. 두 파일의 크기·SHA-256은 `src/grading/java-browser-assets.js`의 무결성 manifest와 일치해야 한다. 로컬 수정·검증과 공개 배포 복구는 구분하며 공개 URL의 응답과 실제 브라우저 준비·실행을 확인하기 전에는 배포 복구 완료로 기록하지 않는다.
+
 `[확정 결정]` [DEC-BROWSER-JAVA-01](roadmap.md#2026-09-26-브라우저-직접-java-실행)에 따라 목표 흐름은 README 시작하기의 GitHub Pages 링크 → 문제 선택 → 코드 작성 → 브라우저 안에서 실행·공개 채점·취소다. clone·Node·JDK 설치·localhost 서버·별도 연결 버튼을 요구하지 않는다. bam의 후속 정정으로 브라우저 학습자 소스·실행 기준은 Java 17로 고정한다. Java 21 후보는 채택하지 않으며 추가 버전 변경을 임의로 하지 않는다. 이 결정은 원본 교안·문제·공개 JUnit 테스트의 재작성이나 native Java 25 이력 변경을 뜻하지 않는다.
 
 `[현재 사실]` 제품은 CheerpJ 4.3·ECJ 3.33과 Java 17용 신뢰 helper로 브라우저 안에서 컴파일·공개 평가를 수행한다. 고정 버전 자산을 준비한 뒤 opaque iframe의 일회용 Worker에서 실행하며 결과는 부모가 검증한 typed DTO로 받는다. 아래 초기 후보·차단점 기록은 당시 단계의 이력이고 현재 지원 범위는 문서 첫머리와 [범위 확장](#java-quest원본-junit-범위-확장)의 검증 결과를 따른다. 미채택 TeaVM Java 21 실험은 후속 구현 경로가 아니다. CheerpJ [공식 라이선스](https://cheerpj.com/docs/licensing)의 Community 조건과 외부 CDN `cjrtnc.leaningtech.com`을 따르며 runtime을 자체 호스팅하지 않는다. 최초 다운로드에는 네트워크가 필요하고 완전 오프라인을 보장하지 않는다.

@@ -69,7 +69,7 @@
   "id": "source-java-browser",
   "scopeRevision": "SOURCE-JAVA-BROWSER-v1-20260922",
   "scopeFiles": [
-    { "path": "docs/architecture.md", "sha256": "8428283f49ca5e47f58606c74b4b13195500ec9f3dac7137269db76e56b2ef86" }
+    { "path": "docs/architecture.md", "sha256": "6c0b421c08eb5d29f7b5efd1d86ef737caaf40454ea55e5992ceb6f5bc032897" }
   ],
   "stage": "implementation",
   "requiredChecks": [
@@ -448,6 +448,8 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 
 `[현재 사실]` 이번 정적 연결 문서 정합성 수정으로 외부 설계와 architecture 파일 전체의 SHA-256을 갱신했다. source Java·React 카드가 다루는 제품 경계와 승인 범위는 바뀌지 않아 `scopeRevision`·단계·선행조건·기존 승인 근거를 유지한다. 전체 pilot도 실행을 포함하는 기존 범위를 유지하며 정적 연결의 후속 증거는 위 개별 작업 카드에 기록한다. 이 해시 갱신은 과거 runtime 검증 재실행이나 미검증 단계의 PASS를 뜻하지 않는다.
 
+`[현재 사실]` 2026-10-06 [BROWSER-JAVA-v1](architecture.md#브라우저-직접-java-실행--browser-java-v1)에 Pages의 저장소 루트 배포와 Java 자산의 생성·무결성 계약을 보완해 `docs/architecture.md` 전체 SHA-256을 source Java·React 카드에 갱신했다. 두 기존 카드의 범위·`scopeRevision`·단계·선행조건·승인 근거는 유지한다. 이번 문서 보완에 대한 독립 검토와 과거 제품 검증은 구분하며 이 해시 갱신은 기존 승인 범위의 확대나 검증 재실행·새 PASS·공개 배포 복구 완료를 뜻하지 않는다.
+
 ### React 목록 시범 작업 카드
 
 `[확정 결정]` React·TypeScript의 점진 이관 목표는 유지한다. `[현재 사실]` 도구체인·CSP·첫 이관 범위는 `DEC-FRONTEND-MIGRATION-01` 결정 대기이며 목록 시범은 미구현이다.
@@ -457,7 +459,7 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
   "version": 1,
   "id": "react-list-pilot",
   "scopeRevision": "REACT-LIST-PILOT-v1",
-  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "8428283f49ca5e47f58606c74b4b13195500ec9f3dac7137269db76e56b2ef86" }],
+  "scopeFiles": [{ "path": "docs/architecture.md", "sha256": "6c0b421c08eb5d29f7b5efd1d86ef737caaf40454ea55e5992ceb6f5bc032897" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-FRONTEND-MIGRATION-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" }
