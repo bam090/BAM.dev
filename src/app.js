@@ -119,6 +119,7 @@ import {
   renderWebProjectLoadingView,
   renderWebProjectView,
 } from "./ui/web-project-view.js";
+import { openPermutationLab } from "./ui/permutation-lab-view.js";
 import { createWebProjectPreviewDocument } from "./ui/web-project-preview.js";
 
 const QUEST_DRAFT_SAVE_DEBOUNCE_MS = 250;
@@ -1001,6 +1002,8 @@ export class BamLearningApp {
   }
 
   enterView(kind) {
+    this.permutationLabDispose?.();
+    this.permutationLabDispose = null;
     const currentSequence = Number.isSafeInteger(this.renderSequence)
       ? this.renderSequence
       : 0;
@@ -2143,6 +2146,12 @@ export class BamLearningApp {
   }
 
   handleClick(event) {
+    const permutationTrigger = event.target.closest("[data-permutation-open]");
+    if (permutationTrigger) {
+      this.permutationLabDispose?.();
+      this.permutationLabDispose = openPermutationLab(permutationTrigger, this.root);
+      return;
+    }
     if (event.target.closest("[data-java-prepare]")) {
       void this.javaBrowserProvider?.prepare();
       return;
@@ -4585,6 +4594,8 @@ export class BamLearningApp {
   }
 
   renderLesson({ answerOpen = false } = {}) {
+    this.permutationLabDispose?.();
+    this.permutationLabDispose = null;
     const lesson = this.currentLesson;
     if (!lesson || !this.curriculum) return;
 
@@ -4681,6 +4692,7 @@ export class BamLearningApp {
               ${prerequisiteHtml ? `<div class="lesson-prerequisites">${prerequisiteHtml}</div>` : ""}
             </header>
 
+            ${lesson.courseId === "algorithm" && ["brute-force-backtracking-recursion", "permutations-combinations-java"].includes(lesson.slug) ? '<aside class="permutation-lab-entry"><button class="button button--secondary" type="button" data-permutation-open>기본순열 실험실</button><p>nums = [1, 2, 3]의 선택·호출·복귀·복구를 한 단계씩 살펴봅니다.</p></aside>' : ""}
             <article class="lesson-body">
               ${bodyHtml}
             </article>
