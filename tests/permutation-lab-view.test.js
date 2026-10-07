@@ -15,9 +15,20 @@ function installDialogHarness(t) {
   const host = { children: [lesson], append(node) { this.children.push(node); } };
   function control(name) {
     if (!controls.has(name)) controls.set(name, {
-      disabled: false, textContent: "", innerHTML: "",
-      hasAttribute(attribute) { return attribute === `data-permutation-${name}`; },
-      closest(selector) { return selector.includes(`[data-permutation-${name}]`) ? this : null; },
+      disabled: false, textContent: "", innerHTML: "", hidden: false, attributes: {},
+      setAttribute(attribute, value) { this.attributes[attribute] = value; },
+      getAttribute(attribute) {
+        if (attribute === "data-permutation-predict" && name.startsWith("predict=")) return name.slice(8);
+        return this.attributes[attribute] ?? null;
+      },
+      hasAttribute(attribute) {
+        return attribute === `data-permutation-${name}`
+          || (attribute === "data-permutation-predict" && name.startsWith("predict="));
+      },
+      closest(selector) {
+        return selector.includes(`[data-permutation-${name}]`)
+          || (name.startsWith("predict=") && selector.includes("[data-permutation-predict]")) ? this : null;
+      },
       focus(options) { focused.push({ name, options }); },
     });
     return controls.get(name);
@@ -28,7 +39,11 @@ function installDialogHarness(t) {
     querySelector(selector) {
       if (selector === ".permutation-lab-source") return control("source");
       const match = selector.match(/data-permutation-([^\]]+)/);
-      return match ? control(match[1]) : null;
+      return match ? control(match[1].replaceAll('"', "").replaceAll("'", "")) : null;
+    },
+    querySelectorAll(selector) {
+      return selector === "[data-permutation-predict]"
+        ? ["keep", "remove"].map((value) => control(`predict=${value}`)) : [];
     },
     addEventListener(name, handler) { listeners.set(name, handler); },
     showModal() { this.modal = true; },
@@ -136,4 +151,123 @@ test("복귀 화면은 방금 실행한 자식 행과 현재 부모 호출·공�
   assert.match(html, /data-permutation-path>\[1, 2, 3\]/);
   assert.match(html, /data-permutation-used>\[true, true, true\]/);
   assert.match(html, /경로 복사본 1개/);
+});
+
+function openFirstPrediction(harness) {
+  openPermutationLab(harness.trigger, harness.host);
+  for (let index = 0; index < 31; index += 1) harness.click("next");
+  assert.equal(harness.control("prediction").hidden, true, "copy 직후는 이번 예측 지점이 아니다");
+  harness.click("next");
+  assert.match(harness.control("counter").textContent, /^32 \/ 201/);
+  assert.equal(harness.control("prediction").hidden, false);
+  assert.match(harness.control("snapshot").innerHTML, /data-permutation-path>\[1, 2, 3\]/);
+}
+
+test("첫 반환에서만 다음 remove의 path를 물으며 두 예상은 답 공개나 단계 이동 없이 바꿀 수 있다", (t) => {
+  const harness = installDialogHarness(t);
+  const { control, click, focused } = harness;
+  openFirstPrediction(harness);
+  assert.match(harness.dialog.innerHTML, /다음 path\.remove 직후, path는 어떻게 될까요/);
+  const snapshot = control("snapshot").innerHTML;
+  const focusCount = focused.length;
+  for (const [choice, expected] of [["keep", /1, 2, 3/], ["remove", /1, 2/]]) {
+    click(`predict=${choice}`);
+    assert.equal(control(`predict=${choice}`).getAttribute("aria-pressed"), "true");
+    assert.equal(control(`predict=${choice === "keep" ? "remove" : "keep"}`).getAttribute("aria-pressed"), "false");
+    assert.match(control("prediction-selection").textContent, expected);
+    assert.equal(control("prediction-result").hidden, true, "선택 직후에는 실제 답을 공개하지 않는다");
+    assert.equal(control("snapshot").innerHTML, snapshot);
+    assert.match(control("counter").textContent, /^32 \/ 201/);
+    assert.equal(control("next").disabled, false);
+  }
+  assert.equal(focused.length, focusCount, "선택 버튼의 초점을 강제로 옮기지 않는다");
+});
+
+test("각 예상은 다음 remove 실제 값과 대조되며 return 직후의 값과 구분한다", (t) => {
+  const harness = installDialogHarness(t);
+  const { control, click } = harness;
+  for (const choice of ["keep", "remove"]) {
+    openFirstPrediction(harness);
+    click(`predict=${choice}`);
+    click("next");
+    assert.match(control("counter").textContent, /^33 \/ 201/);
+    assert.equal(control("prediction-result").hidden, false);
+    assert.match(control("prediction-result").textContent, /1, 2\]/);
+    assert.match(control("prediction-result").textContent, /path\.remove/);
+    assert.match(control("prediction-result").textContent, choice === "keep" ? /예상.*1, 2, 3/ : /예상.*1, 2\]/);
+    assert.match(control("snapshot").innerHTML, /data-permutation-path>\[1, 2\]/);
+    click("next");
+    assert.equal(control("prediction").hidden, true);
+    assert.match(control("snapshot").innerHTML, /data-permutation-path>\[1, 2\]/);
+    click("close");
+  }
+});
+
+test("미응답 다음과 선택 후 건너뛰기는 동일한 실제 상태로 진행하며 건너뛰기는 다음에 초점을 둔다", (t) => {
+  const harness = installDialogHarness(t);
+  const { control, click, focused } = harness;
+  openFirstPrediction(harness);
+  click("next");
+  const unanswered = control("prediction-result").textContent;
+  const actualSnapshot = control("snapshot").innerHTML;
+  click("previous");
+  click("predict=remove");
+  const focusCount = focused.length;
+  click("skip");
+  assert.match(control("counter").textContent, /^33 \/ 201/);
+  assert.equal(control("prediction-result").textContent, unanswered);
+  assert.equal(control("snapshot").innerHTML, actualSnapshot);
+  assert.equal(focused.length, focusCount + 1);
+  assert.deepEqual(focused.at(-1), { name: "next", options: { preventScroll: true } });
+});
+
+test("이전·처음부터·닫기·Escape와 재진입은 지난 예상을 지운다", (t) => {
+  const harness = installDialogHarness(t);
+  const { control, click } = harness;
+  openFirstPrediction(harness);
+  click("next");
+  const unanswered = control("prediction-result").textContent;
+  click("previous");
+  click("predict=remove");
+  click("next");
+  click("next");
+  click("previous");
+  assert.equal(control("prediction-result").textContent, unanswered, "34→33는 지난 답 없이 실제만 보인다");
+  click("previous");
+  for (const choice of ["keep", "remove"]) assert.equal(control(`predict=${choice}`).getAttribute("aria-pressed"), "false");
+  click("predict=remove");
+  click("first");
+  assert.equal(control("prediction").hidden, true);
+  for (let index = 0; index < 32; index += 1) click("next");
+  assert.equal(control("predict=remove").getAttribute("aria-pressed"), "false");
+  click("predict=remove");
+  click("close");
+  openFirstPrediction(harness);
+  assert.equal(control("predict=remove").getAttribute("aria-pressed"), "false");
+  click("predict=keep");
+  harness.listeners.get("cancel")({ preventDefault() {} });
+  openFirstPrediction(harness);
+  assert.equal(control("predict=keep").getAttribute("aria-pressed"), "false");
+});
+
+test("예측은 첫 사례에만 나타나며 저장 없이 기존 202개 trace와 최종 여섯 복사본을 보존한다", (t) => {
+  const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw new Error("예측은 저장소에 접근하지 않는다"); } });
+  t.after(() => {
+    if (originalStorage) Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else delete globalThis.localStorage;
+  });
+  const traceBefore = createPermutationTrace();
+  assert.equal(traceBefore.length, 202);
+  const harness = installDialogHarness(t);
+  openFirstPrediction(harness);
+  harness.click("predict=remove");
+  harness.click("next");
+  for (let index = 34; index < 202; index += 1) {
+    harness.click("next");
+    assert.equal(harness.control("prediction").hidden, true, `후속 ${index}단계`);
+  }
+  assert.match(harness.control("snapshot").innerHTML, /경로 복사본 6개/);
+  assert.deepEqual(createPermutationTrace(), traceBefore);
+  assert.deepEqual(traceBefore.at(-1).answers, [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]);
 });

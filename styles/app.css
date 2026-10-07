@@ -6545,3 +6545,8 @@ a.my-page-record-link:hover { border-color: var(--color-primary); background: va
   .permutation-lab header { flex-direction: column; }
   .permutation-lab-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+.permutation-lab-prediction { padding: 16px; margin-block: 16px; border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-surface-raised); }
+.permutation-lab-prediction-options { display: flex; flex-wrap: wrap; gap: 8px; }
+.permutation-lab-prediction-options [aria-pressed="true"] { border-color: var(--color-primary); background: var(--color-secondary); box-shadow: inset 0 0 0 1px var(--color-primary); }
+.permutation-lab-prediction p { margin: 8px 0; font-size: .875rem; }
