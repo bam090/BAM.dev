@@ -72,14 +72,23 @@ export function openPermutationLab(trigger, host) {
   }
   function update() {
     const snapshot = trace[cursor];
+    // Disabling the focused button can move browser focus to BODY immediately.
+    const focusedBeforeUpdate = document.activeElement;
+    const previousButton = dialog.querySelector('[data-permutation-previous]');
+    const nextButton = dialog.querySelector('[data-permutation-next]');
     const codeScroll = dialog.querySelector(".permutation-lab-source")?.scrollLeft ?? 0;
     dialog.querySelector('[data-permutation-counter]').textContent = `${cursor} / ${trace.length - 1}단계`;
     dialog.querySelector('[data-permutation-description]').textContent = snapshot.description;
-    dialog.querySelector('[data-permutation-previous]').disabled = cursor === 0;
-    dialog.querySelector('[data-permutation-next]').disabled = cursor === trace.length - 1;
+    previousButton.disabled = cursor === 0;
+    nextButton.disabled = cursor === trace.length - 1;
     dialog.querySelector('[data-permutation-snapshot]').innerHTML = renderPermutationSnapshot(snapshot);
     dialog.querySelector('.permutation-lab-source').scrollLeft = codeScroll;
     updatePrediction();
+    if (focusedBeforeUpdate === previousButton && previousButton.disabled) {
+      nextButton.focus({ preventScroll: true });
+    } else if (focusedBeforeUpdate === nextButton && nextButton.disabled) {
+      previousButton.focus({ preventScroll: true });
+    }
   }
   function dispose({ restoreFocus = false } = {}) {
     if (disposed) return;

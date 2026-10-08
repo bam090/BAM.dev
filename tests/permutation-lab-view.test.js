@@ -15,7 +15,13 @@ function installDialogHarness(t) {
   const host = { children: [lesson], append(node) { this.children.push(node); } };
   function control(name) {
     if (!controls.has(name)) controls.set(name, {
-      disabled: false, textContent: "", innerHTML: "", hidden: false, attributes: {},
+      _disabled: false, textContent: "", innerHTML: "", hidden: false, attributes: {},
+      get disabled() { return this._disabled; },
+      set disabled(value) {
+        this._disabled = value;
+        // Chromium drops focus immediately when its active button is disabled.
+        if (value && document.activeElement === this) document.activeElement = document.body;
+      },
       setAttribute(attribute, value) { this.attributes[attribute] = value; },
       getAttribute(attribute) {
         if (attribute === "data-permutation-predict" && name.startsWith("predict=")) return name.slice(8);
@@ -29,7 +35,11 @@ function installDialogHarness(t) {
         return selector.includes(`[data-permutation-${name}]`)
           || (name.startsWith("predict=") && selector.includes("[data-permutation-predict]")) ? this : null;
       },
-      focus(options) { focused.push({ name, options }); },
+      focus(options) {
+        if (this.disabled) return;
+        document.activeElement = this;
+        focused.push({ name, options });
+      },
     });
     return controls.get(name);
   }
@@ -51,14 +61,15 @@ function installDialogHarness(t) {
   };
   const trigger = {
     isConnected: true,
-    focus(options) { focused.push({ name: "entry", options }); },
+    focus(options) { document.activeElement = this; focused.push({ name: "entry", options }); },
   };
   globalThis.window = {
     scrollY: 735,
     location: { hash: "#/learn/algorithm/permutations-combinations-java?reviewReturn=session-123&heading=copy" },
     scrollTo(options) { scrolls.push(options); },
   };
-  globalThis.document = { createElement(tag) { assert.equal(tag, "dialog"); return dialog; } };
+  const body = {};
+  globalThis.document = { body, activeElement: body, createElement(tag) { assert.equal(tag, "dialog"); return dialog; } };
   t.after(() => {
     if (savedWindow) Object.defineProperty(globalThis, "window", savedWindow);
     else delete globalThis.window;
@@ -81,6 +92,7 @@ test("실험실의 다음·이전·처음부터는 같은 snapshot으로 돌아�
   assert.notEqual(control("snapshot").innerHTML, initial);
   click("previous");
   assert.equal(control("snapshot").innerHTML, initial);
+  assert.equal(focused.length, 1, "일반 단계 이동은 버튼의 초점을 강제로 옮기지 않는다");
   click("previous");
   assert.equal(control("snapshot").innerHTML, initial);
   for (let index = 1; index < count; index += 1) click("next");
@@ -93,7 +105,48 @@ test("실험실의 다음·이전·처음부터는 같은 snapshot으로 돌아�
   assert.equal(control("snapshot").innerHTML, initial);
   assert.equal(control("previous").disabled, true);
   assert.equal(control("next").disabled, false);
-  assert.equal(focused.length, 1, "단계 이동은 버튼의 초점을 강제로 옮기지 않는다");
+});
+
+test("마지막 단계에서 다음이 비활성화되면 BODY로 사라진 초점을 이전으로 복원한다", (t) => {
+  const harness = installDialogHarness(t);
+  openPermutationLab(harness.trigger, harness.host);
+  const initialFocusCount = harness.focused.length;
+  for (let index = 1; index < 201; index += 1) harness.click("next");
+  assert.equal(document.activeElement, harness.control("next"));
+  assert.equal(harness.focused.length, initialFocusCount);
+  harness.click("next");
+  assert.equal(harness.control("next").disabled, true);
+  assert.equal(document.activeElement, harness.control("previous"));
+  assert.deepEqual(harness.focused.at(-1), { name: "previous", options: { preventScroll: true } });
+  assert.equal(harness.focused.length, initialFocusCount + 1);
+});
+
+test("첫 단계에서 이전이 비활성화되면 BODY로 사라진 초점을 다음으로 복원한다", (t) => {
+  const harness = installDialogHarness(t);
+  openPermutationLab(harness.trigger, harness.host);
+  harness.click("next");
+  harness.control("previous").focus();
+  const focusCount = harness.focused.length;
+  harness.click("previous");
+  assert.equal(harness.control("previous").disabled, true);
+  assert.equal(document.activeElement, harness.control("next"));
+  assert.deepEqual(harness.focused.at(-1), { name: "next", options: { preventScroll: true } });
+  assert.equal(harness.focused.length, focusCount + 1);
+});
+
+test("경계에 도착해도 다른 활성 버튼의 초점은 빼앗지 않는다", (t) => {
+  const harness = installDialogHarness(t);
+  openPermutationLab(harness.trigger, harness.host);
+  harness.control("close").focus();
+  const focusCount = harness.focused.length;
+  for (let index = 1; index <= 201; index += 1) harness.click("next");
+  assert.equal(document.activeElement, harness.control("close"));
+  assert.equal(harness.focused.length, focusCount);
+  harness.control("first").focus();
+  const beforeReset = harness.focused.length;
+  harness.click("first");
+  assert.equal(document.activeElement, harness.control("first"));
+  assert.equal(harness.focused.length, beforeReset);
 });
 
 test("닫기는 원래 교안 DOM·답펼침·URL을 유지하고 위치와 진입 초점을 복원한다", (t) => {

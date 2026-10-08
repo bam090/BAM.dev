@@ -102,3 +102,56 @@ core·app·content·runtime·desktop·package가 바뀌지 않았으므로 기�
 콘텐츠 불변에 따라 전체 `validate:content`와 전체 `npm run check`도 재실행하지 않았습니다.
 이는 이번 선택형 예측 변경의 독립 검증 결과이며 학습자의 오개념 감소를 관찰한 성과는 아닙니다.
 후속 독립 문서 검토·통합 판정과 이번 변경의 커밋·push·PR·merge·배포는 이 기록 시점에 미실행입니다.
+
+## 단계 경계 초점 결함 수정
+
+- **작업 ID·분류:** `BACKTRACKING-FOCUS-20261008`, 일반 제품 기능의 접근성 결함 수정입니다. 새 학습 경험이 아니므로 기존 경험 카드·학습 내용은 그대로 둡니다.
+- **기준선·결함:** `affd717`의 깨끗한 작업 상태에서 Chromium 151의 1440px·390px·320px 화면으로 Enter·Space 반복 시 마지막 201단계의 다음·처음 0단계의 이전 버튼이 비활성화되며 초점이 BODY로 빠지는 현상을 확인했습니다.
+- **최소 계약:** [단계 경계의 키보드 초점 유지](../designs/lesson-review.md#단계-경계의-키보드-초점-유지)에 따라 초점을 가진 버튼이 비활성화될 때만 반대 방향 활성 버튼으로 `preventScroll` 초점을 옮깁니다. 다른 초점·일반 이동·예측·건너뛰기·문서 복귀는 유지합니다.
+- **소유와 순서:** 설계 담당은 기존 두 문서의 이번 절만 수정합니다. 제품 담당은 `src/ui/permutation-lab-view.js`, 테스트 작성자는 `tests/permutation-lab-view.test.js`의 직접 범위를 맡습니다. 설계 인계 뒤 구현·테스트를 작성하고 독립 실행 검증·문서 검토·통합을 거칩니다.
+- **검증 범위:** focused 자동 검사로 두 경계와 초점 비간섭을 확인하고 실제 Chromium의 세 너비에서 Enter·Space 반복, 대화상자 내부 초점, 예측·건너뛰기·문서 복귀를 검사합니다. 불변인 trace·콘텐츠·실행기의 기존 증거는 재사용하며 전체 검사를 자동 확대하지 않습니다.
+- **비범위:** 학습 경험·Java 코드·trace·API·기능 추가·로그인·저장·분석·네트워크·의존성·배포·PR·merge는 바꾸지 않습니다. 작성자는 Git 상태를 변경하지 않습니다.
+- **현재 상태:** 실험실 UI의 단계 갱신 한 곳을 수정했습니다. 독립 자동 검사·임시 복제본 빌드·실제 브라우저의 반복 키 입력 검증은 PASS입니다. 문서 검토·통합은 후속 인계를 기다립니다.
+
+
+### 경계 초점 수정 검증
+
+테스트 작성자는 수정 전 아래 명령으로 비활성화 즉시 blur되는 동작을 재현했습니다.
+신규 3개 중 양끝 초점 복원 2개가 `actual BODY`로 실패했고 다른 초점 비간섭 1개는 통과했습니다(`/tmp/permutation-boundary-red.log`).
+
+```sh
+node --test --test-name-pattern='BODY|다른 활성 버튼' tests/permutation-lab-view.test.js
+```
+
+제품 수정 뒤 아래 명령으로 신규 3개와 기존 16개를 검사해 19/19 PASS를 확인했습니다(`/tmp/permutation-boundary-green.log`).
+이는 작성자 자체 검사이며 독립 검증과 구분합니다.
+
+```sh
+node --test tests/permutation-trace.test.js tests/permutation-lab-view.test.js
+```
+
+
+`[현재 사실]` 독립 `test_engineer`도 위 두 테스트 파일을 실행해 19/19 PASS를 확인했습니다(`/tmp/bam-boundary-fixed-tests.log`).
+작성자 결과와 중복 집계하지 않습니다.
+Linux·Node v24.19에서 안전한 복제본 `/tmp/bam-boundary-build`의 `npm run build`가 PASS였습니다(`/tmp/bam-boundary-build.log`).
+
+실제 브라우저 반복 검증은 `node /tmp/bam-fixed-repeat-browser.mjs`로 Chromium 151의 1440×1000·390×844·320×640에서 수행했습니다.
+실제 포인터·Enter·Space 입력으로 갱신한 화면의 snapshot을 2,037회 검사했고 매번 해당 cursor의 `path`·`used`·결과 복사본·현재행·프레임별 `i`를 기존 202개 모델과 대조해 PASS했습니다.
+2,037은 snapshot 검사 횟수이며 독립 테스트 수나 assertion 개수가 아닙니다.
+결과는 `/tmp/bam-fixed-repeat-browser.json`과 `/tmp/bam-fixed-repeat-browser.log`이며 각 너비의 light/dark 화면은 `/tmp/bam-fixed-repeat-{1440,390,320}-{light,dark}.png`입니다.
+
+`node /tmp/bam-boundary-focus.mjs`의 단발 경계 검증도 PASS했습니다(`/tmp/bam-boundary-fixed.log`).
+200단계의 다음에서 Enter로 201단계에 도달하면 이전에 초점이 남고, 1단계의 이전에서 Space로 0단계에 도달하면 다음에 초점이 남았습니다.
+Tab·Shift+Tab도 대화상자 안에서 이동했습니다.
+문서 스크롤 735px·URL·DOM·답 펼침 보존을 확인했고 저장소 쓰기·네트워크 요청·runtime exception은 모두 0이었습니다.
+
+수정 전 기준선의 `/tmp/bam-repeat-browser.json`과 `/tmp/bam-repeat-browser.log`는 별도 실패 증거로 보존합니다.
+당시 2,067회의 snapshot 대조는 통과했지만 양끝의 초점은 BODY로 빠졌습니다.
+따라서 상태값 대조 PASS를 초점 PASS로 해석하지 않습니다.
+당시에도 Tab을 누르면 201단계에서는 코드 영역 div로, 0단계에서는 다음 버튼으로 돌아올 수 있었으므로 키보드로 영구 복귀할 수 없는 결함은 아니었습니다.
+이번 수정은 그 추가 복귀 조작 없이 대화상자 안의 활성 단계 버튼에 초점을 유지합니다.
+
+실제 JDK·물리 휴대폰·Safari·Firefox·스크린리더·실제 객관식 전체 왕복은 실행하지 않았습니다.
+불변인 모델·콘텐츠·실행기와 무관한 기존 회귀 증거를 재사용하고 전체 검사로 확대하지 않았습니다.
+`/tmp` 자료는 검증 환경의 임시 증거이며 저장소 영구 자산이 아닙니다.
+이번 결함 수정의 독립 문서 검토·통합과 커밋·push·PR·merge·배포는 이 기록 시점에 미실행입니다.
