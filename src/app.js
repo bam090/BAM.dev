@@ -1633,9 +1633,12 @@ export class BamLearningApp {
   }
 
   restoreReviewViewport({ keepFocusVisible = false } = {}) {
-    const viewport = this.quizSession?.viewport;
+    const session = this.quizSession;
+    const viewport = session?.viewport;
     if (!viewport) return;
+    const sequence = this.renderSequence;
     window.requestAnimationFrame(() => {
+      if (this.currentView !== "review" || this.quizSession !== session || sequence !== this.renderSequence) return;
       const card = this.getQuizQuestionCard() ?? this.root.querySelector?.(".quiz-result-card");
       const top = Number.isFinite(viewport.offset) && card
         ? (window.scrollY ?? 0) + card.getBoundingClientRect().top - viewport.offset
@@ -5276,7 +5279,10 @@ export class BamLearningApp {
   }
 
   focusQuizQuestion() {
+    const session = this.quizSession;
+    const sequence = this.renderSequence;
     window.requestAnimationFrame(() => {
+      if (this.currentView !== "review" || this.quizSession !== session || sequence !== this.renderSequence) return;
       const title = this.getQuizQuestionCard()?.querySelector("[data-quiz-question-title]");
       if (title) focusMainContent(title);
       else focusMainContent(document.querySelector("#lesson-content"));

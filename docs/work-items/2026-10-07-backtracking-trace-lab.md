@@ -280,3 +280,74 @@ BAM_CHROMIUM_NO_SANDBOX=1 node tests/audits/permutation-accessibility.mjs
 `BAM_CHROMIUM_PATH=/nonexistent/bam-audit-chromium`을 추가한 실패 검사에서는 ENOENT·종료 코드 1을 반환하고 남은 임시 프로필과 격리 Chromium이 모두 0이었습니다(`/tmp/bam-ax-preserved-failure-cleanup.json`).
 소스 독립 검토는 기존 임시 helper·고정 디버깅 포트·개인 프로필에 의존하지 않고 자체 loopback 서버와 새 프로필만 사용하며 원시 접근성 트리·스크린샷 파일을 저장하지 않음을 확인했습니다.
 이 독립 증거도 임시 검증 환경에 두고 저장소에는 위 합성 요약만 보존합니다.
+
+## 객관식·문서·실험실 왕복 통합검증
+
+`[확정 결정]` 2026-10-08 사용자 요청에 따라 기존에 미실행으로 남긴 객관식 문제 → 두 백트래킹 문서 → 기본순열 실험실 → 원래 문제의 통합 흐름을 검증합니다.
+작업 ID는 `BACKTRACKING-ROUNDTRIP-20261008`이며 학습 내용과 경험을 바꾸지 않는 일반 제품 유지보수·테스트 작업입니다.
+기준선은 `ec4fec80ecffec9a51d904028ad7e5ee42f861e4`이고 작업 브랜치는 `codex/permutation-roundtrip-validation`입니다.
+인계된 기존 CI `37738321066`의 성공은 이전 기준선의 증거로 보존하며 이번 왕복 검사나 신규 전체 검사의 통과로 세지 않습니다.
+
+- **계약 정본:** [R1 route와 복구 경계](../designs/lesson-review.md#r1-route와-복구-경계), [실험실 수용 기준](../designs/lesson-review.md#수용-기준과-비범위), [선택형 예측](../designs/lesson-review.md#선택형-path-예측-한-사례), [단계 경계 초점](../designs/lesson-review.md#단계-경계의-키보드-초점-유지)을 적용합니다. 새 교육 내용이나 별도의 경험 카드는 만들지 않습니다.
+- **대상과 완료 행동:** `quiz-java-algo-permutations-missing-unvisit` 등 기존 연결을 사용합니다. `js-12-brute-force-backtracking`과 `algo-08-permutations-java` 각각에 대해 미선택·선택 후 미채점·채점 후 해설 펼침 상태에서 실험실을 열고 닫기 버튼과 Escape로 문서에 돌아온 뒤 원래 문제로 복귀합니다. 세션 ID·문항·선택·채점·해설·유효 복귀 토큰·읽던 위치와 복귀 초점을 보존해야 합니다.
+- **데이터와 이동:** 실험실 조작만으로 문서 진도나 완료 기록을 추가하지 않습니다. 다른 문서 이동·브라우저 Back/Forward·재진입 뒤 오래된 대화상자나 예측 선택이 남거나 이전 화면으로 초점을 옮기지 않아야 합니다. 직접 문서 진입이나 다른 문서 이동에 문제 복귀 권한을 새로 만들지 않습니다.
+- **경로 소유권:** 제품·설계 문서 담당은 이 절만 편집합니다. 테스트 작성자는 `tests/app-permutation-roundtrip.test.js`와 `tests/audits/permutation-roundtrip.mjs`를 소유하며 기존 fixture는 수정하지 않습니다. 재현된 제품 결함이 있을 때만 별도 구현 담당에게 `src/app.js`·`src/ui/permutation-lab-view.js`의 최소 수정을 맡깁니다. 이후 독립 `test_engineer`와 별도 `project_integrator`가 검증·통합을 판정합니다.
+- **실행과 인계:** 작성자는 focused 자동 검사와 기존 설치 브라우저에서 재현 가능한 왕복 검사를 준비하고 독립 검증자는 기대값·회귀·실행 환경을 확인합니다. 정확한 명령과 결과·재사용·미실행 범위는 아래 결과 기록에 구분합니다. 사용자의 명시적 전체 검사 요청에 따라 최종 대상에서 `npm run check`를 실행하며 생성·삭제 영향이 있는 검사는 안전한 복제본에서 수행합니다.
+- **제약과 반환:** 기존 교육 내용·README·trace·runner·API·의존성·보안 및 모델 설정을 바꾸지 않습니다. 브라우저 sandbox를 낮추거나 다른 브라우저·추가 설치·실사용자 평가로 확대하지 않습니다. 필수 검사를 실행할 수 없으면 `BLOCKED`로 기록하고 제품 결함은 구현 담당에게, 검사 결함은 테스트 작성자에게 반환합니다. 독립 통합 뒤 Git 담당의 로컬 commit·bundle까지만 허용하며 remote push·PR·merge·배포는 하지 않습니다.
+
+### 왕복 수용 기준과 증거 대응
+
+| 구분 | 판정할 기존 계약 | 이번 검사에서 필요한 관찰 |
+| --- | --- | --- |
+| 풀이 왕복 | R1 세션·토큰·복원 | 두 문서 × 세 풀이 상태 × 닫기/Escape에서 세션·문항·선택·채점·해설·토큰과 문제 위치·초점을 전후 대조합니다. |
+| 문서 보존 | 실험실 진입·복귀 | 읽던 문서 위치에서 열고 닫은 뒤 위치와 진입 버튼 초점을 복원하며 문서 DOM·URL 문맥을 유지합니다. |
+| 실험 관찰 | 첫 반환·명시복구 | 첫 `return`의 `path = [1,2,3]`·`used = [true,true,true]`, 다음 `remove`의 `[1,2]`·`[true,true,true]`, 다음 표시 해제의 `[1,2]`·`[true,true,false]`를 구분합니다. |
+| 선택·초점 | 선택형 예측·경계 초점 | 미응답도 진행하며 선택·건너뛰기·이전·처음부터의 기존 계약을 유지합니다. 양끝에서 비활성화되는 조작 버튼의 초점은 반대 방향 활성 버튼에 남습니다. |
+| 이동·재진입 | 일시 상태 정리·유효 복귀 | 다른 문서·Back/Forward·닫기 뒤 재진입에서 대화상자·예측 선택을 초기화하고 오래된 복귀 초점을 적용하지 않습니다. |
+| 기록 불변 | 실험실 비저장 | 실험실 조작 전후의 진도·완료 기록을 대조하며 정상 풀이 저장과 실험실 때문에 생긴 쓰기를 구분합니다. |
+
+### 왕복 검증 결과
+
+`[현재 사실]` 수정 전 신규 자동 검사 `tests/app-permutation-roundtrip.test.js`는 23개 중 21개가 PASS이고 2개가 FAIL입니다(`/tmp/bam-roundtrip-author-red.log`).
+문제로 돌아갈 때 `focusQuizQuestion`·`restoreReviewViewport`가 예약한 animation frame을 실행하기 전에 Forward 또는 다른 문서로 이동하면 이전 문제의 복귀 처리가 새 문서의 읽던 위치를 덮습니다.
+두 실패 모두 새 문서의 735px 위치가 이전 문제의 400px로 바뀌는 것을 재현했습니다.
+
+`[확정 결정]` 이 결함은 기존 이동·재진입 수용 기준 안에서 `src/app.js`만 최소 수정합니다.
+예약한 처리는 실행 시점에도 문제 화면·세션·렌더 문맥이 예약 당시와 일치할 때만 적용합니다.
+유효한 문제 복귀의 위치·초점 복원은 유지하고 새 기능·교육 내용·저장·토큰 계약은 추가하지 않습니다.
+`[현재 사실]` 제품 수정은 `src/app.js`의 7행 추가·1행 삭제입니다.
+두 예약 처리에 세션·렌더 순서를 보관하고 실행 시점의 문제 화면·세션·렌더 순서가 모두 일치하는지 확인하는 guard를 추가했습니다.
+실험실 UI·교육 내용·trace·runner·API·의존성·저장 스키마·보안 및 모델 설정은 바꾸지 않았습니다.
+제품 담당의 직접 회귀 101/101 PASS(`/tmp/bam-roundtrip-product-green.log`)와 아래 독립 실행은 별도 증거입니다.
+
+독립 `test_engineer`는 최종 제품·테스트 파일의 인계 hash가 일치함을 확인하고 아래 명령에서 101 PASS·0 FAIL·0 SKIP을 확인했습니다(`/tmp/bam-roundtrip-independent/focused.log`).
+
+```sh
+node --test tests/app-permutation-roundtrip.test.js tests/app-independent-review.test.js tests/app-quiz-review.test.js tests/app-view-lifecycle.test.js tests/permutation-lab-view.test.js tests/permutation-trace.test.js
+```
+
+신규 DOM 검사 23개는 두 문서 × 세 풀이 상태 × 닫기/Escape의 12회 왕복과 비저장·선택형 예측·이동 및 재진입·복귀 초점을 포함합니다.
+독립 기대값 감사와 DOM 실행은 PASS이며 수정 전 두 실패도 통과했습니다.
+이 23개는 위 focused 검사와 아래 전체 검사에 포함되므로 별도 고유 검사 수로 더하지 않습니다.
+
+사용자가 요청한 전체 `npm run check`는 안전한 복제본 `/tmp/bam-roundtrip-check-2DR1S0`에서 종료 코드 0으로 완료했습니다(`/tmp/bam-roundtrip-independent/check.log`).
+Workflow·콘텐츠 검사와 빌드가 PASS이고 전체 테스트 1,090개 중 1,087 PASS·0 FAIL·3 SKIP입니다.
+SKIP은 `BAM_JAVA_GUARD_NATIVE_TEST`가 필요한 native guard 2개와 `BAM_VERIFY_PERMUTATION_JAVA`가 필요한 Java 참조 실행 1개이며 해당 실행을 새로 통과한 것으로 세지 않습니다.
+`node --check tests/audits/permutation-roundtrip.mjs`와 `git diff --check`도 PASS입니다.
+
+실제 Chromium 검사는 아래 준비 검사에서 `BLOCKED`입니다.
+
+```sh
+env -u BAM_CHROMIUM_NO_SANDBOX BAM_CHROMIUM_PATH=/usr/bin/chromium node tests/audits/permutation-accessibility.mjs
+```
+
+종료 코드는 1이며 `/usr/lib/chromium/chrome-sandbox`의 소유자·mode 4755 설정 오류로 브라우저를 시작하지 못했습니다(`/tmp/bam-roundtrip-independent/chromium-sandbox-probe.log`).
+Sandbox를 낮추거나 다른 브라우저를 설치해 우회하지 않았으며 같은 브라우저 실행을 재시도하지 않았습니다.
+신규 `tests/audits/permutation-roundtrip.mjs`의 24회 왕복·4회 history 시나리오는 작성과 구문 검사만 마쳤고 실제 브라우저 launch는 0회입니다.
+문서의 실제 배치·native dialog의 Tab 및 inert 동작·실제 브라우저 history 타이밍·접근성 트리·시각 상태는 이번 실행에서 검증하지 못했습니다.
+사용자가 허용한 DOM 대체 검증과 로컬 보존 범위의 판정은 실제 브라우저 gate와 분리하며 브라우저 `BLOCKED`를 PASS로 바꾸지 않습니다.
+이번 변경의 원격 CI는 remote push 금지 범위 때문에 실행하지 않습니다.
+사용자가 제공한 과거 CI `37738321066` 성공은 보존하지만 이번 읽기 전용 `gh` 조회가 Forbidden으로 차단되어 재확인하지 못했습니다.
+과거 CI와 이 카드의 앞선 기능·의미·접근성 검사 결과는 각각 당시 범위의 증거로 남깁니다.
+최종 문서·범위 검토와 `project_integrator`의 통합 판정은 후속 단계입니다.
+로컬 commit·bundle은 해당 통합 판정 뒤 Git 담당이 수행할 예정이며 아직 생성 완료로 기록하지 않습니다.
