@@ -6,7 +6,7 @@ export function renderPermutationSnapshot(snapshot) {
   return `<div class="permutation-lab-grid">
     <section class="permutation-lab-code" aria-label="고정 Java 예제">
       <h3>Java 예제 · nums = [1, 2, 3]</h3>
-      <p>${snapshot.event === 'start' ? '시작 전 · 아직 실행한 행이 없습니다.' : `방금 실행: ${snapshot.executingDepth === null ? 'main' : `깊이 ${snapshot.executingDepth}`} · ${snapshot.line}행`}</p>
+      <p>${snapshot.event === 'start' ? '시작 전 · 아직 실행한 행이 없습니다.' : `이번 단계의 코드: ${snapshot.executingDepth === null ? 'main' : `깊이 ${snapshot.executingDepth}`} · ${snapshot.line}행`}</p>
       <div class="permutation-lab-source" tabindex="0" aria-label="Java 코드. 가로로 스크롤할 수 있습니다."><pre>${PERMUTATION_JAVA_LINES.map((line, index) => `<span class="permutation-lab-line${snapshot.event !== 'start' && snapshot.line === index + 1 ? ' is-current' : ''}"${snapshot.event !== 'start' && snapshot.line === index + 1 ? ' aria-current="step"' : ''}><span class="permutation-lab-line-number">${index + 1}</span><code>${renderHighlightedCode(line, 'java')}</code></span>`).join('')}</pre></div>
     </section>
     <div class="permutation-lab-state">
@@ -36,7 +36,7 @@ export function openPermutationLab(trigger, host) {
     <p>검증된 고정 예제의 계산된 trace를 재생합니다. 임의의 사용자 Java 코드를 실행하는 기능은 아닙니다.</p>
     <p>다음을 누르기 전에 어느 값이 바뀔지 예상해 보세요.</p>
     <div class="permutation-lab-controls"><button type="button" class="button button--secondary" data-permutation-first>처음부터</button><button type="button" class="button button--secondary" data-permutation-previous>이전</button><button type="button" class="button button--primary" data-permutation-next>다음</button><span data-permutation-counter></span></div>
-    <p class="permutation-lab-notice">이전은 학습 재생을 되감는 버튼입니다. Java의 return이나 역실행이 아닙니다.<br>강조한 행을 수행한 직후의 상태를 보여 줍니다.</p>
+    <p class="permutation-lab-notice">이전은 학습 재생을 되감는 버튼입니다. Java의 return이나 역실행이 아닙니다.<br>강조한 행은 이번 단계와 연결된 코드입니다. 호출은 자식으로 넘어간 시점, 복귀는 호출자에게 돌아온 시점을 보여 줍니다.</p>
     <p class="permutation-lab-description" role="status" aria-live="polite" aria-atomic="true" data-permutation-description></p>
     <section class="permutation-lab-prediction" data-permutation-prediction hidden aria-label="첫 복귀의 path 예상과 관찰">
       <div data-permutation-prediction-question>

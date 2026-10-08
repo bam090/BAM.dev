@@ -157,6 +157,8 @@ test("닫기는 원래 교안 DOM·답펼침·URL을 유지하고 위치와 진�
   assert.equal(harness.dialog.attributes["aria-labelledby"], "permutation-lab-title");
   assert.match(harness.dialog.innerHTML, /임의의 사용자 Java 코드를 실행하는 기능은 아닙니다/);
   assert.match(harness.dialog.innerHTML, /Java의 return이나 역실행이 아닙니다/);
+  assert.match(harness.dialog.innerHTML, /호출은 자식으로 넘어간 시점, 복귀는 호출자에게 돌아온 시점/);
+  assert.doesNotMatch(harness.dialog.innerHTML, /강조한 행을 수행한 직후/);
   window.scrollY = 0;
   harness.click("close");
   assert.deepEqual(harness.host.children, [harness.lesson]);
@@ -195,11 +197,11 @@ test("앱의 화면 전환은 열린 실험실을 정리한다", () => {
   assert.equal(app.permutationLabDispose, null);
 });
 
-test("복귀 화면은 방금 실행한 자식 행과 현재 부모 호출·공유 상태를 구분한다", () => {
+test("복귀 화면은 연결된 자식 코드와 현재 부모 호출·공유 상태를 구분한다", () => {
   const trace = createPermutationTrace();
   const copyIndex = trace.findIndex((step) => step.event === "copy");
   const html = renderPermutationSnapshot(trace[copyIndex + 1]);
-  assert.match(html, /방금 실행: 깊이 3 · 13행/);
+  assert.match(html, /이번 단계의 코드: 깊이 3 · 13행/);
   assert.match(html, /깊이 2 · i = 2<strong>현재 호출/);
   assert.match(html, /data-permutation-path>\[1, 2, 3\]/);
   assert.match(html, /data-permutation-used>\[true, true, true\]/);
