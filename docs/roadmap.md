@@ -404,12 +404,14 @@ P2와 P3의 정확한 콘텐츠·과제 수는 미리 정하지 않는다. P4는
 
 `[현재 사실]` 2026-10-02 전체 객관식 작업 절이 같은 설계 파일에 추가되어 PR #45의 첫 CI에서 범위 파일 해시 불일치가 발생했습니다. 현재 블록은 참조 파일의 해시만 동기화합니다. 이전 해시는 `78ba18fcbea7a318a18548a3e7cd167a3ab3c8444ee5261a69ded3b7c45562f1`이며 문제별 기록 제안의 범위·선행조건·`REVIEW-HISTORY-v1`과 미착수 상태는 유지합니다. 전체 객관식 검증을 이 제안의 승인·구현·검증 증거로 옮기지 않습니다.
 
+`[현재 사실]` 2026-10-08 명시 승인에 따라 순열 실험실 관련 절 추가로 달라진 참조 해시를 동기화합니다. 기준 `1c5f899`의 앞부분 579줄은 바이트 단위로 같고 승인된 순열 설계·검증 기록 165줄만 뒤에 추가됐습니다. 이번 문서 유지보수는 `REVIEW-HISTORY-v1`의 범위·선행조건·`prerequisite_pending`과 승인·구현·검증·완료의 `null` 상태를 바꾸지 않으며 순열 작업 결과를 문제별 기록의 완료 근거로 사용하지 않습니다.
+
 ```workflow-state
 {
   "version": 1,
   "id": "review-history",
   "scopeRevision": "REVIEW-HISTORY-v1",
-  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "96075352ebca28304a5b56d54250eeb1866a617136ef1bbb241a203ec7a0d4b6" }],
+  "scopeFiles": [{ "path": "docs/designs/lesson-review.md", "sha256": "024f658c69800b68909623b3ef4ea30ed8396d9e0d0798684463bd4f561a1143" }],
   "stage": "prerequisite_pending",
   "prerequisites": [
     { "id": "DEC-REVIEW-RECORD-01", "status": "PENDING", "ref": "docs/roadmap.md#bam-결정-대기-목록" },
