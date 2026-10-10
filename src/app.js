@@ -5290,7 +5290,10 @@ export class BamLearningApp {
   }
 
   focusQuizResult() {
+    const session = this.quizSession;
+    const sequence = this.renderSequence;
     window.requestAnimationFrame(() => {
+      if (this.currentView !== "review" || this.quizSession !== session || sequence !== this.renderSequence) return;
       const title = document.querySelector("#quiz-result-title");
       if (title) focusMainContent(title);
       else focusMainContent(document.querySelector("#lesson-content"));

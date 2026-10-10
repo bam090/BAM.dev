@@ -351,3 +351,67 @@ Sandbox를 낮추거나 다른 브라우저를 설치해 우회하지 않았으�
 과거 CI와 이 카드의 앞선 기능·의미·접근성 검사 결과는 각각 당시 범위의 증거로 남깁니다.
 최종 문서·범위 검토와 `project_integrator`의 통합 판정은 후속 단계입니다.
 로컬 commit·bundle은 해당 통합 판정 뒤 Git 담당이 수행할 예정이며 아직 생성 완료로 기록하지 않습니다.
+
+## 2026-10-10 기존 흐름 완결성 후속 검증
+
+`[확정 결정]` 사용자 후속 요청에 따라 `9ed84f9`의 문서 왕복 수정과 이전 증거를 보존하고 실제 브라우저 검사를 현재 환경에서 실행할 수 있는지 먼저 확인합니다.
+작업 ID는 `BACKTRACKING-CONTINUATION-20261010`이며 `codex/permutation-continuation`의 일반 제품 유지보수·테스트 작업입니다.
+브라우저가 계속 차단되면 기존 순열 학습·문서 왕복·키보드 접근성에서 코드 또는 DOM으로 재현되는 결함을 비교하고 사용자 흐름에 미치는 영향이 큰 결함부터 최소 수정합니다.
+아직 재현하지 않은 결함을 전제로 제품을 바꾸거나 새 학습 경험을 추가하지 않습니다.
+
+- **기존 완료 행동:** [왕복 수용 기준](#왕복-수용-기준과-증거-대응)과 정본의 [선택형 예측](../designs/lesson-review.md#선택형-path-예측-한-사례)·[경계 초점](../designs/lesson-review.md#단계-경계의-키보드-초점-유지)을 유지합니다. 두 문서와 문제를 오갈 때 풀이 상태·토큰·읽던 위치·초점을 보존하고 실험실의 일시 상태가 다른 화면에 남거나 진도·완료 기록을 추가하지 않아야 합니다. 새로 재현한 결함은 수정 전 실패·수정 후 회귀와 직접 영향받는 기존 동작으로 완료를 판정합니다.
+- **역할과 소유권:** 제품·설계 문서 담당은 이 후속 절만 편집합니다. `product_maintainer`는 실결함에 한해 `src/app.js`·`src/ui/permutation-lab-view.js`를 최소 수정합니다. `roundtrip_test_author`는 필요한 독립 회귀를 `tests/app-permutation-roundtrip.test.js` 또는 `tests/permutation-lab-view.test.js`에 작성합니다. `test_engineer`는 읽기·독립 실행, `project_integrator`는 읽기·통합 판정을 맡으며 Git 작업은 별도 담당에게 인계합니다.
+- **검증 선정:** 이번에는 전체 검사 요청이 없으므로 새 focused 검사와 변경 영향상 필요한 빌드를 우선합니다. 앞선 전체 검사 1,087 PASS·0 FAIL·3 SKIP과 과거 CI는 변경·의존성 대조로 유효한 범위에서만 재사용하며 신규 실행 결과와 구분합니다. 실제 브라우저가 차단되면 원인·명령·미검증 동작을 기록하고 DOM PASS를 실제 브라우저 PASS로 바꾸지 않습니다.
+- **제약:** 브라우저 sandbox 저하·보안 우회·추가 설치·새 권한 및 인증·다른 브라우저와 실사용자 평가 확대를 하지 않습니다. 교육 본문·trace·runner·API·의존성·README·보안 및 모델 설정을 변경하지 않습니다. Remote push·PR·merge·배포는 금지하며 허용된 로컬 Git 작업도 독립 통합 판정 뒤 담당 인계를 따릅니다.
+
+`[현재 사실]` 새 작업 위치 `/workspace/BAM.permutation-continuation`의 HEAD가 `9ed84f9`임을 확인했습니다.
+독립 검증 담당은 2026-10-10에 다음 명령으로 현재 브라우저 실행 가능 여부를 확인했습니다.
+실행 위치는 같은 기준선 `9ed84f9`의 깨끗한 `/workspace/BAM.permutation-validation`이며 이번 worktree와 audit 파일의 SHA가 일치함을 확인했습니다.
+
+```sh
+env -u BAM_CHROMIUM_NO_SANDBOX BAM_CHROMIUM_PATH=/usr/bin/chromium node tests/audits/permutation-roundtrip.mjs
+```
+
+종료 코드 1이며 sandbox helper의 SUID 시작 오류로 `BLOCKED`입니다.
+Helper의 mode는 4755이지만 소유자 UID가 65534로 필요한 소유권 조건을 충족하지 못했습니다.
+앱을 불러오기 전에 중단되어 이번 실제 브라우저 시나리오 실행은 0회입니다(`/tmp/bam-continuation-independent-20261010/chromium-roundtrip-9rq3B5.log`).
+종료 뒤 남은 임시 프로필·프로세스는 모두 0이며 보안 설정 변경이나 재시도는 하지 않았습니다(`/tmp/bam-continuation-independent-20261010/cleanup-9rq3B5.json`).
+이 결과는 앞선 2026-10-08 준비 검사와 구분합니다.
+### 결과 화면의 예약된 초점 처리 결함
+
+`[현재 사실]` 테스트 작성자가 기존 공개 문항과 결과 화면의 관련 학습문서 링크를 사용해 결함 1건을 두 문서에서 재현했습니다.
+결과 화면에서 각 백트래킹 문서로 이동한 뒤 예약된 결과 화면의 animation frame을 실행하면 새 문서의 읽던 위치가 735px에서 0으로 바뀝니다.
+수정 전 독립 작성 회귀는 두 재현 시나리오가 FAIL이고 결과 화면을 유지한 상태에서 `finishQuizSession`·`showRecentQuizResult`가 결과 제목에 초점을 주는 대조 검사는 PASS입니다(`/tmp/bam-continuation-result-author-red.log`).
+
+```sh
+node --test --test-name-pattern='결과에서 문서|결과 화면을 유지' tests/app-permutation-roundtrip.test.js
+```
+
+`[확정 결정]` `src/app.js`의 `focusQuizResult` 한 곳에 기존과 같은 현재 화면·세션·렌더 순서 guard를 추가합니다.
+결과 화면을 떠난 뒤 실행되는 이전 처리를 막고 현재 결과 화면의 정상 초점 이동은 유지합니다.
+`9ed84f9`에서 추가한 두 guard와 교육 내용·UI·trace·API는 그대로 보존합니다.
+DOM 재현의 판정 근거는 스크롤 침해이며 실제 native dialog의 inert가 초점을 차단하는지는 이번 검사로 판단하지 않습니다.
+목차·답 토글 등 읽기 조사에서 추가 결함 근거는 확인하지 못했으며 이를 실제 UI 검사 PASS로 표현하지 않습니다.
+`[현재 사실]` 제품 수정은 `focusQuizResult`에 guard 3행을 추가한 것이며 기존 두 guard를 보존했습니다.
+테스트는 `tests/app-permutation-roundtrip.test.js`에 77행·3개를 추가했습니다.
+작성자는 위와 같은 명령으로 신규 3/3 PASS를 확인했습니다(`/tmp/bam-continuation-result-author-green.log`).
+수정 전 1 PASS·2 FAIL 기록은 보존하며 두 실패는 같은 결함의 재현 시나리오입니다.
+
+### 2026-10-10 독립 검증과 남은 범위
+
+제품 담당의 직접 회귀 104/104 PASS(`/tmp/bam-continuation-result-product-green.log`) 뒤 독립 `test_engineer`도 아래 명령으로 104 PASS·0 FAIL·0 SKIP을 확인했습니다(`/tmp/bam-continuation-independent-20261010/result-focused.log`).
+
+```sh
+node --test tests/app-permutation-roundtrip.test.js tests/app-independent-review.test.js tests/app-quiz-review.test.js tests/app-view-lifecycle.test.js tests/permutation-lab-view.test.js tests/permutation-trace.test.js
+```
+
+신규 3개는 104개에 포함되므로 검사 수를 중복 합산하지 않습니다.
+안전한 복제본 `/tmp/bam-continuation-build-LUCrxX`에서 `npm run build`가 종료 코드 0으로 완료됐습니다(`/tmp/bam-continuation-independent-20261010/build.log`).
+독립 검증자는 diff 검사와 인계 파일의 hash 일치도 확인했습니다.
+제품 파일 SHA-256은 `6c50d27cc998f7a0e53f36e3f6dae7e031c5718c5499808bbdb8c384165d8ccf`, 테스트 파일은 `4404c58fc935335c1fb46df4a26924ba9fea352c78c197e4b4797b2710133a51`입니다.
+
+이번 전체 검사는 재실행하지 않았습니다.
+앞선 1,087 PASS·0 FAIL·3 SKIP은 이전 commit의 실행 결과이며 이번 변경의 전체 검사 PASS로 주장하지 않습니다.
+실제 브라우저 준비 검사는 위 1회에서 `BLOCKED`였고 앱 시나리오는 실행하지 않았으며 보안 우회는 없었습니다.
+DOM 검사는 예약 callback의 실행 순서를 제어해 스크롤·초점 계약을 확인한 것으로 실제 브라우저의 callback 타이밍·native focus 및 inert·화면 배치 차이까지 검증하지는 않습니다.
+최종 문서·범위 통합 판정과 허용된 로컬 Git 작업은 별도 담당의 후속 단계이며 아직 완료로 기록하지 않습니다.

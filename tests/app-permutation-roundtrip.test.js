@@ -428,3 +428,80 @@ for (const destination of ["Forward", "other-document"]) {
     assert.equal(focusLog.length, focusCount, "Leaving review invalidates its queued focus changes");
   });
 }
+
+async function finishPublicQuiz(harness, target) {
+  await harness.navigate(`#/review/java/${target.lessonId}`);
+  const { app } = harness;
+  while (app.quizSession.screen === "question") {
+    const input = app.getQuizQuestionCard().radios.find((option) => option.value === "a");
+    input.focus();
+    app.handleChange({ target: input });
+    harness.clickReview("[data-quiz-check]");
+    if (app.quizSession.currentIndex === app.quizSession.questions.length - 1) break;
+    app.showNextQuizQuestion();
+  }
+  harness.flushFrames();
+  app.finishQuizSession();
+  assert.equal(app.quizSession.screen, "result");
+  assert.equal(app.quizSession.gradedAnswers.size, app.quizSession.questions.length);
+  assert.equal(app.progressRepository.getProgress().quizAttempts.length, 1);
+  assert.match(harness.root.innerHTML, /id="quiz-result-title"/);
+}
+
+for (const target of targets) {
+  test(`${target.lessonId}: 결과에서 문서로 이동한 뒤 예약된 결과 초점은 읽던 위치를 덮어쓰지 않는다`, async (t) => {
+    const harness = installRoundtripHarness(t, { deferFrames: true });
+    const { app, root, storage, writes, focusLog } = harness;
+    await finishPublicQuiz(harness, target);
+    const resultSessionId = app.quizSession.id;
+    const lesson = curriculum.lessons.find(({ id }) => id === target.lessonId);
+    const linkMatch = root.innerHTML.match(/<a href="([^"]+)" data-review-document>/);
+    assert.ok(linkMatch, "The public result must expose its related document link");
+    assert.equal(linkMatch[1], `#/learn/${lesson.courseId}/${lesson.slug}`);
+    const link = root.querySelector("[data-review-document]");
+    // The existing lightweight fixture does not parse attributes from rendered HTML.
+    // Hydrate only this real, asserted href; use the app's existing click handler.
+    link.setAttribute("href", linkMatch[1]);
+    link.focus();
+    app.handleQuizClick(event(link));
+    await app.openRoute();
+    assert.equal(app.currentLesson.id, target.lessonId);
+    assert.equal(app.lessonReviewReturn.saved.id, resultSessionId);
+    assert.match(root.innerHTML, /data-review-return/);
+    const entry = root.querySelector("[data-permutation-open]");
+    entry.focus();
+    window.scrollY = 735;
+    const beforeFrame = { focusCount: focusLog.length, storage: [...storage.values], writes: writes.length };
+    // Animation callbacks run before a rendering opportunity, not necessarily between
+    // every navigation task. Model navigation winning that race; native timing and
+    // modal inert/focus behavior remain unverified while Chromium is blocked.
+    harness.flushFrames();
+    assert.equal(window.scrollY, 735, "The earlier result callback must not scroll a later document to zero");
+    assert.equal(document.activeElement, entry, "The earlier result callback must not refocus the later document shell");
+    assert.equal(focusLog.length, beforeFrame.focusCount);
+    assert.deepEqual([...storage.values], beforeFrame.storage);
+    assert.equal(writes.length, beforeFrame.writes);
+    const { dialog } = harness.openLab();
+    dialog.cancel();
+    assert.equal(window.scrollY, 735);
+    assert.equal(document.activeElement, entry);
+    assert.equal(app.progressRepository.getProgress().quizAttempts.length, 1, "Reading and lab use must not duplicate the completed attempt");
+  });
+}
+
+test("결과 화면을 유지하면 완료와 최근 결과의 예약 초점은 결과 제목에 정상 도착한다", async (t) => {
+  const harness = installRoundtripHarness(t, { deferFrames: true });
+  const { app, root } = harness;
+  await finishPublicQuiz(harness, targets[0]);
+  window.scrollY = 735;
+  harness.flushFrames();
+  assert.equal(document.activeElement, root.querySelector("#quiz-result-title"));
+  assert.equal(window.scrollY, 0);
+  const completed = structuredClone(app.progressRepository.getProgress().quizAttempts);
+  app.showRecentQuizResult();
+  window.scrollY = 735;
+  harness.flushFrames();
+  assert.equal(document.activeElement, root.querySelector("#quiz-result-title"));
+  assert.equal(window.scrollY, 0);
+  assert.deepEqual(app.progressRepository.getProgress().quizAttempts, completed);
+});
