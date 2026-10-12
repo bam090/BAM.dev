@@ -90,6 +90,16 @@ export function openPermutationLab(trigger, host) {
       previousButton.focus({ preventScroll: true });
     }
   }
+  function focusNextButtonVisible() {
+    const nextButton = dialog.querySelector('[data-permutation-next]');
+    nextButton.focus({ preventScroll: true });
+    const visibleTop = dialog.getBoundingClientRect().top + dialog.clientTop;
+    const visibleBottom = visibleTop + dialog.clientHeight;
+    const nextRect = nextButton.getBoundingClientRect();
+    // Keep the existing 3px focus outline and 3px offset inside the dialog.
+    if (nextRect.top - 6 < visibleTop) dialog.scrollTop = Math.floor(dialog.scrollTop + nextRect.top - 6 - visibleTop);
+    else if (nextRect.bottom + 6 > visibleBottom) dialog.scrollTop = Math.ceil(dialog.scrollTop + nextRect.bottom + 6 - visibleBottom);
+  }
   function dispose({ restoreFocus = false } = {}) {
     if (disposed) return;
     disposed = true;
@@ -121,7 +131,7 @@ export function openPermutationLab(trigger, host) {
       prediction = null;
       cursor = comparisonIndex;
       update();
-      dialog.querySelector('[data-permutation-next]').focus({ preventScroll: true });
+      focusNextButtonVisible();
       return;
     }
     const control = event.target.closest('[data-permutation-first], [data-permutation-previous], [data-permutation-next]');
@@ -133,6 +143,6 @@ export function openPermutationLab(trigger, host) {
   host.append(dialog);
   update();
   dialog.showModal();
-  dialog.querySelector('[data-permutation-next]').focus({ preventScroll: true });
+  focusNextButtonVisible();
   return dispose;
 }

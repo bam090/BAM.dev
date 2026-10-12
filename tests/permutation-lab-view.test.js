@@ -16,6 +16,11 @@ function installDialogHarness(t) {
   function control(name) {
     if (!controls.has(name)) controls.set(name, {
       _disabled: false, textContent: "", innerHTML: "", hidden: false, attributes: {},
+      offsetTop: 20,
+      getBoundingClientRect() {
+        const top = dialog.getBoundingClientRect().top + dialog.clientTop + this.offsetTop - dialog.scrollTop;
+        return { top, bottom: top + 20, left: 24, right: 124, width: 100, height: 20 };
+      },
       get disabled() { return this._disabled; },
       set disabled(value) {
         this._disabled = value;
@@ -44,7 +49,11 @@ function installDialogHarness(t) {
     return controls.get(name);
   }
   const dialog = {
-    innerHTML: "", attributes: {}, modal: false,
+    innerHTML: "", attributes: {}, modal: false, scrollTop: 0, clientTop: 2, clientHeight: 180,
+    getBoundingClientRect() {
+      const height = this.clientHeight + this.clientTop * 2;
+      return { top: 40, bottom: 40 + height, left: 20, right: 300, width: 280, height };
+    },
     setAttribute(name, value) { this.attributes[name] = value; },
     querySelector(selector) {
       if (selector === ".permutation-lab-source") return control("source");
@@ -216,6 +225,69 @@ function openFirstPrediction(harness) {
   assert.match(harness.control("counter").textContent, /^32 \/ 201/);
   assert.equal(harness.control("prediction").hidden, false);
   assert.match(harness.control("snapshot").innerHTML, /data-permutation-path>\[1, 2, 3\]/);
+}
+
+for (const action of ["initial", "skip"]) for (const placement of ["above", "below", "visible"]) {
+  test(`${action}: 다음 버튼이 ${placement}이면 초점 테두리까지 보이도록 실험실 내부 위치만 조정한다`, (t) => {
+    const harness = installDialogHarness(t);
+    const { dialog, control, focused, scrolls } = harness;
+    if (action === "skip") openFirstPrediction(harness);
+    dialog.clientHeight = 120;
+    dialog.scrollTop = 100;
+    const next = control("next");
+    // The 20px button starts 10px above, ends 5px below, or lies fully inside
+    // the dialog viewport. Changing dialog.scrollTop moves its measured rect.
+    next.offsetTop = { above: 90, below: 205, visible: 140 }[placement];
+    if (action === "initial") openPermutationLab(harness.trigger, harness.host);
+    else {
+      control("skip").focus();
+      harness.click("skip");
+      assert.match(control("counter").textContent, /^33 \/ 201/);
+    }
+
+    assert.equal(document.activeElement, next);
+    assert.deepEqual(focused.at(-1), { name: "next", options: { preventScroll: true } });
+    const rect = next.getBoundingClientRect();
+    const visibleTop = dialog.getBoundingClientRect().top + dialog.clientTop;
+    assert.ok(rect.top >= visibleTop + 6, "초점 버튼의 위쪽과 6px 테두리가 보여야 한다.");
+    assert.ok(rect.bottom <= visibleTop + dialog.clientHeight - 6, "초점 버튼의 아래쪽과 6px 테두리가 보여야 한다.");
+    assert.equal(dialog.scrollTop, { above: 84, below: 111, visible: 100 }[placement],
+      "가려진 만큼만 옮기고 이미 보이는 버튼은 그대로 둔다.");
+    assert.equal(window.scrollY, 735, "문서의 읽던 위치는 바꾸지 않는다.");
+    assert.deepEqual(scrolls, [], "실험실 내부 초점 이동은 창 스크롤을 호출하지 않는다.");
+  });
+}
+
+for (const placement of ["above", "below"]) {
+  test(`소수점 ${placement} 위치에서도 정수 스크롤 반올림 뒤 6px 초점 테두리를 보존한다`, (t) => {
+    const harness = installDialogHarness(t);
+    const { dialog, control, scrolls } = harness;
+    if (placement === "above") openFirstPrediction(harness);
+    dialog.clientHeight = 120;
+    let roundedScrollTop = 100;
+    const scrollTargets = [];
+    // Model Chrome's observed integer scroll offset while retaining fractional
+    // layout geometry, which can otherwise leave only 5.64px of focus clearance.
+    Object.defineProperty(dialog, "scrollTop", {
+      get: () => roundedScrollTop,
+      set(value) { scrollTargets.push(value); roundedScrollTop = Math.round(value); },
+    });
+    const next = control("next");
+    next.offsetTop = placement === "above" ? 90.64 : 205.36;
+    if (placement === "above") {
+      control("skip").focus();
+      harness.click("skip");
+    } else openPermutationLab(harness.trigger, harness.host);
+
+    const rect = next.getBoundingClientRect();
+    const visibleTop = dialog.getBoundingClientRect().top + dialog.clientTop;
+    assert.ok(rect.top >= visibleTop + 6, "반올림 뒤에도 위쪽 테두리 6px가 모두 보여야 한다.");
+    assert.ok(rect.bottom <= visibleTop + dialog.clientHeight - 6, "반올림 뒤에도 아래쪽 테두리 6px가 모두 보여야 한다.");
+    assert.deepEqual(scrollTargets, [placement === "above" ? 84 : 112], "가시 영역 바깥 방향으로 정수 목표를 잡는다.");
+    assert.equal(document.activeElement, next);
+    assert.equal(window.scrollY, 735);
+    assert.deepEqual(scrolls, []);
+  });
 }
 
 test("첫 반환에서만 다음 remove의 path를 물으며 두 예상은 답 공개나 단계 이동 없이 바꿀 수 있다", (t) => {

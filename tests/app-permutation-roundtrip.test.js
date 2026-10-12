@@ -118,8 +118,8 @@ function installRoundtripHarness(t, { deferFrames = false } = {}) {
     const controls = new Map();
     const listeners = new Map();
     const dialog = {
-      innerHTML: "", isConnected: true,
-      setAttribute() {}, getBoundingClientRect: () => ({ left: 0, right: 100, top: 0, bottom: 100 }),
+      innerHTML: "", isConnected: true, clientTop: 2, clientHeight: 996, scrollTop: 0,
+      setAttribute() {}, getBoundingClientRect: () => ({ left: 0, right: 100, top: 0, bottom: 1000 }),
       querySelector(selector) {
         if (!controls.has(selector)) {
           const control = makeControl(selector);
@@ -303,6 +303,62 @@ for (const target of targets) for (const state of ["unanswered", "selected", "gr
     assert.equal(document.activeElement.id, `quiz-related-concept-${target.questionId}`);
     assert.equal(app.progressRepository.getProgress().quizAttempts.length, 0);
     assert.deepEqual(app.progressRepository.getProgress().completedLessonIds, completed);
+  });
+}
+
+for (const target of targets) {
+  test(`${target.lessonId}: 사이드바 검색 뒤 실험실의 첫 Escape는 문서 초점과 읽던 위치를 복원한다`, async (t) => {
+    const harness = installRoundtripHarness(t);
+    const { app, root, storage, writes } = harness;
+    await openQuestion(harness, target, "graded-expanded");
+    const saved = await visitDocument(harness, target);
+    await app.loadSidebarCatalog();
+    const handlers = new Map();
+    window.addEventListener = () => {};
+    document.addEventListener = (name, handler) => handlers.set(name, handler);
+    root.addEventListener = () => {};
+    app.mobileMedia = { matches: false, addEventListener() {} };
+    app.bindGlobalEvents();
+
+    const input = root.querySelector("[data-sidebar-search]");
+    const results = root.querySelector("#sidebar-search-results");
+    input.value = "순열";
+    app.handleInput(event(input));
+    assert.equal(app.getServiceNavigation().query, "순열");
+    assert.equal(results.hidden, false);
+    assert.equal(input.getAttribute("aria-expanded"), "true");
+    const beforeLab = { hash: window.location.hash, markup: root.innerHTML, data: [...storage.values], writes: writes.length };
+    window.scrollY = 735;
+
+    let searchWhenModalOpened;
+    const createElement = document.createElement;
+    document.createElement = (tag) => {
+      const dialog = createElement(tag);
+      const showModal = dialog.showModal.bind(dialog);
+      dialog.showModal = () => {
+        searchWhenModalOpened = { query: app.getServiceNavigation().query, input: input.value,
+          hidden: results.hidden, expanded: input.getAttribute("aria-expanded") };
+        showModal();
+      };
+      return dialog;
+    };
+    const { dialog, trigger } = harness.openLab();
+    assert.equal(dialog.open, true);
+    const escape = { ...event(dialog.control("next")), key: "Escape", defaultPrevented: false };
+    handlers.get("keydown")(escape);
+    // Model the native cancel only if the app has not consumed this same Escape.
+    if (!escape.defaultPrevented) dialog.cancel();
+    assert.equal(dialog.isConnected, false, "검색 핸들러가 첫 Escape를 소비해 실험실을 남겨 두면 안 된다.");
+    assert.equal(escape.defaultPrevented, false);
+    assert.deepEqual(searchWhenModalOpened, { query: "", input: "", hidden: true, expanded: "false" },
+      "실험실을 열기 전에 기존 검색을 닫아야 한다.");
+    assert.equal(document.activeElement, trigger);
+    assert.equal(window.scrollY, 735);
+    assert.equal(window.location.hash, beforeLab.hash);
+    assert.equal(root.innerHTML, beforeLab.markup);
+    assert.deepEqual([...storage.values], beforeLab.data);
+    assert.equal(writes.length, beforeLab.writes);
+    assert.deepEqual(app.lessonReviewReturn.saved, saved);
   });
 }
 

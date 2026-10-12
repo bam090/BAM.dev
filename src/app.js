@@ -2151,6 +2151,7 @@ export class BamLearningApp {
   handleClick(event) {
     const permutationTrigger = event.target.closest("[data-permutation-open]");
     if (permutationTrigger) {
+      this.clearSidebarSearch();
       this.permutationLabDispose?.();
       this.permutationLabDispose = openPermutationLab(permutationTrigger, this.root);
       return;
