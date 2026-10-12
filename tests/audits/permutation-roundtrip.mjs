@@ -200,14 +200,17 @@ async function prepareQuestion(client, driver, origin, target, answerState) {
   await client.send("Page.navigate", { url: `${origin}/${reviewHash}` });
   await waitFor(() => driver.has("[data-quiz-view-mode]"), "public Java question UI");
   await driver.press('[data-quiz-view-mode="all"]');
+  await driver.settle();
   const card = `[data-quiz-question-id="${target.question}"]`;
   await waitFor(() => driver.has(card), "target question in public collection");
   if (answerState !== "unselected") {
     await driver.press(`${card} [data-quiz-option][value="a"]`, " ");
     if (answerState === "graded-expanded") {
       await driver.press(`${card} [data-quiz-check]`);
+      await driver.settle();
       await waitFor(() => driver.has(`${card} [data-quiz-feedback-toggle]`), "graded question");
       await driver.press(`${card} [data-quiz-feedback-toggle]`);
+      await driver.settle();
     }
   }
   await client.evaluate(`document.querySelector(${JSON.stringify(card)}).scrollIntoView({block:'start',behavior:'instant'})`);
@@ -290,7 +293,8 @@ async function auditHistory(client, driver, target, otherTarget) {
     history.back()`);
   await waitFor(() => driver.has(`[data-quiz-question-id="${target.question}"]`), "browser Back to question");
   await driver.settle();
-  assert.equal(await driver.has("dialog"), false);
+  // The review screen keeps its scope dialog in the DOM while closed.
+  assert.equal(await driver.has("dialog[open], dialog.permutation-lab, dialog.concept-dialog"), false);
   assert.equal(await client.evaluate("window.__roundtripProbe.staleFocusCalls"), 0);
   assert.deepEqual(await driver.session(), originalSession);
   assert.equal(await driver.active(`#quiz-related-concept-${target.question}`), true);
